@@ -9,6 +9,7 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: check-added-large-files
+      - id: detect-private-key
   - repo: https://github.com/psf/black
     rev: 22.10.0
     hooks:
@@ -22,3 +23,8 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v2.1.1
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

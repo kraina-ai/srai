@@ -13,4 +13,4 @@ Spatial Representations for Artificial Intelligence
 ### Pre-commit hooks
  This repository uses [pre-commit](https://pre-commit.com/) for managing pre-commit hooks.
  They are configured in .pre-commit-config.yaml.
- To install them use `pre-commit install` after initial setup with `pdm`.
+ To install them use `pre-commit install && pre-commit install -t commit-msg` after initial setup with `pdm`.
