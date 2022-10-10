@@ -1,0 +1,45 @@
+site_name: Spatial Representations for Artificial Intelligence
+site_url: https://example.com/
+nav:
+  - Home: index.md
+  - About: about.md
+  - Examples: examples.md
+  - Api: api.md
+  - Notebook: example.ipynb
+  - Python File: my_module.py
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter:
+      ignore_h1_titles: True
+  - mermaid2
+
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
