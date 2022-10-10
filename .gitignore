@@ -130,3 +130,6 @@ dmypy.json
 
 # pdm
 .pdm.toml
+
+# vs-code user settings
+.vscode
