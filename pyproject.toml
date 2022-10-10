@@ -21,5 +21,18 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 dev = [
+    "black~=22.10",
+    "flake8~=5.0",
+    "isort~=5.10",
+    "mypy~=0.982",
     "pytest~=7.1",
+    "pytest-cov~=4.0",
+    "pre-commit~=2.20",
 ]
+
+[tool.black]
+line-length = 100
+target-version = ["py38", "py39"]
+
+[tool.isort]
+profile = "black"
