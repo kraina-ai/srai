@@ -6,3 +6,11 @@ Spatial Representations for Artificial Intelligence
  * [PDM](https://github.com/pdm-project/pdm)
 
  Run `pdm install`
+
+## Development
+ To start development install with `pdm install -d`.
+
+### Pre-commit hooks
+ This repository uses [pre-commit](https://pre-commit.com/) for managing pre-commit hooks.
+ They are configured in .pre-commit-config.yaml.
+ To install them use `pre-commit install` after initial setup with `pdm`.
