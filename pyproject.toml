@@ -32,7 +32,7 @@ dev = [
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39"]
+target-version = ["py38", "py39", "py310"]
 
 [tool.isort]
 profile = "black"
