@@ -1,6 +1,6 @@
 [project]
 name = "srai"
-version = "0.1.0"
+version = "0.0.1"
 description = ""
 authors = [
     {name = "srai", email = "example@gmail.com"},
@@ -21,6 +21,7 @@ dependencies = [
 requires-python = ">=3.8"
 readme = "README.md"
 license = {text = "Apache-2.0"}
+
 [project.optional-dependencies]
 docs = [
     "mkdocs>=1.4.0",
@@ -37,7 +38,7 @@ build-backend = "pdm.pep517.api"
 [tool]
 [tool.pdm]
 [tool.pdm.dev-dependencies]
-# pdm add <library> -dG dev
+# pdm add -d <library>
 dev = [
     "black~=22.10",
     "flake8~=5.0",
@@ -48,6 +49,7 @@ dev = [
     "pre-commit~=2.20",
     "ipykernel>=6.16.0",
     "alive-progress>=2.4.1",
+    "bumpver>=2022.1118",
 ]
 
 [tool.black]
@@ -56,3 +58,17 @@ target-version = ["py38", "py39", "py310"]
 
 [tool.isort]
 profile = "black"
+
+[tool.bumpver]
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+    'version = "{version}"',
+]
