@@ -17,8 +17,10 @@ jobs:
         uses: pdm-project/setup-pdm@v2
         with:
           python-version: 3.8
-      - name: Install dependencies
-        run: pdm sync -d -G docs
+      - name: Generate requirements.txt
+        run: pdm export -G docs > requirements.txt
+      # - name: Install dependencies
+      #   run: pdm sync -d -G docs
       # - uses: pdm-project/setup-pdm@main
       #   name: Setup PDM
       #   with:
@@ -34,6 +36,15 @@ jobs:
         # run: pdm install -g -G docs # Then you can use pdm in the following steps.
       # - run: ls -la
       # - run: source .venv/bin/activate
-      - name: Deploy documentation
-        run: python -m mkdocs gh-deploy --force
+      # - name: Deploy documentation
+      #   run: python -m mkdocs gh-deploy --force
         # run: python -m mkdocs gh-deploy --force
+
+      - name: Deploy docs
+        uses: mhausenblas/mkdocs-deploy-gh-pages@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONFIG_FILE: mkdocs.yml
+          # EXTRA_PACKAGES: build-base
+          # # GITHUB_DOMAIN: github.myenterprise.com
+          REQUIREMENTS: requirements.txt
