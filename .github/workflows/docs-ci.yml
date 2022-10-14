@@ -14,10 +14,11 @@ jobs:
         with:
           python-version: 3.8  # Version range or exact version of a Python version to use, the same as actions/setup-python
           architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
-          enable-pep582: true  # Enable PEP 582 package loading globally
+          enable-pep582: false  # Enable PEP 582 package loading globally
       - name: Install dependencies
         run: pdm install -G docs # Then you can use pdm in the following steps.
-      - run: eval "$(pdm --pep582)"
+      # - run: eval "$(pdm --pep582)"
+      - run: source .venv/bin/activate
       - run: pip list
       - name: Deploy documentation
         run: python -m mkdocs gh-deploy --force
