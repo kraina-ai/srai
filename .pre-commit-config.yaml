@@ -37,7 +37,7 @@ ci:
         for more information, see https://pre-commit.ci
     autofix_prs: true
     autoupdate_branch: ''
-    autoupdate_commit_msg: 'build(pre-commit.ci) pre-commit autoupdate'
+    autoupdate_commit_msg: 'build(pre-commit.ci): pre-commit autoupdate'
     autoupdate_schedule: weekly
     skip: []
     submodules: false
