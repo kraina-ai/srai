@@ -19,3 +19,11 @@ Spatial Representations for Artificial Intelligence
 
 #### Documentation
  This repository uses [MkDocs](https://www.mkdocs.org) as a documentation generator. To use it locally, run  `pdm install -G docs` to download all required packages.
+
+## Deployment
+### Releasing a new version
+To release a new version:
+```sh
+bumpver update --patch
+```
+This command will update the version strings across the project, commit and tag the commit with the new version. All you need to do is to push the changes.
