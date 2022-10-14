@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - '**'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,41 +11,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.8
-      - run: pip install pdm
-      # - name: Set up PDM
-      #   uses: pdm-project/setup-pdm@v2
-      #   with:
-      #     python-version: 3.8
-      # - run: sudo apt-get install python-lxml libxml2-dev libxslt-dev
+      - name: Install pdm
+        run: pip install pdm
       - name: Generate requirements.txt
         run: pdm export -G docs > requirements.txt
-      - run: pip install -r requirements.txt
-      # - name: Install dependencies
-      #   run: pdm sync -d -G docs
-      # - uses: pdm-project/setup-pdm@main
-      #   name: Setup PDM
-      #   with:
-      #     python-version: 3.8  # Version range or exact version of a Python version to use, the same as actions/setup-python
-      #     architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
-      #     enable-pep582: false  # Enable PEP 582 package loading globally
-      # - run: pdm venv create --name docs-ci 3.8
-      # - run: eval "$(pdm --pep582)"
-      # - run: pdm venv activate docs-ci
-      # - run: eval $(pdm venv activate docs-ci)
-      # - run: export PDM_VENV_IN_PROJECT=True
-      # - name: Install dependencies
-        # run: pdm install -g -G docs # Then you can use pdm in the following steps.
-      # - run: ls -la
-      # - run: source .venv/bin/activate
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Deploy documentation
-      #   run: python -m mkdocs gh-deploy --force
         run: mkdocs gh-deploy --force
-
-      # - name: Deploy docs
-      #   uses: mhausenblas/mkdocs-deploy-gh-pages@master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     CONFIG_FILE: mkdocs.yml
-      #     # EXTRA_PACKAGES: build-base
-      #     # # GITHUB_DOMAIN: github.myenterprise.com
-      #     REQUIREMENTS: requirements.txt
