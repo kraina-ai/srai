@@ -936,7 +936,7 @@ dependencies = [
 name = "pyrosm"
 version = "0.6.1"
 requires_python = ">=3.6"
-summary = ""
+summary = "A Python tool to parse OSM data from Protobuf format into GeoDataFrame."
 dependencies = [
     "cykhash",
     "geopandas>=0.8.0",
@@ -1168,7 +1168,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:c6e5648243f6e640205f16f35b9c743314ab89a97d9dc34512fdebec49b676b4"
+content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254146d3d7"
 
 [metadata.files]
 "about-time 3.1.1" = [
