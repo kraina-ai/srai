@@ -19,6 +19,8 @@ jobs:
       - name: Install dependencies
         run: pdm install -G docs # Then you can use pdm in the following steps.
       # - run: eval "$(pdm --pep582)"
+      - run: pdm venv activate docs-ci
       - run: eval $(pdm venv activate docs-ci)
       - name: Deploy documentation
-        run: python -m mkdocs gh-deploy --force
+        run: mkdocs gh-deploy --force
+        # run: python -m mkdocs gh-deploy --force
