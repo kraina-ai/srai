@@ -71,6 +71,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "bumpver"
+version = "2022.1119"
+requires_python = ">=2.7"
+summary = "Bump version numbers in project files."
+dependencies = [
+    "click; python_version >= \"3.6\"",
+    "colorama>=0.4",
+    "lexid",
+    "pathlib2",
+    "setuptools>=45.0.0; python_version >= \"3.5\"",
+    "toml",
+]
+
+[[package]]
 name = "certifi"
 version = "2022.9.24"
 requires_python = ">=3.6"
@@ -455,6 +469,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lexid"
+version = "2021.1006"
+requires_python = ">=2.7"
+summary = "Variable width build numbers with lexical ordering."
+
+[[package]]
 name = "lxml"
 version = "4.9.1"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*"
@@ -527,19 +547,20 @@ summary = "The fastest markdown parser in pure Python"
 
 [[package]]
 name = "mkdocs"
-version = "1.4.0"
+version = "1.4.1"
 requires_python = ">=3.7"
 summary = "Project documentation with Markdown."
 dependencies = [
-    "Jinja2>=2.11.1",
-    "Markdown<3.4,>=3.2.1",
-    "PyYAML>=5.1",
     "click>=7.0",
+    "colorama>=0.4; platform_system == \"Windows\"",
     "ghp-import>=1.0",
     "importlib-metadata>=4.3; python_version < \"3.10\"",
+    "jinja2>=2.11.1",
+    "markdown<3.4,>=3.2.1",
     "mergedeep>=1.3.4",
     "packaging>=20.5",
     "pyyaml-env-tag>=0.1",
+    "pyyaml>=5.1",
     "watchdog>=2.0",
 ]
 
@@ -764,6 +785,14 @@ name = "parso"
 version = "0.8.3"
 requires_python = ">=3.6"
 summary = "A Python Parser"
+
+[[package]]
+name = "pathlib2"
+version = "2.3.7.post1"
+summary = "Object-oriented filesystem paths"
+dependencies = [
+    "six",
+]
 
 [[package]]
 name = "pathspec"
@@ -1050,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "setuptools"
-version = "65.4.1"
+version = "65.5.0"
 requires_python = ">=3.7"
 summary = "Easily download, build, install, upgrade, and uninstall Python packages"
 
@@ -1168,7 +1197,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254146d3d7"
+content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2d635d22"
 
 [metadata.files]
 "about-time 3.1.1" = [
@@ -1225,6 +1254,10 @@ content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254
 "bleach 5.0.1" = [
     {url = "https://files.pythonhosted.org/packages/c2/5d/d5d45a38163ede3342d6ac1ca01b5d387329daadf534a25718f9a9ba818c/bleach-5.0.1.tar.gz", hash = "sha256:0d03255c47eb9bd2f26aa9bb7f2107732e7e8fe195ca2f64709fcf3b0a4a085c"},
     {url = "https://files.pythonhosted.org/packages/d4/87/508104336a2bc0c4cfdbdceedc0f44dc72da3abc0460c57e323ddd1b3257/bleach-5.0.1-py3-none-any.whl", hash = "sha256:085f7f33c15bd408dd9b17a4ad77c577db66d76203e5984b1bd59baeee948b2a"},
+]
+"bumpver 2022.1119" = [
+    {url = "https://files.pythonhosted.org/packages/34/e4/c9ca423e253ba606e7ac65ec18b4abd4f4a672f421dab00ab3dabed518c9/bumpver-2022.1119-py2.py3-none-any.whl", hash = "sha256:c4cc84a881bf945510a4831200fd082c3520665c61e73ff7732e26249a6a86c9"},
+    {url = "https://files.pythonhosted.org/packages/86/05/510f620a80ffb07c8f728015e955934e3a77d95c45b61a0d7dd2c4ad1af5/bumpver-2022.1119.tar.gz", hash = "sha256:afed711d286403ed848daabba6006318ed2fb8d4c1f192466ac20756afc31a61"},
 ]
 "certifi 2022.9.24" = [
     {url = "https://files.pythonhosted.org/packages/1d/38/fa96a426e0c0e68aabc68e896584b83ad1eec779265a028e156ce509630e/certifi-2022.9.24-py3-none-any.whl", hash = "sha256:90c1a32f1d68f940488354e36370f6cca89f0f106db09518524c88d6ed83f382"},
@@ -1610,6 +1643,10 @@ content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254
     {url = "https://files.pythonhosted.org/packages/1e/b6/53edfeda6e8ac67a9fd31b510fe8c8e46c1b505805ae958d6fff82f9b2df/jupytext-1.14.1-py3-none-any.whl", hash = "sha256:216bddba8bbb9355831ba17fd8d45cfe5d1355e7152bc8980f39175fc2584875"},
     {url = "https://files.pythonhosted.org/packages/f9/82/41eb391880f4c67b34d2b81e0a13d01801b01507a88e8572c93d4e592972/jupytext-1.14.1.tar.gz", hash = "sha256:314fa0e732b1d14764271843b676938ef8a7b9d53c3575ade636b45d13f341c8"},
 ]
+"lexid 2021.1006" = [
+    {url = "https://files.pythonhosted.org/packages/60/0b/28a3f9abc75abbf1fa996eb2dd77e1e33a5d1aac62566e3f60a8ec8b8a22/lexid-2021.1006.tar.gz", hash = "sha256:509a3a4cc926d3dbf22b203b18a4c66c25e6473fb7c0e0d30374533ac28bafe5"},
+    {url = "https://files.pythonhosted.org/packages/cf/e3/35764404a4b7e2021be1f88f42264c2e92e0c4720273559a62461ce64a47/lexid-2021.1006-py2.py3-none-any.whl", hash = "sha256:5526bb5606fd74c7add23320da5f02805bddd7c77916f2dc1943e6bada8605ed"},
+]
 "lxml 4.9.1" = [
     {url = "https://files.pythonhosted.org/packages/02/df/ff20eb830ef6a36bcd33d6fde18adf97cbd5b6d0b7f60926d3a28766afcb/lxml-4.9.1-cp38-cp38-win32.whl", hash = "sha256:1a7c59c6ffd6ef5db362b798f350e24ab2cfa5700d53ac6681918f314a4d3b94"},
     {url = "https://files.pythonhosted.org/packages/08/28/e57d8d8d18fd946e014f4ddfa154d4e436986f72bb2326a2ec4de3b4e4f6/lxml-4.9.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:079b68f197c796e42aa80b1f739f058dcee796dc725cc9a1be0cdb08fc45b000"},
@@ -1756,9 +1793,9 @@ content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254
     {url = "https://files.pythonhosted.org/packages/09/ec/4b43dae793655b7d8a25f76119624350b4d65eb663459eb9603d7f1f0345/mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4"},
     {url = "https://files.pythonhosted.org/packages/2d/a4/509f6e7783ddd35482feda27bc7f72e65b5e7dc910eca4ab2164daf9c577/mistune-0.8.4.tar.gz", hash = "sha256:59a3429db53c50b5c6bcc8a07f8848cb00d7dc8bdb431a4ab41920d201d4756e"},
 ]
-"mkdocs 1.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/50/74/8231b486bb6627c7bf819eeeeb22856c8fbf388cfee203eb13f2f1be6403/mkdocs-1.4.0-py3-none-any.whl", hash = "sha256:ce057e9992f017b8e1496b591b6c242cbd34c2d406e2f9af6a19b97dd6248faa"},
-    {url = "https://files.pythonhosted.org/packages/da/a2/6c05983e8f42213ec71900cf419a6465aeb1dc605e56ccb58ecff2f3c812/mkdocs-1.4.0.tar.gz", hash = "sha256:e5549a22d59e7cb230d6a791edd2c3d06690908454c0af82edc31b35d57e3069"},
+"mkdocs 1.4.1" = [
+    {url = "https://files.pythonhosted.org/packages/27/81/7219ab996d6f7ef74370a37e7c0a24d5c24f42ba4499ca5f2127221ee9df/mkdocs-1.4.1-py3-none-any.whl", hash = "sha256:2b7845c2775396214cd408753e4cfb01af3cfed36acc141a84bce2ceec9d705d"},
+    {url = "https://files.pythonhosted.org/packages/89/10/f619044414b7d8605fdb560dac98c5ffcaeb44ef6fe58f08d24b1595c9a5/mkdocs-1.4.1.tar.gz", hash = "sha256:07ed90be4062e4ef732bbac2623097b9dca35c67b562c38cfd0bfbc7151758c1"},
 ]
 "mkdocs-autorefs 0.4.1" = [
     {url = "https://files.pythonhosted.org/packages/3b/3f/9531888bc92bafb1bffddca5d9240a7bae9a479d465528883b61808ef9d6/mkdocs-autorefs-0.4.1.tar.gz", hash = "sha256:70748a7bd025f9ecd6d6feeba8ba63f8e891a1af55f48e366d6d6e78493aba84"},
@@ -1911,6 +1948,10 @@ content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254
 "parso 0.8.3" = [
     {url = "https://files.pythonhosted.org/packages/05/63/8011bd08a4111858f79d2b09aad86638490d62fbf881c44e434a6dfca87b/parso-0.8.3-py2.py3-none-any.whl", hash = "sha256:c001d4636cd3aecdaf33cbb40aebb59b094be2a74c556778ef5576c175e19e75"},
     {url = "https://files.pythonhosted.org/packages/a2/0e/41f0cca4b85a6ea74d66d2226a7cda8e41206a624f5b330b958ef48e2e52/parso-0.8.3.tar.gz", hash = "sha256:8c07be290bb59f03588915921e29e8a50002acaf2cdc5fa0e0114f91709fafa0"},
+]
+"pathlib2 2.3.7.post1" = [
+    {url = "https://files.pythonhosted.org/packages/09/eb/4af4bcd5b8731366b676192675221c5324394a580dfae469d498313b5c4a/pathlib2-2.3.7.post1-py2.py3-none-any.whl", hash = "sha256:5266a0fd000452f1b3467d782f079a4343c63aaa119221fbdc4e39577489ca5b"},
+    {url = "https://files.pythonhosted.org/packages/31/51/99caf463dc7c18eb18dad1fffe465a3cf3ee50ac3d1dccbd1781336fe9c7/pathlib2-2.3.7.post1.tar.gz", hash = "sha256:9fe0edad898b83c0c3e199c842b27ed216645d2e177757b2dd67384d4113c641"},
 ]
 "pathspec 0.10.1" = [
     {url = "https://files.pythonhosted.org/packages/24/9f/a9ae1e6efa11992dba2c4727d94602bd2f6ee5f0dedc29ee2d5d572c20f7/pathspec-0.10.1.tar.gz", hash = "sha256:7ace6161b621d31e7902eb6b5ae148d12cfd23f4a249b9ffb6b9fee12084323d"},
@@ -2373,9 +2414,9 @@ content_hash = "sha256:b9533dcba70e8d40c271640ce0e9da139b391d6081026dae2d9f9f254
     {url = "https://files.pythonhosted.org/packages/e9/05/3ce7e813ee0666fc10ede875da17d8d5671b774491dcfb4be176c3a880e2/scipy-1.9.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa270cc6080c987929335c4cb94e8054fee9a6058cecff22276fa5dbab9856fc"},
     {url = "https://files.pythonhosted.org/packages/ec/7b/bf1cb24ba269d5911ba723a17e4c10f64c727798d74be0ac87c5fd9201ca/scipy-1.9.2-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:82e8bfb352aa9dce9a0ffe81f4c369a2c87c85533519441686f59f21d8c09697"},
 ]
-"setuptools 65.4.1" = [
-    {url = "https://files.pythonhosted.org/packages/03/c9/7b050ea4cc4144d0328f15e0b43c839e759c6c639370a3b932ecf4c6358f/setuptools-65.4.1.tar.gz", hash = "sha256:3050e338e5871e70c72983072fe34f6032ae1cdeeeb67338199c2f74e083a80e"},
-    {url = "https://files.pythonhosted.org/packages/bd/b4/f120561bc94a04bae5d71ea86fe2c7d97f57ab89635b4739ec4abceda92d/setuptools-65.4.1-py3-none-any.whl", hash = "sha256:1b6bdc6161661409c5f21508763dc63ab20a9ac2f8ba20029aaaa7fdb9118012"},
+"setuptools 65.5.0" = [
+    {url = "https://files.pythonhosted.org/packages/41/82/7f54bbfe5c247a8c9f78d8d1d7c051847bcb78843c397b866dba335c1e88/setuptools-65.5.0-py3-none-any.whl", hash = "sha256:f62ea9da9ed6289bfe868cd6845968a2c854d1427f8548d52cae02a42b4f0356"},
+    {url = "https://files.pythonhosted.org/packages/c5/41/247814d8b7a044717164c74080725a6c8f3d2b5fc82b34bd825b617df663/setuptools-65.5.0.tar.gz", hash = "sha256:512e5536220e38146176efb833d4a62aa726b7bbff82cfbc8ba9eaa3996e0b17"},
 ]
 "shapely 1.8.5.post1" = [
     {url = "https://files.pythonhosted.org/packages/01/74/eaa56c4b230e874458c8d25fddf18d23e2e2625f307db227f38c37b24139/Shapely-1.8.5.post1-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:6fe855e7d45685926b6ba00aaeb5eba5862611f7465775dacd527e081a8ced6d"},
