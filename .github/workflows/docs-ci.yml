@@ -9,10 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
+      # - uses: actions/setup-python@v4
+      #   with:
+      #     python-version: 3.8
+      # - run: pip install pdm
+      - name: Set up PDM
+        uses: pdm-project/setup-pdm@v2
         with:
           python-version: 3.8
-      - run: pip install pdm
+      - name: Install dependencies
+        run: pdm sync -d -G docs
       # - uses: pdm-project/setup-pdm@main
       #   name: Setup PDM
       #   with:
@@ -24,8 +30,8 @@ jobs:
       # - run: pdm venv activate docs-ci
       # - run: eval $(pdm venv activate docs-ci)
       # - run: export PDM_VENV_IN_PROJECT=True
-      - name: Install dependencies
-        run: pdm install -g -G docs # Then you can use pdm in the following steps.
+      # - name: Install dependencies
+        # run: pdm install -g -G docs # Then you can use pdm in the following steps.
       # - run: ls -la
       # - run: source .venv/bin/activate
       - name: Deploy documentation
