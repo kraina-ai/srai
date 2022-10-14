@@ -8,7 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt-get install python-pip python-dev python-lxml libxml2-dev libxslt-dev
       - uses: actions/checkout@v2
       # - uses: actions/setup-python@v4
       #   with:
@@ -18,6 +17,7 @@ jobs:
         uses: pdm-project/setup-pdm@v2
         with:
           python-version: 3.8
+      - run: sudo apt-get install python-lxml libxml2-dev libxslt-dev
       - name: Generate requirements.txt
         run: pdm export -G docs > requirements.txt
       # - name: Install dependencies
