@@ -8,6 +8,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
       - id: check-yaml
+        exclude: mkdocs.yml  # See https://github.com/readthedocs/readthedocs.org/issues/6889
       - id: check-added-large-files
       - id: detect-private-key
   - repo: https://github.com/psf/black
