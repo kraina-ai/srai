@@ -29,5 +29,5 @@ jobs:
       - run: ls -la
       - run: source .venv/bin/activate
       - name: Deploy documentation
-        run: mkdocs gh-deploy --force
+        run: python -m mkdocs gh-deploy --force
         # run: python -m mkdocs gh-deploy --force
