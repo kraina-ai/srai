@@ -38,15 +38,15 @@ jobs:
         # run: pdm install -g -G docs # Then you can use pdm in the following steps.
       # - run: ls -la
       # - run: source .venv/bin/activate
-      # - name: Deploy documentation
+      - name: Deploy documentation
       #   run: python -m mkdocs gh-deploy --force
-        # run: python -m mkdocs gh-deploy --force
+        run: mkdocs gh-deploy --force
 
-      - name: Deploy docs
-        uses: mhausenblas/mkdocs-deploy-gh-pages@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG_FILE: mkdocs.yml
-          # EXTRA_PACKAGES: build-base
-          # # GITHUB_DOMAIN: github.myenterprise.com
-          REQUIREMENTS: requirements.txt
+      # - name: Deploy docs
+      #   uses: mhausenblas/mkdocs-deploy-gh-pages@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     CONFIG_FILE: mkdocs.yml
+      #     # EXTRA_PACKAGES: build-base
+      #     # # GITHUB_DOMAIN: github.myenterprise.com
+      #     REQUIREMENTS: requirements.txt
