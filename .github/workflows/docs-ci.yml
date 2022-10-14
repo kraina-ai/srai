@@ -8,6 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt-get install python-pip python-dev python-lxml libxml2-dev libxslt-dev
       - uses: actions/checkout@v2
       # - uses: actions/setup-python@v4
       #   with:
