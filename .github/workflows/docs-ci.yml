@@ -16,6 +16,7 @@ jobs:
           architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
           enable-pep582: false  # Enable PEP 582 package loading globally
       - name: Install dependencies
-        run: pdm install -G docs # Then you can use pdm in the following steps.
+        run: pdm config python.use_venv false && pdm install -G docs # Then you can use pdm in the following steps.
+      - run: pip list
       - name: Deploy documentation
         run: mkdocs gh-deploy --force
