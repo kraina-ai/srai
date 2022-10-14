@@ -25,9 +25,9 @@ jobs:
       # - run: eval $(pdm venv activate docs-ci)
       # - run: export PDM_VENV_IN_PROJECT=True
       - name: Install dependencies
-        run: pdm install -G docs # Then you can use pdm in the following steps.
-      - run: ls -la
-      - run: source .venv/bin/activate
+        run: pdm install -g -G docs # Then you can use pdm in the following steps.
+      # - run: ls -la
+      # - run: source .venv/bin/activate
       - name: Deploy documentation
         run: python -m mkdocs gh-deploy --force
         # run: python -m mkdocs gh-deploy --force
