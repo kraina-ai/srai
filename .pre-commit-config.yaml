@@ -29,3 +29,15 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
+
+ci:
+    autofix_commit_msg: |
+        fix(pre-commit.ci): auto fixes from pre-commit.com hooks
+
+        for more information, see https://pre-commit.ci
+    autofix_prs: true
+    autoupdate_branch: ''
+    autoupdate_commit_msg: 'build(pre-commit.ci) pre-commit autoupdate'
+    autoupdate_schedule: weekly
+    skip: []
+    submodules: false
