@@ -1,4 +1,4 @@
-name: ci
+name: docs-ci
 on:
   push:
     branches:
@@ -8,13 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: pdm-project/setup-pdm@main
-        name: Setup PDM
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.8  # Version range or exact version of a Python version to use, the same as actions/setup-python
-          architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
-          enable-pep582: true  # Enable PEP 582 package loading globally
+          python-version: 3.8
+      - name: Install pdm
+        run: pip install pdm
+      - name: Generate requirements.txt
+        run: pdm export -G docs > requirements.txt
       - name: Install dependencies
-        run: pdm install -G docs # Then you can use pdm in the following steps.
+        run: pip install -r requirements.txt
       - name: Deploy documentation
         run: mkdocs gh-deploy --force
