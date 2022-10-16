@@ -15,10 +15,10 @@ Spatial Representations for Artificial Intelligence
  They are configured in .pre-commit-config.yaml.
  To install them use `pre-commit install && pre-commit install -t commit-msg` after initial setup with `pdm`.
 
-### Optional dependencies
-
-#### Documentation
+### Documentation
  This repository uses [MkDocs](https://www.mkdocs.org) as a documentation generator. To use it locally, run  `pdm install -G docs` to download all required packages.
+
+ Docstrings should be written following the [google convention](https://gist.github.com/redlotus/3bc387c2591e3e908c9b63b97b11d24e). To ease development one can use [autoDocstring extension](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring) to generate the docstrings.
 
 ## Deployment
 ### Releasing a new version
