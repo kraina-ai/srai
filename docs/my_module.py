@@ -1,5 +1,8 @@
+"""Exemplary docstring."""
+
+
 class MyClass:
-    """Print print print!"""
+    """Print print print."""
 
     def method_a(self, name: str):
         """Print a greeting.
@@ -7,12 +10,12 @@ class MyClass:
         Args:
             name: The name of the person to greet.
         """
-        print("A!")
+        print()
 
     def method_b(self):
-        """Print B!"""
+        """Print B."""
         print("B!")
 
     def method_c(self):
-        """Print C!"""
+        """Print C."""
         print("C!")
