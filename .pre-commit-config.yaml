@@ -8,7 +8,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
       - id: check-yaml
-        exclude: mkdocs.yml  # See https://github.com/readthedocs/readthedocs.org/issues/6889
+        exclude: mkdocs.yml # See https://github.com/readthedocs/readthedocs.org/issues/6889
       - id: check-added-large-files
       - id: detect-private-key
   - repo: https://github.com/psf/black
@@ -29,6 +29,10 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.982
+    hooks:
+      - id: mypy
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v2.1.1
     hooks:
@@ -36,13 +40,13 @@ repos:
         stages: [commit-msg]
 
 ci:
-    autofix_commit_msg: |
-        fix(pre-commit.ci): auto fixes from pre-commit.com hooks
+  autofix_commit_msg: |
+    fix(pre-commit.ci): auto fixes from pre-commit.com hooks
 
-        for more information, see https://pre-commit.ci
-    autofix_prs: true
-    autoupdate_branch: ''
-    autoupdate_commit_msg: 'build(pre-commit.ci): pre-commit autoupdate'
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "build(pre-commit.ci): pre-commit autoupdate"
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

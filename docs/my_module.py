@@ -4,7 +4,7 @@
 class MyClass:
     """Print print print."""
 
-    def method_a(self, name: str):
+    def method_a(self, name: str) -> None:
         """Print a greeting.
 
         Args:
@@ -12,10 +12,10 @@ class MyClass:
         """
         print()
 
-    def method_b(self):
+    def method_b(self) -> None:
         """Print B."""
         print("B!")
 
-    def method_c(self):
+    def method_c(self) -> None:
         """Print C."""
         print("C!")
