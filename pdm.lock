@@ -61,6 +61,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "black"
+version = "22.10.0"
+extras = ["jupyter"]
+requires_python = ">=3.7"
+summary = "The uncompromising code formatter."
+dependencies = [
+    "black==22.10.0",
+    "ipython>=7.8.0",
+    "tokenize-rt>=3.2.0",
+]
+
+[[package]]
 name = "bleach"
 version = "5.0.1"
 requires_python = ">=3.7"
@@ -250,6 +262,15 @@ dependencies = [
     "mccabe<0.8.0,>=0.7.0",
     "pycodestyle<2.10.0,>=2.9.0",
     "pyflakes<2.6.0,>=2.5.0",
+]
+
+[[package]]
+name = "flake8-docstrings"
+version = "1.6.0"
+summary = "Extension for flake8 which uses pydocstyle to check docstrings"
+dependencies = [
+    "flake8>=3",
+    "pydocstyle>=2.1",
 ]
 
 [[package]]
@@ -898,6 +919,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pydocstyle"
+version = "6.1.1"
+requires_python = ">=3.6"
+summary = "Python docstring style checker"
+dependencies = [
+    "snowballstemmer",
+]
+
+[[package]]
+name = "pydocstyle"
+version = "6.1.1"
+extras = ["toml"]
+requires_python = ">=3.6"
+summary = "Python docstring style checker"
+dependencies = [
+    "pydocstyle==6.1.1",
+    "toml",
+]
+
+[[package]]
 name = "pyflakes"
 version = "2.5.0"
 requires_python = ">=3.6"
@@ -1096,6 +1137,11 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
 
 [[package]]
+name = "snowballstemmer"
+version = "2.2.0"
+summary = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
+
+[[package]]
 name = "soupsieve"
 version = "2.3.2.post1"
 requires_python = ">=3.6"
@@ -1125,6 +1171,12 @@ summary = "A tiny CSS parser"
 dependencies = [
     "webencodings>=0.4",
 ]
+
+[[package]]
+name = "tokenize-rt"
+version = "5.0.0"
+requires_python = ">=3.7"
+summary = "A wrapper around the stdlib `tokenize` which roundtrips."
 
 [[package]]
 name = "toml"
@@ -1197,7 +1249,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2d635d22"
+content_hash = "sha256:6905456ecc51c3a6a3b9111e2281d9f5fd2a8ba7aac258f43169602326e4ace9"
 
 [metadata.files]
 "about-time 3.1.1" = [
@@ -1522,6 +1574,10 @@ content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2
 "flake8 5.0.4" = [
     {url = "https://files.pythonhosted.org/packages/ad/00/9808c62b2d529cefc69ce4e4a1ea42c0f855effa55817b7327ec5b75e60a/flake8-5.0.4.tar.gz", hash = "sha256:6fbe320aad8d6b95cec8b8e47bc933004678dc63095be98528b7bdd2a9f510db"},
     {url = "https://files.pythonhosted.org/packages/cf/a0/b881b63a17a59d9d07f5c0cc91a29182c8e8a9aa2bde5b3b2b16519c02f4/flake8-5.0.4-py2.py3-none-any.whl", hash = "sha256:7a1cf6b73744f5806ab95e526f6f0d8c01c66d7bbe349562d22dfca20610b248"},
+]
+"flake8-docstrings 1.6.0" = [
+    {url = "https://files.pythonhosted.org/packages/8b/ad/35dc9b3585ddbab617679b97487450f873e582408843c07fe97f524463c2/flake8_docstrings-1.6.0-py2.py3-none-any.whl", hash = "sha256:99cac583d6c7e32dd28bbfbef120a7c0d1b6dde4adb5a9fd441c4227a6534bde"},
+    {url = "https://files.pythonhosted.org/packages/c1/a6/b8a953fb256ee383fed9094f7270ab75cd637c23749c211f0e6b3552a31e/flake8-docstrings-1.6.0.tar.gz", hash = "sha256:9fe7c6a306064af8e62a055c2f61e9eb1da55f84bb39caef2b84ce53708ac34b"},
 ]
 "geopandas 0.11.1" = [
     {url = "https://files.pythonhosted.org/packages/a5/88/8e13f8153a84fc96c019077b9d1e38e267b69c2a1eba5cb5fb83e1ef9ae3/geopandas-0.11.1.tar.gz", hash = "sha256:f0f0c8d0423d30cf81de2056d853145c4362739350a7f8f2d72cc7409ef1eca1"},
@@ -2077,6 +2133,10 @@ content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2
     {url = "https://files.pythonhosted.org/packages/fe/5b/6f77e6ebc93e5e3c7fd480e1b171a6547407eba901a56a65d2745df24144/pydantic-1.10.2-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bedf309630209e78582ffacda64a21f96f3ed2e51fbf3962d4d488e503420254"},
     {url = "https://files.pythonhosted.org/packages/fe/fd/8f7f8271d526378c927babd1229501e576760cef9a509909a3415eec3c0d/pydantic-1.10.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bb6ad4489af1bac6955d38ebcb95079a836af31e4c4f74aba1ca05bb9f6027bd"},
 ]
+"pydocstyle 6.1.1" = [
+    {url = "https://files.pythonhosted.org/packages/4c/30/4cdea3c8342ad343d41603afc1372167c224a04dc5dc0bf4193ccb39b370/pydocstyle-6.1.1.tar.gz", hash = "sha256:1d41b7c459ba0ee6c345f2eb9ae827cab14a7533a88c5c6f7e94923f72df92dc"},
+    {url = "https://files.pythonhosted.org/packages/87/67/4df10786068766000518c6ad9c4a614e77585a12ab8f0654c776757ac9dc/pydocstyle-6.1.1-py3-none-any.whl", hash = "sha256:6987826d6775056839940041beef5c08cc7e3d71d63149b48e36727f70144dc4"},
+]
 "pyflakes 2.5.0" = [
     {url = "https://files.pythonhosted.org/packages/07/92/f0cb5381f752e89a598dd2850941e7f570ac3cb8ea4a344854de486db152/pyflakes-2.5.0.tar.gz", hash = "sha256:491feb020dca48ccc562a8c0cbe8df07ee13078df59813b83959cbdada312ea3"},
     {url = "https://files.pythonhosted.org/packages/dc/13/63178f59f74e53acc2165aee4b002619a3cfa7eeaeac989a9eb41edf364e/pyflakes-2.5.0-py2.py3-none-any.whl", hash = "sha256:4579f67d887f804e67edb544428f264b7b24f435b263c4614f384135cea553d2"},
@@ -2463,6 +2523,10 @@ content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2
     {url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
     {url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
 ]
+"snowballstemmer 2.2.0" = [
+    {url = "https://files.pythonhosted.org/packages/44/7b/af302bebf22c749c56c9c3e8ae13190b5b5db37a33d9068652e8f73b7089/snowballstemmer-2.2.0.tar.gz", hash = "sha256:09b16deb8547d3412ad7b590689584cd0fe25ec8db3be37788be3810cbf19cb1"},
+    {url = "https://files.pythonhosted.org/packages/ed/dc/c02e01294f7265e63a7315fe086dd1df7dacb9f840a804da846b96d01b96/snowballstemmer-2.2.0-py2.py3-none-any.whl", hash = "sha256:c8e1716e83cc398ae16824e5572ae04e0d9fc2c6b985fb0f900f5f0c96ecba1a"},
+]
 "soupsieve 2.3.2.post1" = [
     {url = "https://files.pythonhosted.org/packages/16/e3/4ad79882b92617e3a4a0df1960d6bce08edfb637737ac5c3f3ba29022e25/soupsieve-2.3.2.post1-py3-none-any.whl", hash = "sha256:3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759"},
     {url = "https://files.pythonhosted.org/packages/f3/03/bac179d539362319b4779a00764e95f7542f4920084163db6b0fd4742d38/soupsieve-2.3.2.post1.tar.gz", hash = "sha256:fc53893b3da2c33de295667a0e19f078c14bf86544af307354de5fcf12a3f30d"},
@@ -2478,6 +2542,10 @@ content_hash = "sha256:649c2db10fbd53eaf636b055c328f7eaf0852fd0f02a8b98baf49d4a2
 "tinycss2 1.1.1" = [
     {url = "https://files.pythonhosted.org/packages/1e/5a/576828164b5486f319c4323915b915a8af3fa4a654bbb6f8fc8e87b5cb17/tinycss2-1.1.1.tar.gz", hash = "sha256:b2e44dd8883c360c35dd0d1b5aad0b610e5156c2cb3b33434634e539ead9d8bf"},
     {url = "https://files.pythonhosted.org/packages/53/7b/5dba39bf0572f1f28e2844f08f74a73482a381de1d1feac3bbc6b808051e/tinycss2-1.1.1-py3-none-any.whl", hash = "sha256:fe794ceaadfe3cf3e686b22155d0da5780dd0e273471a51846d0a02bc204fec8"},
+]
+"tokenize-rt 5.0.0" = [
+    {url = "https://files.pythonhosted.org/packages/40/01/fb40ea8c465f680bf7aa3f5bee39c62ba8b7f52c38048c27aa95aff4f779/tokenize_rt-5.0.0.tar.gz", hash = "sha256:3160bc0c3e8491312d0485171dea861fc160a240f5f5766b72a1165408d10740"},
+    {url = "https://files.pythonhosted.org/packages/8d/12/4c7495f25b4c9131706f3aaffb185d4de32c02a6ee49d875e929c5b7c919/tokenize_rt-5.0.0-py2.py3-none-any.whl", hash = "sha256:c67772c662c6b3dc65edf66808577968fb10badfc2042e3027196bed4daf9e5a"},
 ]
 "toml 0.10.2" = [
     {url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
