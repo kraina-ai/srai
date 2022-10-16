@@ -1,0 +1,8 @@
+{
+  "editor.formatOnSave": true,
+  "python.formatting.provider": "black",
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "python.linting.mypyEnabled": true,
+  "autoDocstring.docstringFormat": "google-notypes",
+}
