@@ -10,19 +10,28 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.8", "3.9", "3.10"]
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      # - name: Set up Python ${{ matrix.python-version }}
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+      # - name: Install pdm
+      #   run: pip install pdm
+      # - name: Generate requirements.txt
+      #   run: pdm export -G docs > requirements.txt
+      # - name: Install dependencies
+      #   run: pip install -r requirements.txt
+      - uses: pdm-project/setup-pdm@main
+        name: Setup PDM (Python ${{ matrix.python-version }})
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install pdm
-        run: pip install pdm
-      - name: Generate requirements.txt
-        run: pdm export -G docs > requirements.txt
+          architecture: x64    # The target architecture (x86, x64) of the Python interpreter. the same as actions/setup-python
+          enable-pep582: true  # Enable PEP 582 package loading globally
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pdm install       # Then you can use pdm in the following steps.
       - name: Test with pytest
-        run: pytest
+        run: pdm run tox -e python${{ matrix.python-version }}
