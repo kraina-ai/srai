@@ -9,6 +9,13 @@ jobs:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for build to succeed
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: run-tests
+          ref: ${{ github.sha }}
       - uses: actions/checkout@v2
       - uses: pdm-project/setup-pdm@main
         name: Setup PDM

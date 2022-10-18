@@ -5,8 +5,16 @@ on:
       - main
 jobs:
   deploy:
+    name: Publish library 📦 documentation 📄 to Github Pages 🌐
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for build to succeed
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: run-tests
+          ref: ${{ github.sha }}
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v4
         with:
