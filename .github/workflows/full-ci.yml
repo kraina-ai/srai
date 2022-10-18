@@ -12,7 +12,6 @@ jobs:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     needs: [run-tests]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v2
       - uses: pdm-project/setup-pdm@main
@@ -25,24 +24,34 @@ jobs:
       #   run: pdm build
       - name: Add PDM Publish plugin
         run: pdm plugin add pdm-publish
+      - name: Publish distribution 📦 to PyPI
+        if: ${{ startsWith(github.ref, 'refs/tags') }}
+        run: pdm publish --repository pypi --password ${{ secrets.PYPI_API_TOKEN }}
+      - uses: jannekem/run-python-script-action@v1
+        with:
+          script: |
+            import time
+            import os
+
+            for root, dirs, files in os.walk("dist"):
+                for file in files:
+                    if file.endswith(".whl"):
+                        extension = '-py3-none-any.whl'
+                    else:
+                        extension = '.tar.gz'
+                    first_part = file.replace(extension, '')
+                    current_date = time.strftime("%Y%m%d%H%M%S")
+                    new_name = f"{first_part}-{current_date}{extension}"
+                    os.rename(os.path.join(root, file), os.path.join(root, new_name))
+
       - name: Publish distribution 📦 to Test PyPI
         # if: ${{ startsWith(github.ref, 'refs/tags') }}
         run: pdm publish --repository testpypi --password ${{ secrets.PYPI_TEST_API_TOKEN }}
-        # uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-        #   password: ${{ secrets.PYPI_TEST_API_TOKEN }}
-        #   repository_url: https://test.pypi.org/legacy/
-      # - name: Publish distribution 📦 to PyPI
-      #   if: ${{ startsWith(github.ref, 'refs/tags') }}
-      #   run: pdm publish --repository pypi --password ${{ secrets.PYPI_API_TOKEN }}
-        # uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-        #   password: ${{ secrets.PYPI_API_TOKEN }}
 
   generate-docs:
     name: Publish library 📦 documentation 📄 to Github Pages 🌐
     needs: [run-tests]
-    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }}
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
