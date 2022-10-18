@@ -30,6 +30,7 @@ jobs:
       - run: echo ${GITHUB_WORKSPACE}
       - run: pwd
       - run: ls -la
+      - run: pip install toml
       - uses: jannekem/run-python-script-action@v1
         name: Rename test version
         with:
