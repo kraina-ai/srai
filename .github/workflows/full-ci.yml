@@ -25,9 +25,6 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags') }}
         run: pdm publish --repository pypi --password ${{ secrets.PYPI_API_TOKEN }}
-      - run: echo ${GITHUB_WORKSPACE}
-      - run: pwd
-      - run: ls -la
       - run: pip install toml
       - uses: jannekem/run-python-script-action@v1
         name: Rename test version
