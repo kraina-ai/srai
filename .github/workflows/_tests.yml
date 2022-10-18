@@ -1,13 +1,5 @@
 name: tests
-on:
-  push:
-    branches:
-      - main
-      - '**'
-  pull_request:
-    branches:
-      - main
-  workflow_call:
+on: workflow_call
 
 jobs:
   run-tests:
@@ -15,8 +7,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        # os: [ubuntu-latest, macos-latest]
+        # python-version: ["3.8", "3.9", "3.10"]
+        os: [ubuntu-latest]
+        python-version: ["3.8"]
     steps:
       - uses: actions/checkout@v2
       - uses: pdm-project/setup-pdm@main
