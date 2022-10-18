@@ -1,4 +1,4 @@
-name: docs-ci
+name: tests
 on:
   push:
     branches:

@@ -1157,6 +1157,32 @@ requires_python = ">= 3.7"
 summary = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
 
 [[package]]
+name = "tox"
+version = "3.26.0"
+requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+summary = "tox is a generic virtualenv management and test command line tool"
+dependencies = [
+    "colorama>=0.4.1; platform_system == \"Windows\"",
+    "filelock>=3.0.0",
+    "packaging>=14",
+    "pluggy>=0.12.0",
+    "py>=1.4.17",
+    "six>=1.14.0",
+    "tomli>=2.0.1; python_version >= \"3.7\" and python_version < \"3.11\"",
+    "virtualenv!=20.0.0,!=20.0.1,!=20.0.2,!=20.0.3,!=20.0.4,!=20.0.5,!=20.0.6,!=20.0.7,>=16.0.0",
+]
+
+[[package]]
+name = "tox-pdm"
+version = "0.6.0"
+requires_python = ">=3.7"
+summary = "A plugin for tox that utilizes PDM as the package manager and installer"
+dependencies = [
+    "toml>=0.10",
+    "tox>=3.18.0",
+]
+
+[[package]]
 name = "traitlets"
 version = "5.4.0"
 requires_python = ">=3.7"
@@ -1209,7 +1235,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:7cda8e3bd51db0b8e316d3e8a545d8d4f4a950c87abe696a8039e78cbeaf8649"
+content_hash = "sha256:7b2fd15901fc904b3d419215f6eeb8ed372bf0f5a093d312a557b362fdb1a4ba"
 
 [metadata.files]
 "about-time 3.1.1" = [
@@ -2419,6 +2445,14 @@ content_hash = "sha256:7cda8e3bd51db0b8e316d3e8a545d8d4f4a950c87abe696a8039e78cb
     {url = "https://files.pythonhosted.org/packages/f3/9e/225a41452f2d9418d89be5e32cf824c84fe1e639d350d6e8d49db5b7f73a/tornado-6.2.tar.gz", hash = "sha256:9b630419bde84ec666bfd7ea0a4cb2a8a651c2d5cccdbdd1972a0c859dfc3c13"},
     {url = "https://files.pythonhosted.org/packages/f9/51/6f63a166d9a3077be100cbb13dcbce434e5654daaaa7003b0a045b9f6edf/tornado-6.2-cp37-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:1d54d13ab8414ed44de07efecb97d4ef7c39f7438cf5e976ccd356bebb1b5fca"},
     {url = "https://files.pythonhosted.org/packages/fb/bd/074254a55bfc82d7a1886abbd803600ef01cbd76ee66bc30307b2724130b/tornado-6.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:20f638fd8cc85f3cbae3c732326e96addff0a15e22d80f049e00121651e82e72"},
+]
+"tox 3.26.0" = [
+    {url = "https://files.pythonhosted.org/packages/59/14/1931cd6cb9804f2326cccdd750af32a5095132b7d73cc33577644ab59888/tox-3.26.0.tar.gz", hash = "sha256:44f3c347c68c2c68799d7d44f1808f9d396fc8a1a500cbc624253375c7ae107e"},
+    {url = "https://files.pythonhosted.org/packages/a0/62/4a490d6e064727ced44b2a7897bf3f8cc09fa9443f2ef258ff56973d96e1/tox-3.26.0-py2.py3-none-any.whl", hash = "sha256:bf037662d7c740d15c9924ba23bb3e587df20598697bb985ac2b49bdc2d847f6"},
+]
+"tox-pdm 0.6.0" = [
+    {url = "https://files.pythonhosted.org/packages/3a/8e/92d832ead1c7d7899484ac01ec91c88b953cccc94c9ed5e04ed097d6a57d/tox-pdm-0.6.0.tar.gz", hash = "sha256:b2918c5cf0ca8cfbf30d4c0b41446ecf9c2c7254e102deb5349462a7eb8194bb"},
+    {url = "https://files.pythonhosted.org/packages/fa/45/e261c0499707fb0171a0742a591fb02f950c77fa04d40c18f5d4338dad55/tox_pdm-0.6.0-py3-none-any.whl", hash = "sha256:3e9067ee1620ee43948e063e32239e84020a8b37ff1893cf7797fbd6acb43e46"},
 ]
 "traitlets 5.4.0" = [
     {url = "https://files.pythonhosted.org/packages/7d/28/8f4757d68ee7c46e0733dda81595f1bd107fda7bc0c6a577912387e87d86/traitlets-5.4.0-py3-none-any.whl", hash = "sha256:93663cc8236093d48150e2af5e2ed30fc7904a11a6195e21bab0408af4e6d6c8"},
