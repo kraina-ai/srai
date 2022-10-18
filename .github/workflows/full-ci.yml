@@ -34,7 +34,7 @@ jobs:
             import time
             import os
 
-            for root, dirs, files in os.walk("${{ GITHUB_WORKSPACE }}/dist"):
+            for root, dirs, files in os.walk("${GITHUB_WORKSPACE}/dist"):
                 for file in files:
                     if file.endswith(".whl"):
                         extension = '-py3-none-any.whl'
