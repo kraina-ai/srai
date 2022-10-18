@@ -2,7 +2,7 @@ name: full-ci
 on:
   push:
     branches:
-      - main
+      - '**'
 
 jobs:
   run-tests:
@@ -30,12 +30,11 @@ jobs:
         name: Rename test version
         with:
           script: |
-            import time
             import toml
             data = toml.load("pyproject.toml")
-            current_date = time.strftime("%Y%m%d%H%M%S")
-            data['project']['version']=f"{data['project']['version']}-{current_date}"
-            data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{current_date}"
+            sha = '${{ github.sha }}'
+            data['project']['version']=f"{data['project']['version']}-{sha}"
+            data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{sha}"
             f = open("pyproject.toml",'w')
             toml.dump(data, f)
             f.close()
