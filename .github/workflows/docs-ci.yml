@@ -3,11 +3,14 @@ on:
   push:
     branches:
       - main
+
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
   deploy:
     name: Publish library 📦 documentation 📄 to Github Pages 🌐
     runs-on: ubuntu-latest
-    needs: run-tests
+    needs: [tests]
     steps:
       # - name: Wait for build to succeed
       #   uses: fountainhead/action-wait-for-check@v1.1.0
