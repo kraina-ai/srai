@@ -39,8 +39,8 @@ jobs:
             import toml
             data = toml.load("pyproject.toml")
             current_date = time.strftime("%Y%m%d%H%M%S")
-            data['tool']['bumpver']['current_version']=f"{data['tool.bumpver']['current_version']}-{current_date}"
             data['project']['version']=f"{data['project']['version']}-{current_date}"
+            data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{current_date}"
             f = open("pyproject.toml",'w')
             toml.dump(data, f)
             f.close()
