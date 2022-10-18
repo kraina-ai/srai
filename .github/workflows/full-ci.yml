@@ -2,15 +2,15 @@ name: full-ci
 on:
   push:
     branches:
-      - '**'
+      - main
 
 jobs:
-  # run-tests:
-  #   uses: ./.github/workflows/_tests.yml
+  run-tests:
+    uses: ./.github/workflows/_tests.yml
 
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
-    # needs: [run-tests]
+    needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,8 +20,6 @@ jobs:
           python-version: 3.8
           architecture: x64
           enable-pep582: true
-      # - name: Build package
-      #   run: pdm build
       - name: Add PDM Publish plugin
         run: pdm plugin add pdm-publish
       - name: Publish distribution 📦 to PyPI
@@ -44,26 +42,24 @@ jobs:
             f = open("pyproject.toml",'w')
             toml.dump(data, f)
             f.close()
-
       - name: Publish distribution 📦 to Test PyPI
-        # if: ${{ startsWith(github.ref, 'refs/tags') }}
         run: pdm publish --repository testpypi --password ${{ secrets.PYPI_TEST_API_TOKEN }}
 
-  # generate-docs:
-  #   name: Publish library 📦 documentation 📄 to Github Pages 🌐
-  #   needs: [run-tests]
-  #   if: ${{ startsWith(github.ref, 'refs/tags') }}
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.8
-  #     - name: Install pdm
-  #       run: pip install pdm
-  #     - name: Generate requirements.txt
-  #       run: pdm export -G docs > requirements.txt
-  #     - name: Install dependencies
-  #       run: pip install -r requirements.txt
-  #     - name: Deploy documentation
-  #       run: mkdocs gh-deploy --force
+  generate-docs:
+    name: Publish library 📦 documentation 📄 to Github Pages 🌐
+    needs: [run-tests]
+    if: ${{ startsWith(github.ref, 'refs/tags') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install pdm
+        run: pip install pdm
+      - name: Generate requirements.txt
+        run: pdm export -G docs > requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Deploy documentation
+        run: mkdocs gh-deploy --force
