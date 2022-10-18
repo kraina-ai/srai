@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PDM as a dependency management tool
 - black, flake8, isort, mypy, pytest-cov
 - pre-commit configuration
-- Apache 2.0 licence
+- Apache 2.0 license
 - mkdocs for documentation
 - GitHub pages to host documentation
 - initial requirements
