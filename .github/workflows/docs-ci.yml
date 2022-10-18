@@ -2,27 +2,20 @@ name: docs-ci
 on:
   push:
     branches:
-      - '**'
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      # - uses: actions/setup-python@v4
-      #   with:
-      #     python-version: 3.8
-      - uses: pdm-project/setup-pdm@main
-        name: Setup PDM
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.8
-          architecture: x64
-          enable-pep582: true
-      # - name: Install pdm
-      #   run: pip install pdm
-      # - name: Generate requirements.txt
-      #   run: pdm export -G docs > requirements.txt
+      - name: Install pdm
+        run: pip install pdm
+      - name: Generate requirements.txt
+        run: pdm export -G docs > requirements.txt
       - name: Install dependencies
-        # run: pip install -r requirements.txt
-        run: pdm install -G docs
+        run: pip install -r requirements.txt
       - name: Deploy documentation
-        run: pdm run mkdocs gh-deploy --force
+        run: mkdocs gh-deploy --force
