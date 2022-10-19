@@ -18,6 +18,6 @@ jobs:
           architecture: x64
           enable-pep582: true
       - name: Install dependencies
-        run: pdm install -d
+        run: pdm install -d -G test
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
