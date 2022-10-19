@@ -10,8 +10,8 @@ class BaseLoader(abc.ABC):
     """Base abstract class for loaders."""
 
     @abc.abstractmethod
-    def download(self, gdf: gpd.GeoDataFrame, **kwargs: Any) -> gpd.GeoDataFrame:
-        """Download data for a given area.
+    def load(self, gdf: gpd.GeoDataFrame, **kwargs: Any) -> gpd.GeoDataFrame:
+        """Load data for a given area.
 
         Args:
             gdf: GeoDataFrame with the area of interest.
