@@ -25,13 +25,16 @@ pip install pdm
 2. Install package locally (will download all dev packages and create a local venv)
 
 ```sh
+# Optional if you want to create venv in a specific version. More info: https://pdm.fming.dev/latest/usage/venv/#create-a-virtualenv-yourself
+pdm venv create 3.8 # or any higher version of Python
+
 pdm install
 ```
 
 3. Activate pdm venv
 
 ```sh
-pdm venv activate
+eval $(pdm venv activate)
 
 # or
 
@@ -43,6 +46,26 @@ source ./venv/bin/activate
 ```sh
 pre-commit install && pre-commit install -t commit-msg
 ```
+
+### Testing
+
+For testing, [tox](https://tox.wiki/en/latest/) is used to allow testing on multiple Python versions.
+
+To test code locally before commiting, run
+
+```sh
+tox -e python3.8 # put your python version here
+```
+
+<!-- ### Pre-commit hooks
+ This repository uses [pre-commit](https://pre-commit.com/) for managing pre-commit hooks.
+ They are configured in .pre-commit-config.yaml.
+ To install them use `pre-commit install && pre-commit install -t commit-msg` after initial setup with `pdm`.
+
+### Documentation
+ This repository uses [MkDocs](https://www.mkdocs.org) as a documentation generator. To use it locally, run  `pdm install -G docs` to download all required packages.
+
+ Docstrings should be written following the [google convention](https://gist.github.com/redlotus/3bc387c2591e3e908c9b63b97b11d24e). To ease development one can use [autoDocstring extension](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring) to generate the docstrings. -->
 
 ### Fixing bugs
 
@@ -60,3 +83,11 @@ All Python code must be written **compatible with Python 3.8+**.
 <!-- More detailed code conventions can be found in the developer docs. -->
 
 <!-- ## Adding tests -->
+
+## Deployment
+### Releasing a new version
+To release a new version:
+```sh
+bumpver update --patch
+```
+This command will update the version strings across the project, commit and tag the commit with the new version. All you need to do is to push the changes.
