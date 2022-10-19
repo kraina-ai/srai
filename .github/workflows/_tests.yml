@@ -20,4 +20,4 @@ jobs:
       - name: Install dependencies
         run: pdm install -d
       - name: Run tests with tox
-        run: pdm run pytest tests/
+        run: pdm run tox -e python${{ matrix.python-version }}
