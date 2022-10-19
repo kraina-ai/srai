@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 100
+max-doc-length = 100
+extend-ignore = E203
+exclude =
+    .git,
+    .venv,
+    __pycache__,
+    old,
+    build,
+    dist
