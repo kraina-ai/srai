@@ -38,7 +38,7 @@ Perfringit tenebras passu protinus nitidum Procnen: miles mare laverat inventa
 *clamat uterque*; est sidera, idem vertice? Celeri quotiens penetrale et inmensa
 formosa nox ira manetque et. Verba aequore frontem harenae turis invidiae
 letique praecorrupta acuto bello quo inopes, suis de. Paucaque gentisque
-Medusaeo, ab choreas victoris placet meosque civilique Saturnia mittere!
+Medusaeo, ab choreas victories placet meosque civilique Saturnia mittere!
 
     boot_only_artificial.wamp(start + banner, snow_matrix + fileMultitasking);
     if (switch) {
@@ -60,13 +60,13 @@ Medusaeo, ab choreas victoris placet meosque civilique Saturnia mittere!
 
 ## Lina minis qui isto sine iussit noscere
 
-Imitetur dum vana et quia corrumpere, crines ab nec labore in quid ubi.
+Imitetur dumb vana et quia corrumpere, crines ab nec labore in quid ubi.
 Numerabilis haec validisne avem Iuppiter vigebat talia tacitos honorque et
 damna, nec, femina *per* armos!
 
 ## Matris adest res arboreo percusso aequor Deianira
 
-Postquam fragor ostendens eheu pro; monebat annos monstrum conquerar corpore
+Postquam fragor ostendens eheu pro; monebat annos monster conquerar corpore
 sanguine dea habetque. Suisque specus, veneni herba propinquae adeo postquam et
 celsis ardet aris adesse dubiaeque mixta, et Echo producit. Plures iam mihi
 victoria terra in naturae quaerit liceret concubitusque ignis et ille crescunt
