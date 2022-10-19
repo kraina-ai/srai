@@ -1,0 +1,23 @@
+name: tests
+on: workflow_call
+
+jobs:
+  run-tests:
+    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: pdm-project/setup-pdm@main
+        name: Setup PDM (Python ${{ matrix.python-version }})
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+          enable-pep582: true
+      - name: Install dependencies
+        run: pdm install -d
+      - name: Run tests with tox
+        run: pdm run tox -e python${{ matrix.python-version }}
