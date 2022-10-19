@@ -2,7 +2,7 @@ name: full-ci
 on:
   push:
     branches:
-      - '**'
+      - main
 
 jobs:
   run-tests:
@@ -20,8 +20,6 @@ jobs:
           python-version: 3.8
           architecture: x64
           enable-pep582: true
-      # - name: Add PDM Publish plugin
-      #   run: pdm plugin add pdm-publish
       - name: Publish distribution 📦 to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags') }}
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
