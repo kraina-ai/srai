@@ -51,7 +51,7 @@ pre-commit install && pre-commit install -t commit-msg
 
 For testing, [tox](https://tox.wiki/en/latest/) is used to allow testing on multiple Python versions.
 
-To test code locally before commiting, run
+To test code locally before committing, run
 
 ```sh
 tox -e python3.8 # put your python version here
