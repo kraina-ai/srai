@@ -24,7 +24,7 @@ jobs:
       #   run: pdm plugin add pdm-publish
       - name: Publish distribution 📦 to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags') }}
-        run: pdm publish --repository pypi --password ${{ secrets.PYPI_API_TOKEN }}
+        run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
       - run: pip install toml
       - uses: jannekem/run-python-script-action@v1
         name: Rename test version
@@ -40,7 +40,7 @@ jobs:
             toml.dump(data, f)
             f.close()
       - name: Publish distribution 📦 to Test PyPI
-        run: pdm publish --repository testpypi --password ${{ secrets.PYPI_TEST_API_TOKEN }}
+        run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
 
   generate-docs:
     name: Publish library 📦 documentation 📄 to Github Pages 🌐
