@@ -1,4 +1,4 @@
-"""Base classes for loaders."""
+"""Base class for loaders."""
 
 import abc
 
