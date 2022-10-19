@@ -1,6 +1,7 @@
 """Base class for loaders."""
 
 import abc
+from typing import Any
 
 import geopandas as gpd
 
@@ -9,7 +10,7 @@ class BaseLoader(abc.ABC):
     """Base abstract class for loaders."""
 
     @abc.abstractmethod
-    def download(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def download(self, gdf: gpd.GeoDataFrame, **kwargs: Any) -> gpd.GeoDataFrame:
         """Download data for a given area.
 
         Args:
