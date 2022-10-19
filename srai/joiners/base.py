@@ -4,7 +4,7 @@ import abc
 
 import geopandas as gpd
 
-from ..regnionizers.base import BaseRegionizer
+from ..regionizers.base import BaseRegionizer
 
 
 class BaseJoiner(abc.ABC):
