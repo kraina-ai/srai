@@ -28,7 +28,7 @@ pip install pdm
 # Optional if you want to create venv in a specific version. More info: https://pdm.fming.dev/latest/usage/venv/#create-a-virtualenv-yourself
 pdm venv create 3.8 # or any higher version of Python
 
-pdm install
+pdm install -G:all
 ```
 
 3. Activate pdm venv
