@@ -1,5 +1,6 @@
 {
-    "recommendations": [
-        "njpwerner.autodocstring",
-    ]
+  "recommendations": [
+    "njpwerner.autodocstring",
+    "streetsidesoftware.code-spell-checker",
+  ]
 }

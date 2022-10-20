@@ -1,0 +1,20 @@
+version: "0.2"
+ignorePaths:
+  [
+    "cspell.config.yaml",
+    ".pre-commit-config.yaml",
+    "pyproject.toml",
+    ".flake8",
+    ".gitignore",
+    "tox.ini",
+    "pdm.lock",
+    ".github/",
+    ".mypy_cache/",
+    ".vscode/",
+  ]
+dictionaryDefinitions: []
+dictionaries: []
+words: []
+ignoreWords: ["geopandas"]
+import: []
+languageId: "python"
