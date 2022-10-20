@@ -4,6 +4,7 @@ ignorePaths:
     "cspell.config.yaml",
     ".pre-commit-config.yaml",
     "pyproject.toml",
+    "mkdocs.yml",
     ".flake8",
     ".gitignore",
     "tox.ini",
@@ -13,8 +14,21 @@ ignorePaths:
     ".vscode/",
   ]
 dictionaryDefinitions: []
-dictionaries: []
+dictionaries: ["python", "softwareTerms"]
 words: []
-ignoreWords: ["geopandas"]
+ignoreWords:
+  [
+    "srai",
+    "embedder",
+    "regionizer",
+    "geopandas",
+    "mkdocs",
+    "pyrosm",
+    "pyosmium",
+    "docstrings",
+    "bumpver",
+    "ndarray",
+  ]
 import: []
 languageId: "python"
+language: "en,la"
