@@ -12,7 +12,7 @@ class BaseEmbedder(abc.ABC):
     """Base abstract class for embedders."""
 
     @abc.abstractmethod
-    def embed(self, gdf: gpd.GeoDataFrame, **kwargs: Any) -> npt.NDArray[np.float64]:
+    def embed(self, gdf: gpd.GeoDataFrame) -> npt.NDArray[np.float64]:
         """Embed a given GeoDataFrame.
 
         Args:
