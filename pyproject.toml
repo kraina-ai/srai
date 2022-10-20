@@ -12,14 +12,17 @@ dependencies = [
     "numpy>=1.23.4",
     "pydantic>=1.10.2",
     "geoparquet>=0.0.3",
-    "geovoronoi>=0.4.0",
     "pyfunctional>=1.4.3",
-    "osmium>=3.4.1",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 
+[project.optional-dependencies]
+# pdm add -G osm <library>
+osm = ["osmium>=3.4.1"]
+# pdm add -G voronoi <library>
+voronoi = ["geovoronoi>=0.4.0", "voronoi-diagram-for-polygons>=0.1.2"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
@@ -29,9 +32,7 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = [
-    "bumpver>=2022.1118",
-]
+dev = ["bumpver>=2022.1118"]
 # pdm add -dG lint <library>
 lint = [
     "pre-commit~=2.20",
@@ -43,11 +44,7 @@ lint = [
     "mypy~=0.982",
 ]
 # pdm add -dG test <library>
-test = [
-    "pytest~=7.1",
-    "pytest-cov~=4.0",
-    "tox-pdm>=0.6.0",
-]
+test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs>=1.4.0",
