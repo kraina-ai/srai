@@ -1,7 +1,6 @@
 """Base class for regionizers."""
 
 import abc
-from typing import Any
 
 import geopandas as gpd
 
@@ -11,10 +10,10 @@ class BaseRegionizer(abc.ABC):
 
     @abc.abstractmethod
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """Regionize a given GeoDataFrame.
+        """Regionize a given GeoDataFrame. This one should treat the input as a single region.
 
         Args:
-            gdf: GeoDataFrame to be regionized.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
 
         Returns:
             GeoDataFrame with the regionized data.
