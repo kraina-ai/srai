@@ -10,10 +10,10 @@ class BaseJoiner(abc.ABC):
 
     @abc.abstractmethod
     def join(self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """Join a given GeoDataFrame.
+        """Join featrues to regions.
 
         Args:
-            regions (gpd.GeoDataFrame): regions into which features are joined
+            regions (gpd.GeoDataFrame): regions with which features are joined
             features (gpd.GeoDataFrame): features to be joined
         Returns:
             GeoDataFrame with the joined data
