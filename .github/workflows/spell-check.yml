@@ -13,7 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: streetsidesoftware/cspell-action@v2
+        id: cspell-action
         with:
           config: "cspell.config.yaml"
           verbose: true
           files: "**"
+          incremental_files_only: false
+      - name: Show Results
+        env:
+          outputs: ${{ toJSON(steps.cspell-action.outputs) }}
+        run: |
+          echo "$outputs"
