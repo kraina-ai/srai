@@ -1,4 +1,4 @@
-name: full-ci
+name: "Build & publish"
 on:
   push:
     branches:
