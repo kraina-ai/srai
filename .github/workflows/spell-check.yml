@@ -1,4 +1,4 @@
-name: "Check spelling"
+name: "Check spelling workflow"
 on:
   pull_request:
     branches:
@@ -9,6 +9,7 @@ on:
 
 jobs:
   spellcheck:
+    name: "Check spelling job"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
