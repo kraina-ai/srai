@@ -12,8 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
       - run: npm install -g cspell
       - run: cspell-cli --config cspell.config.yaml --gitignore --no-must-find-files --no-progress --no-summary --show-context --relative "**"
+      # - run: npx cspell --config cspell.config.yaml --gitignore --no-must-find-files --no-progress --no-summary --show-context --relative "**"
       - uses: streetsidesoftware/cspell-action@v2
         id: cspell-action
         with:
