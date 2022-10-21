@@ -16,7 +16,7 @@ jobs:
         id: cspell-action
         with:
           config: "cspell.config.yaml"
-          verbose: true
+          verbose: false
           files: "**"
           incremental_files_only: false
           inline: warning
