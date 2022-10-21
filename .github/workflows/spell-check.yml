@@ -19,10 +19,13 @@ jobs:
           verbose: true
           files: "**"
           incremental_files_only: false
-          inline: none
+          inline: warning
           strict: false
       - name: Show Results
         env:
           outputs: ${{ toJSON(steps.cspell-action.outputs) }}
         run: |
           echo "$outputs"
+      - name: Fail
+        if: ${{ steps.cspell-action.outputs.success == 'false' }}
+        run: exit 1
