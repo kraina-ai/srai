@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: pdm-project/setup-pdm@main
+      - uses: pdm-project/setup-pdm@v2.7
         name: Setup PDM
         with:
           python-version: 3.8
