@@ -1,4 +1,4 @@
-name: full-ci
+name: "Build & publish"
 on:
   push:
     branches:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   run-tests:
+    name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
 
   build-n-publish:
@@ -14,7 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: pdm-project/setup-pdm@main
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
           python-version: 3.8

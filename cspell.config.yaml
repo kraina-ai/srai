@@ -1,0 +1,38 @@
+version: "0.2"
+ignorePaths:
+  [
+    "cspell.config.yaml",
+    ".pre-commit-config.yaml",
+    "pyproject.toml",
+    "mkdocs.yml",
+    ".flake8",
+    ".gitignore",
+    "tox.ini",
+    "pdm.lock",
+    ".github/",
+    ".mypy_cache/",
+    ".vscode/",
+  ]
+dictionaryDefinitions: []
+dictionaries: ["python", "softwareTerms"]
+words: []
+ignoreWords:
+  [
+    "srai",
+    "embedder",
+    "embedders",
+    "regionize",
+    "regionized",
+    "regionizer",
+    "regionizers",
+    "geopandas",
+    "mkdocs",
+    "pyrosm",
+    "pyosmium",
+    "docstrings",
+    "bumpver",
+    "ndarray",
+  ]
+import: []
+languageId: "python"
+language: "en,la"
