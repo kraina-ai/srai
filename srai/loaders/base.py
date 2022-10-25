@@ -12,7 +12,8 @@ class BaseLoader(abc.ABC):
 
     @abc.abstractmethod
     def load(self, area: Union[gpd.GeoDataFrame, Path]) -> gpd.GeoDataFrame:
-        """Load data for a given area.
+        """
+        Load data for a given area.
 
         Args:
             area (gdf.GeoDataFrame | Path): GeoDataFrame with the area of interest or a path

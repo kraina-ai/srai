@@ -64,7 +64,7 @@ class SphereEllipsoid(Ellipsoid):  # type: ignore
 
         References:
             [1] https://github.com/geospace-code/pymap3d
-        """  # noqa: W505, E501
+        """
         self.semimajor_axis = 1
         self.semiminor_axis = 1
         self.flattening = (self.semimajor_axis - self.semiminor_axis) / self.semimajor_axis
@@ -94,9 +94,9 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
         Wrapper for a ecef2geodetic function from pymap3d library.
 
     Args:
-        x (float): X cartesian coordinate
-        y (float): Y cartesian coordinate
-        z (float): Z cartesian coordinate
+        x (float): X cartesian coordinate.
+        y (float): Y cartesian coordinate.
+        z (float): Z cartesian coordinate.
 
     Returns:
         Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
@@ -159,7 +159,7 @@ def _create_polygon(
     Args:
         spherical_polygon_points (npt.NDArray): List of spherical points.
         bbox: (Polygon): Current sphere octant bounding box.
-        se (SphereEllipsoid): SphereEllipsoid object
+        se (SphereEllipsoid): SphereEllipsoid object.
         max_step (int): Max step between interpolated points on an arc.
 
     Returns:
