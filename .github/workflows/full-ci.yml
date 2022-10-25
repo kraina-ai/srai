@@ -59,7 +59,7 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate requirements.txt
-        run: pdm export -G docs > requirements.txt
+        run: pdm export -G docs -G osm -G voronoi -G visualization > requirements.txt
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Deploy documentation

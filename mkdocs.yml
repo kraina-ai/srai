@@ -1,12 +1,13 @@
 site_name: Spatial Representations for Artificial Intelligence
-site_url: https://example.com/
-nav:
-  - Home: index.md
-  - About: about.md
-  - Examples: examples.md
-  - Api: api.md
-  - Notebook: example.ipynb
-  - Python File: my_module.py
+site_url: https://srai-lab.github.io/srai/
+# nav:
+#   - Home: index.md
+#   - About: about.md
+#   - Examples: examples
+#   - Api: api.md
+#   - Notebook: example.ipynb
+#   - Python File: my_module.py
+#   # - Usage: usage.md
 
 theme:
   name: material
@@ -26,18 +27,26 @@ theme:
         name: Switch to light mode
 
 plugins:
+  - gen-files:
+      scripts:
+        - docs/copy_examples.py
+        - docs/generate_api.py
   - search
   - mkdocstrings
   - mkdocs-jupyter:
+      include: ["*.ipynb"]
       ignore_h1_titles: True
+      execute: True
+      include_source: True
   - mermaid2
-
+  - awesome-pages
 
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      check_paths: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

@@ -26,8 +26,12 @@ class VoronoiRegionizer:
         All (multi)polygons from seeds GeoDataFrame will be transformed to their centroids,
         because scipy function requires only points as an input.
 
+        Seeds laying on a single arc might result in a ValueError exception.
+
         Args:
             seeds (gpd.GeoDataFrame): GeoDataFrame with seeds for creating a tessellation.
+            max_meters_between_points (int): Maximal distance in meters between two points
+                in a resulting polygon. Higher number results lower resolution of a polygon.
 
         References:
             [1] https://en.wikipedia.org/wiki/Voronoi_diagram
@@ -39,6 +43,9 @@ class VoronoiRegionizer:
         for index, row in seeds.iterrows():
             self.region_ids.append(index)
             self.seeds.append(row.geometry.centroid)
+
+        if len(seeds) == 0:
+            raise ValueError("Minimum one seed is required.")
 
         if any(p1.equals(p2) for p1, p2 in combinations(self.seeds, r=2)):
             raise ValueError("Duplicate seeds present.")
@@ -54,6 +61,8 @@ class VoronoiRegionizer:
             GeoDataFrame with the regionized data.
         """
         generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
-        regions_gdf = gpd.GeoDataFrame(data={"geometry": generated_regions}, index=self.region_ids)
+        regions_gdf = gpd.GeoDataFrame(
+            data={"geometry": generated_regions}, index=self.region_ids, crs=4326
+        )
         clipped_regions_gdf = regions_gdf.clip(mask=gdf, keep_geom_type=False)
         return clipped_regions_gdf

@@ -39,15 +39,15 @@ SPHERE_PARTS = [
     SphericalPolygon([POINT_BACK, POINT_LEFT, POINT_BOTTOM, POINT_BACK]),
     SphericalPolygon([POINT_LEFT, POINT_FRONT, POINT_BOTTOM, POINT_LEFT]),
 ]
-SPHERE_PARTS_METADATA = [
-    box(minx=0, miny=0, maxx=90, maxy=90).bounds,
-    box(minx=90, miny=0, maxx=180, maxy=90).bounds,
-    box(minx=-180, miny=0, maxx=-90, maxy=90).bounds,
-    box(minx=-90, miny=0, maxx=0, maxy=90).bounds,
-    box(minx=0, miny=-90, maxx=90, maxy=0).bounds,
-    box(minx=90, miny=-90, maxx=180, maxy=0).bounds,
-    box(minx=-180, miny=-90, maxx=-90, maxy=0).bounds,
-    box(minx=-90, miny=-90, maxx=0, maxy=0).bounds,
+SPHERE_PARTS_BOUNDING_BOXES = [
+    box(minx=0, miny=0, maxx=90, maxy=90),
+    box(minx=90, miny=0, maxx=180, maxy=90),
+    box(minx=-180, miny=0, maxx=-90, maxy=90),
+    box(minx=-90, miny=0, maxx=0, maxy=90),
+    box(minx=0, miny=-90, maxx=90, maxy=0),
+    box(minx=90, miny=-90, maxx=180, maxy=0),
+    box(minx=-180, miny=-90, maxx=-90, maxy=0),
+    box(minx=-90, miny=-90, maxx=0, maxy=0),
 ]
 
 
@@ -73,42 +73,80 @@ class SphereEllipsoid(Ellipsoid):  # type: ignore
         )
         self.eccentricity = sqrt(2 * self.flattening - self.flattening**2)
 
-    def map_to_geocentric(self, lon: float, lat: float) -> Tuple[float, float, float]:
-        """
-        Wrapper for a geodetic2ecef function from pymap3d library.
 
-        Args:
-            lon (float): longitude of a point in a wgs84 crs.
-            lat (float): latitude of a point in a wgs84 crs.
+def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, float, float]:
+    """
+    Wrapper for a geodetic2ecef function from pymap3d library.
 
-        Returns:
-            Tuple[float, float, float]: (x, y, z) coordinates tuple.
-        """
-        x, y, z = geodetic2ecef(lat, lon, 0, ell=self)
-        return x, y, z
+    Args:
+        lon (float): longitude of a point in a wgs84 crs.
+        lat (float): latitude of a point in a wgs84 crs.
 
-    def map_from_geocentric(self, x: float, y: float, z: float) -> Tuple[float, float]:
-        """
-         Wrapper for a ecef2geodetic function from pymap3d library.
+    Returns:
+        Tuple[float, float, float]: (x, y, z) coordinates tuple.
+    """
+    x, y, z = geodetic2ecef(lat, lon, 0, ell=ell)
+    return x, y, z
 
-        Args:
-            x (float): X cartesian coordinate
-            y (float): Y cartesian coordinate
-            z (float): Z cartesian coordinate
 
-        Returns:
-            Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
-        """
-        lat, lon, _ = ecef2geodetic(x, y, z, ell=self)
-        return lon, lat
+def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[float, float]:
+    """
+        Wrapper for a ecef2geodetic function from pymap3d library.
+
+    Args:
+        x (float): X cartesian coordinate
+        y (float): Y cartesian coordinate
+        z (float): Z cartesian coordinate
+
+    Returns:
+        Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
+    """
+    lat, lon, _ = ecef2geodetic(x, y, z, ell=ell)
+    return lon, lat
+
+
+def _fix_lat_lon(
+    lon: float,
+    lat: float,
+    bbox: Polygon,
+) -> Tuple[float, float]:
+    """
+    Fix point signs and rounding.
+
+    Rounds latitude and longitude to 8 decimal places.
+    Checks if any point is on a boundary and flips its sign
+    to ensure validity of a polygon.
+
+    Args:
+        lon (float): Longitude of a point.
+        lat (float): Latitude of a point.
+        bbox (Polygon): Current sphere octant bounding box.
+
+    Returns:
+        Tuple[float, float]: Longitude and latitude of a point.
+    """
+    min_lon, min_lat, max_lon, max_lat = bbox.bounds
+
+    # round imperfections
+    lon = round(lon, 8)
+    lat = round(lat, 8)
+
+    # switch signs
+    if lon and abs(lon) == abs(min_lon):
+        lon = min_lon
+    elif lon and abs(lon) == abs(max_lon):
+        lon = max_lon
+    if lat and abs(lat) == abs(min_lat):
+        lat = min_lat
+    elif lat and abs(lat) == abs(max_lat):
+        lat = max_lat
+
+    return lon, lat
 
 
 def _create_polygon(
     spherical_polygon_points: npt.NDArray,
-    min_lon: float,
-    min_lat: float,
-    max_lon: float,
-    max_lat: float,
+    bbox: Polygon,
     se: SphereEllipsoid,
     max_step: int,
 ) -> Polygon:
@@ -120,10 +158,7 @@ def _create_polygon(
 
     Args:
         spherical_polygon_points (npt.NDArray): List of spherical points.
-        min_lon (float): Current sphere octant minimal longitude bound.
-        min_lat (float): Current sphere octant minimal latitude bound.
-        max_lon (float): Current sphere octant maximal longitude bound.
-        max_lat (float): Current sphere octant maximal latitude bound.
+        bbox: (Polygon): Current sphere octant bounding box.
         se (SphereEllipsoid): SphereEllipsoid object
         max_step (int): Max step between interpolated points on an arc.
 
@@ -134,28 +169,18 @@ def _create_polygon(
     prev_lon = None
     prev_lat = None
     n = len(spherical_polygon_points)
-    bbox = box(minx=min_lon, miny=min_lat, maxx=max_lon, maxy=max_lat)
     for i in range(n):
         start = spherical_polygon_points[i]
         end = spherical_polygon_points[(i + 1) % n]
-        start_lon, start_lat = se.map_from_geocentric(*start)
-        end_lon, end_lat = se.map_from_geocentric(*end)
+        start_lon, start_lat = map_from_geocentric(start[0], start[1], start[2], se)
+        end_lon, end_lat = map_from_geocentric(end[0], end[1], end[2], se)
         haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
         steps = ceil(haversine_distance / max_step)
         t_vals = np.linspace(0, 1, steps)
         for pt in geometric_slerp(start, end, t_vals):
-            lon, lat = se.map_from_geocentric(*pt)
-            lon = round(lon, 8)
-            lat = round(lat, 8)
-            if lon and abs(lon) == abs(min_lon):
-                lon = min_lon
-            elif lon and abs(lon) == abs(max_lon):
-                lon = max_lon
-            if lat and abs(lat) == abs(min_lat):
-                lat = min_lat
-            elif lat and abs(lat) == abs(max_lat):
-                lat = max_lat
-            if prev_lon and abs(prev_lon - lon) >= 90:
+            lon, lat = map_from_geocentric(pt[0], pt[1], pt[2], se)
+            lon, lat = _fix_lat_lon(lon, lat, bbox)
+            if prev_lon is not None and abs(prev_lon - lon) >= 90:
                 sign = 1 if lat > 0 else -1
                 max_lat = sign * max(abs(prev_lat), abs(lat))
                 if polygon_points[-1] != (prev_lon, max_lat):
@@ -165,6 +190,7 @@ def _create_polygon(
             polygon_points.append((lon, lat))
             prev_lon = lon
             prev_lat = lat
+
     polygon = Polygon(polygon_points)
     polygon = polygon.intersection(bbox)
     return polygon
@@ -192,7 +218,7 @@ def generate_voronoi_regions(
         return [MultiPolygon([box(minx=-180, maxx=180, miny=-90, maxy=90)])]
 
     se = SphereEllipsoid()
-    mapped_points = [se.map_to_geocentric(pt.x, pt.y) for pt in seeds]
+    mapped_points = [map_to_geocentric(pt.x, pt.y, se) for pt in seeds]
     sphere_points = np.array([[pt[0], pt[1], pt[2]] for pt in mapped_points])
 
     radius = 1
@@ -205,20 +231,16 @@ def generate_voronoi_regions(
         region_vertices = [v for v in sv.vertices[region]]
         sph_pol = SphericalPolygon(region_vertices)
         sphere_intersection_parts = [
-            (intersection, sphere_part_metadata)
-            for sphere_part, sphere_part_metadata in zip(SPHERE_PARTS, SPHERE_PARTS_METADATA)
+            (intersection, sphere_part_bbox)
+            for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES)
             if (intersection := sph_pol.intersection(sphere_part)).area() > 0
         ]
         multi_polygon_parts: List[Polygon] = []
-        for sphere_intersection_part, bounds in sphere_intersection_parts:
-            min_lon, min_lat, max_lon, max_lat = bounds
+        for sphere_intersection_part, bbox in sphere_intersection_parts:
             for spherical_polygon_points in sphere_intersection_part.points:
                 polygon = _create_polygon(
                     spherical_polygon_points=spherical_polygon_points,
-                    min_lon=min_lon,
-                    min_lat=min_lat,
-                    max_lon=max_lon,
-                    max_lat=max_lat,
+                    bbox=bbox,
                     se=se,
                     max_step=max_meters_between_points,
                 )

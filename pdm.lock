@@ -108,6 +108,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bracex"
+version = "2.3.post1"
+requires_python = ">=3.7"
+summary = "Bash style brace expander."
+
+[[package]]
 name = "bumpver"
 version = "2022.1119"
 requires_python = ">=2.7"
@@ -325,6 +331,17 @@ dependencies = [
 name = "geoparquet"
 version = "0.0.3"
 summary = "GeoPandas API for Parquet file format."
+
+[[package]]
+name = "geovoronoi"
+version = "0.4.0"
+requires_python = ">=3.6"
+summary = "a package to create and plot Voronoi regions in geographic areas"
+dependencies = [
+    "numpy>=1.19.0",
+    "scipy>=1.5.0",
+    "shapely>=1.7.0",
+]
 
 [[package]]
 name = "ghp-import"
@@ -563,6 +580,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaleido"
+version = "0.2.1"
+summary = "Static image export for web-based visualization libraries with zero dependencies"
+
+[[package]]
 name = "keplergl"
 version = "0.3.2"
 summary = "This is a simple jupyter widget for kepler.gl, an advanced geospatial visualization tool, to render large-scale interactive maps."
@@ -704,6 +726,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "mkdocs-awesome-pages-plugin"
+version = "2.8.0"
+requires_python = ">=3.6.2"
+summary = "An MkDocs plugin that simplifies configuring page titles and their order"
+dependencies = [
+    "mkdocs>=1",
+    "natsort>=8.1.0",
+    "wcmatch>=7",
+]
+
+[[package]]
+name = "mkdocs-gen-files"
+version = "0.4.0"
+requires_python = ">=3.7,<4.0"
+summary = "MkDocs plugin to programmatically generate documentation pages during the build"
+dependencies = [
+    "mkdocs<2.0.0,>=1.0.3",
+]
+
+[[package]]
 name = "mkdocs-jupyter"
 version = "0.22.0"
 requires_python = ">=3.7.1,<4"
@@ -811,6 +853,12 @@ dependencies = [
 name = "mypy-extensions"
 version = "0.4.3"
 summary = "Experimental type system extensions for programs checked with the mypy typechecker."
+
+[[package]]
+name = "natsort"
+version = "8.2.0"
+requires_python = ">=3.6"
+summary = "Simple yet flexible natural sorting in Python."
 
 [[package]]
 name = "nbclassic"
@@ -1488,6 +1536,15 @@ requires_python = ">=3.6"
 summary = "Filesystem events monitoring"
 
 [[package]]
+name = "wcmatch"
+version = "8.4.1"
+requires_python = ">=3.7"
+summary = "Wildcard/glob file name matcher."
+dependencies = [
+    "bracex>=2.1.1",
+]
+
+[[package]]
 name = "wcwidth"
 version = "0.2.5"
 summary = "Measures the displayed width of unicode strings in a terminal"
@@ -1519,7 +1576,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b90155b2bb8e"
+content_hash = "sha256:0009db42dd2d3c6d2d7212129c74eaeea224d3dc6683bb355d6a56518ce4574f"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -1632,6 +1689,10 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
 "bleach 5.0.1" = [
     {url = "https://files.pythonhosted.org/packages/c2/5d/d5d45a38163ede3342d6ac1ca01b5d387329daadf534a25718f9a9ba818c/bleach-5.0.1.tar.gz", hash = "sha256:0d03255c47eb9bd2f26aa9bb7f2107732e7e8fe195ca2f64709fcf3b0a4a085c"},
     {url = "https://files.pythonhosted.org/packages/d4/87/508104336a2bc0c4cfdbdceedc0f44dc72da3abc0460c57e323ddd1b3257/bleach-5.0.1-py3-none-any.whl", hash = "sha256:085f7f33c15bd408dd9b17a4ad77c577db66d76203e5984b1bd59baeee948b2a"},
+]
+"bracex 2.3.post1" = [
+    {url = "https://files.pythonhosted.org/packages/26/f5/7c60fb31c9aea37b3424e4206f9f6ed23c1ee0a717fa31749d10665a4eef/bracex-2.3.post1-py3-none-any.whl", hash = "sha256:351b7f20d56fb9ea91f9b9e9e7664db466eb234188c175fd943f8f755c807e73"},
+    {url = "https://files.pythonhosted.org/packages/b3/96/d53e290ddf6215cfb24f93449a1835eff566f79a1f332cf046a978df0c9e/bracex-2.3.post1.tar.gz", hash = "sha256:e7b23fc8b2cd06d3dec0692baabecb249dda94e06a617901ff03a6c56fd71693"},
 ]
 "bumpver 2022.1119" = [
     {url = "https://files.pythonhosted.org/packages/34/e4/c9ca423e253ba606e7ac65ec18b4abd4f4a672f421dab00ab3dabed518c9/bumpver-2022.1119-py2.py3-none-any.whl", hash = "sha256:c4cc84a881bf945510a4831200fd082c3520665c61e73ff7732e26249a6a86c9"},
@@ -1955,6 +2016,10 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
     {url = "https://files.pythonhosted.org/packages/27/c3/3ffe3ddc783d3173fe87dbb213bc3b562dd31667662a5c12af100ac77524/geoparquet-0.0.3-py3-none-any.whl", hash = "sha256:6aaee13d802d02d73c14a981bc73482c0074a5af671557971187890070fc7da9"},
     {url = "https://files.pythonhosted.org/packages/89/61/6f4cd7d0dc97e08006a958a1db2889416c85a08afd0c9d0cafbb01083465/geoparquet-0.0.3.tar.gz", hash = "sha256:2968c0cd65fe5781abc057252e71bb364b5d18ecbf26c32d753a98df01196a65"},
 ]
+"geovoronoi 0.4.0" = [
+    {url = "https://files.pythonhosted.org/packages/47/9b/3fb8ea881921ad2868a2850193aa02b5d996a117df0fe1d4c5e2188d5595/geovoronoi-0.4.0.tar.gz", hash = "sha256:fdd890f39947c662d11cdf2dd4827617a746f1572cf92ffa818ac41154815f42"},
+    {url = "https://files.pythonhosted.org/packages/cc/da/9c5f78c5ac27d72877011211e4804e388ddf5087452c74dc455aebaeec02/geovoronoi-0.4.0-py3-none-any.whl", hash = "sha256:a0742379dc9bd63f6a4f193d2007a916a68d7b1e88b58fdbbfe9b78cc4392b04"},
+]
 "ghp-import 2.1.0" = [
     {url = "https://files.pythonhosted.org/packages/d9/29/d40217cbe2f6b1359e00c6c307bb3fc876ba74068cbab3dde77f03ca0dc4/ghp-import-2.1.0.tar.gz", hash = "sha256:9c535c4c61193c2df8871222567d7fd7e5014d835f97dc7b7439069e2413d343"},
     {url = "https://files.pythonhosted.org/packages/f7/ec/67fbef5d497f86283db54c22eec6f6140243aae73265799baaaa19cd17fb/ghp_import-2.1.0-py3-none-any.whl", hash = "sha256:8337dd7b50877f163d4c0289bc1f1c7f127550241988d568c1db512c4324a619"},
@@ -2079,6 +2144,14 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
 "jupytext 1.14.1" = [
     {url = "https://files.pythonhosted.org/packages/1e/b6/53edfeda6e8ac67a9fd31b510fe8c8e46c1b505805ae958d6fff82f9b2df/jupytext-1.14.1-py3-none-any.whl", hash = "sha256:216bddba8bbb9355831ba17fd8d45cfe5d1355e7152bc8980f39175fc2584875"},
     {url = "https://files.pythonhosted.org/packages/f9/82/41eb391880f4c67b34d2b81e0a13d01801b01507a88e8572c93d4e592972/jupytext-1.14.1.tar.gz", hash = "sha256:314fa0e732b1d14764271843b676938ef8a7b9d53c3575ade636b45d13f341c8"},
+]
+"kaleido 0.2.1" = [
+    {url = "https://files.pythonhosted.org/packages/45/8e/4297556be5a07b713bb42dde0f748354de9a6918dee251c0e6bdcda341e7/kaleido-0.2.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:bb9a5d1f710357d5d432ee240ef6658a6d124c3e610935817b4b42da9c787c05"},
+    {url = "https://files.pythonhosted.org/packages/88/89/4b6f8bb3f9ab036fd4ad1cb2d628ab5c81db32ac9aa0641d7b180073ba43/kaleido-0.2.1-py2.py3-none-win32.whl", hash = "sha256:ecc72635860be616c6b7161807a65c0dbd9b90c6437ac96965831e2e24066552"},
+    {url = "https://files.pythonhosted.org/packages/a1/2b/680662678a57afab1685f0c431c2aba7783ce4344f06ec162074d485d469/kaleido-0.2.1-py2.py3-none-manylinux2014_aarch64.whl", hash = "sha256:845819844c8082c9469d9c17e42621fbf85c2b237ef8a86ec8a8527f98b6512a"},
+    {url = "https://files.pythonhosted.org/packages/ae/b3/a0f0f4faac229b0011d8c4a7ee6da7c2dca0b6fd08039c95920846f23ca4/kaleido-0.2.1-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:aa21cf1bf1c78f8fa50a9f7d45e1003c387bd3d6fe0a767cfbbf344b95bdc3a8"},
+    {url = "https://files.pythonhosted.org/packages/e0/f7/0ccaa596ec341963adbb4f839774c36d5659e75a0812d946732b927d480e/kaleido-0.2.1-py2.py3-none-macosx_10_11_x86_64.whl", hash = "sha256:ca6f73e7ff00aaebf2843f73f1d3bacde1930ef5041093fe76b83a15785049a7"},
+    {url = "https://files.pythonhosted.org/packages/f7/9a/0408b02a4bcb3cf8b338a2b074ac7d1b2099e2b092b42473def22f7b625f/kaleido-0.2.1-py2.py3-none-win_amd64.whl", hash = "sha256:4670985f28913c2d063c5734d125ecc28e40810141bdb0a46f15b76c1d45f23c"},
 ]
 "keplergl 0.3.2" = [
     {url = "https://files.pythonhosted.org/packages/f0/b7/e36a95d722233af09e136855142c71a8f2327715f240552d72bc6b814a02/keplergl-0.3.2.tar.gz", hash = "sha256:1762c4212f177843884ad51f74e06ee3efe58ea3711d0327b6aa99ccbed52815"},
@@ -2354,6 +2427,14 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
     {url = "https://files.pythonhosted.org/packages/3b/3f/9531888bc92bafb1bffddca5d9240a7bae9a479d465528883b61808ef9d6/mkdocs-autorefs-0.4.1.tar.gz", hash = "sha256:70748a7bd025f9ecd6d6feeba8ba63f8e891a1af55f48e366d6d6e78493aba84"},
     {url = "https://files.pythonhosted.org/packages/fb/5c/6594400290df38f99bf8d9ef249387b56f4ad962667836266f6fe7da8597/mkdocs_autorefs-0.4.1-py3-none-any.whl", hash = "sha256:a2248a9501b29dc0cc8ba4c09f4f47ff121945f6ce33d760f145d6f89d313f5b"},
 ]
+"mkdocs-awesome-pages-plugin 2.8.0" = [
+    {url = "https://files.pythonhosted.org/packages/18/39/22aa311684b56104ea74c34dae7008cfd609388bbd0bdbb7229b515e89ba/mkdocs-awesome-pages-plugin-2.8.0.tar.gz", hash = "sha256:af7e327e14b2eea3b2735c37428e33a528ecd2d9ae2296dc0f1632f0f3bc28f7"},
+    {url = "https://files.pythonhosted.org/packages/92/4a/f519bf743ba40e5493b6f79f3f880f0356f8a3ec3bf2ca07c5320ef62c89/mkdocs_awesome_pages_plugin-2.8.0-py3-none-any.whl", hash = "sha256:6b21ad4f41aecbe89e3a9a51f8837892cc7ce8ca0f9f4e0a355d56159ace3d68"},
+]
+"mkdocs-gen-files 0.4.0" = [
+    {url = "https://files.pythonhosted.org/packages/19/fa/064b85a1b0d11d77a8458e1bfac50decc8d467ac866e75ccb5a6483c5c1f/mkdocs-gen-files-0.4.0.tar.gz", hash = "sha256:377bff8ee8e93515916689f483d971643f83a94eed7e92318854da8f344f0163"},
+    {url = "https://files.pythonhosted.org/packages/6e/e2/f5b9f5b2ff62f2868d475586522d5d286d29c1d4e46aff0fd65037bb78b5/mkdocs_gen_files-0.4.0-py3-none-any.whl", hash = "sha256:3241a4c947ecd11763ca77cc645015305bf71a0e1b9b886801c114fcf9971e71"},
+]
 "mkdocs-jupyter 0.22.0" = [
     {url = "https://files.pythonhosted.org/packages/5e/b9/fe4258b286fe7a50ddcd312fb448e39894cf631bf241fed3fe11b22f54c4/mkdocs-jupyter-0.22.0.tar.gz", hash = "sha256:585cc69bea4cb9faf6898131978dc9a9b225091ed4b6084f5ab65652a5e12185"},
 ]
@@ -2410,6 +2491,10 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
 "mypy-extensions 0.4.3" = [
     {url = "https://files.pythonhosted.org/packages/5c/eb/975c7c080f3223a5cdaff09612f3a5221e4ba534f7039db34c35d95fa6a5/mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {url = "https://files.pythonhosted.org/packages/63/60/0582ce2eaced55f65a4406fc97beba256de4b7a95a0034c6576458c6519f/mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+]
+"natsort 8.2.0" = [
+    {url = "https://files.pythonhosted.org/packages/3e/58/61c4b4fd9e597affdcd3347d5991fa5be404af26f19932d3116b67e133da/natsort-8.2.0-py3-none-any.whl", hash = "sha256:04fe18fdd2b9e5957f19f687eb117f102ef8dde6b574764e536e91194bed4f5f"},
+    {url = "https://files.pythonhosted.org/packages/9a/81/50a71d8ac87727ee6213207e30502560ffcf3b72a06b45fbeaa1ed48bec6/natsort-8.2.0.tar.gz", hash = "sha256:57f85b72c688b09e053cdac302dd5b5b53df5f73ae20b4874fcbffd8bf783d11"},
 ]
 "nbclassic 0.4.5" = [
     {url = "https://files.pythonhosted.org/packages/87/53/f772db447e5da12433f7bd5bf71b71e7eb15f465c22087fc9a5e027bab59/nbclassic-0.4.5.tar.gz", hash = "sha256:05704c6cdd8301bf52e40ed9fae39e80d6bc5d2d447dc67831c145b4dd928779"},
@@ -3265,6 +3350,10 @@ content_hash = "sha256:5c0f0bd8c3213821d0468a9e3ea0f3f358f09dfbdc10bb744878b9015
     {url = "https://files.pythonhosted.org/packages/eb/15/e1a0c11f137fe05f593288fe735f8cd28c9b2f398e0c08623977dce81921/watchdog-2.1.9-py3-none-win_ia64.whl", hash = "sha256:ad576a565260d8f99d97f2e64b0f97a48228317095908568a9d5c786c829d428"},
     {url = "https://files.pythonhosted.org/packages/f8/50/d5501772dfb710618540842bfd927ba8e643834129101db279b3b388f2cb/watchdog-2.1.9-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:ed80a1628cee19f5cfc6bb74e173f1b4189eb532e705e2a13e3250312a62e0c9"},
     {url = "https://files.pythonhosted.org/packages/ff/e0/dad09238e32d161e332c2e94b367d2aaa5f2ffe3e240b49b70473979fd61/watchdog-2.1.9-py3-none-manylinux2014_x86_64.whl", hash = "sha256:4f4e1c4aa54fb86316a62a87b3378c025e228178d55481d30d857c6c438897d6"},
+]
+"wcmatch 8.4.1" = [
+    {url = "https://files.pythonhosted.org/packages/b4/a7/1875f68c4e39f9c68f5ba3aaf80ed1853903e5119941d514789fbc51a80d/wcmatch-8.4.1-py3-none-any.whl", hash = "sha256:3476cd107aba7b25ba1d59406938a47dc7eec6cfd0ad09ff77193f21a964dee7"},
+    {url = "https://files.pythonhosted.org/packages/b7/94/5dd083fc972655f6689587c3af705aabc8b8e781bacdf22d6d2282fe6142/wcmatch-8.4.1.tar.gz", hash = "sha256:b1f042a899ea4c458b7321da1b5e3331e3e0ec781583434de1301946ceadb943"},
 ]
 "wcwidth 0.2.5" = [
     {url = "https://files.pythonhosted.org/packages/59/7c/e39aca596badaf1b78e8f547c807b04dae603a433d3e7a7e04d67f2ef3e5/wcwidth-0.2.5-py2.py3-none-any.whl", hash = "sha256:beb4802a9cebb9144e99086eff703a642a13d6a0052920003a230f3294bbe784"},

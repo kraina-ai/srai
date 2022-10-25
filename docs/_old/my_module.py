@@ -5,7 +5,8 @@ class MyClass:
     """Print print print."""
 
     def method_a(self, name: str) -> None:
-        """Print a greeting.
+        """
+        Print a greeting.
 
         Args:
             name: The name of the person to greet.
