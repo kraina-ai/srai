@@ -17,6 +17,7 @@ def _merge_disjointed_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> 
 
     Returns:
         MultiPolygon: Merged polygon
+
     """
     single_polygons = []
     for geom in polygons:
@@ -38,5 +39,6 @@ def _merge_disjointed_gdf_geometries(gdf: gpd.GeoDataFrame) -> MultiPolygon:
 
     Returns:
         MultiPolygon: Merged polygon
+
     """
     return _merge_disjointed_polygons(list(gdf.geometry))

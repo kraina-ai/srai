@@ -2,6 +2,7 @@
 Voronoi Regionizer.
 
 This module contains voronoi regionizer implementation.
+
 """
 
 from itertools import combinations
@@ -15,10 +16,11 @@ class VoronoiRegionizer:
     """
     VoronoiRegionizer.
 
-    Voronoi [1] regionizer allows the given geometries to be divided into
-    Thiessen polygons using geometries that are the seeds. To minimize distortions
-    tessellation will be performed on a sphere using SphericalVoronoi [2] function
-    from scipy library.
+    Voronoi [1] regionizer allows the given geometries to be divided
+    into Thiessen polygons using geometries that are the seeds. To
+    minimize distortions tessellation will be performed on a sphere
+    using SphericalVoronoi [2] function from scipy library.
+
     """
 
     def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
@@ -40,6 +42,7 @@ class VoronoiRegionizer:
         References:
             [1] https://en.wikipedia.org/wiki/Voronoi_diagram
             [2] https://docs.scipy.org/doc/scipy-1.9.2/reference/generated/scipy.spatial.SphericalVoronoi.html
+
         """  # noqa: W505, E501
         self.region_ids = []
         self.seeds = []
@@ -68,6 +71,7 @@ class VoronoiRegionizer:
 
         Returns:
             GeoDataFrame with the regionized data cropped using input GeoDataFrame.
+
         """
         generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
         regions_gdf = gpd.GeoDataFrame(

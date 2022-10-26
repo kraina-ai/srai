@@ -18,5 +18,6 @@ class BaseJoiner(abc.ABC):
             features (gpd.GeoDataFrame): features to be joined
         Returns:
             GeoDataFrame with the joined data
+
         """
         raise NotImplementedError

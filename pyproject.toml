@@ -44,6 +44,7 @@ lint = [
     "flake8-docstrings>=1.6.0",
     "isort~=5.10",
     "mypy~=0.982",
+    "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
 test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
@@ -68,6 +69,7 @@ visualization = [
 [tool.black]
 line-length = 100
 target-version = ["py38", "py39", "py310"]
+preview = true
 
 [tool.isort]
 profile = "black"
@@ -93,8 +95,18 @@ warn_return_any = true
 
 [tool.pydocstyle]
 convention = "google"
-add-select = ["D213"]
+add-select = ["D202", "D213"]
 add-ignore = ["D212"]
+
+[tool.docformatter]
+syntax = 'google'
+black = true
+recursive = true
+docstring-length = [60, 100]
+blank = false
+pre-summary-newline = true
+close-quotes-on-newline = true
+wrap-one-line = true
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]

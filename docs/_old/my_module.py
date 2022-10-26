@@ -10,6 +10,7 @@ class MyClass:
 
         Args:
             name (str): The name of the person to greet.
+
         """
         print()
 

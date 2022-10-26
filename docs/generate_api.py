@@ -13,9 +13,10 @@ def write_file(file_path: Path) -> None:
 
     Args:
         file_path (Path): Current file path.
+
     """
-    root_path = i.relative_to(MODULE_DIRECTORY_PATH)
-    dst_path = (API_DIRECTORY_PATH / i.parts[-2]).with_suffix(".md")
+    root_path = file_path.relative_to(MODULE_DIRECTORY_PATH)
+    dst_path = (API_DIRECTORY_PATH / file_path.parts[-2]).with_suffix(".md")
     print(f"Adding {root_path} to API")
     with mkdocs_gen_files.open(dst_path, "w") as dst:
         dst.write(f"::: {'.'.join(list(i.parts)[:-1])}")

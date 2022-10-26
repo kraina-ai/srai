@@ -3,6 +3,7 @@ Spherical voronoi utils.
 
 This module contains spherical voronoi implementation based on
 SphericalVoronoi function from scipy library.
+
 """
 
 from math import ceil, sqrt
@@ -64,6 +65,7 @@ class SphereEllipsoid(Ellipsoid):  # type: ignore
 
         References:
             [1] https://github.com/geospace-code/pymap3d
+
         """
         self.semimajor_axis = 1
         self.semiminor_axis = 1
@@ -84,6 +86,7 @@ def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, fl
 
     Returns:
         Tuple[float, float, float]: (x, y, z) coordinates tuple.
+
     """
     x, y, z = geodetic2ecef(lat, lon, 0, ell=ell)
     return x, y, z
@@ -91,7 +94,7 @@ def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, fl
 
 def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[float, float]:
     """
-        Wrapper for a ecef2geodetic function from pymap3d library.
+    Wrapper for a ecef2geodetic function from pymap3d library.
 
     Args:
         x (float): X cartesian coordinate.
@@ -100,6 +103,7 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
 
     Returns:
         Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
+
     """
     lat, lon, _ = ecef2geodetic(x, y, z, ell=ell)
     return lon, lat
@@ -124,6 +128,7 @@ def _fix_lat_lon(
 
     Returns:
         Tuple[float, float]: Longitude and latitude of a point.
+
     """
     min_lon, min_lat, max_lon, max_lat = bbox.bounds
 
@@ -164,6 +169,7 @@ def _create_polygon(
 
     Returns:
         Polygon: Mapped polygon in wgs84 crs.
+
     """
     polygon_points = []
     prev_lon = None
@@ -213,6 +219,7 @@ def generate_voronoi_regions(
     Returns:
         List[MultiPolygon]: List of regions cut into up to 8 polygons based
         on 8 parts of a sphere.
+
     """
     if len(seeds) == 1:
         return [MultiPolygon([box(minx=-180, maxx=180, miny=-90, maxy=90)])]
