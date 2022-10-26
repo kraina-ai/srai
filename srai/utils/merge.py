@@ -6,14 +6,14 @@ import geopandas as gpd
 from shapely.geometry import MultiPolygon, Polygon
 
 
-def merge_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> MultiPolygon:
+def _merge_disjointed_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> MultiPolygon:
     """
     Merges all polygons into a single MultiPolygon.
 
     Input polygons are expected to be disjointed.
 
     Args:
-        polygons (List[Union[Polygon, MultiPolygon]]): List of polygons to merge
+        polygons: List of polygons to merge
 
     Returns:
         MultiPolygon: Merged polygon
@@ -27,16 +27,16 @@ def merge_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> MultiPolygon
     return MultiPolygon(single_polygons)
 
 
-def merge_gdf_into_polygon(gdf: gpd.GeoDataFrame) -> MultiPolygon:
+def _merge_disjointed_gdf_geometries(gdf: gpd.GeoDataFrame) -> MultiPolygon:
     """
     Merges geometries from a GeoDataFrame into a single MultiPolygon.
 
     Input geometries are expected to be disjointed.
 
     Args:
-        gdf (gpd.GeoDataFrame): GeoDataFrame with geometries to merge.
+        gdf: GeoDataFrame with geometries to merge.
 
     Returns:
         MultiPolygon: Merged polygon
     """
-    return merge_polygons(list(gdf.geometry))
+    return _merge_disjointed_polygons(list(gdf.geometry))

@@ -79,8 +79,8 @@ def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, fl
     Wrapper for a geodetic2ecef function from pymap3d library.
 
     Args:
-        lon (float): longitude of a point in a wgs84 crs.
-        lat (float): latitude of a point in a wgs84 crs.
+        lon: longitude of a point in a wgs84 crs.
+        lat: latitude of a point in a wgs84 crs.
 
     Returns:
         Tuple[float, float, float]: (x, y, z) coordinates tuple.
@@ -94,9 +94,9 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
         Wrapper for a ecef2geodetic function from pymap3d library.
 
     Args:
-        x (float): X cartesian coordinate.
-        y (float): Y cartesian coordinate.
-        z (float): Z cartesian coordinate.
+        x: X cartesian coordinate.
+        y: Y cartesian coordinate.
+        z: Z cartesian coordinate.
 
     Returns:
         Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
@@ -118,9 +118,9 @@ def _fix_lat_lon(
     to ensure validity of a polygon.
 
     Args:
-        lon (float): Longitude of a point.
-        lat (float): Latitude of a point.
-        bbox (Polygon): Current sphere octant bounding box.
+        lon: Longitude of a point.
+        lat: Latitude of a point.
+        bbox: Current sphere octant bounding box.
 
     Returns:
         Tuple[float, float]: Longitude and latitude of a point.
@@ -157,10 +157,10 @@ def _create_polygon(
     into a wgs84 crs while keeping integrity across all coordinates.
 
     Args:
-        spherical_polygon_points (npt.NDArray): List of spherical points.
-        bbox: (Polygon): Current sphere octant bounding box.
-        se (SphereEllipsoid): SphereEllipsoid object.
-        max_step (int): Max step between interpolated points on an arc.
+        spherical_polygon_points: List of spherical points.
+        bbox: Current sphere octant bounding box.
+        se: SphereEllipsoid object.
+        max_step: Max step between interpolated points on an arc.
 
     Returns:
         Polygon: Mapped polygon in wgs84 crs.
@@ -206,8 +206,8 @@ def generate_voronoi_regions(
     SphericalVoronoi algorithm from scipy library.
 
     Args:
-        seeds (List[Point]): List of seeds used for generating regions.
-        max_meters_between_points (int): maximal distance between points
+        seeds: List of seeds used for generating regions.
+        max_meters_between_points: maximal distance between points
         during interpolation of two vertices on a sphere.
 
     Returns:

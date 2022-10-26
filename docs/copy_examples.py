@@ -11,7 +11,7 @@ def write_file(file_path: Path) -> None:
     Copies file from examples directory into mkdocs scope.
 
     Args:
-        file_path (Path): Current file path.
+        file_path: Current file path.
     """
     root_path = i.relative_to(".")
     print(f"Copying {root_path} file to {root_path}")

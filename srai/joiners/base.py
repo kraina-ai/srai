@@ -14,8 +14,8 @@ class BaseJoiner(abc.ABC):
         Join features to regions.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions: regions with which features are joined
+            features: features to be joined
         Returns:
             GeoDataFrame with the joined data
         """

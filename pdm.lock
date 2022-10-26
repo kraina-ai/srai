@@ -333,17 +333,6 @@ version = "0.0.3"
 summary = "GeoPandas API for Parquet file format."
 
 [[package]]
-name = "geovoronoi"
-version = "0.4.0"
-requires_python = ">=3.6"
-summary = "a package to create and plot Voronoi regions in geographic areas"
-dependencies = [
-    "numpy>=1.19.0",
-    "scipy>=1.5.0",
-    "shapely>=1.7.0",
-]
-
-[[package]]
 name = "ghp-import"
 version = "2.1.0"
 summary = "Copy your docs directly to the gh-pages branch."
@@ -1297,7 +1286,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.8"
 requires_python = ">=3.7"
-summary = "Pseudo terminal support for Windows from Python."
+summary = ""
 
 [[package]]
 name = "pyyaml"
@@ -1576,7 +1565,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:0009db42dd2d3c6d2d7212129c74eaeea224d3dc6683bb355d6a56518ce4574f"
+content_hash = "sha256:c60b4a11dcc85b7d27215f2c084dfeefa1864a59a77354937e3ba2a7039f048f"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2015,10 +2004,6 @@ content_hash = "sha256:0009db42dd2d3c6d2d7212129c74eaeea224d3dc6683bb355d6a56518
 "geoparquet 0.0.3" = [
     {url = "https://files.pythonhosted.org/packages/27/c3/3ffe3ddc783d3173fe87dbb213bc3b562dd31667662a5c12af100ac77524/geoparquet-0.0.3-py3-none-any.whl", hash = "sha256:6aaee13d802d02d73c14a981bc73482c0074a5af671557971187890070fc7da9"},
     {url = "https://files.pythonhosted.org/packages/89/61/6f4cd7d0dc97e08006a958a1db2889416c85a08afd0c9d0cafbb01083465/geoparquet-0.0.3.tar.gz", hash = "sha256:2968c0cd65fe5781abc057252e71bb364b5d18ecbf26c32d753a98df01196a65"},
-]
-"geovoronoi 0.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/47/9b/3fb8ea881921ad2868a2850193aa02b5d996a117df0fe1d4c5e2188d5595/geovoronoi-0.4.0.tar.gz", hash = "sha256:fdd890f39947c662d11cdf2dd4827617a746f1572cf92ffa818ac41154815f42"},
-    {url = "https://files.pythonhosted.org/packages/cc/da/9c5f78c5ac27d72877011211e4804e388ddf5087452c74dc455aebaeec02/geovoronoi-0.4.0-py3-none-any.whl", hash = "sha256:a0742379dc9bd63f6a4f193d2007a916a68d7b1e88b58fdbbfe9b78cc4392b04"},
 ]
 "ghp-import 2.1.0" = [
     {url = "https://files.pythonhosted.org/packages/d9/29/d40217cbe2f6b1359e00c6c307bb3fc876ba74068cbab3dde77f03ca0dc4/ghp-import-2.1.0.tar.gz", hash = "sha256:9c535c4c61193c2df8871222567d7fd7e5014d835f97dc7b7439069e2413d343"},

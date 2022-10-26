@@ -4,7 +4,7 @@ import pytest
 from shapely.geometry import Point, box
 
 from srai.regionizers import VoronoiRegionizer
-from srai.utils import merge_gdf_into_polygon
+from srai.utils import _merge_disjointed_gdf_geometries
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
 bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]})
@@ -63,4 +63,4 @@ def test_multiple_seeds_regions() -> None:
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     result_gdf = vr.transform(gdf=bbox_gdf)
     assert len(result_gdf.index) == 6
-    assert merge_gdf_into_polygon(result_gdf).difference(bbox).is_empty
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(bbox).is_empty

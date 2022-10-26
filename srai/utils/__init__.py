@@ -1,8 +1,8 @@
 """Utilities."""
 
-from .merge import merge_gdf_into_polygon, merge_polygons
+from .merge import _merge_disjointed_gdf_geometries, _merge_disjointed_polygons
 
 __all__ = [
-    "merge_gdf_into_polygon",
-    "merge_polygons",
+    "_merge_disjointed_gdf_geometries",
+    "_merge_disjointed_polygons",
 ]

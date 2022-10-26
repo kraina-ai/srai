@@ -12,7 +12,7 @@ def write_file(file_path: Path) -> None:
     Writes dummy file with reference to a module.
 
     Args:
-        file_path (Path): Current file path.
+        file_path: Current file path.
     """
     root_path = i.relative_to(MODULE_DIRECTORY_PATH)
     dst_path = (API_DIRECTORY_PATH / i.parts[-2]).with_suffix(".md")

@@ -17,7 +17,7 @@ class BaseRegionizer(abc.ABC):
         single region.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+            gdf: GeoDataFrame to be regionized.
 
         Returns:
             GeoDataFrame with the regionized data.
