@@ -4,5 +4,5 @@
   "python.linting.flake8Enabled": true,
   "python.linting.enabled": true,
   "python.linting.mypyEnabled": true,
-  "autoDocstring.docstringFormat": "google-notypes",
+  "autoDocstring.docstringFormat": "google",
 }

@@ -10,7 +10,11 @@ class BaseRegionizer(abc.ABC):
 
     @abc.abstractmethod
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """Regionize a given GeoDataFrame. This one should treat the input as a single region.
+        """
+        Regionize a given GeoDataFrame.
+
+        This one should treat the input as a
+        single region.
 
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
