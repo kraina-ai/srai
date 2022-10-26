@@ -14,7 +14,7 @@ class BaseEmbedder(abc.ABC):
         Embed a given GeoDataFrame.
 
         Args:
-            gdf: GeoDataFrame to be embedded.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be embedded.
 
         Returns:
             np.ndarray with embedding for each row.

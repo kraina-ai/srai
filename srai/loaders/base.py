@@ -16,8 +16,8 @@ class BaseLoader(abc.ABC):
         Load data for a given area.
 
         Args:
-            area: GeoDataFrame with the area of interest or a path
-            to a file with a geometry.
+            area (gdf.GeoDataFrame | Path): GeoDataFrame with the area of interest or a path
+                to a file with a geometry.
 
         Returns:
             GeoDataFrame with the downloaded data.

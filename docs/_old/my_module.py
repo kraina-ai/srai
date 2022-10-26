@@ -9,7 +9,7 @@ class MyClass:
         Print a greeting.
 
         Args:
-            name: The name of the person to greet.
+            name (str): The name of the person to greet.
         """
         print()
 

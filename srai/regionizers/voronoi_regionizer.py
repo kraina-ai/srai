@@ -29,8 +29,9 @@ class VoronoiRegionizer:
         because scipy function requires only points as an input.
 
         Args:
-            seeds: GeoDataFrame with seeds for creating a tessellation.
-            max_meters_between_points: Maximal distance in meters between two points
+            seeds (gpd.GeoDataFrame): GeoDataFrame with seeds for
+                creating a tessellation.
+            max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
 
         Raises:
@@ -61,9 +62,9 @@ class VoronoiRegionizer:
         using a Voronoi diagram on the sphere.
 
         Args:
-            gdf: GeoDataFrame to be regionized. Will use this list of geometries to crop
-            resulting regions. Pass a boundary box with bounds (-180, -90, 180, 90) to
-            return regions covering whole Earth.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized. Will use this list of geometries
+                to crop resulting regions. Pass a boundary box with bounds (-180, -90, 180, 90) to
+                return regions covering whole Earth.
 
         Returns:
             GeoDataFrame with the regionized data cropped using input GeoDataFrame.

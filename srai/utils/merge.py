@@ -13,7 +13,7 @@ def _merge_disjointed_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> 
     Input polygons are expected to be disjointed.
 
     Args:
-        polygons: List of polygons to merge
+        polygons (List[Union[Polygon, MultiPolygon]]): List of polygons to merge
 
     Returns:
         MultiPolygon: Merged polygon
@@ -34,7 +34,7 @@ def _merge_disjointed_gdf_geometries(gdf: gpd.GeoDataFrame) -> MultiPolygon:
     Input geometries are expected to be disjointed.
 
     Args:
-        gdf: GeoDataFrame with geometries to merge.
+        gdf (gpd.GeoDataFrame): GeoDataFrame with geometries to merge.
 
     Returns:
         MultiPolygon: Merged polygon
