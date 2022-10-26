@@ -12,16 +12,18 @@ from ._spherical_voronoi import generate_voronoi_regions
 
 
 class VoronoiRegionizer:
-    """A Voronoi regionizer."""
+    """
+    VoronoiRegionizer.
+
+    Voronoi [1] regionizer allows the given geometries to be divided into
+    Thiessen polygons using geometries that are the seeds. To minimize distortions
+    tessellation will be performed on a sphere using SphericalVoronoi [2] function
+    from scipy library.
+    """
 
     def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
         """
-        VoronoiRegionizer.
-
-        Voronoi [1] regionizer allows the given geometries to be divided into
-        Thiessen polygons using geometries that are the seeds. To minimize distortions
-        tessellation will be performed on a sphere using SphericalVoronoi [2] function
-        from scipy library.
+        Inits VoronoiRegionizer.
 
         All (multi)polygons from seeds GeoDataFrame will be transformed to their centroids,
         because scipy function requires only points as an input.
