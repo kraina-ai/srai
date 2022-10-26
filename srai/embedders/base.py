@@ -10,12 +10,14 @@ class BaseEmbedder(abc.ABC):
 
     @abc.abstractmethod
     def embed(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """Embed a given GeoDataFrame.
+        """
+        Embed a given GeoDataFrame.
 
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame to be embedded.
 
         Returns:
             np.ndarray with embedding for each row.
+
         """
         raise NotImplementedError

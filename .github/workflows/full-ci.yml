@@ -59,8 +59,10 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate requirements.txt
-        run: pdm export -G docs > requirements.txt
+        run: pdm export -d -G:all > requirements.txt
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Install geovoronoi dependency
+        run: pip install geovoronoi==0.4.0
       - name: Deploy documentation
         run: mkdocs gh-deploy --force

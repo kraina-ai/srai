@@ -13,6 +13,8 @@ dependencies = [
     "pydantic>=1.10.2",
     "geoparquet>=0.0.3",
     "pyfunctional>=1.4.3",
+    "rtree>=1.0.1",
+    "scipy>=1.9.3",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -22,7 +24,7 @@ license = { text = "Apache-2.0" }
 # pdm add -G osm <library>
 osm = ["osmium>=3.4.1"]
 # pdm add -G voronoi <library>
-voronoi = ["geovoronoi>=0.4.0", "voronoi-diagram-for-polygons>=0.1.2"]
+voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
@@ -42,6 +44,7 @@ lint = [
     "flake8-docstrings>=1.6.0",
     "isort~=5.10",
     "mypy~=0.982",
+    "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
 test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
@@ -53,11 +56,20 @@ docs = [
     "mkdocstrings[python]>=0.19.0",
     "mkdocs-jupyter>=0.22.0",
     "ipykernel>=6.16.0",
+    "mkdocs-gen-files>=0.4.0",
+    "mkdocs-awesome-pages-plugin>=2.8.0",
+]
+visualization = [
+    "keplergl>=0.3.2",
+    "matplotlib>=3.6.1",
+    "plotly>=5.10.0",
+    "kaleido==0.2.1",
 ]
 
 [tool.black]
 line-length = 100
 target-version = ["py38", "py39", "py310"]
+preview = true
 
 [tool.isort]
 profile = "black"
@@ -83,3 +95,18 @@ warn_return_any = true
 
 [tool.pydocstyle]
 convention = "google"
+add-select = ["D202", "D213"]
+add-ignore = ["D212"]
+
+[tool.docformatter]
+syntax = 'google'
+black = true
+recursive = true
+docstring-length = [60, 100]
+blank = false
+pre-summary-newline = true
+close-quotes-on-newline = true
+wrap-one-line = true
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]

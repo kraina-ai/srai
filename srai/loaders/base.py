@@ -12,13 +12,15 @@ class BaseLoader(abc.ABC):
 
     @abc.abstractmethod
     def load(self, area: Union[gpd.GeoDataFrame, Path]) -> gpd.GeoDataFrame:
-        """Load data for a given area.
+        """
+        Load data for a given area.
 
         Args:
             area (gdf.GeoDataFrame | Path): GeoDataFrame with the area of interest or a path
-            to a file with a geometry.
+                to a file with a geometry.
 
         Returns:
             GeoDataFrame with the downloaded data.
+
         """
         raise NotImplementedError
