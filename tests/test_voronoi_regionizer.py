@@ -27,7 +27,9 @@ def test_empty_gdf_value_error() -> None:
 def test_duplicate_seeds_value_error() -> None:
     """Test checks if duplicate points are disallowed."""
     with pytest.raises(ValueError):
-        seeds_gdf = gpd.GeoDataFrame({"geometry": [Point(0, 0), Point(0, 0)]}, index=[1, 2])
+        seeds_gdf = gpd.GeoDataFrame(
+            {"geometry": [Point(0, 0), Point(0, 0)]}, index=[1, 2], crs="EPSG:4326"
+        )
         VoronoiRegionizer(seeds=seeds_gdf)
 
 

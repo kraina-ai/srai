@@ -1,20 +1,30 @@
 site_name: Spatial Representations for Artificial Intelligence
-site_url: https://srai-lab.github.io/srai/
-# nav:
-#   - Home: index.md
-#   - About: about.md
-#   - Examples: examples
-#   - Api: api.md
-#   - Notebook: example.ipynb
-#   - Python File: my_module.py
-#   # - Usage: usage.md
+site_url: null
+
+repo_url: https://github.com/srai-lab/srai
+repo_name: srai-lab/srai
 
 theme:
   name: material
+  features:
+    - navigation.tabs
+    - navigation.tabs.stick
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - content.code.annotate
+  favicon: images/earth.svg
+  icon:
+    logo: material/earth
+    repo: material/github
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: orange
+      accent: light blue
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -22,9 +32,37 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: orange
+      accent: light blue
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+
+extra:
+  analytics:
+    provider: google
+    property: G-VDSV9JTGPD
+  consent:
+    title: Cookie consent
+    description: >-
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+    cookies:
+      github:
+        name: Github
+        checked: true
+      analytics:
+        name: Google Analytics
+        checked: true
+    actions:
+      - accept
+      - manage
+
+# Copyright &copy; 2022 - 2022 SRAI Lab –
+copyright: >
+  <a href="#__consent">Change cookie settings</a>
 
 plugins:
   - gen-files:
@@ -36,7 +74,7 @@ plugins:
   - mkdocs-jupyter:
       include: ["*.ipynb"]
       ignore_h1_titles: True
-      execute: True
+      execute: !ENV [MKDOCS_EXECUTE_JUPYTER, False]
       include_source: True
   - mermaid2
   - awesome-pages

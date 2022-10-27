@@ -21,7 +21,11 @@ class VoronoiRegionizer:
     minimize distortions tessellation will be performed on a sphere
     using SphericalVoronoi [2] function from scipy library.
 
-    """
+    References:
+        [1] https://en.wikipedia.org/wiki/Voronoi_diagram
+        [2] https://docs.scipy.org/doc/scipy-1.9.2/reference/generated/scipy.spatial.SphericalVoronoi.html
+
+    """  # noqa: W505, E501
 
     def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
         """
@@ -38,21 +42,20 @@ class VoronoiRegionizer:
 
         Raises:
             ValueError: If seeds are laying on a single arc.
+            ValueError: If any seed is duplicated.
+            ValueError: If provided seeds geodataframe has no crs defined.
 
-        References:
-            [1] https://en.wikipedia.org/wiki/Voronoi_diagram
-            [2] https://docs.scipy.org/doc/scipy-1.9.2/reference/generated/scipy.spatial.SphericalVoronoi.html
+        """
+        if len(seeds.index) == 0:
+            raise ValueError("Minimum one seed is required.")
 
-        """  # noqa: W505, E501
+        seeds_wgs84 = seeds.set_crs(epsg=4326)
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
-        for index, row in seeds.iterrows():
+        for index, row in seeds_wgs84.iterrows():
             self.region_ids.append(index)
             self.seeds.append(row.geometry.centroid)
-
-        if len(seeds) == 0:
-            raise ValueError("Minimum one seed is required.")
 
         if any(p1.equals(p2) for p1, p2 in combinations(self.seeds, r=2)):
             raise ValueError("Duplicate seeds present.")
@@ -72,10 +75,14 @@ class VoronoiRegionizer:
         Returns:
             GeoDataFrame with the regionized data cropped using input GeoDataFrame.
 
+        Raises:
+            ValueError: If provided geodataframe has no crs defined.
+
         """
+        gds_wgs84 = gdf.set_crs(epsg=4326)
         generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=4326
         )
-        clipped_regions_gdf = regions_gdf.clip(mask=gdf, keep_geom_type=False)
+        clipped_regions_gdf = regions_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
         return clipped_regions_gdf
