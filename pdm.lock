@@ -956,6 +956,12 @@ requires_python = ">=3.5"
 summary = "Patch asyncio to allow nested event loops"
 
 [[package]]
+name = "networkx"
+version = "2.8.7"
+requires_python = ">=3.8"
+summary = "Python package for creating and manipulating graphs and networks"
+
+[[package]]
 name = "nodeenv"
 version = "1.7.0"
 requires_python = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*"
@@ -1010,6 +1016,23 @@ requires_python = ">=3.6"
 summary = "Python bindings for libosmium, the data processing library for OSM data"
 dependencies = [
     "requests",
+]
+
+[[package]]
+name = "osmnx"
+version = "1.2.2"
+requires_python = ">=3.8"
+summary = "Retrieve, model, analyze, and visualize OpenStreetMap street networks and other spatial data"
+dependencies = [
+    "Rtree>=1.0",
+    "Shapely<2.0,>=1.8",
+    "geopandas>=0.11",
+    "matplotlib>=3.5",
+    "networkx>=2.8",
+    "numpy>=1.22",
+    "pandas>=1.4",
+    "pyproj>=3.3",
+    "requests>=2.28",
 ]
 
 [[package]]
@@ -1321,7 +1344,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.8"
 requires_python = ">=3.7"
-summary = ""
+summary = "Pseudo terminal support for Windows from Python."
 
 [[package]]
 name = "pyyaml"
@@ -2549,6 +2572,10 @@ content_hash = "sha256:55a41ea9e76d21f29b10cb1495265475e14d7e496ffda885e1354ef4f
     {url = "https://files.pythonhosted.org/packages/35/76/64c51c1cbe704ad79ef6ec82f232d1893b9365f2ff194111787dc91b004f/nest_asyncio-1.5.6.tar.gz", hash = "sha256:d267cc1ff794403f7df692964d1d2a3fa9418ffea2a3f6859a439ff482fef290"},
     {url = "https://files.pythonhosted.org/packages/e9/1a/6dd9ec31cfdb34cef8fea0055b593ee779a6f63c8e8038ad90d71b7f53c0/nest_asyncio-1.5.6-py3-none-any.whl", hash = "sha256:b9a953fb40dceaa587d109609098db21900182b16440652454a146cffb06e8b8"},
 ]
+"networkx 2.8.7" = [
+    {url = "https://files.pythonhosted.org/packages/9e/89/90846e0da5c412cbffb66d1f976b056cd46c6f2aa7f2f1eb271573b5fefb/networkx-2.8.7.tar.gz", hash = "sha256:815383fd52ece0a7024b5fd8408cc13a389ea350cd912178b82eed8b96f82cd3"},
+    {url = "https://files.pythonhosted.org/packages/d0/00/1713dd6735d5a646cabdd99ff750e969795134d7d33f462ad71dfd07fa76/networkx-2.8.7-py3-none-any.whl", hash = "sha256:15cdf7f7c157637107ea690cabbc488018f8256fa28242aed0fb24c93c03a06d"},
+]
 "nodeenv 1.7.0" = [
     {url = "https://files.pythonhosted.org/packages/96/a8/d3b5baead78adadacb99e7281b3e842126da825cf53df61688cfc8b8ff91/nodeenv-1.7.0-py2.py3-none-any.whl", hash = "sha256:27083a7b96a25f2f5e1d8cb4b6317ee8aeda3bdd121394e5ac54e498028a042e"},
     {url = "https://files.pythonhosted.org/packages/f3/9d/a28ecbd1721cd6c0ea65da6bfb2771d31c5d7e32d916a8f643b062530af3/nodeenv-1.7.0.tar.gz", hash = "sha256:e0e7f7dfb85fc5394c6fe1e8fa98131a2473e04311a45afb6508f7cf1836fa2b"},
@@ -2608,6 +2635,10 @@ content_hash = "sha256:55a41ea9e76d21f29b10cb1495265475e14d7e496ffda885e1354ef4f
     {url = "https://files.pythonhosted.org/packages/e7/90/26f3f1dca894c12931591b57b917d3f39b4750b5c879f9e99add0896a647/osmium-3.4.1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:76e8461ae68c5307f44eb407424b7dcfc7d0d8bb5b52283088d8f549c0d715ba"},
     {url = "https://files.pythonhosted.org/packages/ed/30/22fe6d11c4a58105c982e5a83148464f13c7c626b7395ccdc7cbc5472880/osmium-3.4.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7bf648744dadd3396040ed57332780272356fb4b87dbd17521ba9b8b91c6e665"},
     {url = "https://files.pythonhosted.org/packages/f6/8a/a97d4436b802ab20f606e695e63f6636985c5a6e4ae5117cd8a49c8c7a59/osmium-3.4.1-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:50a9c94c4856d81c11e68ff327b81d759311974d7fb67618cec3b15e32b7f4c1"},
+]
+"osmnx 1.2.2" = [
+    {url = "https://files.pythonhosted.org/packages/0b/39/5132e483efee609feedbb769ac0a9031785fec4181b0dbeb79614710b50c/osmnx-1.2.2-py2.py3-none-any.whl", hash = "sha256:94f2a3929e857d8c0da39ae552c6da3b1a3f4bcfea6de108696bda5ee3a7689d"},
+    {url = "https://files.pythonhosted.org/packages/da/93/2711a45fe7a9ea7d6498df61dde5e2bb4ac51fb74206c459cee2cdd29961/osmnx-1.2.2.tar.gz", hash = "sha256:30924452ca02758ece3301f9fcfb1b80edf31e2be7abe7fa7e0fefddb5050408"},
 ]
 "packaging 21.3" = [
     {url = "https://files.pythonhosted.org/packages/05/8e/8de486cbd03baba4deef4142bd643a3e7bbe954a784dc1bb17142572d127/packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},

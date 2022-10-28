@@ -23,7 +23,7 @@ license = { text = "Apache-2.0" }
 
 [project.optional-dependencies]
 # pdm add -G osm <library>
-osm = ["osmium>=3.4.1"]
+osm = ["osmium>=3.4.1", "osmnx>=1.2.2"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 
@@ -48,7 +48,11 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
+test = [
+    "pytest~=7.1",
+    "pytest-cov~=4.0",
+    "tox-pdm>=0.6.0",
+]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs>=1.4.0",
@@ -112,5 +116,7 @@ pre-summary-newline = true
 close-quotes-on-newline = true
 wrap-one-line = true
 
+
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
