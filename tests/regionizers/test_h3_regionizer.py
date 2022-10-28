@@ -3,7 +3,7 @@
 import osmnx as ox
 import pytest
 
-from srai.regionizers.h3_regionizer import H3Regionizer
+from srai.regionizers import H3Regionizer
 
 
 @pytest.mark.parametrize(  # type: ignore
