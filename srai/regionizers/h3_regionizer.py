@@ -36,18 +36,21 @@ class H3Regionizer:
         Init H3Regionizer.
 
         Args:
-            resolution (int): Size of the cells.
+            resolution (int): Resolution of the cells. See [1] for a full comparison.
             buffer (bool, optional): Whether to fully cover the geometries with
                 H3 Cells (visible on the borders).
                 Turn off for large geometries, as it's computationally expensive.
                 Defaults to True.
 
         Raises:
-            ValueError: If resolution is not within 0 <= resolution <= 15.
+            ValueError: If resolution is not between 0 and 15.
+
+        References:
+            [1] https://h3geo.org/docs/core-library/restable/
 
         """
         if not (0 <= resolution <= 15):
-            raise ValueError(f"Resolution {resolution} is not within 0 <= resolution <= 15.")
+            raise ValueError(f"Resolution {resolution} is not between 0 and 15.")
 
         self.resolution = resolution
         self.buffer = buffer
@@ -85,6 +88,23 @@ class H3Regionizer:
             return self._buffer(gdf_exploded, gdf_h3)
 
         return gdf_h3.to_crs(gdf.crs)
+
+    def _polygon_shapely_to_h3(self, polygon: geometry.Polygon) -> h3.Polygon:
+        """
+        Convert Shapely Polygon to H3 Polygon.
+
+        Args:
+            polygon (geometry.Polygon): Shapely polygon to be converted.
+
+        Returns:
+            h3.Polygon: Converted polygon.
+
+        """
+        exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
+        interiors = [
+            [coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors
+        ]
+        return h3.Polygon(exterior, *interiors)
 
     def _gdf_from_h3_indexes(self, h3_indexes: List[str]) -> gpd.GeoDataFrame:
         """
@@ -132,23 +152,6 @@ class H3Regionizer:
             shell=[coord[::-1] for coord in polygon.outer],
             holes=[[coord[::-1] for coord in hole] for hole in polygon.holes],
         )
-
-    def _polygon_shapely_to_h3(self, polygon: geometry.Polygon) -> h3.Polygon:
-        """
-        Convert Shapely Polygon to H3 Polygon.
-
-        Args:
-            polygon (geometry.Polygon): Shapely polygon to be converted.
-
-        Returns:
-            h3.Polygon: Converted polygon.
-
-        """
-        exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
-        interiors = [
-            [coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors
-        ]
-        return h3.Polygon(exterior, *interiors)
 
     def _buffer(self, gdf: gpd.GeoDataFrame, gdf_h3: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
