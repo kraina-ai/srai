@@ -20,7 +20,7 @@ theme:
     - navigation.indexes
     - toc.follow
     - content.code.annotate
-  favicon: images/earth.svg
+  favicon: assets/images/earth.svg
   icon:
     logo: material/earth
     repo: material/github
@@ -81,6 +81,11 @@ extra:
       - accept
       - manage
 
+extra_css:
+  - assets/css/jupyter.css
+extra_javascript:
+  - assets/js/code_expand_collapse.js
+
 # Copyright &copy; 2022 - 2022 SRAI Lab –
 copyright: >
   <a href="#__consent">Change cookie settings</a>
@@ -94,9 +99,9 @@ plugins:
   - mkdocstrings
   - mkdocs-jupyter:
       include: ["*.ipynb"]
-      ignore_h1_titles: True
-      execute: !ENV [MKDOCS_EXECUTE_JUPYTER, False]
-      include_source: True
+      ignore_h1_titles: true
+      execute: !ENV [MKDOCS_EXECUTE_JUPYTER, true]
+      include_source: true
   - mermaid2
   - awesome-pages
 
