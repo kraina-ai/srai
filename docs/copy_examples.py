@@ -21,5 +21,5 @@ def write_file(file_path: Path) -> None:
 
 
 for i in EXAMPLES_DIRECTORY_PATH.glob("**/*"):
-    if i.is_file():
+    if i.is_file() and "cache" not in i.parts:
         write_file(i)

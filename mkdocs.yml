@@ -6,6 +6,9 @@ repo_name: srai-lab/srai
 
 edit_uri: ""
 
+watch:
+  - examples
+
 theme:
   name: material
   features:
