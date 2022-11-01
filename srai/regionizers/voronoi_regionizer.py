@@ -6,8 +6,10 @@ This module contains voronoi regionizer implementation.
 """
 
 from itertools import combinations
+from typing import Optional
 
 import geopandas as gpd
+from shapely.geometry import box
 
 from ._spherical_voronoi import generate_voronoi_regions
 
@@ -36,20 +38,21 @@ class VoronoiRegionizer:
 
         Args:
             seeds (gpd.GeoDataFrame): GeoDataFrame with seeds for
-                creating a tessellation.
+                creating a tessellation. Minimum 4 seeds are required.
+                Seeds cannot lie on a single arc.
             max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
 
         Raises:
-            ValueError: If seeds are laying on a single arc.
             ValueError: If any seed is duplicated.
+            ValueError: If less than 4 seeds are provided.
             ValueError: If provided seeds geodataframe has no crs defined.
 
         """
-        if len(seeds.index) == 0:
-            raise ValueError("Minimum one seed is required.")
+        if len(seeds.index) < 4:
+            raise ValueError("Minimum 4 seeds are required.")
 
-        seeds_wgs84 = seeds.set_crs(epsg=4326)
+        seeds_wgs84 = seeds.to_crs(epsg=4326)
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
@@ -60,7 +63,7 @@ class VoronoiRegionizer:
         if any(p1.equals(p2) for p1, p2 in combinations(self.seeds, r=2)):
             raise ValueError("Duplicate seeds present.")
 
-    def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
         """
         Regionize a given GeoDataFrame.
 
@@ -68,9 +71,10 @@ class VoronoiRegionizer:
         using a Voronoi diagram on the sphere.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized. Will use this list of geometries
-                to crop resulting regions. Pass a boundary box with bounds (-180, -90, 180, 90) to
-                return regions covering whole Earth.
+            gdf (Optional[gpd.GeoDataFrame], optional): GeoDataFrame to be regionized.
+                Will use this list of geometries to crop resulting regions. If None, a boundary box
+                with bounds (-180, -90, 180, 90) is used to return regions covering whole Earth.
+                Defaults to None.
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with the regionized data cropped using input
@@ -78,9 +82,15 @@ class VoronoiRegionizer:
 
         Raises:
             ValueError: If provided geodataframe has no crs defined.
+            ValueError: If seeds are laying on a single arc.
 
         """
-        gds_wgs84 = gdf.set_crs(epsg=4326)
+        if gdf is None:
+            gdf = gpd.GeoDataFrame(
+                {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
+            )
+
+        gds_wgs84 = gdf.to_crs(epsg=4326)
         generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=4326
