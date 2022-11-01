@@ -220,9 +220,12 @@ def generate_voronoi_regions(
         List[MultiPolygon]: List of regions cut into up to 8 polygons based
         on 8 parts of a sphere.
 
+    Raises:
+        ValueError: If less than 4 seeds are provided.
+
     """
-    if len(seeds) == 1:
-        return [MultiPolygon([box(minx=-180, maxx=180, miny=-90, maxy=90)])]
+    if len(seeds) < 4:
+        raise ValueError("Minimum 4 seeds are required.")
 
     se = SphereEllipsoid()
     mapped_points = [map_to_geocentric(pt.x, pt.y, se) for pt in seeds]
@@ -230,7 +233,7 @@ def generate_voronoi_regions(
 
     radius = 1
     center = np.array([0, 0, 0])
-    sv = SphericalVoronoi(sphere_points, radius, center)
+    sv = SphericalVoronoi(sphere_points, radius, center, threshold=1e-8)
     sv.sort_vertices_of_regions()
 
     generated_regions: List[MultiPolygon] = []
