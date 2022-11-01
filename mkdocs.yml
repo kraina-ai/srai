@@ -83,8 +83,6 @@ extra:
 
 extra_css:
   - assets/css/jupyter.css
-extra_javascript:
-  - assets/js/code_expand_collapse.js
 
 # Copyright &copy; 2022 - 2022 SRAI Lab –
 copyright: >
@@ -100,8 +98,8 @@ plugins:
   - mkdocs-jupyter:
       include: ["*.ipynb"]
       ignore_h1_titles: true
-      execute: !ENV [MKDOCS_EXECUTE_JUPYTER, true]
-      include_source: true
+      execute: !ENV [MKDOCS_EXECUTE_JUPYTER, false]
+      include_source: false
   - mermaid2
   - awesome-pages
 

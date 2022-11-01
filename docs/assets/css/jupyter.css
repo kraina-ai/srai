@@ -8,7 +8,7 @@
 }
 
 .jp-OutputArea-prompt {
-  visibility: hidden; /* disable this to tune the position */
+  visibility: hidden;
   background-color: red;
   position: absolute;
   right: 0;
@@ -21,7 +21,6 @@
   text-align: left;
 }
 .jp-Cell-outputWrapper > .jp-Cell-outputCollapser {
-  /* background-color:red; */
   margin-top: -17px;
 }
 
@@ -36,4 +35,8 @@
 
 .jp-RenderedImage.jp-OutputArea-output {
   text-align: center;
+}
+
+.jupyter-wrapper .zeroclipboard-container {
+  z-index: 3 !important;
 }
