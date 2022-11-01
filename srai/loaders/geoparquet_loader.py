@@ -49,6 +49,9 @@ class GeoparquetLoader:
             gpd.GeoDataFrame: Loaded geoparquet file as a GeoDataFrame.
 
         """
+        if columns and "geometry" not in columns:
+            columns.append("geometry")
+
         gdf = gpd.read_parquet(path=file_path, columns=columns)
 
         if index_column:
@@ -58,7 +61,7 @@ class GeoparquetLoader:
 
         gdf.to_crs(epsg=4326, inplace=True)
 
-        if area:
+        if area is not None:
             area_wgs84 = area.to_crs(epsg=4326)
             gdf = gdf.clip(mask=area_wgs84, keep_geom_type=False)
 
