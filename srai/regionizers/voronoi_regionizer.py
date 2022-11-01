@@ -73,7 +73,8 @@ class VoronoiRegionizer:
                 return regions covering whole Earth.
 
         Returns:
-            GeoDataFrame with the regionized data cropped using input GeoDataFrame.
+            gpd.GeoDataFrame: GeoDataFrame with the regionized data cropped using input
+                GeoDataFrame.
 
         Raises:
             ValueError: If provided geodataframe has no crs defined.
