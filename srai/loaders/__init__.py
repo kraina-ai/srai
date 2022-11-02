@@ -1,5 +1,6 @@
 """Loaders."""
 
 from .base import BaseLoader
+from .geoparquet_loader import GeoparquetLoader
 
-__all__ = ["BaseLoader"]
+__all__ = ["BaseLoader", "GeoparquetLoader"]

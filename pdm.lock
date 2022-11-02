@@ -1157,6 +1157,15 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 summary = "library with cross-python path, ini-parsing, io, code, log facilities"
 
 [[package]]
+name = "pyarrow"
+version = "10.0.0"
+requires_python = ">=3.7"
+summary = "Python library for Apache Arrow"
+dependencies = [
+    "numpy>=1.16.6",
+]
+
+[[package]]
 name = "pycodestyle"
 version = "2.9.1"
 requires_python = ">=3.6"
@@ -1596,7 +1605,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:e8b217912e7e83b9d9fa116a9b7b7ba05c94af32bf227758a011e1ed32590a2d"
+content_hash = "sha256:55a41ea9e76d21f29b10cb1495265475e14d7e496ffda885e1354ef4fa75d891"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2794,6 +2803,30 @@ content_hash = "sha256:e8b217912e7e83b9d9fa116a9b7b7ba05c94af32bf227758a011e1ed3
 "py 1.11.0" = [
     {url = "https://files.pythonhosted.org/packages/98/ff/fec109ceb715d2a6b4c4a85a61af3b40c723a961e8828319fbcb15b868dc/py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
     {url = "https://files.pythonhosted.org/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
+]
+"pyarrow 10.0.0" = [
+    {url = "https://files.pythonhosted.org/packages/01/69/48421b3e41741b73b750d4db0c07dc950424c40f79c7b74892d2b5de4e58/pyarrow-10.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:d45a59e2f47826544c0ca70bc0f7ed8ffa5ad23f93b0458230c7e983bcad1acf"},
+    {url = "https://files.pythonhosted.org/packages/07/f7/ee422a76cd1ec6366326b701c8ee82c283f7432122135575e0a878eb09f8/pyarrow-10.0.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b45f969ed924282e9d4ede38f3430630d809c36dbff65452cabce03141943d28"},
+    {url = "https://files.pythonhosted.org/packages/1c/f0/4b41f7f0e84a5454886f02707f55423e1e2331f3a2019b39eae475029eb1/pyarrow-10.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:68ccb82c04c0f7abf7a95541d5e9d9d94290fc66a2d36d3f6ea0777f40c15654"},
+    {url = "https://files.pythonhosted.org/packages/3a/f1/3f754a2fb9c4c94d7c869b3575e1b3b95ae26c2bd17f90957ff87b5cec2e/pyarrow-10.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:758284e1ebd3f2a9abb30544bfec28d151a398bb7c0f2578cbca5ee5b000364a"},
+    {url = "https://files.pythonhosted.org/packages/40/b4/e7bbea26f2279155c1eea7f33e9275b788afdfba0680e08bfda5b347feff/pyarrow-10.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2d326a9d47ac237d81b8c4337e9d30a0b361835b536fc7ea53991455ce761fbd"},
+    {url = "https://files.pythonhosted.org/packages/43/08/d04893609c4eca5e50e93c52ce80b92c107a73d51999c0275121003c802a/pyarrow-10.0.0-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:69b8a1fd99201178799b02f18498633847109b701856ec762f314352a431b7d0"},
+    {url = "https://files.pythonhosted.org/packages/48/5a/5a52d6af126e6083b88cebd85a414a75c4a155f1f55f0bd87f61fad188ef/pyarrow-10.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c79300e1a3e23f2bf4defcf0d70ff5ea25ef6ebf6f121d8670ee14bb662bb7ca"},
+    {url = "https://files.pythonhosted.org/packages/53/31/2b288532660824e04e381aed72c6f66d6a2c166e59eac9e1c426914f7968/pyarrow-10.0.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:e4c6da9f9e1ff96781ee1478f7cc0860e66c23584887b8e297c4b9905c3c9066"},
+    {url = "https://files.pythonhosted.org/packages/54/76/776059807d8bac7833134fa0edac0aa44fd83a417c667ddc37404eff1e89/pyarrow-10.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:f76157d9579571c865860e5fd004537c03e21139db76692d96fd8a186adab1f2"},
+    {url = "https://files.pythonhosted.org/packages/5a/cd/fbb3a4dd82c4a776544cd75279bf36c2be1c4cd56aba13aa70fe32b912a5/pyarrow-10.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:4051664d354b14939b5da35cfa77821ade594bc1cf56dd2032b3068c96697d74"},
+    {url = "https://files.pythonhosted.org/packages/5e/44/aaad183397324863e5b483f8ea4ec974574ac3297e3efee22e2208a0455f/pyarrow-10.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:b3e3148468d3eed3779d68241f1d13ed4ee7cca4c6dbc7c07e5062b93ad4da33"},
+    {url = "https://files.pythonhosted.org/packages/5e/b4/b331c9c5df996bb918642295ede579ff0f4638a96698985aa793102e7056/pyarrow-10.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:25f51dca780fc22cfd7ac30f6bdfe70eb99145aee9acfda987f2c49955d66ed9"},
+    {url = "https://files.pythonhosted.org/packages/93/32/fbd9ab0ac47c89866e4bc241c890d16a32cc9ae95a47f166cdf25e38e914/pyarrow-10.0.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3d2694f08c8d4482d14e3798ff036dbd81ae6b1c47948f52515e1aa90fbec3f0"},
+    {url = "https://files.pythonhosted.org/packages/9e/64/8579ec4647dbcf755008a9af17e289b648c875aea62c2b8ed8efd0d0f693/pyarrow-10.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:7ce026274cd5d9934cd3694e89edecde4e036018bbc6cb735fd33b9e967e7d47"},
+    {url = "https://files.pythonhosted.org/packages/9f/85/7a6ffe7c40d7797639c94fca3075e7435801ee80dcd0fb6047170cd55963/pyarrow-10.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:f329951d56b3b943c353f7b27c894e02367a7efbb9fef7979c6b24e02dbfcf55"},
+    {url = "https://files.pythonhosted.org/packages/b5/73/1928f92f2f3567f7df2ad75588da2d3a5f52b44d7d0c03d43e111b05e8f6/pyarrow-10.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b9f63ceb8346aac0bcb487fafe9faca642ad448ca649fcf66a027c6e120cbc12"},
+    {url = "https://files.pythonhosted.org/packages/bd/3d/9594c09e1e2fe2e5ed7ef5c22e4347fee2ea243bccd960442e2c97731fd2/pyarrow-10.0.0.tar.gz", hash = "sha256:b153b05765393557716e3729cf988442b3ae4f5567364ded40d58c07feed27c2"},
+    {url = "https://files.pythonhosted.org/packages/d5/48/653247f1abca4da74afc36fa42ececd6ca3ca951b3919a6278c0efe4f924/pyarrow-10.0.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:65d4a312f3ced318423704355acaccc7f7bdfe242472e59bdd54aa0f8837adf8"},
+    {url = "https://files.pythonhosted.org/packages/dc/04/cbff70531860edc11a7d1b5f09e1f85cb4164e7bd2f4e3d1ff96112407b7/pyarrow-10.0.0-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:511735040b83f2993f78d7fb615e7b88253d75f41500e87e587c40156ff88120"},
+    {url = "https://files.pythonhosted.org/packages/ea/53/266925237044075c344f1ca0a86fb22e14125c3e6a21cdbdc1086d356edc/pyarrow-10.0.0-cp310-cp310-macosx_10_14_universal2.whl", hash = "sha256:10e031794d019425d34406edffe7e32157359e9455f9edb97a1732f8dabf802f"},
+    {url = "https://files.pythonhosted.org/packages/ea/55/ee0dee46d8bcfd0536c793b440f91d8bce4ae7378165beb85e495c0be85d/pyarrow-10.0.0-cp39-cp39-macosx_10_14_universal2.whl", hash = "sha256:7e6b837cc44cd62a0e280c8fc4de94ebce503d6d1190e6e94157ab49a8bea67b"},
+    {url = "https://files.pythonhosted.org/packages/ee/ef/cbd1bb65ea334582eea40f96fc39769c4b9e2be640f396e603e79100a0b5/pyarrow-10.0.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:7be7f42f713068293308c989a4a3a2de03b70199bdbe753901c6595ff8640c64"},
 ]
 "pycodestyle 2.9.1" = [
     {url = "https://files.pythonhosted.org/packages/67/e4/fc77f1039c34b3612c4867b69cbb2b8a4e569720b1f19b0637002ee03aff/pycodestyle-2.9.1-py2.py3-none-any.whl", hash = "sha256:d1735fc58b418fd7c5f658d28d943854f8a849b01a5d0a1e6f3f3fdd0166804b"},

@@ -15,6 +15,7 @@ dependencies = [
     "pyfunctional>=1.4.3",
     "rtree>=1.0.1",
     "scipy>=1.9.3",
+    "pyarrow>=10.0.0",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -102,7 +103,10 @@ add-ignore = ["D212"]
 syntax = 'google'
 black = true
 recursive = true
-docstring-length = [60, 100]
+wrap-summaries = 100
+wrap-descriptions = 100
+# force-wrap = false # uncomment after https://github.com/PyCQA/docformatter/issues/68 is resolved
+tab-width = 4
 blank = false
 pre-summary-newline = true
 close-quotes-on-newline = true
