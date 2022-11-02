@@ -1,8 +1,8 @@
 """
 Spherical voronoi utils.
 
-This module contains spherical voronoi implementation based on
-SphericalVoronoi function from scipy library.
+This module contains spherical voronoi implementation based on SphericalVoronoi function from scipy
+library.
 
 """
 
