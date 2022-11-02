@@ -31,15 +31,15 @@ class GeoparquetLoader:
         area: Optional[gpd.GeoDataFrame] = None,
     ) -> gpd.GeoDataFrame:
         """
-        Loads a geoparquet file.
+        Load a geoparquet file.
 
         Args:
             file_path (Union[Path, str]): parquet file path.
-            index_column (Optional[str], optional): Column that will be used as an index.
+            index_column (str, optional): Column that will be used as an index.
                 If not provided, automatic indexing will be applied by default. Defaults to None.
-            columns (Optional[List[str]], optional): List of columns to load.
+            columns (List[str], optional): List of columns to load.
                 If not provided, all will be loaded. Defaults to None.
-            area (Optional[gpd.GeoDataFrame], optional): Mask to clip loaded data.
+            area (gpd.GeoDataFrame, optional): Mask to clip loaded data.
                 If not provided, unaltered data will be returned. Defaults to None.
 
         Raises:
