@@ -5,32 +5,20 @@ This module contains intersection joiner implementation.
 
 """
 
-from dataclasses import dataclass
-
 import geopandas as gpd
 import pandas as pd
-
-
-@dataclass
-class JoinerResult:
-    """Joiner result dataclass."""
-
-    regions: gpd.GeoDataFrame
-    features: gpd.GeoDataFrame
-    joined: gpd.GeoDataFrame
 
 
 class IntersectionJoiner:
     """
     Intersection Joiner.
 
-    Intersection Joiner allows to join two GeoDataFrames and find all
-    overlapping geometries. It does not apply any grouping or
-    aggregation.
+    Intersection Joiner allows to join two GeoDataFrames and find all overlapping geometries. It
+    does not apply any grouping or aggregation.
 
     """
 
-    def join(self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame) -> JoinerResult:
+    def join(self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Join features to regions.
 
@@ -39,11 +27,8 @@ class IntersectionJoiner:
             features (gpd.GeoDataFrame): features to be joined
 
         Returns:
-            JoinerResult object, which contains 3 GeoDataFrames:
-            * original regions
-            * original features
-            * intersection of regions and features, which contains a MultiIndex and a geometry with
-              the intersection
+            GeoDataFrame with an intersection of regions and features, which contains
+            a MultiIndex and a geometry with the intersection
 
         """
         joined_parts = []
@@ -51,17 +36,13 @@ class IntersectionJoiner:
         for _, single in features.groupby(features["geometry"].geom_type):
             joined_parts.append(
                 gpd.overlay(
-                    single[["geometry"]].reset_index().rename(columns={"index": "features_id"}),
-                    regions[["geometry"]].reset_index().rename(columns={"index": "hex_id"}),
+                    single[["geometry"]].reset_index(names="feature_id"),
+                    regions[["geometry"]].reset_index(names="region_id"),
                     how="intersection",
                     keep_geom_type=False,
-                ).set_index(["hex_id", "features_id"])
+                ).set_index(["region_id", "feature_id"])
             )
 
-        joined = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=True))
+        joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
 
-        return JoinerResult(
-            regions=regions,
-            features=features,
-            joined=joined,
-        )
+        return joint

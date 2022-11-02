@@ -17,7 +17,8 @@ class BaseJoiner(abc.ABC):
             regions (gpd.GeoDataFrame): regions with which features are joined
             features (gpd.GeoDataFrame): features to be joined
         Returns:
-            GeoDataFrame with the joined data
+            GeoDataFrame with an intersection of regions and features, which contains
+            a MultiIndex and a geometry with the intersection
 
         """
         raise NotImplementedError
