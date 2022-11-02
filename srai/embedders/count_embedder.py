@@ -5,6 +5,7 @@ This module contains count embedder implementation.
 
 """
 import geopandas as gpd
+import pandas as pd
 
 
 class CountEmbedder:
@@ -23,16 +24,9 @@ class CountEmbedder:
             gpd.GeoDataFrame with embedding for each region.
 
         """
-        regions_geometry = regions_gdf[["geometry"]]
-        joint_features = joint.drop(columns="geometry")
-        joint_index_names = joint_features.index.names
-        joint_long = (
-            joint_features.reset_index()
-            .melt(id_vars=joint_index_names)
-            .dropna(axis=0)
-            .set_index(joint_index_names)
+        joint_with_features = joint.join(features_gdf.drop("geometry", axis=1))
+        region_embeddings = (
+            pd.get_dummies(joint_with_features.drop("geometry", axis=1)).groupby(level=0).sum()
         )
-        joint_long["val"] = joint_long["variable"] + "_" + joint_long["value"]
-        feature_counts = joint_long.groupby(level=0)["val"].value_counts().unstack(fill_value=0)
-        result = regions_geometry.join(feature_counts, how="left")
-        return result
+        result_gdf = regions_gdf.join(region_embeddings, how="left").fillna(0)
+        return result_gdf
