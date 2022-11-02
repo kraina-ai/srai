@@ -10,7 +10,7 @@ from srai.regionizers import H3Regionizer
     "geoname,resolution,buffer",
     [
         ("Wroclaw, Poland", 7, True),
-        ("Tokyo, Japan", 7, False),
+        ("Tokyo, Japan", 7, True),
         ("London, England", 7, True),
     ],
 )

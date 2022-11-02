@@ -17,7 +17,6 @@ from typing import List
 
 import geopandas as gpd
 import h3
-import pandas as pd
 from functional import seq
 from shapely import geometry
 
@@ -73,21 +72,28 @@ class H3Regionizer:
 
         """
         gdf_wgs84 = gdf.to_crs(epsg=4326)
+
         # transform multipolygons to multiple polygons
         gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
+        gdf_buffered = self._buffer(gdf_exploded) if self.buffer else gdf_exploded
 
         h3_indexes = (
-            seq(gdf_exploded["geometry"])
+            seq(gdf_buffered["geometry"])
             .map(self._polygon_shapely_to_h3)
             .flat_map(lambda polygon: h3.polygon_to_cells(polygon, self.resolution))
             .to_list()
         )
 
         gdf_h3 = self._gdf_from_h3_indexes(h3_indexes)
-        if self.buffer:
-            return self._buffer(gdf_exploded, gdf_h3)
 
-        return gdf_h3.to_crs(gdf.crs)
+        # there may be too many cells because of too big buffer
+        gdf_h3_clipped = (
+            gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right")
+            if self.buffer
+            else gdf_h3
+        )
+
+        return gdf_h3_clipped.to_crs(gdf.crs)
 
     def _polygon_shapely_to_h3(self, polygon: geometry.Polygon) -> h3.Polygon:
         """
@@ -153,42 +159,38 @@ class H3Regionizer:
             holes=[[coord[::-1] for coord in hole] for hole in polygon.holes],
         )
 
-    def _buffer(self, gdf: gpd.GeoDataFrame, gdf_h3: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def _buffer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Buffer H3 Cells to cover the entire geometries.
+        Buffer geometries to generate H3 cells that cover them entirely.
 
         Filling the geometries using h3.polygon_to_cells() with H3 cells does
-        not cover fully the geometries around the borders. To overcome this
-        the approach inspired by [1] is used with the difference, that the neighbouring
-        cells are found for all of the cells, not only the borders.
+        not cover fully the geometries around the borders, because some H3 cells' centers fall out
+        of the geometries. To overcome that a buffering is needed to incorporate these cells back.
+        Buffering is done in meters and is liberal, which means that performing
+        h3.polygon_to_cells() on new geometries results in H3 cells falling out of the geometries.
+        Spatial join with the original geometries is needed later to solve this issue.
 
         Notes:
-            This implementation is quite slow. There is an optimization possible to find
-            only the neighbours for the border cells. It was done that way however,
-            because it is hard to identify contiguous cells and handle this case correctly.
-
-            Other solutions are to buffer the geometries by some constant * edge length,
-            but that gives imprefect solutions due to different H3 cell edge lenghts across
-            the globe.
+            According to [1] the ratio between the biggest and smallest hexagons at a given
+            resolution is at maximum ~2. From that we can deduce, that the maximum edge length
+            ratio becomes t_max / t_min = sqrt(2). As we would like to buffer at least 1 edge length
+            regardless of the size, we need to multiply by at least sqrt(2).
 
         Args:
             gdf (gpd.GeoDataFrame): Geometries.
-            gdf_h3 (gpd.GeoDataFrame): H3 cells.
 
         Returns:
-            gpd.GeoDataFrame: A superset of original H3 cells with added cells on the borders.
+            gpd.GeoDataFrame: Geometries buffered around the edges.
 
         References:
-            [1] https://stackoverflow.com/a/62519680
+            [1] https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas
 
         """
-        h3_disk = seq(gdf_h3.index).map(h3.grid_disk).flatten().distinct().to_list()
-        gdf_h3_disk = self._gdf_from_h3_indexes(h3_disk)
-
-        gdf_h3_border = (
-            gdf_h3_disk.sjoin(gdf[["geometry"]], predicate="overlaps")
-            .drop(columns="index_right")
-            .drop_duplicates()
+        return gpd.GeoDataFrame(
+            geometry=(
+                gdf.to_crs(epsg=3395)
+                .buffer(2 * h3.average_hexagon_edge_length(self.resolution, unit="m"))
+                .to_crs(epsg=4326)
+            ),
+            index=gdf.index,
         )
-
-        return pd.concat([gdf_h3, gdf_h3_border], axis=0).drop_duplicates()
