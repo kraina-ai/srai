@@ -20,8 +20,10 @@ import h3
 from functional import seq
 from shapely import geometry
 
+from . import BaseRegionizer
 
-class H3Regionizer:
+
+class H3Regionizer(BaseRegionizer):
     """
     H3 Regionizer.
 
@@ -37,9 +39,7 @@ class H3Regionizer:
         Args:
             resolution (int): Resolution of the cells. See [1] for a full comparison.
             buffer (bool, optional): Whether to fully cover the geometries with
-                H3 Cells (visible on the borders).
-                Turn off for large geometries, as it's computationally expensive.
-                Defaults to True.
+                H3 Cells (visible on the borders). Defaults to True.
 
         Raises:
             ValueError: If resolution is not between 0 and 15.
@@ -168,8 +168,9 @@ class H3Regionizer:
         not cover fully the geometries around the borders, because some H3 cells' centers fall out
         of the geometries. To overcome that a buffering is needed to incorporate these cells back.
         Buffering is done in meters and is liberal, which means that performing
-        h3.polygon_to_cells() on new geometries results in H3 cells falling out of the geometries.
-        Spatial join with the original geometries is needed later to solve this issue.
+        h3.polygon_to_cells() on new geometries results in some H3 cells not intersecting with the
+        original geometries. Spatial join with the original geometries is needed later to solve
+        this issue.
 
         Notes:
             According to [1] the ratio between the biggest and smallest hexagons at a given
