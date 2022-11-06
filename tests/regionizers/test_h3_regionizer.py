@@ -34,6 +34,7 @@ def expected_h3_indexes() -> List[str]:
         ("gdf_empty", "gdf_empty", H3_RESOLUTION, pytest.raises(AttributeError)),
         ("gdf_polygons", "expected_h3_indexes", -1, pytest.raises(ValueError)),
         ("gdf_polygons", "expected_h3_indexes", 16, pytest.raises(ValueError)),
+        ("gdf_no_crs", "gdf_no_crs", H3_RESOLUTION, pytest.raises(ValueError)),
     ],
 )
 def test_transform(

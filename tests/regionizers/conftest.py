@@ -12,6 +12,24 @@ def gdf_empty() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
+def gdf_no_crs() -> gpd.GeoDataFrame:
+    """Get GeoDataFrame with no crs."""
+    return gpd.GeoDataFrame(
+        geometry=[
+            geometry.Polygon(
+                shell=[
+                    (-1, 0),
+                    (0, 0.5),
+                    (1, 0),
+                    (1, 1),
+                    (0, 1),
+                ]
+            )
+        ]
+    )
+
+
+@pytest.fixture  # type: ignore
 def gdf_polygons() -> gpd.GeoDataFrame:
     """Get GeoDataFrame with two polygons."""
     return gpd.GeoDataFrame(
