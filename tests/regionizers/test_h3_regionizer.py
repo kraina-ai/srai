@@ -44,7 +44,7 @@ def test_transform(
     expectation: Any,
     request: Any,
 ) -> None:
-    """Test data structure."""
+    """Test transform of H3Regionizer."""
     gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
     h3_indexes: List[str] = request.getfixturevalue(expected_h3_indexes_fixture)
     with expectation:
