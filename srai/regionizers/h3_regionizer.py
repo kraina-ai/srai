@@ -81,6 +81,7 @@ class H3Regionizer:
             seq(gdf_buffered["geometry"])
             .map(self._polygon_shapely_to_h3)
             .flat_map(lambda polygon: h3.polygon_to_cells(polygon, self.resolution))
+            .distinct()
             .to_list()
         )
 
@@ -88,7 +89,7 @@ class H3Regionizer:
 
         # there may be too many cells because of too big buffer
         gdf_h3_clipped = (
-            gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right")
+            gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right").drop_duplicates()
             if self.buffer
             else gdf_h3
         )
