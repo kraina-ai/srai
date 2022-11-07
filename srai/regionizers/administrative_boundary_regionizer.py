@@ -5,18 +5,16 @@ This module contains administrative boundary regionizer implementation.
 
 """
 
-# from itertools import combinations
-from typing import Optional, Union
+from typing import Union
 
 import geopandas as gpd
-
-# from ._spherical_voronoi import generate_voronoi_regions
 import osmnx as ox
+import topojson as tp
 from OSMPythonTools.overpass import Overpass, overpassQueryBuilder
-
-# from shapely.geometry import box
-
-# import osmnx.settings as oxs
+from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
+from shapely.validation import make_valid
 
 
 class AdministrativeBoundaryRegionizer:
@@ -24,79 +22,73 @@ class AdministrativeBoundaryRegionizer:
     AdministrativeBoundaryRegionizer.
 
     Administrative boundary regionizer allows the given geometries to be divided
-    into boundaries from OpenStreetMap [1] on a given `admin_level`.
+    into boundaries from OpenStreetMap on a given `admin_level` [1].
 
-    Can download those boundaries online using `osmnx` library or load it from downloaded `.pbf`
-    file.
+    Downloads those boundaries online using `OSMPythonTools` and `osmnx` library.
+
+    Note: offline .pbf loading will be implemented in the future.
 
     References:
-        [1] https://wiki.openstreetmap.org/wiki/Tag:boundary=administrative
+        [1] https://wiki.openstreetmap.org/wiki/Key:admin_level
 
     """
-
-    # https://wiki.openstreetmap.org/wiki/Key:admin_level
 
     def __init__(
         self,
         admin_level: int,
-        pbf_file_path: Optional[str] = None,
+        return_empty_region: bool = False,
         prioritize_english_name: bool = True,
-        toposimplify: Union[float, bool, None] = True,
+        toposimplify: Union[bool, float] = True,
     ) -> None:
         """
-        Inits VoronoiRegionizer.
-
-        TODO!!! All (multi)polygons from seeds GeoDataFrame will be transformed to their centroids,
-        because scipy function requires only points as an input.
+        Init AdministrativeBoundaryRegionizer.
 
         Args:
-            seeds (gpd.GeoDataFrame): GeoDataFrame with seeds for
-                creating a tessellation. Minimum 4 seeds are required.
-                Seeds cannot lie on a single arc.
-            max_meters_between_points (int): Maximal distance in meters between two points
-                in a resulting polygon. Higher number results lower resolution of a polygon.
+            admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of available values.
+            return_empty_region (bool, optional): Whether to return an empty region to fill remaining space or not. Defaults to False.
+            prioritize_english_name (bool, optional): Whether to use english area name if available as a region id first. Defaults to True.
+            toposimplify (Union[bool, float], optional): Whether to simplify topology to reduce geometries size or not. Value is passed to `topojson` library for topology-aware simplification. Defaults to True (which results in value equal 1e-4).
 
-        Raises:
-            ValueError: If any seed is duplicated.
-            ValueError: If less than 4 seeds are provided.
-            ValueError: If provided seeds geodataframe has no crs defined.
+        References:
+            [1] https://wiki.openstreetmap.org/wiki/Tag:boundary=administrative#10_admin_level_values_for_specific_countries
 
-        """
+        """  # noqa: W505, E501
         self.admin_level = admin_level
         self.prioritize_english_name = prioritize_english_name
+        self.return_empty_region = return_empty_region
 
         if isinstance(toposimplify, float):
             self.toposimplify = toposimplify
-        elif not toposimplify:
-            self.toposimplify = 0.0
         elif toposimplify:
-            self.toposimplify = 0.1
-        # self.tags = {"boundary": "administrative", "admin_level": str(admin_level)}
+            self.toposimplify = 1e-4
+        else:
+            self.toposimplify = False
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Regionize a given GeoDataFrame.
 
-        TODO!!! Returns a list of disjointed regions consisting of Thiessen cells generated
-        using a Voronoi diagram on the sphere.
+        Will query Overpass [1] server using `OSMPythonTools` [2] library for closed administrative
+        boundaries on a given admin_level and then download geometries for each relation using
+        `osmnx` [3] library.
 
         Args:
-            gdf (Optional[gpd.GeoDataFrame], optional): GeoDataFrame to be regionized.
-                Will use this list of geometries to crop resulting regions. If None, a boundary box
-                with bounds (-180, -90, 180, 90) is used to return regions covering whole Earth.
-                Defaults to None.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+                Will use this list of geometries to crop resulting regions.
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with the regionized data cropped using input
                 GeoDataFrame.
 
         Raises:
-            ValueError: If provided geodataframe has no crs defined.
-            ValueError: If seeds are laying on a single arc.
+            RuntimeError: If simplification can't preserve a topology.
+
+        References:
+            [1] https://wiki.openstreetmap.org/wiki/Overpass_API
+            [2] https://github.com/mocnik-science/osm-python-tools
+            [3] https://github.com/gboeing/osmnx
 
         """
-        # oxs.default_crs = "EPSG:4326"
-
         gds_wgs84 = gdf.to_crs(epsg=4326)
         raw_gdf_bounds = gds_wgs84.total_bounds
         overpass_bbox = (raw_gdf_bounds[1], raw_gdf_bounds[0], raw_gdf_bounds[3], raw_gdf_bounds[2])
@@ -108,18 +100,13 @@ class AdministrativeBoundaryRegionizer:
                 '"type"~"boundary|multipolygon"',
                 f'"admin_level"="{self.admin_level}"',
             ],
-            # out="body",
-            # out="ids",
             out="ids tags",
             includeGeometry=False,
         )
         overpass = Overpass()
         boundaries = overpass.query(query, timeout=60, shallow=False)
         regions_dicts = []
-        # relations_names = []
-        # relations = []
-        # total = boundaries.countRelations()
-        for idx, element in enumerate(boundaries.relations()):
+        for element in boundaries.relations():
             region_id = None
             if self.prioritize_english_name:
                 region_id = element.tag("name:en")
@@ -128,44 +115,52 @@ class AdministrativeBoundaryRegionizer:
             if not region_id:
                 region_id = str(element.id())
 
-            # relations_names.append(name)
-
-            # print(region_id, element.id(), idx + 1, total)
-            # multipolygon = _parse_relation_to_multipolygon(
-            #     element=element.to_json(), geometries=geometries
-            # )
-            # geometries[unique_id] = multipolygon
             regions_dicts.append(
                 {"geometry": self._get_boundary_geometry(element.id()), "region_id": region_id}
             )
-            # relations.append(f"R{element.areaId()}")
-            # relations.append(f"R{element.id()}")
-
-        # regions_gdf = (
-        #     ox.geocode_to_gdf(query=relations, by_osmid=True)
-        #     .set_crs(epsg=4326)
-        #     .set_index(relations_names)
-        # )
 
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
-        # gdf_bounds = box(
-        #     minx=raw_gdf_bounds[0],
-        #     miny=raw_gdf_bounds[1],
-        #     maxx=raw_gdf_bounds[2],
-        #     maxy=raw_gdf_bounds[3],
-        # )
-        # boundaries_gdf = ox.geometries_from_polygon(
-        #     polygon=gdf_bounds,
-        #     # west=gdf_bounds[0],
-        #     # south=gdf_bounds[1],
-        #     # east=gdf_bounds[2],
-        #     # north=gdf_bounds[3],
-        #     tags=self.tags,
-        # )  # N S E W
-        # clipped_regions_gdf = boundaries_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
-        # return clipped_regions_gdf
+        regions_gdf = self._toposimplify_gdf(regions_gdf)
+
         clipped_regions_gdf = regions_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
+
+        if self.return_empty_region:
+            empty_region = self._generate_empty_region(
+                mask=gds_wgs84, regions_gdf=clipped_regions_gdf
+            )
+            if not empty_region.is_empty:
+                clipped_regions_gdf.loc["EMPTY", "geometry"] = empty_region
         return clipped_regions_gdf
 
     def _get_boundary_geometry(self, relation_id: int) -> gpd.GeoDataFrame:
+        """Download a geometry of a relation using `osmnx` library."""
         return ox.geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
+
+    def _toposimplify_gdf(self, regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Create a topology to ensure proper boundaries between regions and simplify it."""
+        topo = tp.Topology(
+            regions_gdf,
+            prequantize=False,
+            presimplify=False,
+            toposimplify=self.toposimplify,
+            simplify_algorithm="dp",
+            prevent_oversimplify=True,
+        )
+        regions_gdf = topo.to_gdf(winding_order="CW_CCW", crs="EPSG:4326", validate=True)
+        regions_gdf.index.rename("region_id", inplace=True)
+        regions_gdf.geometry = regions_gdf.geometry.apply(make_valid)
+        for idx, r in regions_gdf.iterrows():
+            if not isinstance(r.geometry, (Polygon, MultiPolygon)):
+                raise RuntimeError(
+                    f"Simplification couldn't preserve geometry for region: {idx}."
+                    " Try lowering toposimplify value."
+                )
+        return regions_gdf
+
+    def _generate_empty_region(
+        self, mask: gpd.GeoDataFrame, regions_gdf: gpd.GeoDataFrame
+    ) -> BaseGeometry:
+        """Generate a region filling the space between regions and full clipping mask."""
+        joined_mask = unary_union(mask.geometry)
+        joined_geometry = unary_union(regions_gdf.geometry)
+        return joined_mask.difference(joined_geometry)
