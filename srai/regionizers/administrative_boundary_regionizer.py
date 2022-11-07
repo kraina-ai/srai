@@ -78,6 +78,10 @@ class AdministrativeBoundaryRegionizer:
         boundaries on a given admin_level and then download geometries for each relation using
         `osmnx` [3] library.
 
+        If `prioritize_english_name` is set to `True`, method will try to extract `name:en` tag
+        first before resorting to `name` tag. If boundary doesn't have a `name` tag, and `id`
+        will be used.
+
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
                 Will use this list of geometries to crop resulting regions.
