@@ -6,7 +6,7 @@ This module contains administrative boundary regionizer implementation.
 """
 
 # from itertools import combinations
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 
@@ -41,6 +41,7 @@ class AdministrativeBoundaryRegionizer:
         admin_level: int,
         pbf_file_path: Optional[str] = None,
         prioritize_english_name: bool = True,
+        toposimplify: Union[float, bool, None] = True,
     ) -> None:
         """
         Inits VoronoiRegionizer.
@@ -63,6 +64,13 @@ class AdministrativeBoundaryRegionizer:
         """
         self.admin_level = admin_level
         self.prioritize_english_name = prioritize_english_name
+
+        if isinstance(toposimplify, float):
+            self.toposimplify = toposimplify
+        elif not toposimplify:
+            self.toposimplify = 0.0
+        elif toposimplify:
+            self.toposimplify = 0.1
         # self.tags = {"boundary": "administrative", "admin_level": str(admin_level)}
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -100,15 +108,17 @@ class AdministrativeBoundaryRegionizer:
                 '"type"~"boundary|multipolygon"',
                 f'"admin_level"="{self.admin_level}"',
             ],
-            out="body",
-            includeGeometry=True,
+            # out="body",
+            # out="ids",
+            out="ids tags",
+            includeGeometry=False,
         )
         overpass = Overpass()
-        boundaries = overpass.query(query, timeout=60)
+        boundaries = overpass.query(query, timeout=60, shallow=False)
         regions_dicts = []
         # relations_names = []
         # relations = []
-        total = boundaries.countRelations()
+        # total = boundaries.countRelations()
         for idx, element in enumerate(boundaries.relations()):
             region_id = None
             if self.prioritize_english_name:
@@ -120,7 +130,7 @@ class AdministrativeBoundaryRegionizer:
 
             # relations_names.append(name)
 
-            print(region_id, element.id(), idx + 1, total)
+            # print(region_id, element.id(), idx + 1, total)
             # multipolygon = _parse_relation_to_multipolygon(
             #     element=element.to_json(), geometries=geometries
             # )
