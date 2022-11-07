@@ -95,5 +95,6 @@ class VoronoiRegionizer:
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=4326
         )
+        regions_gdf.index.rename("region_id", inplace=True)
         clipped_regions_gdf = regions_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
         return clipped_regions_gdf
