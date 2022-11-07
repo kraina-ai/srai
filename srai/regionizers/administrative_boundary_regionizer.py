@@ -44,10 +44,16 @@ class AdministrativeBoundaryRegionizer:
         Init AdministrativeBoundaryRegionizer.
 
         Args:
-            admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of available values.
-            return_empty_region (bool, optional): Whether to return an empty region to fill remaining space or not. Defaults to False.
-            prioritize_english_name (bool, optional): Whether to use english area name if available as a region id first. Defaults to True.
-            toposimplify (Union[bool, float], optional): Whether to simplify topology to reduce geometries size or not. Value is passed to `topojson` library for topology-aware simplification. Defaults to True (which results in value equal 1e-4).
+            admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of
+                available values.
+            return_empty_region (bool, optional): Whether to return an empty region to fill
+                remaining space or not. Defaults to False.
+            prioritize_english_name (bool, optional): Whether to use english area name if available
+                as a region id first. Defaults to True.
+            toposimplify (Union[bool, float], optional): Whether to simplify topology to reduce
+                geometries size or not. Value is passed to `topojson` library for topology-aware
+                simplification. Since provided values are treated like degrees, values between
+                1e-4 and 1.0 are recommended. Defaults to True (which results in value equal 1e-4).
 
         References:
             [1] https://wiki.openstreetmap.org/wiki/Tag:boundary=administrative#10_admin_level_values_for_specific_countries
