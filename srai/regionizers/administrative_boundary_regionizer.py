@@ -57,10 +57,18 @@ class AdministrativeBoundaryRegionizer:
                 simplification. Since provided values are treated like degrees, values between
                 1e-4 and 1.0 are recommended. Defaults to True (which results in value equal 1e-4).
 
+        Raises:
+            ValueError: If admin_level is outside available range (1-11). See [2] for list of
+                values with `in_wiki` selected.
+
         References:
             [1] https://wiki.openstreetmap.org/wiki/Tag:boundary=administrative#10_admin_level_values_for_specific_countries
+            [2] https://taginfo.openstreetmap.org/keys/admin_level#values
 
         """  # noqa: W505, E501
+        if admin_level < 1 or admin_level > 11:
+            raise ValueError("admin_level outside of available range.")
+
         self.admin_level = admin_level
         self.prioritize_english_name = prioritize_english_name
         self.return_empty_region = return_empty_region
