@@ -118,7 +118,9 @@ class AdministrativeBoundaryRegionizer:
 
         """
         gds_wgs84 = gdf.to_crs(epsg=4326)
-        raw_gdf_bounds = gds_wgs84.total_bounds
+        raw_gdf_bounds = (
+            gds_wgs84.total_bounds
+        )  # TODO: switch to loop over all geometries (simplify to polygons or base geometries)
         overpass_bbox = (raw_gdf_bounds[1], raw_gdf_bounds[0], raw_gdf_bounds[3], raw_gdf_bounds[2])
         query = overpassQueryBuilder(
             bbox=overpass_bbox,
