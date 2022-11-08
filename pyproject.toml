@@ -17,6 +17,7 @@ dependencies = [
     "scipy>=1.9.3",
     "pyarrow>=10.0.0",
     "topojson>=1.5",
+    "alive-progress>=2.4.1",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -66,6 +67,9 @@ visualization = [
     "matplotlib>=3.6.1",
     "plotly>=5.10.0",
     "kaleido==0.2.1",
+]
+performance = [
+    "scalene>=1.5.14",
 ]
 
 [tool.black]

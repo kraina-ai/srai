@@ -8,8 +8,9 @@ This module contains administrative boundary regionizer implementation.
 from typing import Union
 
 import geopandas as gpd
-import osmnx as ox
 import topojson as tp
+from alive_progress import alive_it
+from osmnx import geocode_to_gdf
 from OSMPythonTools.overpass import Overpass, overpassQueryBuilder
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
@@ -27,6 +28,7 @@ class AdministrativeBoundaryRegionizer:
     Downloads those boundaries online using `OSMPythonTools` and `osmnx` library.
 
     Note: offline .pbf loading will be implemented in the future.
+    Note: option to download historic data will be implemented in the future.
 
     References:
         [1] https://wiki.openstreetmap.org/wiki/Key:admin_level
@@ -78,9 +80,16 @@ class AdministrativeBoundaryRegionizer:
         boundaries on a given admin_level and then download geometries for each relation using
         `osmnx` [3] library.
 
-        If `prioritize_english_name` is set to `True`, method will try to extract `name:en` tag
-        first before resorting to `name` tag. If boundary doesn't have a `name` tag, and `id`
+        If `prioritize_english_name` is set to `True`, method will try to extract the `name:en` tag
+        first before resorting to the `name` tag. If boundary doesn't have a `name` tag, an `id`
         will be used.
+
+        Before returning downloaded regions, a topology is built and can be simplified to reduce
+        size of geometries while keeping neighbouring regions together without introducing gaps.
+        `Topojson` library [4] is used for this operation.
+
+        Additionally, an empty region with name `EMPTY` can be introduced if returned regions do
+        not fully cover a clipping mask.
 
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
@@ -97,6 +106,7 @@ class AdministrativeBoundaryRegionizer:
             [1] https://wiki.openstreetmap.org/wiki/Overpass_API
             [2] https://github.com/mocnik-science/osm-python-tools
             [3] https://github.com/gboeing/osmnx
+            [4] https://github.com/mattijn/topojson
 
         """
         gds_wgs84 = gdf.to_crs(epsg=4326)
@@ -116,7 +126,7 @@ class AdministrativeBoundaryRegionizer:
         overpass = Overpass()
         boundaries = overpass.query(query, timeout=60, shallow=False)
         regions_dicts = []
-        for element in boundaries.relations():
+        for element in alive_it(boundaries.relations(), force_tty=True, title="Loading boundaries"):
             region_id = None
             if self.prioritize_english_name:
                 region_id = element.tag("name:en")
@@ -144,7 +154,7 @@ class AdministrativeBoundaryRegionizer:
 
     def _get_boundary_geometry(self, relation_id: int) -> gpd.GeoDataFrame:
         """Download a geometry of a relation using `osmnx` library."""
-        return ox.geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
+        return geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
 
     def _toposimplify_gdf(self, regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Create a topology to ensure proper boundaries between regions and simplify it."""
