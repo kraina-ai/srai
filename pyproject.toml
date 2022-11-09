@@ -68,9 +68,7 @@ visualization = [
     "plotly>=5.10.0",
     "kaleido==0.2.1",
 ]
-performance = [
-    "scalene>=1.5.14",
-]
+performance = ["scalene>=1.5.14"]
 
 [tool.black]
 line-length = 100
