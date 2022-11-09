@@ -9,13 +9,13 @@ from typing import Union
 
 import geopandas as gpd
 import topojson as tp
-from alive_progress import alive_it
 from osmnx import geocode_to_gdf
 from OSMPythonTools.overpass import Overpass, overpassQueryBuilder
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
+from tqdm import tqdm
 
 
 class AdministrativeBoundaryRegionizer:
@@ -136,7 +136,7 @@ class AdministrativeBoundaryRegionizer:
         overpass = Overpass()
         boundaries = overpass.query(query, timeout=60, shallow=False)
         regions_dicts = []
-        for element in alive_it(boundaries.relations(), force_tty=True, title="Loading boundaries"):
+        for element in tqdm(boundaries.relations(), desc="Loading boundaries"):
             region_id = None
             if self.prioritize_english_name:
                 region_id = element.tag("name:en")

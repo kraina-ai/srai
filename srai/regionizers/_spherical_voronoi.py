@@ -11,12 +11,12 @@ from typing import List, Tuple
 
 import numpy as np
 import numpy.typing as npt
-from alive_progress import alive_it
 from haversine import haversine
 from pymap3d import Ellipsoid, ecef2geodetic, geodetic2ecef
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from shapely.geometry import MultiPolygon, Point, Polygon, box
 from spherical_geometry.polygon import SphericalPolygon
+from tqdm import tqdm
 
 # LON: 0; LAT: 0
 POINT_FRONT = (1.0, 0.0, 0.0)
@@ -32,28 +32,12 @@ POINT_LEFT = (0.0, -1.0, 0.0)
 POINT_RIGHT = (0.0, 1.0, 0.0)
 
 SPHERE_PARTS = [
-    # SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_RIGHT, POINT_FRONT]),
-    # SphericalPolygon([POINT_RIGHT, POINT_TOP, POINT_BACK, POINT_RIGHT]),
-    # SphericalPolygon([POINT_BACK, POINT_TOP, POINT_LEFT, POINT_BACK]),
-    # SphericalPolygon([POINT_LEFT, POINT_TOP, POINT_FRONT, POINT_LEFT]),
-    # SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BOTTOM, POINT_FRONT]),
-    # SphericalPolygon([POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_RIGHT]),
-    # SphericalPolygon([POINT_BACK, POINT_LEFT, POINT_BOTTOM, POINT_BACK]),
-    # SphericalPolygon([POINT_LEFT, POINT_FRONT, POINT_BOTTOM, POINT_LEFT]),
     SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
     SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
     SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
     SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
 ]
 SPHERE_PARTS_BOUNDING_BOXES = [
-    # box(minx=0, miny=0, maxx=90, maxy=90),
-    # box(minx=90, miny=0, maxx=180, maxy=90),
-    # box(minx=-180, miny=0, maxx=-90, maxy=90),
-    # box(minx=-90, miny=0, maxx=0, maxy=90),
-    # box(minx=0, miny=-90, maxx=90, maxy=0),
-    # box(minx=90, miny=-90, maxx=180, maxy=0),
-    # box(minx=-180, miny=-90, maxx=-90, maxy=0),
-    # box(minx=-90, miny=-90, maxx=0, maxy=0),
     box(minx=0, miny=0, maxx=180, maxy=90),
     box(minx=0, miny=-90, maxx=180, maxy=0),
     box(minx=-180, miny=-90, maxx=0, maxy=0),
@@ -247,7 +231,7 @@ def generate_voronoi_regions(
     sv.sort_vertices_of_regions()
 
     generated_regions: List[MultiPolygon] = []
-    for region in alive_it(sv.regions, force_tty=True, title="Generating regions"):
+    for region in tqdm(sv.regions, desc="Generating regions"):
         region_vertices = [v for v in sv.vertices[region]]
         sph_pol = SphericalPolygon(region_vertices)
         sphere_intersection_parts = []
