@@ -31,7 +31,7 @@ class VoronoiRegionizer:
 
     def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
         """
-        Inits VoronoiRegionizer.
+        Init VoronoiRegionizer.
 
         All (multi)polygons from seeds GeoDataFrame will be transformed to their centroids,
         because scipy function requires only points as an input.

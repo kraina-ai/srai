@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - mkdocs for documentation
 - GitHub pages to host documentation
 - initial requirements
+- H3 Regionizer
 
 ### Changed
 - pyrosm for pyosmium

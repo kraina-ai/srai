@@ -135,3 +135,6 @@ dmypy.json
 .vscode/**/*
 !.vscode/settings.json.default
 !.vscode/extensions.json
+
+# osmnx
+cache/
