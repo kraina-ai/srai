@@ -5,12 +5,12 @@ This module contains administrative boundary regionizer implementation.
 
 """
 
-from typing import Union
+from typing import Any, Dict, Union
 
 import geopandas as gpd
 import topojson as tp
 from osmnx import geocode_to_gdf
-from OSMPythonTools.overpass import Overpass, overpassQueryBuilder
+from OSMPythonTools.overpass import Element, Overpass, overpassQueryBuilder
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -135,19 +135,11 @@ class AdministrativeBoundaryRegionizer:
         )
         overpass = Overpass()
         boundaries = overpass.query(query, timeout=60, shallow=False)
-        regions_dicts = []
-        for element in tqdm(boundaries.relations(), desc="Loading boundaries"):
-            region_id = None
-            if self.prioritize_english_name:
-                region_id = element.tag("name:en")
-            if not region_id:
-                region_id = element.tag("name")
-            if not region_id:
-                region_id = str(element.id())
 
-            regions_dicts.append(
-                {"geometry": self._get_boundary_geometry(element.id()), "region_id": region_id}
-            )
+        regions_dicts = [
+            self._parse_overpass_element(element=element)
+            for element in tqdm(boundaries.relations(), desc="Loading boundaries")
+        ]
 
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
         regions_gdf = self._toposimplify_gdf(regions_gdf)
@@ -161,6 +153,21 @@ class AdministrativeBoundaryRegionizer:
             if not empty_region.is_empty:
                 clipped_regions_gdf.loc["EMPTY", "geometry"] = empty_region
         return clipped_regions_gdf
+
+    def _parse_overpass_element(self, element: Element) -> Dict[str, Any]:
+        """Parse single Overpass Element and return a region."""
+        region_id = None
+        if self.prioritize_english_name:
+            region_id = element.tag("name:en")
+        if not region_id:
+            region_id = element.tag("name")
+        if not region_id:
+            region_id = str(element.id())
+
+        return {
+            "geometry": self._get_boundary_geometry(element.id()).geometry[0],
+            "region_id": region_id,
+        }
 
     def _get_boundary_geometry(self, relation_id: int) -> gpd.GeoDataFrame:
         """Download a geometry of a relation using `osmnx` library."""
