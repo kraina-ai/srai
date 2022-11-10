@@ -28,7 +28,12 @@ class VoronoiRegionizer:
 
     """  # noqa: W505, E501
 
-    def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
+    def __init__(
+        self,
+        seeds: gpd.GeoDataFrame,
+        max_meters_between_points: int = 10_000,
+        allow_multiprocessing: bool = True,
+    ) -> None:
         """
         Init VoronoiRegionizer.
 
@@ -41,6 +46,8 @@ class VoronoiRegionizer:
                 Seeds cannot lie on a single arc. Empty seeds will be removed.
             max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
+            allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
+                accelerating the calculation for more than 100 seeds.
 
         Raises:
             ValueError: If any seed is duplicated.
@@ -55,6 +62,7 @@ class VoronoiRegionizer:
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
+        self.allow_multiprocessing = allow_multiprocessing
         for index, row in seeds_wgs84.iterrows():
             candidate_point = row.geometry.centroid
             if not candidate_point.is_empty:
@@ -92,7 +100,9 @@ class VoronoiRegionizer:
             )
 
         gds_wgs84 = gdf.to_crs(epsg=4326)
-        generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
+        generated_regions = generate_voronoi_regions(
+            self.seeds, self.max_meters_between_points, self.allow_multiprocessing
+        )
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=4326
         )
