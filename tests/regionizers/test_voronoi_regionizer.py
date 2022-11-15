@@ -1,27 +1,25 @@
 """Voronoi regionizer tests."""
+from typing import Any
+
 import geopandas as gpd
 import pytest
-from shapely.geometry import Point, box
+from shapely.geometry import Point
 
 from srai.regionizers import VoronoiRegionizer
 from srai.utils import _merge_disjointed_gdf_geometries
 
-bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
-bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs="EPSG:4326")
 
-
-def test_zero_seeds_value_error() -> None:
-    """Test checks if zero seeds is disallowed."""
-    with pytest.raises(ValueError):
-        seeds_gdf = gpd.GeoDataFrame({"geometry": []}, index=[])
-        VoronoiRegionizer(seeds=seeds_gdf)
-
-
-def test_empty_gdf_value_error() -> None:
+def test_empty_gdf_value_error(gdf_empty) -> None:  # type: ignore
     """Test checks if empty GeoDataFrames are disallowed."""
     with pytest.raises(ValueError):
-        seeds_gdf = gpd.GeoDataFrame()
-        VoronoiRegionizer(seeds=seeds_gdf)
+        VoronoiRegionizer(seeds=gdf_empty)
+
+
+def test_no_crs_gdf_value_error(gdf_earth_poles, gdf_no_crs) -> None:  # type: ignore
+    """Test checks if GeoDataFrames without crs are disallowed."""
+    with pytest.raises(ValueError):
+        vr = VoronoiRegionizer(seeds=gdf_earth_poles)
+        vr.transform(gdf=gdf_no_crs)
 
 
 def test_duplicate_seeds_value_error() -> None:
@@ -46,29 +44,17 @@ def test_single_seed_region() -> None:
         VoronoiRegionizer(seeds=seeds_gdf)
 
 
-def test_multiple_seeds_regions() -> None:
+def test_multiple_seeds_regions(  # type: ignore
+    gdf_earth_poles, gdf_earth_bbox, earth_bbox
+) -> None:
     """Test checks if regions are generated correctly."""
-    seeds_gdf = gpd.GeoDataFrame(
-        {
-            "geometry": [
-                Point(0, 0),
-                Point(90, 0),
-                Point(180, 0),
-                Point(-90, 0),
-                Point(0, 90),
-                Point(0, -90),
-            ]
-        },
-        index=[1, 2, 3, 4, 5, 6],
-        crs="EPSG:4326",
-    )
-    vr = VoronoiRegionizer(seeds=seeds_gdf)
-    result_gdf = vr.transform(gdf=bbox_gdf)
+    vr = VoronoiRegionizer(seeds=gdf_earth_poles)
+    result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 6
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(bbox).is_empty
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
-def test_four_close_seed_region() -> None:
+def test_four_close_seed_region(gdf_earth_bbox, earth_bbox) -> None:  # type: ignore
     """Test checks if four close seeds are properly evaluated."""
     seeds_gdf = gpd.GeoDataFrame(
         {
@@ -83,54 +69,34 @@ def test_four_close_seed_region() -> None:
         crs="EPSG:4326",
     )
     vr = VoronoiRegionizer(seeds=seeds_gdf)
-    result_gdf = vr.transform(gdf=bbox_gdf)
+    result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 4
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(bbox).is_empty
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
-def test_default_parameter() -> None:
+def test_default_parameter(gdf_earth_poles, earth_bbox) -> None:  # type: ignore
     """Test checks if regions are generated correctly with a default mask."""
-    seeds_gdf = gpd.GeoDataFrame(
-        {
-            "geometry": [
-                Point(0, 0),
-                Point(90, 0),
-                Point(180, 0),
-                Point(-90, 0),
-                Point(0, 90),
-                Point(0, -90),
-            ]
-        },
-        index=[1, 2, 3, 4, 5, 6],
-        crs="EPSG:4326",
-    )
-    vr = VoronoiRegionizer(seeds=seeds_gdf)
+    vr = VoronoiRegionizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
     assert len(result_gdf.index) == 6
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(bbox).is_empty
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
-def test_clipping_parameter() -> None:
+@pytest.mark.parametrize(  # type: ignore
+    "gdf_fixture",
+    [
+        "gdf_multipolygon",
+        "gdf_poland",
+        "gdf_earth_bbox",
+    ],
+)
+def test_clipping_parameter(
+    gdf_fixture: str,
+    request: Any,
+) -> None:
     """Test checks if regions are clipped correctly with a provided mask."""
-    world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-    area = world[world.name == "Poland"]
-    area = area.to_crs(epsg=4326)
-
-    seeds_gdf = gpd.GeoDataFrame(
-        {
-            "geometry": [
-                Point(0, 0),
-                Point(90, 0),
-                Point(180, 0),
-                Point(-90, 0),
-                Point(0, 90),
-                Point(0, -90),
-            ]
-        },
-        index=[1, 2, 3, 4, 5, 6],
-        crs="EPSG:4326",
-    )
-    vr = VoronoiRegionizer(seeds=seeds_gdf)
-    result_gdf = vr.transform(gdf=area)
-    assert len(result_gdf.index) == 1
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(area.iloc[0].geometry).is_empty
+    gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
+    gdf_earth_poles: gpd.GeoDataFrame = request.getfixturevalue("gdf_earth_poles")
+    vr = VoronoiRegionizer(seeds=gdf_earth_poles)
+    result_gdf = vr.transform(gdf=gdf)
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(gdf.iloc[0].geometry).is_empty

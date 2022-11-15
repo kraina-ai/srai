@@ -92,3 +92,42 @@ def gdf_multipolygon() -> gpd.GeoDataFrame:
         ],
         crs="epsg:4326",
     )
+
+
+@pytest.fixture  # type: ignore
+def gdf_earth_poles() -> gpd.GeoDataFrame:
+    """Get GeoDataFrame with 6 Earth poles."""
+    return gpd.GeoDataFrame(
+        {
+            "geometry": [
+                geometry.Point(0, 0),
+                geometry.Point(90, 0),
+                geometry.Point(180, 0),
+                geometry.Point(-90, 0),
+                geometry.Point(0, 90),
+                geometry.Point(0, -90),
+            ]
+        },
+        index=[1, 2, 3, 4, 5, 6],
+        crs="EPSG:4326",
+    )
+
+
+@pytest.fixture  # type: ignore
+def gdf_poland() -> gpd.GeoDataFrame:
+    """Get Poland GeoDataFrame."""
+    world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+    area = world[world.name == "Poland"]
+    return area
+
+
+@pytest.fixture  # type: ignore
+def earth_bbox() -> geometry.Polygon:
+    """Get full bounding box GeoDataFrame."""
+    return geometry.box(minx=-180, maxx=180, miny=-90, maxy=90)
+
+
+@pytest.fixture  # type: ignore
+def gdf_earth_bbox(earth_bbox) -> gpd.GeoDataFrame:
+    """Get full bounding box GeoDataFrame."""
+    return gpd.GeoDataFrame({"geometry": [earth_bbox]}, crs="EPSG:4326")
