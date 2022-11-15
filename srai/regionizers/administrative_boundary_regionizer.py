@@ -5,14 +5,14 @@ This module contains administrative boundary regionizer implementation.
 
 """
 
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import geopandas as gpd
 import topojson as tp
 from osmnx import geocode_to_gdf
 from OSMPythonTools.overpass import Element, Overpass, overpassQueryBuilder
-from shapely.geometry import MultiPolygon, Polygon
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
@@ -80,6 +80,8 @@ class AdministrativeBoundaryRegionizer:
         else:
             self.toposimplify = False
 
+        self.overpass = Overpass()
+
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Regionize a given GeoDataFrame.
@@ -117,10 +119,49 @@ class AdministrativeBoundaryRegionizer:
             [4] https://github.com/mattijn/topojson
 
         """
-        gds_wgs84 = gdf.to_crs(epsg=4326)
-        raw_gdf_bounds = (
-            gds_wgs84.total_bounds
-        )  # TODO: switch to loop over all geometries (simplify to polygons or base geometries)
+        gdf_wgs84 = gdf.to_crs(epsg=4326)
+
+        relations = self._query_all_geometries(gdf_wgs84)
+
+        regions_dicts = [
+            self._parse_overpass_element(element=element)
+            for element in tqdm(relations, desc="Loading boundaries")
+        ]
+
+        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
+        regions_gdf = self._toposimplify_gdf(regions_gdf)
+
+        clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
+
+        if self.return_empty_region:
+            empty_region = self._generate_empty_region(
+                mask=gdf_wgs84, regions_gdf=clipped_regions_gdf
+            )
+            if not empty_region.is_empty:
+                clipped_regions_gdf.loc["EMPTY", "geometry"] = empty_region
+        return clipped_regions_gdf
+
+    def _query_all_geometries(self, gdf_wgs84: gpd.GeoDataFrame) -> List[Element]:
+        elements = list()
+        elements_ids = set()
+
+        for g in tqdm(gdf_wgs84.geometry, desc="Querying relations"):
+            for element in self._query_single_geometry(g):
+                element_id = element.id()
+                if element_id not in elements_ids:
+                    elements_ids.add(element_id)
+                    elements.append(element)
+
+        return elements
+
+    def _query_single_geometry(self, g: BaseGeometry) -> List[Element]:
+        if isinstance(g, BaseMultipartGeometry):
+            return [e for sub_geom in g.geoms for e in self._query_single_geometry(sub_geom)]
+
+        raw_gdf_bounds = g.bounds
+        if isinstance(g, Point):
+            raw_gdf_bounds = g.buffer(1e-4).bounds
+
         overpass_bbox = (raw_gdf_bounds[1], raw_gdf_bounds[0], raw_gdf_bounds[3], raw_gdf_bounds[2])
         query = overpassQueryBuilder(
             bbox=overpass_bbox,
@@ -133,26 +174,8 @@ class AdministrativeBoundaryRegionizer:
             out="ids tags",
             includeGeometry=False,
         )
-        overpass = Overpass()
-        boundaries = overpass.query(query, timeout=60, shallow=False)
-
-        regions_dicts = [
-            self._parse_overpass_element(element=element)
-            for element in tqdm(boundaries.relations(), desc="Loading boundaries")
-        ]
-
-        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
-        regions_gdf = self._toposimplify_gdf(regions_gdf)
-
-        clipped_regions_gdf = regions_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
-
-        if self.return_empty_region:
-            empty_region = self._generate_empty_region(
-                mask=gds_wgs84, regions_gdf=clipped_regions_gdf
-            )
-            if not empty_region.is_empty:
-                clipped_regions_gdf.loc["EMPTY", "geometry"] = empty_region
-        return clipped_regions_gdf
+        boundaries = self.overpass.query(query, timeout=60, shallow=False)
+        return list(boundaries.relations()) if boundaries.relations() else []
 
     def _parse_overpass_element(self, element: Element) -> Dict[str, Any]:
         """Parse single Overpass Element and return a region."""
@@ -165,11 +188,11 @@ class AdministrativeBoundaryRegionizer:
             region_id = str(element.id())
 
         return {
-            "geometry": self._get_boundary_geometry(element.id()).geometry[0],
+            "geometry": self._get_boundary_geometry(element.id()),
             "region_id": region_id,
         }
 
-    def _get_boundary_geometry(self, relation_id: int) -> gpd.GeoDataFrame:
+    def _get_boundary_geometry(self, relation_id: int) -> BaseGeometry:
         """Download a geometry of a relation using `osmnx` library."""
         return geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
 
