@@ -144,6 +144,7 @@ class AdministrativeBoundaryRegionizer:
     def _generate_regions_from_all_geometries(
         self, gdf_wgs84: gpd.GeoDataFrame
     ) -> List[Dict[str, Any]]:
+        """Query and optimize downloading data from Overpass."""
         elements_ids = set()
         generated_regions: List[Dict[str, Any]] = list()
 
@@ -165,6 +166,7 @@ class AdministrativeBoundaryRegionizer:
         return generated_regions
 
     def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
+        """Flatten all geometries into a list of BaseGeometries."""
         if isinstance(g, BaseMultipartGeometry):
             return list(
                 seq([self._flatten_geometries(sub_geom) for sub_geom in g.geoms]).flatten().list()
@@ -172,6 +174,7 @@ class AdministrativeBoundaryRegionizer:
         return [g]
 
     def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
+        """Generate Overpass query for a geometry."""
         if isinstance(g, Point):
             query = (
                 f"is_in({g.y},{g.x});"
