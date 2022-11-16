@@ -55,17 +55,17 @@ class CountEmbedder:
             pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
 
         """
-        regions_df = self._remove_geometry_if_present(regions_gdf)
-        features_df = self._remove_geometry_if_present(features_gdf)
-        joint_df = self._remove_geometry_if_present(joint_gdf)
-
-        if features_df.empty or joint_df.empty:
+        if features_gdf.empty or joint_gdf.empty:
             if self.expected_output_features is not None:
                 return pd.DataFrame(
-                    0, index=regions_df.index, columns=self.expected_output_features
+                    0, index=regions_gdf.index, columns=self.expected_output_features
                 )
             else:
                 return pd.DataFrame()
+
+        regions_df = self._remove_geometry_if_present(regions_gdf)
+        features_df = self._remove_geometry_if_present(features_gdf)
+        joint_df = self._remove_geometry_if_present(joint_gdf)
 
         joint_with_features = joint_df.join(features_df)
         region_embeddings = pd.get_dummies(joint_with_features).groupby(level=0).sum()
