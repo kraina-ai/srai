@@ -1,4 +1,4 @@
-site_name: Spatial Representations for Artificial Intelligence
+site_name: srai
 site_url: null
 
 repo_url: https://github.com/srai-lab/srai
@@ -20,16 +20,16 @@ theme:
     - navigation.indexes
     - toc.follow
     - content.code.annotate
-  favicon: assets/images/earth.svg
+  favicon: assets/logos/favicon.ico
+  logo: assets/logos/srai-logo-symbol.svg
   icon:
-    logo: material/earth
     repo: material/github
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: orange
-      accent: light blue
+      primary: white
+      accent: deep orange
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
@@ -37,8 +37,8 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: orange
-      accent: light blue
+      primary: white
+      accent: orange
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -82,6 +82,8 @@ extra:
       - manage
 
 extra_css:
+  - assets/css/font.css
+  - assets/css/palette.css
   - assets/css/jupyter.css
 
 # Copyright &copy; 2022 - 2022 SRAI Lab –
@@ -104,6 +106,8 @@ plugins:
   - awesome-pages
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
