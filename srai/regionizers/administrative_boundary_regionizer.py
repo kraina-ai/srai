@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Union
 
 import geopandas as gpd
 import topojson as tp
+from functional import seq
 from osmnx import geocode_to_gdf
 from OSMPythonTools.overpass import Element, Overpass, overpassQueryBuilder
 from shapely.geometry import MultiPolygon, Point, Polygon
@@ -38,6 +39,7 @@ class AdministrativeBoundaryRegionizer:
     def __init__(
         self,
         admin_level: int,
+        clip_regions: bool = True,
         return_empty_region: bool = False,
         prioritize_english_name: bool = True,
         toposimplify: Union[bool, float] = True,
@@ -48,6 +50,9 @@ class AdministrativeBoundaryRegionizer:
         Args:
             admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of
                 available values.
+            clip_regions (bool, optional): Whether to to clip regions using a provided mask.
+                Turning it off can an be useful when trying to load regions using list a of points.
+                Defaults to True.
             return_empty_region (bool, optional): Whether to return an empty region to fill
                 remaining space or not. Defaults to False.
             prioritize_english_name (bool, optional): Whether to use english area name if available
@@ -71,6 +76,7 @@ class AdministrativeBoundaryRegionizer:
 
         self.admin_level = admin_level
         self.prioritize_english_name = prioritize_english_name
+        self.clip_regions = clip_regions
         self.return_empty_region = return_empty_region
 
         if isinstance(toposimplify, float):
@@ -121,61 +127,79 @@ class AdministrativeBoundaryRegionizer:
         """
         gdf_wgs84 = gdf.to_crs(epsg=4326)
 
-        relations = self._query_all_geometries(gdf_wgs84)
-
-        regions_dicts = [
-            self._parse_overpass_element(element=element)
-            for element in tqdm(relations, desc="Loading boundaries")
-        ]
+        regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
-        clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
+        if self.clip_regions:
+            regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
 
         if self.return_empty_region:
-            empty_region = self._generate_empty_region(
-                mask=gdf_wgs84, regions_gdf=clipped_regions_gdf
-            )
+            empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
-                clipped_regions_gdf.loc["EMPTY", "geometry"] = empty_region
-        return clipped_regions_gdf
+                regions_gdf.loc["EMPTY", "geometry"] = empty_region
+        return regions_gdf
 
-    def _query_all_geometries(self, gdf_wgs84: gpd.GeoDataFrame) -> List[Element]:
-        elements = list()
+    def _generate_regions_from_all_geometries(
+        self, gdf_wgs84: gpd.GeoDataFrame
+    ) -> List[Dict[str, Any]]:
         elements_ids = set()
+        generated_regions: List[Dict[str, Any]] = list()
 
-        for g in tqdm(gdf_wgs84.geometry, desc="Querying relations"):
-            for element in self._query_single_geometry(g):
-                element_id = element.id()
-                if element_id not in elements_ids:
-                    elements_ids.add(element_id)
-                    elements.append(element)
-
-        return elements
-
-    def _query_single_geometry(self, g: BaseGeometry) -> List[Element]:
-        if isinstance(g, BaseMultipartGeometry):
-            return [e for sub_geom in g.geoms for e in self._query_single_geometry(sub_geom)]
-
-        raw_gdf_bounds = g.bounds
-        if isinstance(g, Point):
-            raw_gdf_bounds = g.buffer(1e-4).bounds
-
-        overpass_bbox = (raw_gdf_bounds[1], raw_gdf_bounds[0], raw_gdf_bounds[3], raw_gdf_bounds[2])
-        query = overpassQueryBuilder(
-            bbox=overpass_bbox,
-            elementType="relation",
-            selector=[
-                '"boundary"="administrative"',
-                '"type"~"boundary|multipolygon"',
-                f'"admin_level"="{self.admin_level}"',
-            ],
-            out="ids tags",
-            includeGeometry=False,
+        all_geometries = (
+            seq([self._flatten_geometries(g) for g in gdf_wgs84.geometry]).flatten().list()
         )
-        boundaries = self.overpass.query(query, timeout=60, shallow=False)
-        return list(boundaries.relations()) if boundaries.relations() else []
+
+        for geometry in tqdm(all_geometries, desc="Loading boundaries"):
+            unary_geometry = unary_union([r["geometry"] for r in generated_regions])
+            if not geometry.within(unary_geometry):
+                query = self._generate_query_for_single_geometry(geometry)
+                boundaries = self.overpass.query(query, timeout=60, shallow=False)
+                boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
+                for boundary in boundaries_list:
+                    if boundary.id() not in elements_ids:
+                        elements_ids.add(boundary.id())
+                        generated_regions.append(self._parse_overpass_element(boundary))
+
+        return generated_regions
+
+    def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
+        if isinstance(g, BaseMultipartGeometry):
+            return list(
+                seq([self._flatten_geometries(sub_geom) for sub_geom in g.geoms]).flatten().list()
+            )
+        return [g]
+
+    def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
+        if isinstance(g, Point):
+            query = (
+                f"is_in({g.y},{g.x});"
+                'area._["boundary"="administrative"]'
+                '["type"~"boundary|multipolygon"]'
+                f'["admin_level"="{self.admin_level}"];'
+                "relation(pivot); out ids tags;"
+            )
+        else:
+            raw_gdf_bounds = g.bounds
+            overpass_bbox = (
+                raw_gdf_bounds[1],
+                raw_gdf_bounds[0],
+                raw_gdf_bounds[3],
+                raw_gdf_bounds[2],
+            )
+            query = overpassQueryBuilder(
+                bbox=overpass_bbox,
+                elementType="relation",
+                selector=[
+                    '"boundary"="administrative"',
+                    '"type"~"boundary|multipolygon"',
+                    f'"admin_level"="{self.admin_level}"',
+                ],
+                out="ids tags",
+                includeGeometry=False,
+            )
+        return query
 
     def _parse_overpass_element(self, element: Element) -> Dict[str, Any]:
         """Parse single Overpass Element and return a region."""
