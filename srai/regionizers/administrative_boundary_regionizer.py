@@ -152,16 +152,18 @@ class AdministrativeBoundaryRegionizer:
             seq([self._flatten_geometries(g) for g in gdf_wgs84.geometry]).flatten().list()
         )
 
-        for geometry in tqdm(all_geometries, desc="Loading boundaries"):
-            unary_geometry = unary_union([r["geometry"] for r in generated_regions])
-            if not geometry.within(unary_geometry):
-                query = self._generate_query_for_single_geometry(geometry)
-                boundaries = self.overpass.query(query, timeout=60, shallow=False)
-                boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
-                for boundary in boundaries_list:
-                    if boundary.id() not in elements_ids:
-                        elements_ids.add(boundary.id())
-                        generated_regions.append(self._parse_overpass_element(boundary))
+        with tqdm(desc="Loading boundaries") as pbar:
+            for geometry in all_geometries:
+                unary_geometry = unary_union([r["geometry"] for r in generated_regions])
+                if not geometry.within(unary_geometry):
+                    query = self._generate_query_for_single_geometry(geometry)
+                    boundaries = self.overpass.query(query, timeout=60, shallow=False)
+                    boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
+                    for boundary in boundaries_list:
+                        if boundary.id() not in elements_ids:
+                            elements_ids.add(boundary.id())
+                            generated_regions.append(self._parse_overpass_element(boundary))
+                            pbar.update(1)
 
         return generated_regions
 
