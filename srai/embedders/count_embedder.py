@@ -34,7 +34,7 @@ class CountEmbedder:
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-    ) -> gpd.GeoDataFrame:
+    ) -> pd.DataFrame:
         """
         Embed a given GeoDataFrame.
 
@@ -52,33 +52,29 @@ class CountEmbedder:
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
 
         Returns:
-            gpd.GeoDataFrame: Embedding and geometry for each region in regions_gdf.
+            pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
 
         """
-        joint_with_features = joint_gdf.join(features_gdf.drop("geometry", axis=1))
-        region_embeddings = (
-            pd.get_dummies(joint_with_features.drop("geometry", axis=1)).groupby(level=0).sum()
-        )
-        region_embeddings = self._maybe_filter_to_expected_features(region_embeddings)
-        region_embedding_gdf = regions_gdf.join(region_embeddings, how="left").fillna(0)
+        regions_df = self._remove_geometry_if_present(regions_gdf)
+        features_df = self._remove_geometry_if_present(features_gdf)
+        joint_df = self._remove_geometry_if_present(joint_gdf)
 
-        return region_embedding_gdf
+        if features_df.empty or joint_df.empty:
+            if self.expected_output_features is not None:
+                return pd.DataFrame(
+                    0, index=regions_df.index, columns=self.expected_output_features
+                )
+            else:
+                return pd.DataFrame()
 
-    def _maybe_filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
-        """
-        Filter columns if expected_output_features provided.
+        joint_with_features = joint_df.join(features_df)
+        region_embeddings = pd.get_dummies(joint_with_features).groupby(level=0).sum()
 
-        Args:
-            region_embeddings (pd.DataFrame): Counted frequencies of each feature value.
-
-        Returns:
-            pd.DataFrame: region_embeddings either unchanged
-                or with expected columns only.
-
-        """
         if self.expected_output_features is not None:
-            return self._filter_to_expected_features(region_embeddings)
-        return region_embeddings
+            region_embeddings = self._filter_to_expected_features(region_embeddings)
+        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0)
+
+        return region_embedding_df
 
     def _filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
         """
@@ -97,3 +93,8 @@ class CountEmbedder:
         region_embeddings[missing_features] = 0
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings
+
+    def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
+        if "geometry" in data.columns:
+            data = data.drop(columns="geometry")
+        return pd.DataFrame(data)
