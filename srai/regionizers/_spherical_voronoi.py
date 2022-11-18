@@ -6,7 +6,9 @@ library.
 
 """
 
+from functools import partial
 from math import ceil, sqrt
+from multiprocessing import cpu_count
 from typing import List, Tuple
 
 import numpy as np
@@ -16,6 +18,8 @@ from pymap3d import Ellipsoid, ecef2geodetic, geodetic2ecef
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from shapely.geometry import MultiPolygon, Point, Polygon, box
 from spherical_geometry.polygon import SphericalPolygon
+from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 # LON: 0; LAT: 0
 POINT_FRONT = (1.0, 0.0, 0.0)
@@ -31,24 +35,16 @@ POINT_LEFT = (0.0, -1.0, 0.0)
 POINT_RIGHT = (0.0, 1.0, 0.0)
 
 SPHERE_PARTS = [
-    SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_RIGHT, POINT_FRONT]),
-    SphericalPolygon([POINT_RIGHT, POINT_TOP, POINT_BACK, POINT_RIGHT]),
-    SphericalPolygon([POINT_BACK, POINT_TOP, POINT_LEFT, POINT_BACK]),
-    SphericalPolygon([POINT_LEFT, POINT_TOP, POINT_FRONT, POINT_LEFT]),
-    SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BOTTOM, POINT_FRONT]),
-    SphericalPolygon([POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_RIGHT]),
-    SphericalPolygon([POINT_BACK, POINT_LEFT, POINT_BOTTOM, POINT_BACK]),
-    SphericalPolygon([POINT_LEFT, POINT_FRONT, POINT_BOTTOM, POINT_LEFT]),
+    SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
+    SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
+    SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
+    SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
 ]
 SPHERE_PARTS_BOUNDING_BOXES = [
-    box(minx=0, miny=0, maxx=90, maxy=90),
-    box(minx=90, miny=0, maxx=180, maxy=90),
-    box(minx=-180, miny=0, maxx=-90, maxy=90),
-    box(minx=-90, miny=0, maxx=0, maxy=90),
-    box(minx=0, miny=-90, maxx=90, maxy=0),
-    box(minx=90, miny=-90, maxx=180, maxy=0),
-    box(minx=-180, miny=-90, maxx=-90, maxy=0),
-    box(minx=-90, miny=-90, maxx=0, maxy=0),
+    box(minx=0, miny=0, maxx=180, maxy=90),
+    box(minx=0, miny=-90, maxx=180, maxy=0),
+    box(minx=-180, miny=-90, maxx=0, maxy=0),
+    box(minx=-180, miny=0, maxx=0, maxy=90),
 ]
 
 
@@ -112,7 +108,7 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
 def _fix_lat_lon(
     lon: float,
     lat: float,
-    bbox: Polygon,
+    bbox: Tuple[float, float, float, float],
 ) -> Tuple[float, float]:
     """
     Fix point signs and rounding.
@@ -124,13 +120,13 @@ def _fix_lat_lon(
     Args:
         lon (float): Longitude of a point.
         lat (float): Latitude of a point.
-        bbox (Polygon): Current sphere octant bounding box.
+        bbox (Tuple[float, float, float, float]): Current sphere octant bounding box.
 
     Returns:
         Tuple[float, float]: Longitude and latitude of a point.
 
     """
-    min_lon, min_lat, max_lon, max_lat = bbox.bounds
+    min_lon, min_lat, max_lon, max_lat = bbox
 
     # round imperfections
     lon = round(lon, 8)
@@ -175,6 +171,7 @@ def _create_polygon(
     prev_lon = None
     prev_lat = None
     n = len(spherical_polygon_points)
+    bbox_bounds = bbox.bounds
     for i in range(n):
         start = spherical_polygon_points[i]
         end = spherical_polygon_points[(i + 1) % n]
@@ -185,7 +182,7 @@ def _create_polygon(
         t_vals = np.linspace(0, 1, steps)
         for pt in geometric_slerp(start, end, t_vals):
             lon, lat = map_from_geocentric(pt[0], pt[1], pt[2], se)
-            lon, lat = _fix_lat_lon(lon, lat, bbox)
+            lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
             if prev_lon is not None and abs(prev_lon - lon) >= 90:
                 sign = 1 if lat > 0 else -1
                 max_lat = sign * max(abs(prev_lat), abs(lat))
@@ -202,8 +199,49 @@ def _create_polygon(
     return polygon
 
 
+def _create_region(
+    region_id: int, sv: SphericalVoronoi, se: SphereEllipsoid, max_meters_between_points: int
+) -> MultiPolygon:
+    """
+    Parse spherical region into a WGS84 MultiPolygon.
+
+    Args:
+        region_id (int): Index of region in SphericalVoronoi result.
+        sv (SphericalVoronoi): SphericalVoronoi object.
+        se (SphereEllipsoid): SphereEllipsoid object.
+        max_meters_between_points (int): maximal distance between points
+            during interpolation of two vertices on a sphere.
+
+    Returns:
+        MultiPolygon: Parsed region in WGS84 coordinates.
+
+    """
+    region = sv.regions[region_id]
+    region_vertices = [v for v in sv.vertices[region]]
+    sph_pol = SphericalPolygon(region_vertices)
+    sphere_intersection_parts = []
+    for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
+        if sph_pol.intersects_poly(sphere_part):
+            intersection = sph_pol.intersection(sphere_part)
+            sphere_intersection_parts.append((intersection, sphere_part_bbox))
+
+    multi_polygon_parts: List[Polygon] = []
+    for sphere_intersection_part, bbox in sphere_intersection_parts:
+        for spherical_polygon_points in sphere_intersection_part.points:
+            polygon = _create_polygon(
+                spherical_polygon_points=spherical_polygon_points,
+                bbox=bbox,
+                se=se,
+                max_step=max_meters_between_points,
+            )
+            multi_polygon_parts.append(polygon)
+
+    multi_polygon = MultiPolygon(multi_polygon_parts)
+    return multi_polygon
+
+
 def generate_voronoi_regions(
-    seeds: List[Point], max_meters_between_points: int
+    seeds: List[Point], max_meters_between_points: int, allow_multiprocessing: bool
 ) -> List[MultiPolygon]:
     """
     Generate Thessien polygons for a given list of seeds.
@@ -215,6 +253,8 @@ def generate_voronoi_regions(
         seeds (List[Point]): List of seeds used for generating regions.
         max_meters_between_points (int): maximal distance between points
             during interpolation of two vertices on a sphere.
+        allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
+            accelerating the calculation for more than 100 seeds.
 
     Returns:
         List[MultiPolygon]: List of regions cut into up to 8 polygons based
@@ -236,27 +276,30 @@ def generate_voronoi_regions(
     sv = SphericalVoronoi(sphere_points, radius, center, threshold=1e-8)
     sv.sort_vertices_of_regions()
 
-    generated_regions: List[MultiPolygon] = []
-    for region in sv.regions:
-        region_vertices = [v for v in sv.vertices[region]]
-        sph_pol = SphericalPolygon(region_vertices)
-        sphere_intersection_parts = [
-            (intersection, sphere_part_bbox)
-            for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES)
-            if (intersection := sph_pol.intersection(sphere_part)).area() > 0
-        ]
-        multi_polygon_parts: List[Polygon] = []
-        for sphere_intersection_part, bbox in sphere_intersection_parts:
-            for spherical_polygon_points in sphere_intersection_part.points:
-                polygon = _create_polygon(
-                    spherical_polygon_points=spherical_polygon_points,
-                    bbox=bbox,
-                    se=se,
-                    max_step=max_meters_between_points,
-                )
-                multi_polygon_parts.append(polygon)
+    create_regions_func = partial(
+        _create_region, sv=sv, se=se, max_meters_between_points=max_meters_between_points
+    )
 
-        multi_polygon = MultiPolygon(multi_polygon_parts)
-        generated_regions.append(multi_polygon)
+    total_regions = len(sv.regions)
+    region_ids = list(range(total_regions))
+
+    num_workers = cpu_count() - 1
+
+    generated_regions: List[MultiPolygon] = []
+    if allow_multiprocessing and total_regions >= 100:
+        generated_regions.extend(
+            process_map(
+                create_regions_func,
+                region_ids,
+                desc="Generating regions",
+                max_workers=num_workers,
+                chunksize=ceil(total_regions / (4 * num_workers)),
+            )
+        )
+    else:
+        generated_regions.extend(
+            create_regions_func(region_id=region_id)
+            for region_id in tqdm(region_ids, desc="Generating regions")
+        )
 
     return generated_regions
