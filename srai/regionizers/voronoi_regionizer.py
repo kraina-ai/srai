@@ -5,7 +5,6 @@ This module contains voronoi regionizer implementation.
 
 """
 
-from itertools import combinations
 from typing import Optional
 
 import geopandas as gpd
@@ -29,7 +28,12 @@ class VoronoiRegionizer:
 
     """  # noqa: W505, E501
 
-    def __init__(self, seeds: gpd.GeoDataFrame, max_meters_between_points: int = 10_000) -> None:
+    def __init__(
+        self,
+        seeds: gpd.GeoDataFrame,
+        max_meters_between_points: int = 10_000,
+        allow_multiprocessing: bool = True,
+    ) -> None:
         """
         Init VoronoiRegionizer.
 
@@ -39,9 +43,11 @@ class VoronoiRegionizer:
         Args:
             seeds (gpd.GeoDataFrame): GeoDataFrame with seeds for
                 creating a tessellation. Minimum 4 seeds are required.
-                Seeds cannot lie on a single arc.
+                Seeds cannot lie on a single arc. Empty seeds will be removed.
             max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
+            allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
+                accelerating the calculation for more than 100 seeds.
 
         Raises:
             ValueError: If any seed is duplicated.
@@ -56,11 +62,14 @@ class VoronoiRegionizer:
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
+        self.allow_multiprocessing = allow_multiprocessing
         for index, row in seeds_wgs84.iterrows():
-            self.region_ids.append(index)
-            self.seeds.append(row.geometry.centroid)
+            candidate_point = row.geometry.centroid
+            if not candidate_point.is_empty:
+                self.region_ids.append(index)
+                self.seeds.append(candidate_point)
 
-        if any(p1.equals(p2) for p1, p2 in combinations(self.seeds, r=2)):
+        if self._check_duplicate_points():
             raise ValueError("Duplicate seeds present.")
 
     def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
@@ -90,10 +99,18 @@ class VoronoiRegionizer:
                 {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
             )
 
-        gds_wgs84 = gdf.to_crs(epsg=4326)
-        generated_regions = generate_voronoi_regions(self.seeds, self.max_meters_between_points)
+        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        generated_regions = generate_voronoi_regions(
+            self.seeds, self.max_meters_between_points, self.allow_multiprocessing
+        )
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=4326
         )
-        clipped_regions_gdf = regions_gdf.clip(mask=gds_wgs84, keep_geom_type=False)
+        regions_gdf.index.rename("region_id", inplace=True)
+        clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
         return clipped_regions_gdf
+
+    def _check_duplicate_points(self) -> bool:
+        """Check if any point overlaps with another using quick sjoin operation."""
+        gdf = gpd.GeoDataFrame(data=[{"geometry": s} for s in self.seeds])
+        return len(gdf.sjoin(gdf).index) != len(self.seeds)
