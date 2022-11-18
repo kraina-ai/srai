@@ -59,12 +59,17 @@ extra:
     actions:
       - accept
       - manage
+  version:
+    provider: mike
 
 # Copyright &copy; 2022 - 2022 SRAI Lab –
 copyright: >
   <a href="#__consent">Change cookie settings</a>
 
 plugins:
+  - mike:
+      canonical_version: "latest"
+      version_selector: true
   - gen-files:
       scripts:
         - docs/copy_examples.py
