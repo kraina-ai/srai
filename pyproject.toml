@@ -60,6 +60,7 @@ docs = [
     "ipykernel>=6.16.0",
     "mkdocs-gen-files>=0.4.0",
     "mkdocs-awesome-pages-plugin>=2.8.0",
+    "mike<2.0.0",
 ]
 visualization = [
     "keplergl>=0.3.2",
