@@ -80,6 +80,8 @@ extra:
     actions:
       - accept
       - manage
+  version:
+    provider: mike
 
 extra_css:
   - assets/css/font.css
@@ -91,6 +93,9 @@ copyright: >
   <a href="#__consent">Change cookie settings</a>
 
 plugins:
+  - mike:
+      canonical_version: "latest"
+      version_selector: true
   - gen-files:
       scripts:
         - docs/copy_examples.py
