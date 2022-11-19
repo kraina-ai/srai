@@ -10,7 +10,6 @@ dependencies = [
     "shapely>=1.8.5.post1",
     "h3>=4.0.0b1",
     "numpy>=1.23.4",
-    "pydantic>=1.10.2",
     "geoparquet>=0.0.3",
     "pyfunctional>=1.4.3",
     "rtree>=1.0.1",
