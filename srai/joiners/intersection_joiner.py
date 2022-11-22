@@ -31,6 +31,16 @@ class IntersectionJoiner:
             a MultiIndex and a geometry with the intersection
 
         """
+        if "geometry" not in regions.columns:
+            raise ValueError("Regions must have a geometry column.")
+        if "geometry" not in features.columns:
+            raise ValueError("Features must have a geometry column.")
+
+        if len(regions) == 0:
+            raise ValueError("Regions must not be empty.")
+        if len(features) == 0:
+            raise ValueError("Features must not be empty.")
+
         joined_parts = []
 
         for _, single in features.groupby(features["geometry"].geom_type):
