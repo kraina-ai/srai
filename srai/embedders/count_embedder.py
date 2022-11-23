@@ -54,25 +54,31 @@ class CountEmbedder:
         Returns:
             pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
 
+        Raises:
+            ValueError: If features_gdf is empty and self.expected_output_features is not set.
+
         """
-        if features_gdf.empty or joint_gdf.empty:
+        if features_gdf.empty:
             if self.expected_output_features is not None:
                 return pd.DataFrame(
                     0, index=regions_gdf.index, columns=self.expected_output_features
                 )
             else:
-                return pd.DataFrame()
+                raise ValueError(
+                    "Cannot embed with empty features_gdf and no expected_output_features."
+                )
 
         regions_df = self._remove_geometry_if_present(regions_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
         joint_df = self._remove_geometry_if_present(joint_gdf)
 
-        joint_with_features = joint_df.join(features_df)
-        region_embeddings = pd.get_dummies(joint_with_features).groupby(level=0).sum()
+        feature_encodings = pd.get_dummies(features_df)
+        joint_with_encodings = joint_df.join(feature_encodings)
+        region_embeddings = joint_with_encodings.groupby(level=0).sum()
 
         if self.expected_output_features is not None:
             region_embeddings = self._filter_to_expected_features(region_embeddings)
-        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0)
+        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
 
         return region_embedding_df
 
