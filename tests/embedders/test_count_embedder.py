@@ -169,13 +169,13 @@ def test_empty(
             "gdf_incorrectly_named_single_index",
             "gdf_features",
             "gdf_joint",
-            does_not_raise(),
+            pytest.raises(ValueError),
         ),
         (
             "gdf_regions",
             "gdf_incorrectly_named_single_index",
             "gdf_joint",
-            does_not_raise(),
+            pytest.raises(ValueError),
         ),
     ],
 )
