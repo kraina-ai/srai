@@ -1,10 +1,11 @@
 """CountEmbedder tests."""
-from typing import List
+from contextlib import nullcontext as does_not_raise
+from typing import Any, List, Union
 
 import geopandas as gpd
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_index_equal
 
 from srai.embedders import CountEmbedder
 
@@ -73,3 +74,120 @@ def test_correct_embedding_expected_features(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
     )
     assert_frame_equal(embedding_df, specified_features_expected_embedding_df, check_dtype=False)
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "regions_fixture,features_fixture,joint_fixture,expected_features_fixture,expectation",
+    [
+        (
+            "gdf_regions_empty",
+            "gdf_features",
+            "gdf_joint",
+            None,
+            does_not_raise(),
+        ),
+        (
+            "gdf_regions",
+            "gdf_features_empty",
+            "gdf_joint",
+            None,
+            pytest.raises(ValueError),
+        ),
+        (
+            "gdf_regions",
+            "gdf_features_empty",
+            "gdf_joint",
+            "expected_feature_names",
+            does_not_raise(),
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint_empty",
+            None,
+            does_not_raise(),
+        ),
+    ],
+)
+def test_empty(
+    regions_fixture: str,
+    features_fixture: str,
+    joint_fixture: str,
+    expected_features_fixture: Union[str, None],
+    expectation: Any,
+    request: Any,
+) -> None:
+    """Test CountEmbedder handling of empty input data frames."""
+    expected_output_features = (
+        None
+        if expected_features_fixture is None
+        else request.getfixturevalue(expected_features_fixture)
+    )
+    embedder = CountEmbedder(expected_output_features)
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
+
+    with expectation:
+        embedding = embedder.embed(gdf_regions, gdf_features, gdf_joint)
+        assert len(embedding) == len(gdf_regions)
+        assert_index_equal(embedding.index, gdf_regions.index)
+        if expected_output_features:
+            assert embedding.columns.tolist() == expected_output_features
+
+        assert (embedding == 0).all().all()
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "regions_fixture,features_fixture,joint_fixture,expectation",
+    [
+        (
+            "gdf_unnamed_single_index",
+            "gdf_features",
+            "gdf_joint",
+            pytest.raises(ValueError),
+        ),
+        (
+            "gdf_regions",
+            "gdf_unnamed_single_index",
+            "gdf_joint",
+            pytest.raises(ValueError),
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_unnamed_single_index",
+            pytest.raises(ValueError),
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_three_level_multi_index",
+            pytest.raises(ValueError),
+        ),
+        (
+            "gdf_incorrectly_named_single_index",
+            "gdf_features",
+            "gdf_joint",
+            does_not_raise(),
+        ),
+        (
+            "gdf_regions",
+            "gdf_incorrectly_named_single_index",
+            "gdf_joint",
+            does_not_raise(),
+        ),
+    ],
+)
+def test_incorrect_indexes(
+    regions_fixture: str, features_fixture: str, joint_fixture: str, expectation: Any, request: Any
+) -> None:
+    """Test if cannot embed with incorrect dataframe indexes."""
+    regions_gdf = request.getfixturevalue(regions_fixture)
+    features_gdf = request.getfixturevalue(features_fixture)
+    joint_gdf = request.getfixturevalue(joint_fixture)
+
+    with expectation:
+        CountEmbedder().embed(
+            regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
+        )

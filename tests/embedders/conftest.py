@@ -9,7 +9,59 @@ from shapely import geometry
 @pytest.fixture  # type: ignore
 def gdf_empty() -> gpd.GeoDataFrame:
     """Get empty GeoDataFrame."""
-    return gpd.GeoDataFrame(geometry=[])
+    return gpd.GeoDataFrame(
+        geometry=[
+            geometry.Polygon(
+                shell=[
+                    (17.02710946531851, 51.110065389823305),
+                    (17.029634931698617, 51.1092989279356),
+                    (17.03212452567607, 51.11021450606774),
+                    (17.032088692873092, 51.11189657169522),
+                    (17.029563145936592, 51.11266305206119),
+                    (17.02707351236059, 51.11174744831988),
+                    (17.02710946531851, 51.110065389823305),
+                ],
+            ),
+        ]
+    )
+
+
+@pytest.fixture  # type: ignore
+def gdf_regions_empty() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with region_id as index name."""
+    return gpd.GeoDataFrame(index=pd.Index([], name="region_id"), geometry=[])
+
+
+@pytest.fixture  # type: ignore
+def gdf_features_empty() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with feature_id as index name."""
+    return gpd.GeoDataFrame(index=pd.Index([], name="feature_id"), geometry=[])
+
+
+@pytest.fixture  # type: ignore
+def gdf_joint_empty() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with MultiIndex and [region_id, feature_id] as index names."""
+    return gpd.GeoDataFrame(
+        index=pd.MultiIndex.from_arrays([[], []], names=["region_id", "feature_id"]), geometry=[]
+    )
+
+
+@pytest.fixture  # type: ignore
+def gdf_unnamed_single_index() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with unnamed Index."""
+    return gpd.GeoDataFrame(index=pd.Index([]), geometry=[])
+
+
+@pytest.fixture  # type: ignore
+def gdf_incorrectly_named_single_index() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with Index named 'test'."""
+    return gpd.GeoDataFrame(index=pd.Index([], name="test"), geometry=[])
+
+
+@pytest.fixture  # type: ignore
+def gdf_three_level_multi_index() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame with three level MultiIndex."""
+    return gpd.GeoDataFrame(index=pd.MultiIndex.from_arrays([[], [], []]), geometry=[])
 
 
 @pytest.fixture  # type: ignore
