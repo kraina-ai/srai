@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2022-MM-DD
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.0.1] - 2022-11-23
+
+### Added
 - PDM as a dependency management tool
 - black, flake8, isort, mypy, pytest-cov
 - pre-commit configuration
@@ -15,23 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub pages to host documentation
 - initial requirements
 - H3 Regionizer
+- Voronoi Regionizer
+- Administrative Boundary Regionizer
 - Intersection Joiner
+- Geoparquet Loader
 
-### Changed
-- pyrosm for pyosmium
-
-### Deprecated
-- dd
-- dd
-
-### Removed
-- rrr
-
-### Fixed
-- fff
-
-### Security
-- ss
-- ss
-
-[Unreleased]: https://github.com/srai-lab/srai/compare/687500b...HEAD
+[Unreleased]: https://github.com/srai-lab/srai/compare/0.0.1...HEAD
+[0.0.1]: https://github.com/srai-lab/srai/compare/687500b...0.0.1
