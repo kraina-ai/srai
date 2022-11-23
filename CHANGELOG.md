@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub pages to host documentation
 - initial requirements
 - H3 Regionizer
+- Intersection Joiner
 
 ### Changed
 - pyrosm for pyosmium
