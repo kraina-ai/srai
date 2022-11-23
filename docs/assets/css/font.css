@@ -1,0 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap");
+
+.md-header__topic:first-child {
+  font-family: "Comfortaa";
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--srai-text-color);
+}

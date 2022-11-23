@@ -1,0 +1,7 @@
+:root > * {
+  --srai-brand-color: #150b5b;
+  --srai-text-color: #01fdb1;
+  --md-primary-fg-color: var(--srai-brand-color);
+  --md-primary-fg-color--light: var(--srai-brand-color);
+  --md-primary-fg-color--dark: var(--srai-brand-color);
+}

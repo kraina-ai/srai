@@ -1,0 +1,42 @@
+.jp-CodeCell > .jp-Cell-inputWrapper {
+  direction: rtl;
+  width: 113%;
+}
+
+.jp-InputArea-prompt {
+  visibility: hidden;
+}
+
+.jp-OutputArea-prompt {
+  visibility: hidden;
+  background-color: red;
+  position: absolute;
+  right: 0;
+}
+
+.jp-CodeCell > .jp-Cell-outputWrapper {
+  margin-top: -10px;
+  padding-top: 0;
+  display: table-cell;
+  text-align: left;
+}
+.jp-Cell-outputWrapper > .jp-Cell-outputCollapser {
+  margin-top: -17px;
+}
+
+.jupyter-wrapper table.dataframe tr,
+.jupyter-wrapper table.dataframe th,
+.jupyter-wrapper table.dataframe td {
+  text-align: left;
+}
+.jupyter-wrapper table.dataframe {
+  table-layout: auto;
+}
+
+.jp-RenderedImage.jp-OutputArea-output {
+  text-align: center;
+}
+
+.jupyter-wrapper .zeroclipboard-container {
+  z-index: 3 !important;
+}
