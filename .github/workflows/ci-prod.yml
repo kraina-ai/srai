@@ -1,0 +1,62 @@
+name: "Build & publish - PROD"
+on:
+  push:
+    tags:
+      - "**"
+
+jobs:
+  run-tests:
+    name: "Run tests job"
+    uses: ./.github/workflows/_tests.yml
+
+  build-n-publish:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM
+        with:
+          python-version: 3.8
+          architecture: x64
+          enable-pep582: true
+      - name: Publish distribution 📦 to PyPI
+        run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
+
+  generate-docs:
+    name: Publish library 📦 documentation 📄 to Github Pages 🌐
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    env:
+      MKDOCS_EXECUTE_JUPYTER: true
+    steps:
+      - uses: actions/checkout@v2
+      - name: Fetch gh-pages branch
+        run: git fetch origin gh-pages --depth=1
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install pdm
+        run: pip install pdm
+      - name: Generate requirements.txt
+        run: pdm export -d -G:all > requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Install geovoronoi dependency
+        run: pip install geovoronoi==0.4.0
+      - name: Install self
+        run: |
+          pdm build -v -d dist
+          pip install $(find dist -name '*.whl')
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Publish latest documentation
+        run: mike deploy --push --update-aliases ${{github.ref_name}} latest
