@@ -1,6 +1,5 @@
-
 <p align="center">
-  <img width="300" src="docs/assets/logos/srai-logo-transparent.png">
+  <img width="300" src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/logos/srai-logo-transparent.png">
 </p>
 
 <p align="center">
@@ -23,6 +22,5 @@
         <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/srai">
     </a>
 </p>
-
 
 Spatial Representations for Artificial Intelligence
