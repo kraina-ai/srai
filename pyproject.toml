@@ -115,7 +115,6 @@ pre-summary-newline = true
 close-quotes-on-newline = true
 wrap-one-line = true
 
-
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
