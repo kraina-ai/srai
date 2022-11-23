@@ -1,6 +1,7 @@
 """Conftest for Embedders."""
 
 import geopandas as gpd
+import pandas as pd
 import pytest
 from shapely import geometry
 
@@ -15,13 +16,6 @@ def gdf_empty() -> gpd.GeoDataFrame:
 def gdf_regions() -> gpd.GeoDataFrame:
     """Get GeoDataFrame with 3 hexagonal regions."""
     regions_gdf = gpd.GeoDataFrame(
-        {
-            "region_id": [
-                "891e2040897ffff",
-                "891e2040d4bffff",
-                "891e2040d5bffff",
-            ]
-        },
         geometry=[
             geometry.Polygon(
                 shell=[
@@ -57,9 +51,11 @@ def gdf_regions() -> gpd.GeoDataFrame:
                 ],
             ),
         ],
+        index=pd.Index(
+            data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"], name="region_id"
+        ),
         crs="epsg:4326",
     )
-    regions_gdf.set_index("region_id", inplace=True)
     return regions_gdf
 
 
@@ -68,7 +64,6 @@ def gdf_features() -> gpd.GeoDataFrame:
     """Get GeoDataFrame with example OSM-like features."""
     features_gdf = gpd.GeoDataFrame(
         {
-            "feature_id": ["way/312457804", "way/1533817161", "way/312457812", "way/312457834"],
             "leisure": ["playground", None, "adult_gaming_centre", None],
             "amenity": [None, "pub", "pub", None],
         },
@@ -108,10 +103,13 @@ def gdf_features() -> gpd.GeoDataFrame:
                 ]
             ),
         ],
+        index=pd.Index(
+            data=["way/312457804", "way/1533817161", "way/312457812", "way/312457834"],
+            name="feature_id",
+        ),
         crs="epsg:4326",
     )
 
-    features_gdf.set_index("feature_id", inplace=True)
     return features_gdf
 
 
@@ -119,15 +117,6 @@ def gdf_features() -> gpd.GeoDataFrame:
 def gdf_joint() -> gpd.GeoDataFrame:
     """Get joint GeoDataFrame for matching regions and features from this module."""
     joint_gdf = gpd.GeoDataFrame(
-        {
-            "region_id": [
-                "891e2040d4bffff",
-                "891e2040897ffff",
-                "891e2040897ffff",
-                "891e2040d5bffff",
-            ],
-            "feature_id": ["way/312457804", "way/1533817161", "way/312457834", "way/312457812"],
-        },
         geometry=[
             geometry.Polygon(
                 shell=[
@@ -167,7 +156,13 @@ def gdf_joint() -> gpd.GeoDataFrame:
                 ]
             ),
         ],
+        index=pd.MultiIndex.from_arrays(
+            arrays=[
+                ["891e2040d4bffff", "891e2040897ffff", "891e2040897ffff", "891e2040d5bffff"],
+                ["way/312457804", "way/1533817161", "way/312457834", "way/312457812"],
+            ],
+            names=["region_id", "feature_id"],
+        ),
         crs="epsg:4326",
     )
-    joint_gdf.set_index(["region_id", "feature_id"], inplace=True)
     return joint_gdf
