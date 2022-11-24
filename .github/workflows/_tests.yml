@@ -31,5 +31,10 @@ jobs:
         with:
           path: cache
           key: overpass-cache-${{ matrix.os }}-${{ matrix.python-version }}
+      - name: Cache tox runner
+        uses: actions/cache@v3
+        with:
+          path: .tox
+          key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
