@@ -24,6 +24,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
           enable-pep582: true
+          cache: true
+          cache-dependency-path: "**/pdm.lock"
       - name: Install dependencies
         run: pdm install -d -G test
       - name: Cache Overpass data

@@ -25,6 +25,8 @@ jobs:
           python-version: 3.8
           architecture: x64
           enable-pep582: true
+          cache: true
+          cache-dependency-path: "**/pdm.lock"
       - run: pip install toml
       - uses: jannekem/run-python-script-action@v1
         name: Rename test version
