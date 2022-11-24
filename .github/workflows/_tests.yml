@@ -26,5 +26,10 @@ jobs:
           enable-pep582: true
       - name: Install dependencies
         run: pdm install -d -G test
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: cache
+          key: overpass-cache
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
