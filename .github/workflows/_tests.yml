@@ -24,7 +24,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
           enable-pep582: true
+          cache: true
+          cache-dependency-path: "**/pdm.lock"
       - name: Install dependencies
         run: pdm install -d -G test
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: cache
+          key: overpass-cache-${{ matrix.os }}-${{ matrix.python-version }}
+      - name: Cache tox runner
+        uses: actions/cache@v3
+        with:
+          path: .tox
+          key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
