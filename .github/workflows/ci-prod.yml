@@ -10,7 +10,7 @@ jobs:
     uses: ./.github/workflows/_tests.yml
 
   build-n-publish:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
     needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +29,7 @@ jobs:
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
 
   generate-docs:
-    name: Publish library 📦 documentation 📄 to Github Pages 🌐
+    name: Publish latest library 📦 documentation 📄 to Github Pages 🌐
     needs: [run-tests]
     runs-on: ubuntu-latest
     env:
@@ -42,6 +42,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-prod-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-prod-
       - name: Install pdm
         run: pip install pdm
       - name: Generate requirements.txt
@@ -58,5 +64,10 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: cache
+          key: mkdocs-overpass-prod-cache-${{ runner.os }}
       - name: Publish latest documentation
         run: mike deploy --push --update-aliases ${{github.ref_name}} latest
