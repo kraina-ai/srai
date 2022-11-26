@@ -94,10 +94,14 @@ class IntersectionJoiner:
             a MultiIndex
 
         """
-        joint = gpd.sjoin(
-            regions,
-            features,
-            how="inner",
-            predicate="intersects",
+        joint = (
+            gpd.sjoin(
+                regions.reset_index(names="region_id"),
+                features.reset_index(names="feature_id"),
+                how="inner",
+                predicate="intersects",
+            )
+            .set_index(["region_id", "feature_id"])
+            .drop(columns=["index_right", "geometry"])
         )
         return joint
