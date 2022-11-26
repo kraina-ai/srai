@@ -50,3 +50,14 @@ def test_correct_multiindex_intersection_joiner(
 
     ut.assertEqual(joint.index.names, joint_multiindex.names)
     ut.assertCountEqual(joint.index, joint_multiindex)
+
+
+def test_correct_multiindex_intersection_joiner_without_geom(
+    regions_gdf: gpd.GeoDataFrame, features_gdf: gpd.GeoDataFrame, joint_multiindex: pd.MultiIndex
+) -> None:
+    """Test checks if intersection joiner returns correct MultiIndex."""
+    joint = IntersectionJoiner().join(regions=regions_gdf, features=features_gdf, return_geom=False)
+
+    ut.assertEqual(joint.index.names, joint_multiindex.names)
+    ut.assertCountEqual(joint.index, joint_multiindex)
+    ut.assertNotIn("geometry", joint.columns)
