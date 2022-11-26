@@ -18,17 +18,20 @@ class IntersectionJoiner:
 
     """
 
-    def join(self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def join(
+        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = True
+    ) -> gpd.GeoDataFrame:
         """
         Join features to regions.
 
         Args:
             regions (gpd.GeoDataFrame): regions with which features are joined
             features (gpd.GeoDataFrame): features to be joined
+            return_geom (bool): whether to return geometry of the joined features
 
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
-            a MultiIndex and a geometry with the intersection
+            a MultiIndex and optionaly a geometry with the intersection
 
         """
         if "geometry" not in regions.columns:
@@ -41,6 +44,26 @@ class IntersectionJoiner:
         if len(features) == 0:
             raise ValueError("Features must not be empty.")
 
+        if return_geom:
+            return self._join_with_geom(regions, features)
+        else:
+            return self._join_without_geom(regions, features)
+
+    def _join_with_geom(
+        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
+    ) -> gpd.GeoDataFrame:
+        """
+        Join features to regions with returning an intersecting geometry.
+
+        Args:
+            regions (gpd.GeoDataFrame): regions with which features are joined
+            features (gpd.GeoDataFrame): features to be joined
+
+        Returns:
+            GeoDataFrame with an intersection of regions and features, which contains
+            a MultiIndex and a geometry with the intersection
+
+        """
         joined_parts = []
 
         for _, single in features.groupby(features["geometry"].geom_type):
@@ -54,5 +77,27 @@ class IntersectionJoiner:
             )
 
         joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
+        return joint
 
+    def _join_without_geom(
+        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
+    ) -> gpd.GeoDataFrame:
+        """
+        Join features to regions without intersection caclulation.
+
+        Args:
+            regions (gpd.GeoDataFrame): regions with which features are joined
+            features (gpd.GeoDataFrame): features to be joined
+
+        Returns:
+            GeoDataFrame with an intersection of regions and features, which contains
+            a MultiIndex
+
+        """
+        joint = gpd.sjoin(
+            regions,
+            features,
+            how="inner",
+            predicate="intersects",
+        )
         return joint
