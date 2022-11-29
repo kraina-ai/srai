@@ -46,7 +46,7 @@ jobs:
 
   generate-docs:
     name: Publish dev library 📦 documentation 📄 to Github Pages 🌐
-    # needs: [run-tests]
+    needs: [run-tests]
     runs-on: ubuntu-latest
     env:
       MKDOCS_EXECUTE_JUPYTER: true
