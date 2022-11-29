@@ -83,7 +83,7 @@ jobs:
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
-          path: cache
+          path: "**/cache"
           key: mkdocs-overpass-dev-cache-${{ runner.os }}
       - uses: jannekem/run-python-script-action@v1
         name: Replace copyright date
