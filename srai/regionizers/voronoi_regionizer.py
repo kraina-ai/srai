@@ -55,9 +55,6 @@ class VoronoiRegionizer:
             ValueError: If provided seeds geodataframe has no crs defined.
 
         """
-        if len(seeds.index) < 4:
-            raise ValueError("Minimum 4 seeds are required.")
-
         seeds_wgs84 = seeds.to_crs(epsg=4326)
         self.region_ids = []
         self.seeds = []
@@ -71,6 +68,9 @@ class VoronoiRegionizer:
 
         if self._check_duplicate_points():
             raise ValueError("Duplicate seeds present.")
+
+        if len(self.seeds) < 4:
+            raise ValueError("Minimum 4 seeds are required.")
 
     def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
         """
