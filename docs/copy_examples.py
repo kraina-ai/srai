@@ -16,7 +16,7 @@ def write_file(file_path: Path) -> None:
     """
     root_path = file_path.relative_to(".")
     print(f"Copying {root_path} file to {root_path}")
-    with open(root_path, "rb") as src, mkdocs_gen_files.open(root_path, "wb") as dst:
+    with root_path.open("rb") as src, mkdocs_gen_files.open(root_path, "wb") as dst:
         dst.write(src.read())
 
 

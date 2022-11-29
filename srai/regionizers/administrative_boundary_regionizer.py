@@ -146,7 +146,7 @@ class AdministrativeBoundaryRegionizer:
     ) -> List[Dict[str, Any]]:
         """Query and optimize downloading data from Overpass."""
         elements_ids = set()
-        generated_regions: List[Dict[str, Any]] = list()
+        generated_regions: List[Dict[str, Any]] = []
 
         all_geometries = (
             seq([self._flatten_geometries(g) for g in gdf_wgs84.geometry]).flatten().list()
