@@ -5,16 +5,22 @@ description = "A set of python modules for geospatial machine learning and data 
 authors = [{ name = "srai", email = "spatialrepresentationsforai@gmail.com" }]
 # pdm add <library>
 dependencies = [
-    "pandas>=1.3",
     "geopandas>=0.11.1",
-    "shapely>=1.8.5.post1",
-    "h3>=4.0.0b1",
-    "numpy>=1.23.4",
     "geoparquet>=0.0.3",
+    "h3>=4.0.0b1",
+    "haversine>=2.7.0",
+    "numpy>=1.23.4",
+    "OSMPythonTools>=0.3.5",
+    "osmium>=3.4.1",
+    "osmnx>=1.2.2",
+    "pandas>=1.3",
+    "pyarrow>=10.0.0",
     "pyfunctional>=1.4.3",
+    "pymap3d>=2.9.1",
     "rtree>=1.0.1",
     "scipy>=1.9.3",
-    "pyarrow>=10.0.0",
+    "shapely>=1.8.5.post1",
+    "spherical-geometry>=1.2.23",
     "topojson>=1.5",
     "tqdm>=4.64.1",
 ]
@@ -41,12 +47,6 @@ Homepage = "https://srai-lab.github.io/srai"
 Repository = "https://github.com/srai-lab/srai"
 Documentation = "https://srai-lab.github.io/srai"
 Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
-
-[project.optional-dependencies]
-# pdm add -G osm <library>
-osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
-# pdm add -G voronoi <library>
-voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
