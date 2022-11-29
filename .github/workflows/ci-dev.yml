@@ -85,5 +85,15 @@ jobs:
         with:
           path: cache
           key: mkdocs-overpass-dev-cache-${{ runner.os }}
+      - uses: jannekem/run-python-script-action@v1
+        name: Replace copyright date
+        with:
+          script: |
+            import time
+            file_name = "mkdocs.yml"
+            with open(file_name) as f:
+                data = f.read().replace('{current_year}', time.strftime("%Y"))
+            with open(file_name, "w") as f:
+                f.write(data)
       - name: Publish dev documentation
         run: mike deploy --push dev
