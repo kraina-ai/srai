@@ -22,7 +22,9 @@ class IntersectionJoiner:
         self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = True
     ) -> gpd.GeoDataFrame:
         """
-        Join features to regions.
+        Join features to regions based on an 'intersects' predicate.
+
+        Does not apply any grouping to regions.
 
         Args:
             regions (gpd.GeoDataFrame): regions with which features are joined
@@ -44,10 +46,14 @@ class IntersectionJoiner:
         if len(features) == 0:
             raise ValueError("Features must not be empty.")
 
+        result_gdf: gpd.GeoDataFrame
+
         if return_geom:
-            return self._join_with_geom(regions, features)
+            result_gdf = self._join_with_geom(regions, features)
         else:
-            return self._join_without_geom(regions, features)
+            result_gdf = self._join_without_geom(regions, features)
+
+        return result_gdf
 
     def _join_with_geom(
         self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
@@ -64,17 +70,15 @@ class IntersectionJoiner:
             a MultiIndex and a geometry with the intersection
 
         """
-        joined_parts = []
-
-        for _, single in features.groupby(features["geometry"].geom_type):
-            joined_parts.append(
-                gpd.overlay(
-                    single[["geometry"]].reset_index(names="feature_id"),
-                    regions[["geometry"]].reset_index(names="region_id"),
-                    how="intersection",
-                    keep_geom_type=False,
-                ).set_index(["region_id", "feature_id"])
-            )
+        joined_parts = [
+            gpd.overlay(
+                single[["geometry"]].reset_index(names="feature_id"),
+                regions[["geometry"]].reset_index(names="region_id"),
+                how="intersection",
+                keep_geom_type=False,
+            ).set_index(["region_id", "feature_id"])
+            for _, single in features.groupby(features["geometry"].geom_type)
+        ]
 
         joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
         return joint
