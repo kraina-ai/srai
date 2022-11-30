@@ -80,11 +80,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-      - name: Cache Overpass data
-        uses: actions/cache@v3
-        with:
-          path: cache
-          key: mkdocs-overpass-dev-cache-${{ runner.os }}
       - uses: jannekem/run-python-script-action@v1
         name: Replace copyright date
         with:
