@@ -51,6 +51,13 @@ osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 all = ["srai[osm,voronoi]"]
 
+deeplearning = [
+    "torch<2.0.0",
+    "pytorch-lightning<2.0.0",
+    "scikit-learn>=1.1.3",
+    "tensorboard>=2.11.0",
+]
+
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
 build-backend = "pdm.pep517.api"
