@@ -22,7 +22,9 @@ class IntersectionJoiner:
         self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = True
     ) -> gpd.GeoDataFrame:
         """
-        Join features to regions.
+        Join features to regions based on an 'intersects' predicate.
+
+        Does not apply any grouping to regions.
 
         Args:
             regions (gpd.GeoDataFrame): regions with which features are joined

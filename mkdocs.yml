@@ -107,6 +107,7 @@ plugins:
       ignore_h1_titles: true
       execute: !ENV [MKDOCS_EXECUTE_JUPYTER, false]
       include_source: false
+      allow_errors: false
   - mermaid2
   - awesome-pages
 
