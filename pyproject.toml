@@ -17,6 +17,7 @@ dependencies = [
     "pyarrow>=10.0.0",
     "topojson>=1.5",
     "tqdm>=4.64.1",
+    "s2>=0.1.9",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
