@@ -67,21 +67,10 @@ class S2Regionizer(BaseRegionizer):
         # TODO: this part is in common with H3Regionizer
         # transform multipolygons to multiple polygons
         gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
-        geo_json = json.loads(gdf_exploded.to_json())
 
-        cells = (
-            seq(geo_json["features"])
-            .map(lambda f: self._geojson_to_cells(f["geometry"], self.resolution))
-            .reduce(lambda acc, curr: {**acc, **curr})
-        )
+        s2_gdf = self._fill_with_s2_cells(gdf_exploded)
 
-        s2_gdf = gpd.GeoDataFrame(
-            None,
-            index=cells.keys(),
-            geometry=list(cells.values()),
-            crs="EPSG:4326",
-        )
-
+        # s2 library fills also holes in Polygons, so here we remove redundant cells
         res = gpd.sjoin(
             s2_gdf,
             gdf_wgs84,
@@ -91,6 +80,22 @@ class S2Regionizer(BaseRegionizer):
 
         return res
 
+    def _fill_with_s2_cells(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        geo_json = json.loads(gdf.to_json())
+        cells = (
+            seq(geo_json["features"])
+            .map(lambda f: self._geojson_to_cells(f["geometry"], self.resolution))
+            .reduce(lambda acc, curr: {**acc, **curr})
+        )
+        cells_gdf = gpd.GeoDataFrame(
+            None,
+            index=cells.keys(),
+            geometry=list(cells.values()),
+            crs="epsg:4326",
+        )
+
+        return cells_gdf
+
     def _geojson_to_cells(self, geo_json: Dict[str, Any], res: int) -> Dict[str, Polygon]:
         raw_cells = s2.polyfill(geo_json, res, with_id=True, geo_json_conformant=True)
         cells: Dict[str, Polygon] = (
@@ -98,8 +103,3 @@ class S2Regionizer(BaseRegionizer):
         )
 
         return cells
-
-    def _remove_cells_outside(
-        self, s2_gdf: gpd.GeoDataFrame, gdf: gpd.GeoDataFrame
-    ) -> gpd.GeoDataFrame:
-        return gpd.sjoin(s2_gdf, gdf, how="inner", predicate="within")
