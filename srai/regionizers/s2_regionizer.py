@@ -71,12 +71,14 @@ class S2Regionizer(BaseRegionizer):
         s2_gdf = self._fill_with_s2_cells(gdf_exploded)
 
         # s2 library fills also holes in Polygons, so here we remove redundant cells
-        res = gpd.sjoin(
+        res: gpd.GeoDataFrame = gpd.sjoin(
             s2_gdf,
             gdf_wgs84,
             how="inner",
             predicate="intersects" if self.buffer else "within",
-        )
+        ).drop(columns=["index_right"])
+
+        res = res[~res.index.duplicated(keep="first")]
 
         return res
 
