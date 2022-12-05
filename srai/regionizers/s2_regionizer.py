@@ -11,10 +11,11 @@ References:
 """
 
 import json
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict
 
 import geopandas as gpd
 from functional import seq
+from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
@@ -99,12 +100,8 @@ class S2Regionizer(BaseRegionizer):
 
         return cells_gdf
 
-    def _geojson_to_cells(
-        self, geo_json: Dict[str, Any], res: int
-    ) -> Sequence[Tuple[str, Polygon]]:
+    def _geojson_to_cells(self, geo_json: Dict[str, Any], res: int) -> Sequence:
         raw_cells = s2.polyfill(geo_json, res, with_id=True, geo_json_conformant=True)
-        cells: Sequence[Tuple[str, Polygon]] = seq(raw_cells).map(
-            lambda c: (c["id"], Polygon(c["geometry"]))
-        )
+        cells: Sequence = seq(raw_cells).map(lambda c: (c["id"], Polygon(c["geometry"])))
 
         return cells
