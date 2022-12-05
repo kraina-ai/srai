@@ -66,7 +66,6 @@ class S2Regionizer(BaseRegionizer):
         """
         gdf_wgs84 = gdf.to_crs(epsg=4326)
 
-        # TODO: this part is in common with H3Regionizer
         # transform multipolygons to multiple polygons
         gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
 
