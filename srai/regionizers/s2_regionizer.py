@@ -11,7 +11,7 @@ References:
 """
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Sequence, Tuple
 
 import geopandas as gpd
 from functional import seq
@@ -34,9 +34,10 @@ class S2Regionizer(BaseRegionizer):
         Init S2 Regionizer.
 
         Args:
-            resolution (int): Resolution of the cells. See [1] for a full comparison.
-            buffer (bool, optional): Whether to fully cover geometries with S2 cells
-            or use just those cells that fully fit into them. Defaults to True.
+            resolution (int): Resolution of the cells (S2 supports 0-30). See [1] for
+            a full comparison.
+            buffer (bool, optional): If True then fully cover geometries with S2 cells.
+            Otherwise only use those cells that fully fit into them. Defaults to True.
 
         Raises:
             ValueError: If resolution is not between 0 and 30.
@@ -86,8 +87,8 @@ class S2Regionizer(BaseRegionizer):
         geo_json = json.loads(gdf.to_json())
         cells = (
             seq(geo_json["features"])
-            .map(lambda f: self._geojson_to_cells(f["geometry"], self.resolution))
-            .reduce(lambda acc, curr: {**acc, **curr})
+            .flat_map(lambda f: self._geojson_to_cells(f["geometry"], self.resolution))
+            .to_dict()
         )
         cells_gdf = gpd.GeoDataFrame(
             None,
@@ -98,10 +99,12 @@ class S2Regionizer(BaseRegionizer):
 
         return cells_gdf
 
-    def _geojson_to_cells(self, geo_json: Dict[str, Any], res: int) -> Dict[str, Polygon]:
+    def _geojson_to_cells(
+        self, geo_json: Dict[str, Any], res: int
+    ) -> Sequence[Tuple[str, Polygon]]:
         raw_cells = s2.polyfill(geo_json, res, with_id=True, geo_json_conformant=True)
-        cells: Dict[str, Polygon] = (
-            seq(raw_cells).map(lambda c: (c["id"], Polygon(c["geometry"]))).to_dict()
+        cells: Sequence[Tuple[str, Polygon]] = seq(raw_cells).map(
+            lambda c: (c["id"], Polygon(c["geometry"]))
         )
 
         return cells
