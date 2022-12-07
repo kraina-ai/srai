@@ -1,5 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
+default_stages: [commit]
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v2.1.1
@@ -27,7 +28,7 @@ repos:
       - id: pydocstyle
         additional_dependencies: ["toml"]
   - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
+    rev: 6.0.0
     hooks:
       - id: flake8
         additional_dependencies:
@@ -36,14 +37,8 @@ repos:
     rev: v0.991
     hooks:
       - id: mypy
-  - repo: https://github.com/dosisod/refurb
-    rev: v1.8.0
-    hooks:
-      - id: refurb
-        language: python
-        language_version: python3.10
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.2.1
+    rev: 2.3.1
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/kynan/nbstripout
@@ -51,7 +46,7 @@ repos:
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.4.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -60,6 +55,13 @@ repos:
         exclude: mkdocs.yml # See https://github.com/readthedocs/readthedocs.org/issues/6889
       - id: check-added-large-files
       - id: detect-private-key
+  - repo: https://github.com/dosisod/refurb
+    rev: v1.8.0
+    hooks:
+      - id: refurb
+        language: python
+        language_version: python3.10
+        stages: [manual]
 
 ci:
   autofix_commit_msg: |

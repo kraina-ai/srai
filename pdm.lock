@@ -352,6 +352,12 @@ requires_python = ">=3.7"
 summary = "Tools to manipulate font files"
 
 [[package]]
+name = "future"
+version = "0.18.2"
+requires_python = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+summary = "Clean single-source support for Python 3 and 2"
+
+[[package]]
 name = "geojson"
 version = "2.5.0"
 summary = "Python bindings and utilities for GeoJSON"
@@ -1444,6 +1450,24 @@ requires_python = ">=3.7"
 summary = "R-Tree spatial index for Python GIS"
 
 [[package]]
+name = "s2"
+version = "0.1.9"
+requires_python = ">=3"
+summary = "Python bindings for S2, a hierarchical square geospatial indexing system."
+dependencies = [
+    "s2sphere",
+    "shapely",
+]
+
+[[package]]
+name = "s2sphere"
+version = "0.2.5"
+summary = "Python implementation of the S2 Geometry Library"
+dependencies = [
+    "future>=0.15",
+]
+
+[[package]]
 name = "scalene"
 version = "1.5.15"
 requires_python = ">=3.8"
@@ -1741,7 +1765,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:002b304234e9c082e87eb419fd00d8f1c857fa0d6b3783fa9d1cf1cb4d85085e"
+content_hash = "sha256:d1a12925fc90261fe9f1548db0256cfb03c4528a5b92c81c6b4782925319413c"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2188,6 +2212,9 @@ content_hash = "sha256:002b304234e9c082e87eb419fd00d8f1c857fa0d6b3783fa9d1cf1cb4
 "fonttools 4.38.0" = [
     {url = "https://files.pythonhosted.org/packages/55/5c/a4a25cf6db42d113d8f626901bb156b2f7cf7c7564a6bbc7b5cd6f7cb484/fonttools-4.38.0.zip", hash = "sha256:2bb244009f9bf3fa100fc3ead6aeb99febe5985fa20afbfbaa2f8946c2fbdaf1"},
     {url = "https://files.pythonhosted.org/packages/e3/d9/e9bae85e84737e76ebbcbea13607236da0c0699baed0ae4f1151b728a608/fonttools-4.38.0-py3-none-any.whl", hash = "sha256:820466f43c8be8c3009aef8b87e785014133508f0de64ec469e4efb643ae54fb"},
+]
+"future 0.18.2" = [
+    {url = "https://files.pythonhosted.org/packages/45/0b/38b06fd9b92dc2b68d58b75f900e97884c45bedd2ff83203d933cf5851c9/future-0.18.2.tar.gz", hash = "sha256:b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"},
 ]
 "geojson 2.5.0" = [
     {url = "https://files.pythonhosted.org/packages/b6/8d/c42d3fe6f9b5e5bd6a55d9f03813d674d65d853cb12e6bc56f154a2ceca0/geojson-2.5.0.tar.gz", hash = "sha256:6e4bb7ace4226a45d9c8c8b1348b3fc43540658359f93c3f7e03efa9f15f658a"},
@@ -3321,6 +3348,14 @@ content_hash = "sha256:002b304234e9c082e87eb419fd00d8f1c857fa0d6b3783fa9d1cf1cb4
     {url = "https://files.pythonhosted.org/packages/e7/30/fdf39d9f9f1ea66bfc66a40cb11680830e510fe72a3df43cea9e0ed4f386/Rtree-1.0.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:e898d7409ab645c25e06d4e058f99271182601d70b2887aba3351bf08e09a0c6"},
     {url = "https://files.pythonhosted.org/packages/ee/a0/481d67a0f52b23781f6f99543a9a4a2e6a5cffb165a6e50b85b7dd23af0b/Rtree-1.0.1-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:6db6a0a93e41594ffc14b053f386dd414ab5a82535bbd9aedafa6ac8dc0650d8"},
     {url = "https://files.pythonhosted.org/packages/fc/52/f77645283cc12539e39381ee00f1802ae6af8baa9357bd9b12d23ff61fbd/Rtree-1.0.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:becd711fe97c2e09b1b7969e83080a3c8012bce2d30f6db879aade255fcba5c1"},
+]
+"s2 0.1.9" = [
+    {url = "https://files.pythonhosted.org/packages/a3/cd/149942fbf9cd80e2ef62bb4ccac8a016e6ba2ce383ab01ae8dbf8953fe59/s2-0.1.9-py2.py3-none-any.whl", hash = "sha256:8f550c1f65a16a5e2efb64867d12356f20092a2d87b10575104563ef6379c192"},
+    {url = "https://files.pythonhosted.org/packages/b9/b0/efaa760f81b02e11a74d00d9810e1f3b704ee8894be7cf996e4f74759a3f/s2-0.1.9.tar.gz", hash = "sha256:ad7a90d78f00dd9edf5002ebfa16163a6cbea582bba4ad8ea9d22df07a60851e"},
+]
+"s2sphere 0.2.5" = [
+    {url = "https://files.pythonhosted.org/packages/01/8e/08260a5f03c642d3f6f040756425dc3f466842c4d5e978f6c2be960dde2f/s2sphere-0.2.5.tar.gz", hash = "sha256:c2478c1ff7c601a59a7151a57b605435897514578fa6bdb8730721c182adbbaf"},
+    {url = "https://files.pythonhosted.org/packages/49/fc/be2251ac7ee75e725027b107ab14d161d829aaac22362f75eaabc859bfba/s2sphere-0.2.5-py2.py3-none-any.whl", hash = "sha256:d2340c9cf458ddc9a89afd1d8048a4195ce6fa6b0095ab900d4be5271e537401"},
 ]
 "scalene 1.5.15" = [
     {url = "https://files.pythonhosted.org/packages/02/f7/2a33b6c6280ab15ee729ec5fa851c29c13f52f78e5a266c8705157b05559/scalene-1.5.15-cp39-cp39-macosx_10_15_universal2.whl", hash = "sha256:d4b71a8671d8856ae1fa54ded79875b44a9f5b7ba4c8dc13921be7cb560f283f"},
