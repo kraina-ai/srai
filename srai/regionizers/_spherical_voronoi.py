@@ -21,31 +21,40 @@ from spherical_geometry.polygon import SphericalPolygon
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-# LON: 0; LAT: 0
-POINT_FRONT = (1.0, 0.0, 0.0)
-# LON: 180; LAT: 0
-POINT_BACK = (-1.0, 0.0, 0.0)
-# LON: 0; LAT: 90
-POINT_TOP = (0.0, 0.0, 1.0)
-# LON: 0; LAT: -90
-POINT_BOTTOM = (0.0, 0.0, -1.0)
-# LON: -90; LAT: 0
-POINT_LEFT = (0.0, -1.0, 0.0)
-# LON: 90; LAT: 0
-POINT_RIGHT = (0.0, 1.0, 0.0)
+SPHERE_PARTS: List[SphericalPolygon] = []
+SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 
-SPHERE_PARTS = [
-    SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
-    SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
-    SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
-    SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
-]
-SPHERE_PARTS_BOUNDING_BOXES = [
-    box(minx=0, miny=0, maxx=180, maxy=90),
-    box(minx=0, miny=-90, maxx=180, maxy=0),
-    box(minx=-180, miny=-90, maxx=0, maxy=0),
-    box(minx=-180, miny=0, maxx=0, maxy=90),
-]
+
+def _generate_sphere_parts() -> None:
+    global SPHERE_PARTS
+    global SPHERE_PARTS_BOUNDING_BOXES
+
+    if not SPHERE_PARTS:
+        # LON: 0; LAT: 0
+        POINT_FRONT = (1.0, 0.0, 0.0)
+        # LON: 180; LAT: 0
+        POINT_BACK = (-1.0, 0.0, 0.0)
+        # LON: 0; LAT: 90
+        POINT_TOP = (0.0, 0.0, 1.0)
+        # LON: 0; LAT: -90
+        POINT_BOTTOM = (0.0, 0.0, -1.0)
+        # LON: -90; LAT: 0
+        POINT_LEFT = (0.0, -1.0, 0.0)
+        # LON: 90; LAT: 0
+        POINT_RIGHT = (0.0, 1.0, 0.0)
+
+        SPHERE_PARTS = [
+            SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
+            SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
+            SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
+            SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
+        ]
+        SPHERE_PARTS_BOUNDING_BOXES = [
+            box(minx=0, miny=0, maxx=180, maxy=90),
+            box(minx=0, miny=-90, maxx=180, maxy=0),
+            box(minx=-180, miny=-90, maxx=0, maxy=0),
+            box(minx=-180, miny=0, maxx=0, maxy=90),
+        ]
 
 
 class SphereEllipsoid(Ellipsoid):  # type: ignore
@@ -220,6 +229,7 @@ def _create_region(
     region_vertices = [v for v in sv.vertices[region]]
     sph_pol = SphericalPolygon(region_vertices)
     sphere_intersection_parts = []
+    _generate_sphere_parts()
     for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
         if sph_pol.intersects_poly(sphere_part):
             intersection = sph_pol.intersection(sphere_part)
