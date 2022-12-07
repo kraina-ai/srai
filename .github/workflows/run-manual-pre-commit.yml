@@ -1,0 +1,19 @@
+name: "Run manual pre-commit stage"
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-manual-stage:
+    name: Run pre-commit manual stage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files --hook-stage manual
