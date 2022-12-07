@@ -29,7 +29,7 @@ def _generate_sphere_parts() -> None:
     global SPHERE_PARTS
     global SPHERE_PARTS_BOUNDING_BOXES
 
-    if len(SPHERE_PARTS) == 0:
+    if not SPHERE_PARTS:
         # LON: 0; LAT: 0
         POINT_FRONT = (1.0, 0.0, 0.0)
         # LON: 180; LAT: 0
