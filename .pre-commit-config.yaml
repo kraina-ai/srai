@@ -36,12 +36,6 @@ repos:
     rev: v0.991
     hooks:
       - id: mypy
-  - repo: https://github.com/dosisod/refurb
-    rev: v1.8.0
-    hooks:
-      - id: refurb
-        language: python
-        language_version: python3.10
   - repo: https://github.com/pdm-project/pdm
     rev: 2.3.1
     hooks:
@@ -60,6 +54,13 @@ repos:
         exclude: mkdocs.yml # See https://github.com/readthedocs/readthedocs.org/issues/6889
       - id: check-added-large-files
       - id: detect-private-key
+  - repo: https://github.com/dosisod/refurb
+    rev: v1.8.0
+    hooks:
+      - id: refurb
+        language: python
+        language_version: python3.10
+        stages: [manual]
 
 ci:
   autofix_commit_msg: |
