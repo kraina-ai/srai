@@ -1,8 +1,49 @@
 """_summary_."""
 
+from typing import Dict, List
+
 import numpy as np
 
-ACCEPTABLE_FEATURES = {
+OSMNX_TIMEOUT: int = 10000
+
+"""
+Extended OSMnx way tags
+"""
+OSMNX_WAY_KEYS: List[str] = [
+    "bridge",
+    "tunnel",
+    "oneway",
+    "lanes",
+    "ref",
+    "name",
+    "highway",
+    "maxspeed",
+    "service",
+    "access",
+    "area",
+    "landuse",
+    "width",
+    "est_width",
+    "junction",
+    # missing in the original OSMnx config
+    "surface",
+    "footway",
+    "bicycle",
+    "lit",
+]
+
+
+"""
+Acceptable features assembled based on [1] and [2].
+
+Assembled values that are officially defined in the wiki and are related to `way` OSM type.
+
+References:
+    [1] https://taginfo.openstreetmap.org/
+    [2] https://wiki.openstreetmap.org/wiki/Main_Page
+
+"""
+OSM_WAY_TAGS: Dict[str, List[str]] = {
     "oneway": ["False", "True"],
     "lanes": list(map(str, range(1, 21))),
     "highway": [
