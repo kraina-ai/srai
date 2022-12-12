@@ -21,7 +21,7 @@ from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
-from srai.utils._optional import check_for_dependencies
+from srai.utils._optional import import_optional_dependencies
 
 
 class AdministrativeBoundaryRegionizer:
@@ -41,10 +41,6 @@ class AdministrativeBoundaryRegionizer:
 
     """
 
-    @check_for_dependencies(
-        dependency_group="osm",
-        modules=["osmnx", "OSMPythonTools"],
-    )
     def __init__(
         self,
         admin_level: int,
@@ -80,6 +76,10 @@ class AdministrativeBoundaryRegionizer:
             [2] https://taginfo.openstreetmap.org/keys/admin_level#values
 
         """  # noqa: W505, E501
+        import_optional_dependencies(
+            dependency_group="osm",
+            modules=["osmnx", "OSMPythonTools"],
+        )
         from OSMPythonTools.overpass import Overpass
 
         if admin_level < 1 or admin_level > 11:

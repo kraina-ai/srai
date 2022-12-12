@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import Any, Callable, List, Optional
+from typing import List, Optional
 
 
 # Inspired by:
@@ -33,9 +33,9 @@ def import_optional_dependency(
     try:
         imported_module = importlib.import_module(module)
         return imported_module if name is None else getattr(imported_module, name)
-    except ImportError as e:
+    except ImportError:
         error_msg = (
-            f'Missing optional dependency "{e.name}". Please install required packages using '
+            f'Missing optional dependency "{module}". Please install required packages using '
             f"`pip install srai[{dependency_group}]`."
         )
         if error == "raise":
@@ -47,27 +47,15 @@ def import_optional_dependency(
     return None
 
 
-def check_for_dependencies(
-    dependency_group: str, modules: List[str]
-) -> Callable[..., Callable[..., Any]]:
+def import_optional_dependencies(dependency_group: str, modules: List[str]) -> None:
     """
-    Decorator allowing import of required dependencies.
+    Import list of optional dependencies.
 
     Args:
         dependency_group (str): Name of optional group that contains dependencies.
         modules (List[str]): List of module names that are expected to be imported.
 
-    Returns:
-        Callable[..., Callable[..., Any]]: Decorator for a function.
-
     """
 
-    def decorator(func: Any) -> Any:
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            for module in modules:
-                import_optional_dependency(dependency_group=dependency_group, module=module)
-            func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
+    for module in modules:
+        import_optional_dependency(dependency_group=dependency_group, module=module)
