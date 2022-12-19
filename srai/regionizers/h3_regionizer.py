@@ -20,7 +20,7 @@ import h3
 from functional import seq
 from shapely import geometry
 
-from . import BaseRegionizer
+from .base import BaseRegionizer
 
 
 class H3Regionizer(BaseRegionizer):
@@ -71,10 +71,9 @@ class H3Regionizer(BaseRegionizer):
             ValueError: If provided GeoDataFrame has no crs defined.
 
         """
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = self._set_crs(gdf)
 
-        # transform multipolygons to multiple polygons
-        gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
+        gdf_exploded = self._explode_multipolygons(gdf_wgs84)
         gdf_buffered = self._buffer(gdf_exploded) if self.buffer else gdf_exploded
 
         h3_indexes = (

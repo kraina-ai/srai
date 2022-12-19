@@ -23,3 +23,29 @@ class BaseRegionizer(abc.ABC):
 
         """
         raise NotImplementedError
+
+    def _set_crs(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Set the CRS to WGS84.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be converted.
+
+        Returns:
+            GeoDataFrame converted to EPSG:4326.
+
+        """
+        return gdf.to_crs(epsg=4326)
+
+    def _explode_multipolygons(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Explode multipolygons into multiple polygons.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be exploded.
+
+        Returns:
+            GeoDataFrame with exploded multipolygons.
+
+        """
+        return gdf.explode(index_parts=True).reset_index(drop=True)

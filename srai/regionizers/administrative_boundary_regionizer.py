@@ -23,8 +23,10 @@ from tqdm import tqdm
 
 from srai.utils._optional import import_optional_dependencies
 
+from .base import BaseRegionizer
 
-class AdministrativeBoundaryRegionizer:
+
+class AdministrativeBoundaryRegionizer(BaseRegionizer):
     """
     AdministrativeBoundaryRegionizer.
 
@@ -136,7 +138,7 @@ class AdministrativeBoundaryRegionizer:
             [4] https://github.com/mattijn/topojson
 
         """
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = self._set_crs(gdf)
 
         regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 

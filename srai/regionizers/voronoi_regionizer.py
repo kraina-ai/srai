@@ -12,8 +12,10 @@ from shapely.geometry import box
 
 from srai.utils._optional import import_optional_dependencies
 
+from .base import BaseRegionizer
 
-class VoronoiRegionizer:
+
+class VoronoiRegionizer(BaseRegionizer):
     """
     VoronoiRegionizer.
 
@@ -104,7 +106,7 @@ class VoronoiRegionizer:
                 {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
             )
 
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = self._set_crs(gdf)
         generated_regions = generate_voronoi_regions(
             self.seeds, self.max_meters_between_points, self.allow_multiprocessing
         )
