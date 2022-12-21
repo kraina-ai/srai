@@ -29,7 +29,6 @@ class S2Regionizer(BaseRegionizer):
     S2 Regionizer.
 
     S2 Regionizer gives an opportunity to divide the given geometries into square S2 cells.
-
     """
 
     def __init__(self, resolution: int, buffer: bool = True) -> None:
@@ -64,7 +63,6 @@ class S2Regionizer(BaseRegionizer):
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
-
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 

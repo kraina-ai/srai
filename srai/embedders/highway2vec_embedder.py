@@ -17,7 +17,6 @@ class Highway2VecEmbedder:
                 to be found in the resulting embedding. If not None, the missing features are added
                 and filled with 0. The unexpected features are removed.
                 The resulting columns are sorted accordingly. Defaults to None.
-
         """
         self.expected_output_features = (
             pd.Series(expected_output_features) if expected_output_features is not None else None
@@ -47,7 +46,6 @@ class Highway2VecEmbedder:
 
         Returns:
             gpd.GeoDataFrame: Embedding and geometry for each region in regions_gdf.
-
         """
         joint_with_features = joint_gdf.join(features_gdf.drop("geometry", axis=1))
         region_embeddings = (
@@ -68,7 +66,6 @@ class Highway2VecEmbedder:
         Returns:
             pd.DataFrame: region_embeddings either unchanged
                 or with expected columns only.
-
         """
         if self.expected_output_features is not None:
             return self._filter_to_expected_features(region_embeddings)
@@ -83,7 +80,6 @@ class Highway2VecEmbedder:
 
         Returns:
             pd.DataFrame: Embeddings with expected columns only.
-
         """
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(region_embeddings.columns)

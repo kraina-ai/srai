@@ -2,7 +2,6 @@
 Voronoi Regionizer.
 
 This module contains voronoi regionizer implementation.
-
 """
 
 from typing import Optional
@@ -56,7 +55,6 @@ class VoronoiRegionizer(BaseRegionizer):
             ValueError: If any seed is duplicated.
             ValueError: If less than 4 seeds are provided.
             ValueError: If provided seeds geodataframe has no crs defined.
-
         """
         import_optional_dependencies(
             dependency_group="voronoi", modules=["haversine", "pymap3d", "spherical_geometry"]
@@ -98,7 +96,6 @@ class VoronoiRegionizer(BaseRegionizer):
         Raises:
             ValueError: If provided geodataframe has no crs defined.
             ValueError: If seeds are laying on a single arc.
-
         """
         from ._spherical_voronoi import generate_voronoi_regions
 

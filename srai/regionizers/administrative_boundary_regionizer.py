@@ -2,7 +2,6 @@
 Administrative Boundary Regionizer.
 
 This module contains administrative boundary regionizer implementation.
-
 """
 import time
 import urllib.request

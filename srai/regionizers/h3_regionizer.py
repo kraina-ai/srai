@@ -31,7 +31,6 @@ class H3Regionizer(BaseRegionizer):
 
     H3 Regionizer allows the given geometries to be divided
     into H3 cells - hexagons with pentagons as a very rare exception
-
     """
 
     def __init__(self, resolution: int, buffer: bool = True) -> None:
@@ -71,7 +70,6 @@ class H3Regionizer(BaseRegionizer):
 
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.
-
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
@@ -106,7 +104,6 @@ class H3Regionizer(BaseRegionizer):
 
         Returns:
             h3.Polygon: Converted polygon.
-
         """
         exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
         interiors = [
@@ -123,7 +120,6 @@ class H3Regionizer(BaseRegionizer):
 
         Returns:
             gpd.GeoDataFrame: H3 cells.
-
         """
         return gpd.GeoDataFrame(
             None,
@@ -141,7 +137,6 @@ class H3Regionizer(BaseRegionizer):
 
         Returns:
             geometry.Polygon: Converted polygon.
-
         """
         return self._polygon_h3_to_shapely(h3.cells_to_polygons([h3_index])[0])
 
@@ -154,7 +149,6 @@ class H3Regionizer(BaseRegionizer):
 
         Returns:
             geometry.Polygon: Converted polygon.
-
         """
         return geometry.Polygon(
             shell=[coord[::-1] for coord in polygon.outer],

@@ -3,7 +3,6 @@ Spherical voronoi utils.
 
 This module contains spherical voronoi implementation based on SphericalVoronoi function from scipy
 library.
-
 """
 
 from functools import partial
@@ -91,7 +90,6 @@ def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, fl
 
     Returns:
         Tuple[float, float, float]: (x, y, z) coordinates tuple.
-
     """
     x, y, z = geodetic2ecef(lat, lon, 0, ell=ell)
     return x, y, z
@@ -108,7 +106,6 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
 
     Returns:
         Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
-
     """
     lat, lon, _ = ecef2geodetic(x, y, z, ell=ell)
     return lon, lat
@@ -133,7 +130,6 @@ def _fix_lat_lon(
 
     Returns:
         Tuple[float, float]: Longitude and latitude of a point.
-
     """
     min_lon, min_lat, max_lon, max_lat = bbox
 
@@ -174,7 +170,6 @@ def _create_polygon(
 
     Returns:
         Polygon: Mapped polygon in wgs84 crs.
-
     """
     polygon_points = []
     prev_lon = None
@@ -223,7 +218,6 @@ def _create_region(
 
     Returns:
         MultiPolygon: Parsed region in WGS84 coordinates.
-
     """
     region = sv.regions[region_id]
     region_vertices = [v for v in sv.vertices[region]]
@@ -272,7 +266,6 @@ def generate_voronoi_regions(
 
     Raises:
         ValueError: If less than 4 seeds are provided.
-
     """
     if len(seeds) < 4:
         raise ValueError("Minimum 4 seeds are required.")
