@@ -19,6 +19,7 @@ from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
+from ..utils.constants import CRS
 from .base import BaseRegionizer
 
 
@@ -64,7 +65,7 @@ class S2Regionizer(BaseRegionizer):
             gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
 
         """
-        gdf_wgs84 = self._set_crs(gdf)
+        gdf_wgs84 = gdf.to_crs(crs=CRS)
 
         s2_gdf = self._fill_with_s2_cells(self._explode_multipolygons(gdf_wgs84))
 
@@ -91,7 +92,7 @@ class S2Regionizer(BaseRegionizer):
             None,
             index=cells.keys(),
             geometry=list(cells.values()),
-            crs="epsg:4326",
+            crs=CRS,
         )
 
         return cells_gdf

@@ -10,6 +10,8 @@ from typing import List, Optional, Union
 
 import geopandas as gpd
 
+from ..utils.constants import CRS
+
 
 class GeoparquetLoader:
     """
@@ -59,10 +61,10 @@ class GeoparquetLoader:
                 raise ValueError(f"Column {index_column} doesn't exist in a file.")
             gdf.set_index(index_column, inplace=True)
 
-        gdf.to_crs(epsg=4326, inplace=True)
+        gdf.to_crs(crs=CRS, inplace=True)
 
         if area is not None:
-            area_wgs84 = area.to_crs(epsg=4326)
+            area_wgs84 = area.to_crs(crs=CRS)
             gdf = gdf.clip(mask=area_wgs84, keep_geom_type=False)
 
         return gdf

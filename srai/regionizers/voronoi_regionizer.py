@@ -12,6 +12,7 @@ from shapely.geometry import box
 
 from srai.utils._optional import import_optional_dependencies
 
+from ..utils.constants import CRS
 from .base import BaseRegionizer
 
 
@@ -60,7 +61,7 @@ class VoronoiRegionizer(BaseRegionizer):
         import_optional_dependencies(
             dependency_group="voronoi", modules=["haversine", "pymap3d", "spherical_geometry"]
         )
-        seeds_wgs84 = seeds.to_crs(epsg=4326)
+        seeds_wgs84 = seeds.to_crs(crs=CRS)
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
@@ -103,15 +104,15 @@ class VoronoiRegionizer(BaseRegionizer):
 
         if gdf is None:
             gdf = gpd.GeoDataFrame(
-                {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
+                {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=CRS
             )
 
-        gdf_wgs84 = self._set_crs(gdf)
+        gdf_wgs84 = gdf.to_crs(crs=CRS)
         generated_regions = generate_voronoi_regions(
             self.seeds, self.max_meters_between_points, self.allow_multiprocessing
         )
         regions_gdf = gpd.GeoDataFrame(
-            data={"geometry": generated_regions}, index=self.region_ids, crs=4326
+            data={"geometry": generated_regions}, index=self.region_ids, crs=CRS
         )
         regions_gdf.index.rename("region_id", inplace=True)
         clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
