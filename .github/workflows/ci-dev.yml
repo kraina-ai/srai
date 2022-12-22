@@ -78,27 +78,27 @@ jobs:
         run: |
           pdm build -v -d dist
           pip install $(find dist -name '*.whl')
-      # - name: Configure Git user
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      # - name: Cache Overpass data
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: "**/cache"
-      #     key: mkdocs-overpass-dev-cache-${{ runner.os }}
-      # - name: Execute jupyter notebooks
-      #   run: |
-      #     jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
-      # - uses: jannekem/run-python-script-action@v1
-      #   name: Replace copyright date
-      #   with:
-      #     script: |
-      #       import time
-      #       file_name = "mkdocs.yml"
-      #       with open(file_name) as f:
-      #           data = f.read().replace('{current_year}', time.strftime("%Y"))
-      #       with open(file_name, "w") as f:
-      #           f.write(data)
-      # - name: Publish dev documentation
-      #   run: mike deploy --push dev
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: "**/cache"
+          key: mkdocs-overpass-dev-cache-${{ runner.os }}
+      - name: Execute jupyter notebooks
+        run: |
+          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
+      - uses: jannekem/run-python-script-action@v1
+        name: Replace copyright date
+        with:
+          script: |
+            import time
+            file_name = "mkdocs.yml"
+            with open(file_name) as f:
+                data = f.read().replace('{current_year}', time.strftime("%Y"))
+            with open(file_name, "w") as f:
+                f.write(data)
+      - name: Publish dev documentation
+        run: mike deploy --push dev
