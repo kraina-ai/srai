@@ -155,7 +155,7 @@ def _fix_lat_lon(
 
 
 def _create_polygon(
-    spherical_polygon_points: npt.NDArray,
+    spherical_polygon_points: npt.NDArray[np.float32],
     bbox: Polygon,
     se: SphereEllipsoid,
     max_step: int,

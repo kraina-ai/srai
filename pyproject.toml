@@ -120,8 +120,8 @@ warn_return_any = true
 
 [tool.pydocstyle]
 convention = "google"
-add-select = ["D202", "D213"]
-add-ignore = ["D212"]
+add-select = ["D213"]
+add-ignore = ["D202", "D212"]
 
 [tool.docformatter]
 syntax = 'google'

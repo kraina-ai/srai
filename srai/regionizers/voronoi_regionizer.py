@@ -10,7 +10,7 @@ from typing import Optional
 import geopandas as gpd
 from shapely.geometry import box
 
-from ._spherical_voronoi import generate_voronoi_regions
+from srai.utils._optional import import_optional_dependencies
 
 
 class VoronoiRegionizer:
@@ -55,6 +55,9 @@ class VoronoiRegionizer:
             ValueError: If provided seeds geodataframe has no crs defined.
 
         """
+        import_optional_dependencies(
+            dependency_group="voronoi", modules=["haversine", "pymap3d", "spherical_geometry"]
+        )
         seeds_wgs84 = seeds.to_crs(epsg=4326)
         self.region_ids = []
         self.seeds = []
@@ -94,6 +97,8 @@ class VoronoiRegionizer:
             ValueError: If seeds are laying on a single arc.
 
         """
+        from ._spherical_voronoi import generate_voronoi_regions
+
         if gdf is None:
             gdf = gpd.GeoDataFrame(
                 {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
