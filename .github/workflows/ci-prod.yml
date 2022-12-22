@@ -53,17 +53,17 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate requirements.txt
-        run: pdm export -d -G:all > requirements.txt
+        run: pdm export --no-default -G docs -G visualization -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --no-deps -r requirements.txt
       - name: Install geovoronoi dependency
         run: pip install geovoronoi==0.4.0
       - name: Install nbconvert dependency
         run: pip install jupyter nbconvert nbformat
-      - name: Install self
+      - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install $(find dist -name '*.whl')
+          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"

@@ -5,18 +5,23 @@ This module contains administrative boundary regionizer implementation.
 
 """
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from OSMPythonTools.overpass import Element
+
 from typing import Any, Dict, List, Union
 
 import geopandas as gpd
 import topojson as tp
 from functional import seq
-from osmnx import geocode_to_gdf
-from OSMPythonTools.overpass import Element, Overpass, overpassQueryBuilder
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
+
+from srai.utils._optional import import_optional_dependencies
 
 
 class AdministrativeBoundaryRegionizer:
@@ -71,6 +76,12 @@ class AdministrativeBoundaryRegionizer:
             [2] https://taginfo.openstreetmap.org/keys/admin_level#values
 
         """  # noqa: W505, E501
+        import_optional_dependencies(
+            dependency_group="osm",
+            modules=["osmnx", "OSMPythonTools"],
+        )
+        from OSMPythonTools.overpass import Overpass
+
         if admin_level < 1 or admin_level > 11:
             raise ValueError("admin_level outside of available range.")
 
@@ -177,6 +188,8 @@ class AdministrativeBoundaryRegionizer:
 
     def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
         """Generate Overpass query for a geometry."""
+        from OSMPythonTools.overpass import overpassQueryBuilder
+
         if isinstance(g, Point):
             query = (
                 f"is_in({g.y},{g.x});"
@@ -206,7 +219,7 @@ class AdministrativeBoundaryRegionizer:
             )
         return query
 
-    def _parse_overpass_element(self, element: Element) -> Dict[str, Any]:
+    def _parse_overpass_element(self, element: "Element") -> Dict[str, Any]:
         """Parse single Overpass Element and return a region."""
         region_id = None
         if self.prioritize_english_name:
@@ -223,6 +236,8 @@ class AdministrativeBoundaryRegionizer:
 
     def _get_boundary_geometry(self, relation_id: int) -> BaseGeometry:
         """Download a geometry of a relation using `osmnx` library."""
+        from osmnx import geocode_to_gdf
+
         return geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
 
     def _toposimplify_gdf(self, regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
