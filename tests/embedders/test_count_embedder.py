@@ -56,7 +56,7 @@ def test_correct_embedding(
     expected_embedding_df: pd.DataFrame,
 ) -> None:
     """Test if CountEmbedder returns correct result in the default case."""
-    embedding_df = CountEmbedder().embed(
+    embedding_df = CountEmbedder().transform(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
     )
     assert_frame_equal(embedding_df, expected_embedding_df, check_dtype=False)
@@ -70,7 +70,7 @@ def test_correct_embedding_expected_features(
     specified_features_expected_embedding_df: pd.DataFrame,
 ) -> None:
     """Test if CountEmbedder returns correct result in the specified features case."""
-    embedding_df = CountEmbedder(expected_output_features=expected_feature_names).embed(
+    embedding_df = CountEmbedder(expected_output_features=expected_feature_names).transform(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
     )
     assert_frame_equal(embedding_df, specified_features_expected_embedding_df, check_dtype=False)
@@ -129,7 +129,7 @@ def test_empty(
     gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        embedding = embedder.embed(gdf_regions, gdf_features, gdf_joint)
+        embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
         assert len(embedding) == len(gdf_regions)
         assert_index_equal(embedding.index, gdf_regions.index)
         if expected_output_features:
@@ -188,6 +188,6 @@ def test_incorrect_indexes(
     joint_gdf = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        CountEmbedder().embed(
+        CountEmbedder().transform(
             regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
         )
