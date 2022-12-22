@@ -48,6 +48,7 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
+all = ["srai[osm,voronoi]"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
@@ -71,6 +72,13 @@ lint = [
 ]
 # pdm add -dG test <library>
 test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
+# pdm add -dG visualization <library>
+visualization = [
+    "keplergl>=0.3.2",
+    "matplotlib>=3.6.1",
+    "plotly>=5.10.0",
+    "kaleido==0.2.1",
+]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs>=1.4.0",
@@ -82,12 +90,6 @@ docs = [
     "mkdocs-gen-files>=0.4.0",
     "mkdocs-awesome-pages-plugin>=2.8.0",
     "mike<2.0.0",
-]
-visualization = [
-    "keplergl>=0.3.2",
-    "matplotlib>=3.6.1",
-    "plotly>=5.10.0",
-    "kaleido==0.2.1",
 ]
 performance = ["scalene>=1.5.14"]
 
