@@ -77,7 +77,7 @@ jobs:
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ '"$(find dist -name '*.whl')"'
+          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
