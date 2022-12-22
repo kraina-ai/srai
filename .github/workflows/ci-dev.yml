@@ -74,10 +74,10 @@ jobs:
         run: pip install geovoronoi==0.4.0
       - name: Install nbconvert dependency
         run: pip install jupyter nbconvert nbformat
-      - name: Install self
+      - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install '$(find dist -name '*.whl')[all]'
+          pip install 'srai[all] @ $(find dist -name '*.whl')'
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
