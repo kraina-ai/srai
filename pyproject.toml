@@ -48,7 +48,9 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
-all = ["srai[osm,voronoi]"]
+# pdm add -G gtfs <library>
+gtfs = ["gtfs-kit>=5.2.3"]
+all = ["srai[osm,voronoi,gtfs]"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]

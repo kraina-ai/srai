@@ -123,6 +123,15 @@ requires_python = ">=3.7"
 summary = "Bash style brace expander."
 
 [[package]]
+name = "branca"
+version = "0.6.0"
+requires_python = ">=3.7"
+summary = "Generate complex HTML+JS pages with Python"
+dependencies = [
+    "jinja2",
+]
+
+[[package]]
 name = "bumpver"
 version = "2022.1120"
 requires_python = ">=2.7"
@@ -377,6 +386,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "folium"
+version = "0.14.0"
+requires_python = ">=3.5"
+summary = "Make beautiful maps with Leaflet.js & Python"
+dependencies = [
+    "branca>=0.6.0",
+    "jinja2>=2.9",
+    "numpy",
+    "requests",
+]
+
+[[package]]
 name = "fonttools"
 version = "4.38.0"
 requires_python = ">=3.7"
@@ -432,6 +453,23 @@ requires_python = ">=3.7"
 summary = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
 dependencies = [
     "colorama>=0.4",
+]
+
+[[package]]
+name = "gtfs-kit"
+version = "5.2.3"
+requires_python = ">=3.8,<4"
+summary = "A Python 3.8+ library for analyzing GTFS feeds."
+dependencies = [
+    "folium>=0",
+    "geopandas>=0",
+    "json2html>=1",
+    "pandas>=1",
+    "pycountry>=19",
+    "requests>=2",
+    "rtree>=0",
+    "shapely>=1",
+    "utm>=0",
 ]
 
 [[package]]
@@ -579,6 +617,11 @@ dependencies = [
     "editorconfig>=0.12.2",
     "six>=1.13.0",
 ]
+
+[[package]]
+name = "json2html"
+version = "1.3.0"
+summary = "JSON to HTML Table Representation"
 
 [[package]]
 name = "jsonpointer"
@@ -1340,6 +1383,15 @@ requires_python = ">=3.6"
 summary = "Python style guide checker"
 
 [[package]]
+name = "pycountry"
+version = "22.3.5"
+requires_python = ">=3.6, <4"
+summary = "ISO country, subdivision, language, currency and script definitions and their translations"
+dependencies = [
+    "setuptools",
+]
+
+[[package]]
 name = "pycparser"
 version = "2.21"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -1502,7 +1554,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.9"
 requires_python = ">=3.7"
-summary = "Pseudo terminal support for Windows from Python."
+summary = ""
 
 [[package]]
 name = "pyyaml"
@@ -1818,6 +1870,11 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 summary = "HTTP library with thread-safe connection pooling, file post, and more."
 
 [[package]]
+name = "utm"
+version = "0.7.0"
+summary = "Bidirectional UTM-WGS84 converter for python"
+
+[[package]]
 name = "verspec"
 version = "0.1.0"
 summary = "Flexible version handling"
@@ -1903,7 +1960,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c99f6203"
+content_hash = "sha256:276fb451913fc89e3ba81b5a770434035c0c1e4147063d9eca566365ef9a9912"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2015,6 +2072,10 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
 "bracex 2.3.post1" = [
     {url = "https://files.pythonhosted.org/packages/26/f5/7c60fb31c9aea37b3424e4206f9f6ed23c1ee0a717fa31749d10665a4eef/bracex-2.3.post1-py3-none-any.whl", hash = "sha256:351b7f20d56fb9ea91f9b9e9e7664db466eb234188c175fd943f8f755c807e73"},
     {url = "https://files.pythonhosted.org/packages/b3/96/d53e290ddf6215cfb24f93449a1835eff566f79a1f332cf046a978df0c9e/bracex-2.3.post1.tar.gz", hash = "sha256:e7b23fc8b2cd06d3dec0692baabecb249dda94e06a617901ff03a6c56fd71693"},
+]
+"branca 0.6.0" = [
+    {url = "https://files.pythonhosted.org/packages/a6/18/cea6374623d82efc292996997cee0a13ae99359c7e66db22f92dc8484dd1/branca-0.6.0-py3-none-any.whl", hash = "sha256:ae706fc7a88dd0296a58bb11c0cb3c6be358491a3b0abee08fe16b4db17814c0"},
+    {url = "https://files.pythonhosted.org/packages/bb/66/e3591bc59d0685668cf9bb451ed527b0c261cfa2afedbe72422442586ace/branca-0.6.0.tar.gz", hash = "sha256:55949855214504c7583b71b9a03a84dce2e96a84027613bb53b42d04844ce24e"},
 ]
 "bumpver 2022.1120" = [
     {url = "https://files.pythonhosted.org/packages/09/90/b276575a9c718e029e9c3b39087c793e594422db4b04df33921868b77b0b/bumpver-2022.1120.tar.gz", hash = "sha256:ff8ad562a2ed87e862e07683cb68c4b61046679bf155f7a7ebb20b2ea47775cd"},
@@ -2355,6 +2416,10 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
     {url = "https://files.pythonhosted.org/packages/8b/ad/35dc9b3585ddbab617679b97487450f873e582408843c07fe97f524463c2/flake8_docstrings-1.6.0-py2.py3-none-any.whl", hash = "sha256:99cac583d6c7e32dd28bbfbef120a7c0d1b6dde4adb5a9fd441c4227a6534bde"},
     {url = "https://files.pythonhosted.org/packages/c1/a6/b8a953fb256ee383fed9094f7270ab75cd637c23749c211f0e6b3552a31e/flake8-docstrings-1.6.0.tar.gz", hash = "sha256:9fe7c6a306064af8e62a055c2f61e9eb1da55f84bb39caef2b84ce53708ac34b"},
 ]
+"folium 0.14.0" = [
+    {url = "https://files.pythonhosted.org/packages/0e/0f/22068577bc5eafdcbf5521dbaed6a5317a434ad6847ad3711dee1fd1f6ba/folium-0.14.0-py2.py3-none-any.whl", hash = "sha256:c894e2c029a8ca40e043a311978a895cefe32d746a94263f807dd7b6b2e9c679"},
+    {url = "https://files.pythonhosted.org/packages/bb/d0/2d8d1a500d829caa0e6b394ee933344f7fee81cb685409e5aaf5c9492f64/folium-0.14.0.tar.gz", hash = "sha256:8ec44697d18f5932e0fdaee8b19da98625de4d0e72cb30ef56f9479f18e11b9f"},
+]
 "fonttools 4.38.0" = [
     {url = "https://files.pythonhosted.org/packages/55/5c/a4a25cf6db42d113d8f626901bb156b2f7cf7c7564a6bbc7b5cd6f7cb484/fonttools-4.38.0.zip", hash = "sha256:2bb244009f9bf3fa100fc3ead6aeb99febe5985fa20afbfbaa2f8946c2fbdaf1"},
     {url = "https://files.pythonhosted.org/packages/e3/d9/e9bae85e84737e76ebbcbea13607236da0c0699baed0ae4f1151b728a608/fonttools-4.38.0-py3-none-any.whl", hash = "sha256:820466f43c8be8c3009aef8b87e785014133508f0de64ec469e4efb643ae54fb"},
@@ -2385,6 +2450,10 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
 "griffe 0.25.1" = [
     {url = "https://files.pythonhosted.org/packages/83/97/344a2444db98769441fd9650e6bb5d336108d53d80edf000537621114e6e/griffe-0.25.1-py3-none-any.whl", hash = "sha256:a2d6cef8129579438c3e71401a5fb035ffea5afa8f8e27d946dbb9e136b90b1a"},
     {url = "https://files.pythonhosted.org/packages/f7/d3/234abefed8275b5930347ba673b9bd438e75282443de8e03ce10ce8f22fa/griffe-0.25.1.tar.gz", hash = "sha256:d79365aa6f5050a24b47fca4b351fbdd446f0fe7924c9e55ae908bfacc91bfcf"},
+]
+"gtfs-kit 5.2.3" = [
+    {url = "https://files.pythonhosted.org/packages/3b/4e/9b08f8cf547f42a764c592ec04a83de3a6a86c6e67aa4b0cbdbcca09dbf4/gtfs_kit-5.2.3-py3-none-any.whl", hash = "sha256:12e9f5826a435fbbfaea3b61e0b8992a9013eafddc589911a6848b274c2600be"},
+    {url = "https://files.pythonhosted.org/packages/a8/31/9d703da99e6d10d2eb93fb389fcbb4496d54291302ec2960b901a9ac79ce/gtfs_kit-5.2.3.tar.gz", hash = "sha256:5a1fd777cb478a44212eb487dffa3f30af848aaf551464fd88a2f96d611963a5"},
 ]
 "h3 4.0.0b2" = [
     {url = "https://files.pythonhosted.org/packages/02/8d/2a7075621da8a5ea0c78c23dc4688862fa99277c0361c4388b07d8f24331/h3-4.0.0b2-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c65e849219d21ce74d6fb87c327f490925190032ee489d7f467d4d5e9fc6b893"},
@@ -2484,6 +2553,9 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
 ]
 "jsbeautifier 1.14.7" = [
     {url = "https://files.pythonhosted.org/packages/7d/0a/6cb21f26972a794ba994a4680998177fdd4130b2ee2d1b82d424721cc103/jsbeautifier-1.14.7.tar.gz", hash = "sha256:77993254db1ff6f84eb6e1d75e3b6b72cba2ef20813a585b2d81e8e5e3c713c6"},
+]
+"json2html 1.3.0" = [
+    {url = "https://files.pythonhosted.org/packages/01/d5/40b617ee19d2d79f606ed37f8a81e51158f126d2af67270c68f2b47ae0d5/json2html-1.3.0.tar.gz", hash = "sha256:8951a53662ae9cfd812685facdba693fc950ffc1c1fd1a8a2d3cf4c34600689c"},
 ]
 "jsonpointer 2.3" = [
     {url = "https://files.pythonhosted.org/packages/a0/6c/c52556b957a0f904e7c45585444feef206fe5cb1ff656303a1d6d922a53b/jsonpointer-2.3.tar.gz", hash = "sha256:97cba51526c829282218feb99dab1b1e6bdf8efd1c43dc9d57be093c0d69c99a"},
@@ -3191,6 +3263,9 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
     {url = "https://files.pythonhosted.org/packages/67/e4/fc77f1039c34b3612c4867b69cbb2b8a4e569720b1f19b0637002ee03aff/pycodestyle-2.9.1-py2.py3-none-any.whl", hash = "sha256:d1735fc58b418fd7c5f658d28d943854f8a849b01a5d0a1e6f3f3fdd0166804b"},
     {url = "https://files.pythonhosted.org/packages/b6/83/5bcaedba1f47200f0665ceb07bcb00e2be123192742ee0edfb66b600e5fd/pycodestyle-2.9.1.tar.gz", hash = "sha256:2c9607871d58c76354b697b42f5d57e1ada7d261c261efac224b664affdc5785"},
 ]
+"pycountry 22.3.5" = [
+    {url = "https://files.pythonhosted.org/packages/33/24/033604d30f6cf82d661c0f9dfc2c71d52cafc2de516616f80d3b0600cb7c/pycountry-22.3.5.tar.gz", hash = "sha256:b2163a246c585894d808f18783e19137cb70a0c18fb36748dc01fc6f109c1646"},
+]
 "pycparser 2.21" = [
     {url = "https://files.pythonhosted.org/packages/5e/0b/95d387f5f4433cb0f53ff7ad859bd2c6051051cebbb564f139a999ab46de/pycparser-2.21.tar.gz", hash = "sha256:e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206"},
     {url = "https://files.pythonhosted.org/packages/62/d5/5f610ebe421e85889f2e55e33b7f9a6795bd982198517d912eb1c76e1a53/pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
@@ -3835,6 +3910,9 @@ content_hash = "sha256:68191a3e76eba70271c999ba461302d5c1e6faceb0bd53896b72f595c
 "urllib3 1.26.13" = [
     {url = "https://files.pythonhosted.org/packages/65/0c/cc6644eaa594585e5875f46f3c83ee8762b647b51fc5b0fb253a242df2dc/urllib3-1.26.13-py2.py3-none-any.whl", hash = "sha256:47cc05d99aaa09c9e72ed5809b60e7ba354e64b59c9c173ac3018642d8bb41fc"},
     {url = "https://files.pythonhosted.org/packages/c2/51/32da03cf19d17d46cce5c731967bf58de9bd71db3a379932f53b094deda4/urllib3-1.26.13.tar.gz", hash = "sha256:c083dd0dce68dbfbe1129d5271cb90f9447dea7d52097c6e0126120c521ddea8"},
+]
+"utm 0.7.0" = [
+    {url = "https://files.pythonhosted.org/packages/f7/7e/629ddbe63164f71bf2b03e151a69bfbf439692652432af4b2a78f21b0a18/utm-0.7.0.tar.gz", hash = "sha256:3c9a3650e98bb6eecec535418d0dfd4db8f88c8ceaca112a0ff0787e116566e2"},
 ]
 "verspec 0.1.0" = [
     {url = "https://files.pythonhosted.org/packages/a4/ce/3b6fee91c85626eaf769d617f1be9d2e15c1cca027bbdeb2e0d751469355/verspec-0.1.0-py3-none-any.whl", hash = "sha256:741877d5633cc9464c45a469ae2a31e801e6dbbaa85b9675d481cda100f11c31"},
