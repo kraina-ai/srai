@@ -18,7 +18,7 @@ class IntersectionJoiner:
 
     """
 
-    def join(
+    def transform(
         self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = True
     ) -> gpd.GeoDataFrame:
         """

@@ -8,10 +8,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         include:
           - os: macos-latest
-            python-version: "3.10"
+            python-version: "3.11"
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ matrix.python-version }}
@@ -38,5 +38,7 @@ jobs:
         with:
           path: .tox
           key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}

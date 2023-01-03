@@ -9,7 +9,7 @@ class BaseEmbedder(abc.ABC):
     """Base abstract class for embedders."""
 
     @abc.abstractmethod
-    def embed(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Embed a given GeoDataFrame.
 
