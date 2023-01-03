@@ -58,6 +58,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
+      - name: Install required osmium dependencies
+        run: sudo apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
