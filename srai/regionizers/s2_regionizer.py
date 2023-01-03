@@ -5,8 +5,8 @@ This module exposes Google's S2 Geospatial Indexing System [1] as a regionizer.
 It uses the Python API [2].
 
 References:
-    [1] https://s2geometry.io/
-    [2] https://github.com/JoaoCarabetta/s2-py
+    1. https://s2geometry.io/
+    2. https://github.com/JoaoCarabetta/s2-py
 
 """
 
@@ -44,7 +44,7 @@ class S2Regionizer(BaseRegionizer):
             ValueError: If resolution is not between 0 and 30.
 
         References:
-            [1] https://s2geometry.io/resources/s2cell_statistics.html
+            1. https://s2geometry.io/resources/s2cell_statistics.html
 
         """
         if not (0 <= resolution <= 30):
