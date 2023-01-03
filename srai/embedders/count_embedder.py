@@ -29,7 +29,7 @@ class CountEmbedder:
         else:
             self.expected_output_features = None
 
-    def embed(
+    def transform(
         self,
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
