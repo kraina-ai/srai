@@ -7,8 +7,11 @@
 <p align="center">
     <img alt="GitHub" src="https://img.shields.io/github/license/srai-lab/srai">
     <img src="https://img.shields.io/github/checks-status/srai-lab/srai/main" alt="Checks">
-    <a href="https://github.com/srai-lab/srai/actions?query=workflow%3A%22Build+%26+publish%22+event%3Apush+branch%3Amain" target="_blank">
-        <img alt="GitHub Workflow Status (event)" src="https://img.shields.io/github/workflow/status/srai-lab/srai/full-ci?event=push&branch=main">
+    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-dev.yml" target="_blank">
+        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-dev.yml?label=build-dev">
+    </a>
+    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-prod.yml" target="_blank">
+        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-prod.yml?label=build-prod">
     </a>
     <a href="https://results.pre-commit.ci/latest/github/srai-lab/srai/main" target="_blank">
         <img src="https://results.pre-commit.ci/badge/github/srai-lab/srai/main.svg" alt="pre-commit.ci status">
