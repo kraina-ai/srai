@@ -18,11 +18,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.11
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
-          python-version: 3.8
+          python-version: 3.11
           architecture: x64
           enable-pep582: true
           cache: true
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.11
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
