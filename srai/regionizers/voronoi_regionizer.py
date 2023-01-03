@@ -23,8 +23,8 @@ class VoronoiRegionizer:
     using SphericalVoronoi [2] function from scipy library.
 
     References:
-        [1] https://en.wikipedia.org/wiki/Voronoi_diagram
-        [2] https://docs.scipy.org/doc/scipy-1.9.2/reference/generated/scipy.spatial.SphericalVoronoi.html
+        1. https://en.wikipedia.org/wiki/Voronoi_diagram
+        2. https://docs.scipy.org/doc/scipy-1.9.2/reference/generated/scipy.spatial.SphericalVoronoi.html
 
     """  # noqa: W505, E501
 

@@ -114,6 +114,7 @@ plugins:
 markdown_extensions:
   - attr_list
   - md_in_html
+  - pymdownx.magiclink
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite

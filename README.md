@@ -8,7 +8,7 @@
     <a href="https://github.com/srai-lab/srai/actions/workflows/ci-dev.yml" target="_blank">
         <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-dev.yml?label=build-dev">
     </a>
-  <a href="https://github.com/srai-lab/srai/actions/workflows/ci-prod.yml" target="_blank">
+    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-prod.yml" target="_blank">
         <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-prod.yml?label=build-prod">
     </a>
     <a href="https://results.pre-commit.ci/latest/github/srai-lab/srai/main" target="_blank">
