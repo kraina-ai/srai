@@ -36,9 +36,9 @@ class S2Regionizer(BaseRegionizer):
 
         Args:
             resolution (int): Resolution of the cells (S2 supports 0-30). See [1] for
-            a full comparison.
+                a full comparison.
             buffer (bool, optional): If True then fully cover geometries with S2 cells.
-            Otherwise only use those cells that fully fit into them. Defaults to True.
+                Otherwise only use those cells that fully fit into them. Defaults to True.
 
         Raises:
             ValueError: If resolution is not between 0 and 30.
