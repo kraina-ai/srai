@@ -2,51 +2,51 @@ name: "Build & publish - DEV"
 on:
   push:
     branches:
-      - "**"
+      - main
 
 jobs:
-  # run-tests:
-  #   name: "Run tests job"
-  #   uses: ./.github/workflows/_tests.yml
+  run-tests:
+    name: "Run tests job"
+    uses: ./.github/workflows/_tests.yml
 
-  # build-n-publish:
-  #   name: Build and publish Python 🐍 distributions 📦 to TestPyPI
-  #   needs: [run-tests]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: 3.11
-  #     - uses: pdm-project/setup-pdm@v3
-  #       name: Setup PDM
-  #       with:
-  #         python-version: 3.11
-  #         architecture: x64
-  #         enable-pep582: true
-  #         cache: true
-  #         cache-dependency-path: "**/pdm.lock"
-  #     - run: pip install toml
-  #     - uses: jannekem/run-python-script-action@v1
-  #       name: Rename test version
-  #       with:
-  #         script: |
-  #           import time
-  #           import toml
-  #           data = toml.load("pyproject.toml")
-  #           current_date = time.strftime("%Y%m%d%H%M%S")
-  #           data['project']['version']=f"{data['project']['version']}-{current_date}"
-  #           data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{current_date}"
-  #           f = open("pyproject.toml",'w')
-  #           toml.dump(data, f)
-  #           f.close()
-  #     - name: Publish distribution 📦 to Test PyPI
-  #       run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
+  build-n-publish:
+    name: Build and publish Python 🐍 distributions 📦 to TestPyPI
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM
+        with:
+          python-version: 3.11
+          architecture: x64
+          enable-pep582: true
+          cache: true
+          cache-dependency-path: "**/pdm.lock"
+      - run: pip install toml
+      - uses: jannekem/run-python-script-action@v1
+        name: Rename test version
+        with:
+          script: |
+            import time
+            import toml
+            data = toml.load("pyproject.toml")
+            current_date = time.strftime("%Y%m%d%H%M%S")
+            data['project']['version']=f"{data['project']['version']}-{current_date}"
+            data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{current_date}"
+            f = open("pyproject.toml",'w')
+            toml.dump(data, f)
+            f.close()
+      - name: Publish distribution 📦 to Test PyPI
+        run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
 
   generate-docs:
     name: Publish dev library 📦 documentation 📄 to Github Pages 🌐
-    # needs: [run-tests]
+    needs: [run-tests]
     runs-on: ubuntu-latest
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
@@ -80,27 +80,27 @@ jobs:
         run: |
           pdm build -v -d dist
           pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
-      # - name: Configure Git user
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      # - name: Cache Overpass data
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: "**/cache"
-      #     key: mkdocs-overpass-dev-cache-${{ runner.os }}
-      # - name: Execute jupyter notebooks
-      #   run: |
-      #     jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
-      # - uses: jannekem/run-python-script-action@v1
-      #   name: Replace copyright date
-      #   with:
-      #     script: |
-      #       import time
-      #       file_name = "mkdocs.yml"
-      #       with open(file_name) as f:
-      #           data = f.read().replace('{current_year}', time.strftime("%Y"))
-      #       with open(file_name, "w") as f:
-      #           f.write(data)
-      # - name: Publish dev documentation
-      #   run: mike deploy --push dev
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: "**/cache"
+          key: mkdocs-overpass-dev-cache-${{ runner.os }}
+      - name: Execute jupyter notebooks
+        run: |
+          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
+      - uses: jannekem/run-python-script-action@v1
+        name: Replace copyright date
+        with:
+          script: |
+            import time
+            file_name = "mkdocs.yml"
+            with open(file_name) as f:
+                data = f.read().replace('{current_year}', time.strftime("%Y"))
+            with open(file_name, "w") as f:
+                f.write(data)
+      - name: Publish dev documentation
+        run: mike deploy --push dev
