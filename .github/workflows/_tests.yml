@@ -12,6 +12,9 @@ jobs:
         include:
           - os: macos-latest
             python-version: "3.11"
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ matrix.python-version }}
@@ -42,3 +45,13 @@ jobs:
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          env_vars: OS,PYTHON
+          fail_ci_if_error: true
+          files: ./coverage.python${{ matrix.python-version }}.xml,
+          # flags: unittests
+          # name: codecov-umbrella
+          # path_to_write_report: ./coverage/codecov_report.txt
+          verbose: true
