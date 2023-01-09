@@ -14,7 +14,7 @@
         <img src="https://results.pre-commit.ci/badge/github/srai-lab/srai/main.svg" alt="pre-commit.ci status">
     </a>
     <a href="https://www.codefactor.io/repository/github/srai-lab/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/srai-lab/srai?logo=codefactor&logoColor=%23fff"></a>
-    <a href="https://www.codefactor.io/repository/github/srai-lab/srai"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/srai-lab/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
+    <a href="https://app.codecov.io/gh/srai-lab/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/srai-lab/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
     <a href="https://pypi.org/project/srai" target="_blank">
         <img src="https://img.shields.io/pypi/v/srai?color=%2334D058&label=pypi%20package&logo=pypi&logoColor=%23fff" alt="Package version">
     </a>
