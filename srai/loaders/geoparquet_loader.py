@@ -21,7 +21,7 @@ class GeoparquetLoader:
     and allows for an automatic index setting and additional geometry clipping.
 
     References:
-        [1] https://github.com/opengeospatial/geoparquet
+        1. https://github.com/opengeospatial/geoparquet
 
     """
 
