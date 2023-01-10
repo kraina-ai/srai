@@ -10,7 +10,7 @@ from typing import List, Optional, Union
 
 import geopandas as gpd
 
-from srai.utils.constants import CRS
+from srai.utils.constants import WGS84_CRS
 
 
 class GeoparquetLoader:
@@ -61,10 +61,10 @@ class GeoparquetLoader:
                 raise ValueError(f"Column {index_column} doesn't exist in a file.")
             gdf.set_index(index_column, inplace=True)
 
-        gdf.to_crs(crs=CRS, inplace=True)
+        gdf.to_crs(crs=WGS84_CRS, inplace=True)
 
         if area is not None:
-            area_wgs84 = area.to_crs(crs=CRS)
+            area_wgs84 = area.to_crs(crs=WGS84_CRS)
             gdf = gdf.clip(mask=area_wgs84, keep_geom_type=False)
 
         return gdf

@@ -1,3 +1,3 @@
 """Constants used across the project."""
 
-CRS = "EPSG:4326"
+WGS84_CRS = "EPSG:4326"
