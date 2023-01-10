@@ -45,7 +45,7 @@ class GTFSLoader:
         feed = gk.read_feed(gtfs_file, dist_units="km")
 
         trips_df = self._load_trips(feed)
-        trips_df.columns = [f"trip_count_{c}" for c in trips_df.columns]
+        directions_df = self._load_directions(feed)
 
         stops_df = feed.stops[["stop_id", "stop_lat", "stop_lon"]].set_index("stop_id")
         stops_df["geometry"] = stops_df.apply(
@@ -57,6 +57,8 @@ class GTFSLoader:
             geometry="geometry",
             crs="EPSG:4326",
         )
+
+        result_gdf = result_gdf.merge(directions_df, how="left", on="stop_id")
 
         result_gdf.index.name = None
 
@@ -89,6 +91,7 @@ class GTFSLoader:
 
         df = pd.DataFrame(records, columns=["stop_id", "hour", "num_trips"])
         df = df.pivot_table(index="stop_id", columns="hour", values="num_trips", fill_value=0)
+        df = df.add_prefix("trip_count_at_")
 
         return df
 
@@ -105,5 +108,16 @@ class GTFSLoader:
             gpd.GeoDataFrame: GeoDataFrame with directions.
 
         """
-        # TODO: implement
-        raise NotImplementedError
+        df = feed.stop_times.merge(feed.trips, on="trip_id")
+        df = df.merge(feed.stops, on="stop_id")
+
+        df = df[df["departure_time"].notna()]
+
+        df["hour"] = df["departure_time"].apply(lambda x: int(x[:2].replace(":", "")) % 24)
+
+        pivoted = df.pivot_table(
+            values="trip_headsign", index="stop_id", columns="hour", aggfunc=set
+        )
+        pivoted = pivoted.add_prefix("directions_at_")
+
+        return pivoted
