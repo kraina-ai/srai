@@ -23,20 +23,13 @@ class GTFSLoader:
     """
     GTFSLoader.
 
-    This loader is capable of reading GTFS feed and calculates time aggregations for a given time
-    slots.
+    This loader is capable of reading GTFS feed and calculates time aggregations in 1H slots.
 
     """
 
-    def __init__(self, time_resolution: str = "1H"):
-        """
-        Initialize GTFS loader.
-
-        Args:
-            time_resolution (str, optional): Resolution for time aggregations. Defaults to "1H".
-
-        """
-        self.time_resolution = time_resolution
+    def __init__(self) -> None:
+        """Initialize GTFS loader."""
+        self.time_resolution = "1H"
 
     def load(self, gtfs_file: Path) -> gpd.GeoDataFrame:
         """
