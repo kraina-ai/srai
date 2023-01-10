@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
@@ -73,7 +74,10 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = ["pytest~=7.1", "pytest-cov~=4.0", "tox-pdm>=0.6.0"]
+test = [
+    "pytest~=7.1",
+    "tox-pdm>=0.6.0",
+]
 # pdm add -dG visualization <library>
 visualization = [
     "keplergl>=0.3.2",
