@@ -11,8 +11,8 @@ import geopandas as gpd
 from shapely.geometry import box
 
 from srai.utils._optional import import_optional_dependencies
+from srai.utils.constants import CRS
 
-from ..utils.constants import CRS
 from .base import BaseRegionizer
 
 

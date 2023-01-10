@@ -19,7 +19,8 @@ from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
-from ..utils.constants import CRS
+from srai.utils.constants import CRS
+
 from .base import BaseRegionizer
 
 

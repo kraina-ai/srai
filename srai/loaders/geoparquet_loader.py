@@ -10,7 +10,7 @@ from typing import List, Optional, Union
 
 import geopandas as gpd
 
-from ..utils.constants import CRS
+from srai.utils.constants import CRS
 
 
 class GeoparquetLoader:

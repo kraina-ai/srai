@@ -22,8 +22,8 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.utils._optional import import_optional_dependencies
+from srai.utils.constants import CRS
 
-from ..utils.constants import CRS
 from .base import BaseRegionizer
 
 

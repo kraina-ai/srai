@@ -20,7 +20,8 @@ import h3
 from functional import seq
 from shapely import geometry
 
-from ..utils.constants import CRS
+from srai.utils.constants import CRS
+
 from .base import BaseRegionizer
 
 
