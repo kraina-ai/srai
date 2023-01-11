@@ -23,3 +23,16 @@ class BaseRegionizer(abc.ABC):
 
         """
         raise NotImplementedError
+
+    def _explode_multipolygons(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Explode multipolygons into multiple polygons.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be exploded.
+
+        Returns:
+            GeoDataFrame with exploded multipolygons.
+
+        """
+        return gdf.explode(index_parts=True).reset_index(drop=True)
