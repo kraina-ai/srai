@@ -2,7 +2,7 @@ name: "Build & publish - DEV"
 on:
   push:
     branches:
-      - main
+      - "**"
 
 jobs:
   # run-tests:
