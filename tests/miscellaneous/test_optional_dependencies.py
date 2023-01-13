@@ -1,8 +1,11 @@
 """Optional dependencies tests."""
 import sys
-from typing import List
+from contextlib import nullcontext as does_not_raise
+from typing import Any, List
 
 import pytest
+
+from srai.utils._optional import ImportErrorHandle, import_optional_dependency
 
 
 @pytest.fixture(autouse=True)  # type: ignore
@@ -117,3 +120,18 @@ def test_optional_missing(test_fn):
     """Test if defined functions are failing without optional packages."""
     with pytest.raises(ImportError):
         test_fn()
+
+
+@pytest.mark.usefixtures("no_optional_dependencies")  # type: ignore
+@pytest.mark.parametrize(  # type: ignore
+    "import_error,expectation",
+    [
+        (ImportErrorHandle.RAISE, pytest.raises(ImportError)),
+        (ImportErrorHandle.WARN, pytest.warns(ImportWarning)),
+        (ImportErrorHandle.IGNORE, does_not_raise()),
+    ],
+)
+def test_optional_missing_error_handle(import_error: ImportErrorHandle, expectation: Any) -> None:
+    """Test checks if import error handles are working."""
+    with expectation:
+        import_optional_dependency(dependency_group="test", module="_srai_test", error=import_error)
