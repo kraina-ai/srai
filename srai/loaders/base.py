@@ -11,7 +11,7 @@ class BaseLoader(abc.ABC):
     """Base abstract class for loaders."""
 
     @abc.abstractmethod
-    def load(self, area: Union[gpd.GeoDataFrame, Path]) -> gpd.GeoDataFrame:
+    def load(self, area: Union[gpd.GeoDataFrame, Path]) -> gpd.GeoDataFrame:  # pragma: no cover
         """
         Load data for a given area.
 

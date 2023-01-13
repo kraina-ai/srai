@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from shapely import geometry
 
+from srai.utils.constants import WGS84_CRS
+
 
 @pytest.fixture  # type: ignore
 def gdf_empty() -> gpd.GeoDataFrame:
@@ -106,7 +108,7 @@ def gdf_regions() -> gpd.GeoDataFrame:
         index=pd.Index(
             data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"], name="region_id"
         ),
-        crs="epsg:4326",
+        crs=WGS84_CRS,
     )
     return regions_gdf
 
@@ -159,7 +161,7 @@ def gdf_features() -> gpd.GeoDataFrame:
             data=["way/312457804", "way/1533817161", "way/312457812", "way/312457834"],
             name="feature_id",
         ),
-        crs="epsg:4326",
+        crs=WGS84_CRS,
     )
 
     return features_gdf
@@ -215,6 +217,6 @@ def gdf_joint() -> gpd.GeoDataFrame:
             ],
             names=["region_id", "feature_id"],
         ),
-        crs="epsg:4326",
+        crs=WGS84_CRS,
     )
     return joint_gdf

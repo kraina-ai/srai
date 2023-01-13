@@ -56,7 +56,7 @@ def import_optional_dependency(
         if error == ImportErrorHandle.WARN:
             import warnings
 
-            warnings.warn(f"{error_msg} Skipping import.")
+            warnings.warn(f"{error_msg} Skipping import.", ImportWarning)
     return None
 
 
