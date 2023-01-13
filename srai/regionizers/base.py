@@ -9,7 +9,7 @@ class BaseRegionizer(abc.ABC):
     """Base abstract class for regionizers."""
 
     @abc.abstractmethod
-    def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:  # pragma: no cover
         """
         Regionize a given GeoDataFrame.
 
