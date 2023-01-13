@@ -7,6 +7,7 @@ from shapely.geometry import Point
 
 from srai.regionizers import VoronoiRegionizer
 from srai.utils import _merge_disjointed_gdf_geometries
+from srai.utils.constants import WGS84_CRS
 
 
 def test_empty_gdf_attribute_error(gdf_empty) -> None:  # type: ignore
@@ -28,7 +29,7 @@ def test_duplicate_seeds_value_error() -> None:
         seeds_gdf = gpd.GeoDataFrame(
             {"geometry": [Point(0, 0), Point(0, 0), Point(-1, -1), Point(2, 2)]},
             index=[1, 2, 3, 4],
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         VoronoiRegionizer(seeds=seeds_gdf)
 
@@ -39,7 +40,7 @@ def test_single_seed_region() -> None:
         seeds_gdf = gpd.GeoDataFrame(
             {"geometry": [Point(0, 0)]},
             index=[1],
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         VoronoiRegionizer(seeds=seeds_gdf)
 
@@ -66,7 +67,7 @@ def test_four_close_seed_region(gdf_earth_bbox, earth_bbox) -> None:  # type: ig
             ]
         },
         index=[1, 2, 3, 4],
-        crs="EPSG:4326",
+        crs=WGS84_CRS,
     )
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)

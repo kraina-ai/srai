@@ -8,9 +8,10 @@ from shapely.geometry import Point, box
 
 from srai.regionizers import AdministrativeBoundaryRegionizer
 from srai.utils import _merge_disjointed_gdf_geometries
+from srai.utils.constants import WGS84_CRS
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
-bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs="EPSG:4326")
+bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -78,7 +79,7 @@ def test_single_points(toposimplify: Union[bool, float]) -> None:
                 Point(15.00989, 49.79905),  # Czechia
             ]
         },
-        crs="EPSG:4326",
+        crs=WGS84_CRS,
     )
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=False, clip_regions=False, toposimplify=toposimplify
@@ -103,7 +104,7 @@ def test_empty_region_full_bounding_box(toposimplify: Union[bool, float]) -> Non
     madagascar_bbox = box(
         minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
     )
-    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs="EPSG:4326")
+    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
@@ -133,7 +134,7 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float]) -> 
         maxx=88.50230949587835,
         maxy=34.846427760404225,
     )
-    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs="EPSG:4326")
+    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )

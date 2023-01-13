@@ -6,6 +6,7 @@ from typing import Any, List
 import pytest
 
 from srai.utils._optional import ImportErrorHandle, import_optional_dependency
+from srai.utils.constants import WGS84_CRS
 
 
 @pytest.fixture(autouse=True)  # type: ignore
@@ -65,12 +66,12 @@ def _test_voronoi_regionizer() -> None:
             ]
         },
         index=[1, 2, 3, 4],
-        crs="EPSG:4326",
+        crs=WGS84_CRS,
     )
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     vr.transform(
         gdf=gpd.GeoDataFrame(
-            {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs="EPSG:4326"
+            {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
         )
     )
 
@@ -89,7 +90,7 @@ def _test_administrative_boundary_regionizer() -> None:
         maxx=88.50230949587835,
         maxy=34.846427760404225,
     )
-    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs="EPSG:4326")
+    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=0.001
     )

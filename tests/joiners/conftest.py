@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from shapely import geometry
 
+from srai.utils.constants import WGS84_CRS
+
 
 @pytest.fixture  # type: ignore
 def no_geometry_gdf() -> gpd.GeoDataFrame:
@@ -28,7 +30,7 @@ def regions_gdf() -> gpd.GeoDataFrame:
             geometry.Polygon([(-2, -1), (-2, -2), (-1, -2), (-1, -1)]),
             geometry.Polygon([(-2, 0.5), (-2, -0.5), (-1, -0.5), (-1, 0.5)]),
         ],
-        crs="epsg:4326",
+        crs=WGS84_CRS,
     )
     return regions
 
@@ -43,7 +45,7 @@ def features_gdf() -> gpd.GeoDataFrame:
             geometry.Point((0, 0)),
             geometry.Point((-0.5, -0.5)),
         ],
-        crs="epsg:4326",
+        crs=WGS84_CRS,
     )
     return features
 
