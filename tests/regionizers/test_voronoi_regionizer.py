@@ -2,21 +2,25 @@
 from typing import Any
 
 import geopandas as gpd
+import numpy as np
 import pytest
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 from srai.regionizers import VoronoiRegionizer
+from srai.regionizers._spherical_voronoi import generate_voronoi_regions
 from srai.utils import _merge_disjointed_gdf_geometries
 from srai.utils.constants import WGS84_CRS
 
 
-def test_empty_gdf_attribute_error(gdf_empty) -> None:  # type: ignore
+def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:
     """Test checks if empty GeoDataFrames are disallowed."""
     with pytest.raises(AttributeError):
         VoronoiRegionizer(seeds=gdf_empty)
 
 
-def test_no_crs_gdf_value_error(gdf_earth_poles, gdf_no_crs) -> None:  # type: ignore
+def test_no_crs_gdf_value_error(
+    gdf_earth_poles: gpd.GeoDataFrame, gdf_no_crs: gpd.GeoDataFrame
+) -> None:
     """Test checks if GeoDataFrames without crs are disallowed."""
     with pytest.raises(ValueError):
         vr = VoronoiRegionizer(seeds=gdf_earth_poles)
@@ -45,8 +49,16 @@ def test_single_seed_region() -> None:
         VoronoiRegionizer(seeds=seeds_gdf)
 
 
-def test_multiple_seeds_regions(  # type: ignore
-    gdf_earth_poles, gdf_earth_bbox, earth_bbox
+def test_single_seed_algorithm_error() -> None:
+    """Test checks if single seed is disallowed."""
+    with pytest.raises(ValueError):
+        generate_voronoi_regions(
+            seeds=[Point(0, 0)], max_meters_between_points=10_000, allow_multiprocessing=True
+        )
+
+
+def test_multiple_seeds_regions(
+    gdf_earth_poles: gpd.GeoDataFrame, gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon
 ) -> None:
     """Test checks if regions are generated correctly."""
     vr = VoronoiRegionizer(seeds=gdf_earth_poles)
@@ -55,7 +67,29 @@ def test_multiple_seeds_regions(  # type: ignore
     assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
-def test_four_close_seed_region(gdf_earth_bbox, earth_bbox) -> None:  # type: ignore
+def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
+    """Test checks if regions are generated correctly and multiprocessing working."""
+    number_of_points = 1000
+    minx, miny, maxx, maxy = earth_bbox.bounds
+    randx = np.random.uniform(minx, maxx, number_of_points)
+    randy = np.random.uniform(miny, maxy, number_of_points)
+    coords = np.vstack((randx, randy)).T
+
+    pts = [p for p in list(map(Point, coords)) if p.within(earth_bbox)]
+
+    random_points_gdf = gpd.GeoDataFrame(
+        {"geometry": pts},
+        index=list(range(len(pts))),
+        crs=WGS84_CRS,
+    )
+
+    vr = VoronoiRegionizer(seeds=random_points_gdf, allow_multiprocessing=True)
+    result_gdf = vr.transform(gdf=gdf_earth_bbox)
+    assert len(result_gdf.index) == number_of_points
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+
+
+def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
     """Test checks if four close seeds are properly evaluated."""
     seeds_gdf = gpd.GeoDataFrame(
         {
@@ -75,7 +109,7 @@ def test_four_close_seed_region(gdf_earth_bbox, earth_bbox) -> None:  # type: ig
     assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
-def test_default_parameter(gdf_earth_poles, earth_bbox) -> None:  # type: ignore
+def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
     """Test checks if regions are generated correctly with a default mask."""
     vr = VoronoiRegionizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
