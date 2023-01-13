@@ -4,7 +4,8 @@ Administrative Boundary Regionizer.
 This module contains administrative boundary regionizer implementation.
 
 """
-
+import time
+import urllib.request
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -100,7 +101,7 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         else:
             self.toposimplify = False
 
-        self.overpass = Overpass()
+        self.overpass = Overpass(waitBetweenQueries=1)
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
@@ -171,7 +172,7 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
                 unary_geometry = unary_union([r["geometry"] for r in generated_regions])
                 if not geometry.within(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
-                    boundaries = self.overpass.query(query, timeout=60, shallow=False)
+                    boundaries = self._query_overpass(query)
                     boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
                     for boundary in boundaries_list:
                         if boundary.id() not in elements_ids:
@@ -180,6 +181,41 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
                             pbar.update(1)
 
         return generated_regions
+
+    def _query_overpass(self, query: str) -> Any:
+        """
+        Query Overpass with OSMPythonTools and catch exceptions.
+
+        Since OSMPythonTools doesn't have useful http error wrapping like osmnx does [1],
+        this method allows for retry after waiting some time.
+
+        Args:
+            query (str): Overpass query.
+
+        Raises:
+            ex: If exception is different than urllib.request.HTTPError or
+                HTTP code is different than 429 or 504.
+
+        Returns:
+            Any: Queries result from OSMPythonTools.
+
+        References:
+            1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
+
+        """
+        while True:
+            try:
+                return self.overpass.query(query, timeout=60, shallow=False)
+            except Exception as ex:
+                if (
+                    isinstance(ex.args, tuple)
+                    and len(ex.args) >= 2
+                    and isinstance(ex.args[1], urllib.request.HTTPError)
+                    and ex.args[1].getcode() in {429, 504}
+                ):
+                    time.sleep(60)
+                else:
+                    raise ex
 
     def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
         """Flatten all geometries into a list of BaseGeometries."""
