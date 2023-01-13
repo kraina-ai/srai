@@ -7,7 +7,7 @@ This module contains administrative boundary regionizer implementation.
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from OSMPythonTools.overpass import Element
 
 from typing import Any, Dict, List, Union
@@ -93,9 +93,9 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         self.clip_regions = clip_regions
         self.return_empty_region = return_empty_region
 
-        if isinstance(toposimplify, float):
+        if isinstance(toposimplify, (int, float)) and toposimplify > 0:
             self.toposimplify = toposimplify
-        elif toposimplify:
+        elif isinstance(toposimplify, bool) and toposimplify:
             self.toposimplify = 1e-4
         else:
             self.toposimplify = False
