@@ -6,6 +6,7 @@ import pytest
 from shapely.geometry import box
 
 from srai.loaders import GeoparquetLoader
+from srai.utils.constants import WGS84_CRS
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
 bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]})
@@ -53,7 +54,7 @@ def test_setting_index() -> None:
 def test_clipping() -> None:
     """Test if properly clips the data."""
     bbox = box(minx=-106.645646, maxx=-93.508292, miny=25.837377, maxy=36.500704)
-    bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs="EPSG:4326")
+    bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
     gdf = GeoparquetLoader().load(
         file_path=Path(__file__).parent / "files" / "example.parquet", area=bbox_gdf
     )

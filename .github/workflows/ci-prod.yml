@@ -14,7 +14,7 @@ jobs:
     needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -37,7 +37,7 @@ jobs:
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Fetch gh-pages branch
         run: git fetch origin gh-pages --depth=1
       - name: Setup Python

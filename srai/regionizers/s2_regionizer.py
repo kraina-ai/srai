@@ -19,7 +19,9 @@ from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
-from . import BaseRegionizer
+from srai.utils.constants import WGS84_CRS
+
+from .base import BaseRegionizer
 
 
 class S2Regionizer(BaseRegionizer):
@@ -64,12 +66,9 @@ class S2Regionizer(BaseRegionizer):
             gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
 
         """
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
-        # transform multipolygons to multiple polygons
-        gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
-
-        s2_gdf = self._fill_with_s2_cells(gdf_exploded)
+        s2_gdf = self._fill_with_s2_cells(self._explode_multipolygons(gdf_wgs84))
 
         # s2 library fills also holes in Polygons, so here we remove redundant cells
         res: gpd.GeoDataFrame = gpd.sjoin(
@@ -94,7 +93,7 @@ class S2Regionizer(BaseRegionizer):
             None,
             index=cells.keys(),
             geometry=list(cells.values()),
-            crs="epsg:4326",
+            crs=WGS84_CRS,
         )
 
         return cells_gdf

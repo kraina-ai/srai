@@ -20,7 +20,9 @@ import h3
 from functional import seq
 from shapely import geometry
 
-from . import BaseRegionizer
+from srai.utils.constants import WGS84_CRS
+
+from .base import BaseRegionizer
 
 
 class H3Regionizer(BaseRegionizer):
@@ -71,10 +73,9 @@ class H3Regionizer(BaseRegionizer):
             ValueError: If provided GeoDataFrame has no crs defined.
 
         """
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
-        # transform multipolygons to multiple polygons
-        gdf_exploded = gdf_wgs84.explode(index_parts=True).reset_index(drop=True)
+        gdf_exploded = self._explode_multipolygons(gdf_wgs84)
         gdf_buffered = self._buffer(gdf_exploded) if self.buffer else gdf_exploded
 
         h3_indexes = (
@@ -128,7 +129,7 @@ class H3Regionizer(BaseRegionizer):
             None,
             index=h3_indexes,
             geometry=[self._h3_index_to_shapely_polygon(h3_index) for h3_index in h3_indexes],
-            crs="epsg:4326",
+            crs=WGS84_CRS,
         )
 
     def _h3_index_to_shapely_polygon(self, h3_index: str) -> geometry.Polygon:
@@ -192,7 +193,7 @@ class H3Regionizer(BaseRegionizer):
             geometry=(
                 gdf.to_crs(epsg=3395)
                 .buffer(2 * h3.average_hexagon_edge_length(self.resolution, unit="m"))
-                .to_crs(epsg=4326)
+                .to_crs(crs=WGS84_CRS)
             ),
             index=gdf.index,
         )

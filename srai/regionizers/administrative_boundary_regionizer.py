@@ -4,10 +4,11 @@ Administrative Boundary Regionizer.
 This module contains administrative boundary regionizer implementation.
 
 """
-
+import time
+import urllib.request
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from OSMPythonTools.overpass import Element
 
 from typing import Any, Dict, List, Union
@@ -22,9 +23,12 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.utils._optional import import_optional_dependencies
+from srai.utils.constants import WGS84_CRS
+
+from .base import BaseRegionizer
 
 
-class AdministrativeBoundaryRegionizer:
+class AdministrativeBoundaryRegionizer(BaseRegionizer):
     """
     AdministrativeBoundaryRegionizer.
 
@@ -90,14 +94,14 @@ class AdministrativeBoundaryRegionizer:
         self.clip_regions = clip_regions
         self.return_empty_region = return_empty_region
 
-        if isinstance(toposimplify, float):
+        if isinstance(toposimplify, (int, float)) and toposimplify > 0:
             self.toposimplify = toposimplify
-        elif toposimplify:
+        elif isinstance(toposimplify, bool) and toposimplify:
             self.toposimplify = 1e-4
         else:
             self.toposimplify = False
 
-        self.overpass = Overpass()
+        self.overpass = Overpass(waitBetweenQueries=1)
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
@@ -136,11 +140,11 @@ class AdministrativeBoundaryRegionizer:
             4. https://github.com/mattijn/topojson
 
         """
-        gdf_wgs84 = gdf.to_crs(epsg=4326)
+        gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
         regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 
-        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs="EPSG:4326").set_index("region_id")
+        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index("region_id")
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
         if self.clip_regions:
@@ -168,7 +172,7 @@ class AdministrativeBoundaryRegionizer:
                 unary_geometry = unary_union([r["geometry"] for r in generated_regions])
                 if not geometry.within(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
-                    boundaries = self.overpass.query(query, timeout=60, shallow=False)
+                    boundaries = self._query_overpass(query)
                     boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
                     for boundary in boundaries_list:
                         if boundary.id() not in elements_ids:
@@ -177,6 +181,41 @@ class AdministrativeBoundaryRegionizer:
                             pbar.update(1)
 
         return generated_regions
+
+    def _query_overpass(self, query: str) -> Any:
+        """
+        Query Overpass with OSMPythonTools and catch exceptions.
+
+        Since OSMPythonTools doesn't have useful http error wrapping like osmnx does [1],
+        this method allows for retry after waiting some time.
+
+        Args:
+            query (str): Overpass query.
+
+        Raises:
+            ex: If exception is different than urllib.request.HTTPError or
+                HTTP code is different than 429 or 504.
+
+        Returns:
+            Any: Queries result from OSMPythonTools.
+
+        References:
+            1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
+
+        """
+        while True:
+            try:
+                return self.overpass.query(query, timeout=60, shallow=False)
+            except Exception as ex:
+                if (
+                    isinstance(ex.args, tuple)
+                    and len(ex.args) >= 2
+                    and isinstance(ex.args[1], urllib.request.HTTPError)
+                    and ex.args[1].getcode() in {429, 504}
+                ):
+                    time.sleep(60)
+                else:
+                    raise ex
 
     def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
         """Flatten all geometries into a list of BaseGeometries."""
@@ -250,7 +289,7 @@ class AdministrativeBoundaryRegionizer:
             simplify_algorithm="dp",
             prevent_oversimplify=True,
         )
-        regions_gdf = topo.to_gdf(winding_order="CW_CCW", crs="EPSG:4326", validate=True)
+        regions_gdf = topo.to_gdf(winding_order="CW_CCW", crs=WGS84_CRS, validate=True)
         regions_gdf.index.rename("region_id", inplace=True)
         regions_gdf.geometry = regions_gdf.geometry.apply(make_valid)
         for idx, r in regions_gdf.iterrows():
