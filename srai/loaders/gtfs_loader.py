@@ -12,11 +12,14 @@ References:
 """
 
 from pathlib import Path
+from typing import Any
 
 import geopandas as gpd
-import gtfs_kit as gk
 import pandas as pd
 from shapely.geometry import Point
+
+from srai.utils._optional import import_optional_dependencies
+from srai.utils.constants import WGS84_CRS
 
 
 class GTFSLoader:
@@ -29,6 +32,8 @@ class GTFSLoader:
 
     def __init__(self) -> None:
         """Initialize GTFS loader."""
+        import_optional_dependencies(dependency_group="gtfs", modules=["gtfs_kit"])
+
         self.time_resolution = "1H"
 
     def load(self, gtfs_file: Path) -> gpd.GeoDataFrame:
@@ -42,6 +47,8 @@ class GTFSLoader:
             gpd.GeoDataFrame: GeoDataFrame with trip counts and list of directions for stops.
 
         """
+        import gtfs_kit as gk
+
         feed = gk.read_feed(gtfs_file, dist_units="km")
 
         trips_df = self._load_trips(feed)
@@ -55,7 +62,7 @@ class GTFSLoader:
         result_gdf = gpd.GeoDataFrame(
             trips_df.merge(stops_df["geometry"], how="inner", on="stop_id"),
             geometry="geometry",
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
 
         result_gdf = result_gdf.merge(directions_df, how="left", on="stop_id")
@@ -64,7 +71,8 @@ class GTFSLoader:
 
         return result_gdf
 
-    def _load_trips(self, feed: gk.Feed) -> pd.DataFrame:
+    # FIXME: how to type this if gtfs_kit is optional?
+    def _load_trips(self, feed: Any) -> pd.DataFrame:
         """
         Load trips from GTFS feed.
 
@@ -95,7 +103,8 @@ class GTFSLoader:
 
         return df
 
-    def _load_directions(self, feed: gk.Feed) -> gpd.GeoDataFrame:
+    # FIXME: how to type this if gtfs_kit is optional?
+    def _load_directions(self, feed: Any) -> gpd.GeoDataFrame:
         """
         Load directions from GTFS feed.
 
