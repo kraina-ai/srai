@@ -36,12 +36,19 @@ class GTFSLoader:
 
         self.time_resolution = "1H"
 
-    def load(self, gtfs_file: Path) -> gpd.GeoDataFrame:
+    def load(
+        self,
+        gtfs_file: Path,
+        fail_on_validation_errors: bool = True,
+        skip_validation: bool = False,
+    ) -> gpd.GeoDataFrame:
         """
         Load GTFS feed and calculate time aggregations for stops.
 
         Args:
             gtfs_file (Path): Path to the GTFS feed.
+            fail_on_validation_errors (bool): Fail if GTFS feed is invalid.
+            skip_validation (bool): Skip GTFS feed validation.
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with trip counts and list of directions for stops.
@@ -50,6 +57,9 @@ class GTFSLoader:
         import gtfs_kit as gk
 
         feed = gk.read_feed(gtfs_file, dist_units="km")
+
+        if not skip_validation:
+            self._validate_feed(feed, fail=fail_on_validation_errors)
 
         trips_df = self._load_trips(feed)
         directions_df = self._load_directions(feed)
@@ -130,3 +140,20 @@ class GTFSLoader:
         pivoted = pivoted.add_prefix("directions_at_")
 
         return pivoted
+
+    # FIXME: how to type this if gtfs_kit is optional?
+    def _validate_feed(self, feed: Any, fail: bool = True) -> None:
+        """
+        Validate GTFS feed.
+
+        Args:
+            feed (gk.Feed): GTFS feed.
+            fail (bool): Fail if feed is invalid.
+
+        """
+        validation_result = feed.validate()
+
+        if (validation_result["type"] == "error").sum() > 0:
+            print(f"Invalid GTFS feed: \n{validation_result}")
+            if fail:
+                raise ValueError("Invalid GTFS feed.")
