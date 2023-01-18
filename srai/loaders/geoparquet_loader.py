@@ -21,7 +21,6 @@ class GeoparquetLoader:
 
     References:
         1. https://github.com/opengeospatial/geoparquet
-
     """
 
     def load(

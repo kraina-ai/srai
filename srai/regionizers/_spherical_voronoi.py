@@ -69,7 +69,6 @@ class SphereEllipsoid(Ellipsoid):  # type: ignore
 
         References:
             1. https://github.com/geospace-code/pymap3d
-
         """
         self.semimajor_axis = 1
         self.semiminor_axis = 1

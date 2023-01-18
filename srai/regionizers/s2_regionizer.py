@@ -7,7 +7,6 @@ It uses the Python API [2].
 References:
     1. https://s2geometry.io/
     2. https://github.com/JoaoCarabetta/s2-py
-
 """
 
 import json
@@ -46,7 +45,6 @@ class S2Regionizer(BaseRegionizer):
 
         References:
             1. https://s2geometry.io/resources/s2cell_statistics.html
-
         """
         if not (0 <= resolution <= 30):
             raise ValueError(f"Resolution {resolution} is not between 0 and 30.")

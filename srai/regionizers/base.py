@@ -32,6 +32,5 @@ class BaseRegionizer(abc.ABC):
 
         Returns:
             GeoDataFrame with exploded multipolygons.
-
         """
         return gdf.explode(index_parts=True).reset_index(drop=True)

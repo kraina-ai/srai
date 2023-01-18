@@ -10,7 +10,6 @@ Note:
 References:
     1. https://uber.github.io/h3-py/
     2. https://uber.github.io/h3-py/api_comparison
-
 """
 
 from typing import List
@@ -47,7 +46,6 @@ class H3Regionizer(BaseRegionizer):
 
         References:
             1. https://h3geo.org/docs/core-library/restable/
-
         """
         if not (0 <= resolution <= 15):
             raise ValueError(f"Resolution {resolution} is not between 0 and 15.")
@@ -181,7 +179,6 @@ class H3Regionizer(BaseRegionizer):
 
         References:
             1. https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas
-
         """
         return gpd.GeoDataFrame(
             geometry=(
