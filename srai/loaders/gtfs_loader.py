@@ -12,7 +12,7 @@ References:
 """
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
@@ -20,6 +20,9 @@ from shapely.geometry import Point
 
 from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import WGS84_CRS
+
+if TYPE_CHECKING:
+    from gtfs_kit import Feed
 
 
 class GTFSLoader:
@@ -81,8 +84,7 @@ class GTFSLoader:
 
         return result_gdf
 
-    # FIXME: how to type this if gtfs_kit is optional?
-    def _load_trips(self, feed: Any) -> pd.DataFrame:
+    def _load_trips(self, feed: "Feed") -> pd.DataFrame:
         """
         Load trips from GTFS feed.
 
@@ -113,8 +115,7 @@ class GTFSLoader:
 
         return df
 
-    # FIXME: how to type this if gtfs_kit is optional?
-    def _load_directions(self, feed: Any) -> gpd.GeoDataFrame:
+    def _load_directions(self, feed: "Feed") -> gpd.GeoDataFrame:
         """
         Load directions from GTFS feed.
 
@@ -141,8 +142,7 @@ class GTFSLoader:
 
         return pivoted
 
-    # FIXME: how to type this if gtfs_kit is optional?
-    def _validate_feed(self, feed: Any, fail: bool = True) -> None:
+    def _validate_feed(self, feed: "Feed", fail: bool = True) -> None:
         """
         Validate GTFS feed.
 
