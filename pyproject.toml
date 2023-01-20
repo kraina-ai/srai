@@ -72,10 +72,7 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = [
-    "pytest~=7.1",
-    "tox-pdm>=0.6.0",
-]
+test = ["pytest~=7.1", "tox-pdm>=0.6.0"]
 # pdm add -dG visualization <library>
 visualization = [
     "keplergl>=0.3.2",
@@ -96,6 +93,10 @@ docs = [
     "mike<2.0.0",
 ]
 performance = ["scalene>=1.5.14"]
+license = [
+    "licensecheck @ git+https://github.com/RaczeQ/LicenseCheck",
+] # change to original package after pull request is accepted
+# https://github.com/FHPythonUtils/LicenseCheck/pull/29
 
 [tool.black]
 line-length = 100
@@ -145,3 +146,15 @@ wrap-one-line = true
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+
+[tool.licensecheck]
+using = "requirements"
+zero = false
+ignore_licenses = ["UNKNOWN"]
+ignore_packages = [
+    'srai',           # skip self
+    'scalene',        # uses Apache-2.0 license, takes time to analyse
+    'docformatter',   # uses MIT license, has mismatched license in analysis
+    'pymap3d',        # uses BSD-2 license, has mismatched license in analysis
+    'mkdocs-jupyter', # uses Apache-2.0 license, has mismatched license in analysis
+]
