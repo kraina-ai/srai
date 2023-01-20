@@ -21,7 +21,7 @@ from shapely.geometry import Point
 from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import WGS84_CRS
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from gtfs_kit import Feed
 
 
