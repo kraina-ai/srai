@@ -50,7 +50,8 @@ class GTFSLoader:
 
         Args:
             gtfs_file (Path): Path to the GTFS feed.
-            fail_on_validation_errors (bool): Fail if GTFS feed is invalid.
+            fail_on_validation_errors (bool): Fail if GTFS feed is invalid. Ignored when
+            skip_validation is True.
             skip_validation (bool): Skip GTFS feed validation.
 
         Returns:
