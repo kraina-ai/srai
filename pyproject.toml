@@ -46,7 +46,7 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # pdm add -G osm <library>
-osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
+osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "overpass>=0.7"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 all = ["srai[osm,voronoi]"]

@@ -1177,18 +1177,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "osmpythontools"
-version = "0.3.5"
-summary = "A library to access OpenStreetMap related services"
+name = "overpass"
+version = "0.7"
+summary = "Python wrapper for the OpenStreetMap Overpass API"
 dependencies = [
-    "beautifulsoup4",
-    "geojson",
-    "lxml",
-    "matplotlib",
-    "numpy",
-    "pandas",
-    "ujson",
-    "xarray",
+    "geojson>=1.0.9",
+    "requests>=2.3.0",
+    "shapely>=1.6.4",
 ]
 
 [[package]]
@@ -1671,43 +1666,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "srai"
-version = "0.0.1"
-requires_python = ">=3.8"
-summary = "A set of python modules for geospatial machine learning and data mining"
-dependencies = [
-    "geopandas>=0.11.1",
-    "geoparquet>=0.0.3",
-    "h3>=4.0.0b1",
-    "numpy>=1.23.4",
-    "pandas>=1.3",
-    "pyarrow>=10.0.0",
-    "pyfunctional>=1.4.3",
-    "rtree>=1.0.1",
-    "s2>=0.1.9",
-    "scipy>=1.9.3",
-    "shapely>=1.8.5.post1",
-    "topojson>=1.5",
-    "tqdm>=4.64.1",
-]
-
-[[package]]
-name = "srai"
-version = "0.0.1"
-extras = ["osm", "voronoi"]
-requires_python = ">=3.8"
-summary = "A set of python modules for geospatial machine learning and data mining"
-dependencies = [
-    "OSMPythonTools>=0.3.5",
-    "haversine>=2.7.0",
-    "osmium>=3.4.1",
-    "osmnx>=1.2.2",
-    "pymap3d>=2.9.1",
-    "spherical-geometry>=1.2.23",
-    "srai==0.0.1",
-]
-
-[[package]]
 name = "stack-data"
 version = "0.6.2"
 summary = "Extract data from python stack frames and tracebacks for informative displays"
@@ -1961,7 +1919,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:6b43174f3dffeaa82ff06a83efae01e6ff1330d5fb76de1ab2a69908479f9fae"
+content_hash = "sha256:cc883ef8e0455ebb869b48aae9937963c2037b708c5fa9c735e74886bfbaba90"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2990,8 +2948,9 @@ content_hash = "sha256:6b43174f3dffeaa82ff06a83efae01e6ff1330d5fb76de1ab2a699084
     {url = "https://files.pythonhosted.org/packages/0b/39/5132e483efee609feedbb769ac0a9031785fec4181b0dbeb79614710b50c/osmnx-1.2.2-py2.py3-none-any.whl", hash = "sha256:94f2a3929e857d8c0da39ae552c6da3b1a3f4bcfea6de108696bda5ee3a7689d"},
     {url = "https://files.pythonhosted.org/packages/da/93/2711a45fe7a9ea7d6498df61dde5e2bb4ac51fb74206c459cee2cdd29961/osmnx-1.2.2.tar.gz", hash = "sha256:30924452ca02758ece3301f9fcfb1b80edf31e2be7abe7fa7e0fefddb5050408"},
 ]
-"osmpythontools 0.3.5" = [
-    {url = "https://files.pythonhosted.org/packages/b8/c0/d7fac2c6992a07bedec01de2ed3b1678b28fb9c374961a124c7d6bb73772/OSMPythonTools-0.3.5.tar.gz", hash = "sha256:13ff721f760fdad5dd78b4d1461d286b78bba96ee151a7301ee8c11a0c258be9"},
+"overpass 0.7" = [
+    {url = "https://files.pythonhosted.org/packages/14/39/4db852d37598f1e415523f2b03b82d4a55cda511a6b8dafb90812bddee2c/overpass-0.7.tar.gz", hash = "sha256:267fac92d15caac15e15db6d9752341493065c94e7eae1187a8aea0d64005650"},
+    {url = "https://files.pythonhosted.org/packages/62/4e/7a5aebe8db73394682f13548b9b016c815c7a9d5a38af3211d23c73a44c1/overpass-0.7-py3-none-any.whl", hash = "sha256:1db80a3afd7693056033b61577fba56747ede6f47cf70a6ced6dae47b9ac0bb4"},
 ]
 "packaging 22.0" = [
     {url = "https://files.pythonhosted.org/packages/6b/f7/c240d7654ddd2d2f3f328d8468d4f1f876865f6b9038b146bec0a6737c65/packaging-22.0.tar.gz", hash = "sha256:2198ec20bd4c017b8f9717e00f0c8714076fc2fd93816750ab48e2c41de2cfd3"},
@@ -3621,6 +3580,7 @@ content_hash = "sha256:6b43174f3dffeaa82ff06a83efae01e6ff1330d5fb76de1ab2a699084
     {url = "https://files.pythonhosted.org/packages/01/74/eaa56c4b230e874458c8d25fddf18d23e2e2625f307db227f38c37b24139/Shapely-1.8.5.post1-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:6fe855e7d45685926b6ba00aaeb5eba5862611f7465775dacd527e081a8ced6d"},
     {url = "https://files.pythonhosted.org/packages/03/c7/767226767fe15d78198f199c51b91c91f4d963e76a939c4a9a4ff2fc4087/Shapely-1.8.5.post1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:0b4ee3132ee90f07d63db3aea316c4c065ed7a26231458dda0874414a09d6ba3"},
     {url = "https://files.pythonhosted.org/packages/04/65/bc86d90b3cdf99e9851403f0b1558b46eb51217d6786cc5e1ccb22ea5211/Shapely-1.8.5.post1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8d086591f744be483b34628b391d741e46f2645fe37594319e0a673cc2c26bcf"},
+    {url = "https://files.pythonhosted.org/packages/11/78/a67ff51c8167323b91b1b5a687ea5e1b071a9228543eb10a243ccb0e0f2b/Shapely-1.8.5.post1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d8a2b2a65fa7f97115c1cd989fe9d6f39281ca2a8a014f1d4904c1a6e34d7f25"},
     {url = "https://files.pythonhosted.org/packages/14/88/523ecb4366850cb94bb7518e07625008e0c20821ddf306bcba36c1bdc5bc/Shapely-1.8.5.post1-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:532a55ee2a6c52d23d6f7d1567c8f0473635f3b270262c44e1b0c88096827e22"},
     {url = "https://files.pythonhosted.org/packages/17/4f/b461d573cbe5625396c551bd771c83282ea5d4fdb30ee931381a23af09a2/Shapely-1.8.5.post1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:c6a9a4a31cd6e86d0fbe8473ceed83d4fe760b19d949fb557ef668defafea0f6"},
     {url = "https://files.pythonhosted.org/packages/17/70/c11106764bf0fdc50191136bdc970ec962bd0bb657070a12779e71e28fea/Shapely-1.8.5.post1-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:c2822111ddc5bcfb116e6c663e403579d0fe3f147d2a97426011a191c43a7458"},
@@ -3630,8 +3590,10 @@ content_hash = "sha256:6b43174f3dffeaa82ff06a83efae01e6ff1330d5fb76de1ab2a699084
     {url = "https://files.pythonhosted.org/packages/3e/0d/29f313b99579e0c54d2b09a60c8e7f71382a44dd725139dbbce51933868a/Shapely-1.8.5.post1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:783bad5f48e2708a0e2f695a34ed382e4162c795cb2f0368b39528ac1d6db7ed"},
     {url = "https://files.pythonhosted.org/packages/40/c2/f4265ebd6f2947f9d391676f998a8fad293ca91ba8704908527428913e9d/Shapely-1.8.5.post1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:99ab0ddc05e44acabdbe657c599fdb9b2d82e86c5493bdae216c0c4018a82dee"},
     {url = "https://files.pythonhosted.org/packages/42/6d/4b56f98700c302b52ce91e4f50704f989998f63ee1603d35bf573bf353d2/Shapely-1.8.5.post1-cp39-cp39-win32.whl", hash = "sha256:8e59817b0fe63d34baedaabba8c393c0090f061917d18fc0bcc2f621937a8f73"},
+    {url = "https://files.pythonhosted.org/packages/47/59/3560714f4526d18c44687b7fddd924d5230babff570cfb3af40f466da70c/Shapely-1.8.5.post1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:89164e7a9776a19e29f01369a98529321994e2e4d852b92b7e01d4d9804c55bf"},
     {url = "https://files.pythonhosted.org/packages/49/73/3dda8f4818880e62d3d260150ebae612c2d059216e761675e78240274126/Shapely-1.8.5.post1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:5d7f85c2d35d39ff53c9216bc76b7641c52326f7e09aaad1789a3611a0f812f2"},
     {url = "https://files.pythonhosted.org/packages/4b/b3/71e5032e5caee0104d09dff12c3ee1b7890110985acb5dece50673e84112/Shapely-1.8.5.post1-cp36-cp36m-win32.whl", hash = "sha256:6d388c0c1bd878ed1af4583695690aa52234b02ed35f93a1c8486ff52a555838"},
+    {url = "https://files.pythonhosted.org/packages/4d/16/ee7ed7a54dbb0bcaa77ca10b0b692e82d1538cd8f663e0f77a46c4dc0435/Shapely-1.8.5.post1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4b47bb6f9369e8bf3e6dbd33e6a25a47ee02b2874792a529fe04a49bf8bc0df6"},
     {url = "https://files.pythonhosted.org/packages/55/95/f694322ba2dc37f7956dbf1bfb924ac42979b04c65b5f37631726729acba/Shapely-1.8.5.post1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:a23ef3882d6aa203dd3623a3d55d698f59bfbd9f8a3bfed52c2da05a7f0f8640"},
     {url = "https://files.pythonhosted.org/packages/56/1a/1e6878881c2d91d892767172351e6bfb6f19633acf66f57e43ad9b724611/Shapely-1.8.5.post1-cp38-cp38-win32.whl", hash = "sha256:2e0a8c2e55f1be1312b51c92b06462ea89e6bb703fab4b114e7a846d941cfc40"},
     {url = "https://files.pythonhosted.org/packages/56/bf/49e91fcad7bbe562141d6337a7f3c7698da513c9f07264b2c02150cf590a/Shapely-1.8.5.post1-cp311-cp311-win_amd64.whl", hash = "sha256:48dcfffb9e225c0481120f4bdf622131c8c95f342b00b158cdbe220edbbe20b6"},

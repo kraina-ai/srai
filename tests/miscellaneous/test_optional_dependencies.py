@@ -37,7 +37,7 @@ def no_optional_dependencies(monkeypatch):
     optional_packages = [
         "osmium",
         "osmnx",
-        "OSMPythonTools",
+        "overpass",
         "pymap3d",
         "haversine",
         "spherical_geometry",
