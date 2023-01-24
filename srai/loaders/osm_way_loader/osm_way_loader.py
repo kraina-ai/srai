@@ -5,7 +5,7 @@ This module contains osm loader implementation for ways based on OSMnx.
 """
 import logging
 from enum import Enum
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
@@ -15,19 +15,7 @@ from functional import seq
 
 from . import constants
 
-ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
-ox.settings.timeout = constants.OSMNX_TIMEOUT
-
 logger = logging.getLogger(__name__)
-
-FEATURE_NAMES = (
-    seq(constants.OSM_WAY_TAGS.items())
-    .flat_map(lambda x: [f"{x[0]}-{v}" if x[0] not in ("oneway") else x[0] for v in x[1]])
-    .distinct()
-    .to_list()
-)
-
-COLS = list(constants.OSM_WAY_TAGS.keys())
 
 
 class NetworkType(str, Enum):
@@ -50,47 +38,92 @@ class NetworkType(str, Enum):
 
 class OSMWayLoader:
     """
-    OSMWayLoader.
+    OSMWayLoader downloads road infrastructure from OSM.
 
-    OSMWayLoader loader is ...
+    OSMWayLoader loader is a wrapper for the `osmnx.graph_from_polygon()`
+    and `osmnx.graph_to_gdfs()` that simplifies obtaining the road infrastructure data
+    from OpenStreetMap. As the OSM data is often noisy, it can also take an opinionated approach
+    on preprocessing it having standarisation in mind - e.g. converting to the same units,
+    disgarding non-wiki values and rounding them.
     """
 
     def __init__(
         self,
         network_type: Union[NetworkType, str],
-        feature_names: List[str] = FEATURE_NAMES,
-        cols: List[str] = COLS,
+        preprocess: bool = True,
+        wide: bool = True,
+        osm_way_tags: Dict[str, List[str]] = constants.OSM_WAY_TAGS,
     ) -> None:
-        """TODO."""
+        """
+        Init OSMWayLoader.
+
+        Args:
+            network_type (Union[NetworkType, str]):
+                Type of the network to download.
+            preprocess (bool): defaults to True
+                Whether to preprocess the data.
+            wide (bool): defaults to True
+                Whether to return the edges in wide format.
+            osm_way_tags (List[str]): defaults to constants.OSM_WAY_TAGS
+                Dict of tags to take into consideration during computing.
+        """
         self.network_type = network_type
-        self.feature_names = feature_names
-        self.cols = cols
+        self.preprocess = preprocess
+        self.wide = wide
+        self.osm_tags_flat = (
+            seq(osm_way_tags.items())
+            .flat_map(lambda x: [f"{x[0]}-{v}" if x[0] not in ("oneway") else x[0] for v in x[1]])
+            .distinct()
+            .to_list()
+        )
+        self.osm_keys = list(osm_way_tags.keys())
 
     def load(self, area: gpd.GeoDataFrame) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
-        ...
+        Load road infrastructure for a given GeoDataFrame.
 
         Args:
-            gdf (gpd.GeoDataFrame): ...
+            area (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
 
         Raises:
-            ValueError: ...
+            ValueError: If provided GeoDataFrame has no crs defined.
 
         Returns:
-            gpd.GeoDataFrame: ...
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
         """
+        ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
+        ox.settings.timeout = constants.OSMNX_TIMEOUT
+
         gdf_wgs84 = area.to_crs(epsg=4326)
 
-        gdf_nodes, gdf_edges = self._gdfs_from_polygons(gdf_wgs84)
-        gdf_edges_exploded = self._explode_cols(gdf_edges)
-        gdf_edges_preprocessed = self._preprocess(gdf_edges_exploded)
-        gdf_edges_wide = self._to_wide(gdf_edges, gdf_edges_preprocessed)
+        gdf_nodes_raw, gdf_edges_raw = self._gdfs_from_polygons(gdf_wgs84)
+        gdf_edges = self._explode_cols(gdf_edges_raw)
 
-        return gdf_nodes, gdf_edges_wide
+        if self.preprocess:
+            self._preprocess(gdf_edges, inplace=True)
+
+        if self.wide:
+            gdf_edges = self._to_wide(gdf_edges_raw, gdf_edges)
+
+        return gdf_nodes_raw, gdf_edges
 
     def _gdfs_from_polygons(
         self, gdf: gpd.GeoDataFrame
     ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Obtain the raw road infrastructure data from OSM.
+
+        Args:
+            gdf (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
+
+        Notes:
+            * The road infrastructure graph is treated as an undirected graph.
+            * `FIXME` The result may contain duplicated nodes or edges,
+            when nearby polygons are queried.
+
+        Returns:
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
+        """
         nodes = []
         edges = []
         for polygon in gdf["geometry"]:
@@ -103,14 +136,22 @@ class OSMWayLoader:
             nodes.append(gdf_n)
             edges.append(gdf_e)
 
-        # FIXME: possible duplicates
         gdf_nodes = pd.concat(nodes, axis=0)
         gdf_edges = pd.concat(edges, axis=0)
 
         return gdf_nodes, gdf_edges
 
     def _explode_cols(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        for col in self.cols:
+        """
+        Explode lists in feature columns.
+
+        Args:
+            gdf (gpd.GeoDataFrame): Edges with columns to explode.
+
+        Returns:
+            gpd.GeoDataFrame: Edges with all of their columns exploded.
+        """
+        for col in self.osm_keys:
             gdf = gdf.explode(col)
 
         gdf["i"] = range(0, len(gdf))
@@ -118,38 +159,26 @@ class OSMWayLoader:
 
         return gdf
 
-    def _to_wide(self, gdf: gpd.GeoDataFrame, gdf_exploded: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        gdf_edges_wide = (
-            pd.get_dummies(gdf_exploded[self.cols], prefix_sep="-")
-            .droplevel(3)
-            .groupby(level=[0, 1, 2])
-            .max()
-            .astype(np.uint8)
-            .reindex(columns=self.feature_names, fill_value=0)
-            .astype(np.uint8)
-        )
+    def _preprocess(
+        self, gdf: gpd.GeoDataFrame, inplace: bool = False
+    ) -> Optional[gpd.GeoDataFrame]:
+        """
+        Preprocess edges.
 
-        gdf_edges_wide = gpd.GeoDataFrame(
-            pd.concat(
-                [
-                    gdf.drop(columns=self.cols),
-                    gdf_edges_wide,
-                ],
-                axis=1,
-            ),
-            crs="epsg:4326",
-        )
+        Args:
+            gdf (gpd.GeoDataFrame): Edges to preprocess.
+            inplace (bool): defaults to False.
 
-        return gdf_edges_wide
-
-    def _preprocess(self, gdf: gpd.GeoDataFrame, inplace: bool = False) -> gpd.GeoDataFrame:
+        Returns:
+            gpd.GeoDataFrame: Edges with preprocessed features.
+        """
         if not inplace:
             gdf = gdf.copy()
 
-        for col in self.cols:
+        for col in self.osm_keys:
             gdf[col] = gdf[col].apply(lambda x, c=col: self._normalize(self._sanitize(x, c), c))
 
-        return gdf
+        return gdf if not inplace else None
 
     def _normalize(self, x: Any, column_name: str) -> Any:
         try:
@@ -215,3 +244,37 @@ class OSMWayLoader:
             return "None"
 
         return x
+
+    def _to_wide(self, gdf: gpd.GeoDataFrame, gdf_exploded: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Convert edges in long format to wide.
+
+        Args:
+            gdf (gpd.GeoDataFrame): original edges.
+            gdf_exploded (gpd.GeoDataFrame): edges with columns after feature explosion.
+
+        Returns:
+            gpd.GeoDataFrame: Edges in wide format.
+        """
+        gdf_edges_wide = (
+            pd.get_dummies(gdf_exploded[self.osm_keys], prefix_sep="-")
+            .droplevel(3)
+            .groupby(level=[0, 1, 2])
+            .max()
+            .astype(np.uint8)
+            .reindex(columns=self.osm_tags_flat, fill_value=0)
+            .astype(np.uint8)
+        )
+
+        gdf_edges_wide = gpd.GeoDataFrame(
+            pd.concat(
+                [
+                    gdf.drop(columns=self.osm_keys),
+                    gdf_edges_wide,
+                ],
+                axis=1,
+            ),
+            crs="epsg:4326",
+        )
+
+        return gdf_edges_wide
