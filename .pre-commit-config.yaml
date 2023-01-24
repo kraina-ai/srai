@@ -12,18 +12,18 @@ repos:
     hooks:
       - id: black-jupyter
   - repo: https://github.com/pycqa/isort
-    rev: v5.11.3
+    rev: 5.11.4
     hooks:
       - id: isort
         name: isort (python)
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.1
+    rev: v1.6.0.rc1
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
         args: ["--in-place", "--config", "./pyproject.toml"]
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
+    rev: 6.3.0
     hooks:
       - id: pydocstyle
         additional_dependencies: ["toml"]
@@ -38,7 +38,7 @@ repos:
     hooks:
       - id: mypy
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.3.3
+    rev: 2.4.0
     hooks:
       - id: pdm-lock-check
   - repo: https://github.com/kynan/nbstripout
@@ -56,7 +56,7 @@ repos:
       - id: check-added-large-files
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v1.9.0
+    rev: v1.10.0
     hooks:
       - id: refurb
         language: python
