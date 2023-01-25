@@ -134,7 +134,7 @@ class GTFSLoader:
 
         df = df[df["departure_time"].notna()]
 
-        df["hour"] = df["departure_time"].apply(lambda x: int(x[:2].replace(":", "")) % 24)
+        df["hour"] = df["departure_time"].apply(self._parse_departure_time)
 
         pivoted = df.pivot_table(
             values="trip_headsign", index="stop_id", columns="hour", aggfunc=set
@@ -160,3 +160,19 @@ class GTFSLoader:
             warnings.warn(f"Invalid GTFS feed: \n{validation_result}", RuntimeWarning)
             if fail:
                 raise ValueError("Invalid GTFS feed.")
+
+    def _parse_departure_time(self, departure_time: str) -> int:
+        """
+        Parse departure time and extract hour from it.
+
+        In GTFS feed, departure time is in format HH:MM:SS. HH can be greater than 24, so
+        we need to parse it to 0-23 range.
+
+        Args:
+            departure_time (str): Departure time in format HH:MM:SS.
+
+        Returns:
+            int: Departure time in hours.
+
+        """
+        return int(departure_time[:2].replace(":", "")) % 24
