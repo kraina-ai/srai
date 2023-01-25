@@ -4,6 +4,10 @@ from typing import Dict, List
 
 import numpy as np
 
+MPH_TO_KMH = 1.609344
+INCHES_TO_METERS = 0.0254
+FEET_TO_METERS = 0.3048
+
 OSMNX_TIMEOUT: int = 180
 """The timeout interval in seconds for HTTP requests."""
 

@@ -9,9 +9,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
-import osmnx as ox
 import pandas as pd
 from functional import seq
+from tqdm.auto import tqdm
+
+import srai.utils.constants as srai_constants
+from srai.utils._optional import import_optional_dependencies
 
 from . import constants
 
@@ -67,6 +70,8 @@ class OSMWayLoader:
             osm_way_tags (List[str]): defaults to constants.OSM_WAY_TAGS
                 Dict of tags to take into consideration during computing.
         """
+        import_optional_dependencies(dependency_group="osm", modules=["osmnx"])
+
         self.network_type = network_type
         self.preprocess = preprocess
         self.wide = wide
@@ -91,10 +96,12 @@ class OSMWayLoader:
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
         """
+        import osmnx as ox
+
         ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
         ox.settings.timeout = constants.OSMNX_TIMEOUT
 
-        gdf_wgs84 = area.to_crs(epsg=4326)
+        gdf_wgs84 = area.to_crs(crs=srai_constants.WGS84_CRS)
 
         gdf_nodes_raw, gdf_edges_raw = self._gdfs_from_polygons(gdf_wgs84)
         gdf_edges = self._explode_cols(gdf_edges_raw)
@@ -124,9 +131,11 @@ class OSMWayLoader:
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
         """
+        import osmnx as ox
+
         nodes = []
         edges = []
-        for polygon in gdf["geometry"]:
+        for polygon in tqdm(gdf["geometry"], desc="Downloading graphs", leave=False):
             G_directed = ox.graph_from_polygon(
                 polygon, network_type=self.network_type, retain_all=True, clean_periphery=True
             )
@@ -175,7 +184,9 @@ class OSMWayLoader:
         if not inplace:
             gdf = gdf.copy()
 
-        for col in self.osm_keys:
+        max_osm_keys_str_len = max(map(len, self.osm_keys))
+        for col in (pbar := tqdm(self.osm_keys, leave=False)):
+            pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
             gdf[col] = gdf[col].apply(lambda x, c=col: self._normalize(self._sanitize(x, c), c))
 
         return gdf if not inplace else None
@@ -200,7 +211,7 @@ class OSMWayLoader:
             elif column_name == "width":
                 x = min(round(x * 2) / 2, 30.0)
         except Exception as e:
-            logger.warn(
+            logger.warning(
                 f"{OSMWayLoader._normalize.__qualname__} | {column_name}: {x} - {type(x)} | {e}"
             )
             return "None"
@@ -224,17 +235,17 @@ class OSMWayLoader:
                 x = x.replace("km/h", "")
                 if "mph" in x:
                     x = float(x.split(" mph")[0])
-                    x = x * 1.6
+                    x = x * constants.MPH_TO_KMH
                 x = float(x)
             elif column_name == "width":
                 if x.endswith(" m") or x.endswith("m") or x.endswith("meter"):
                     x = x.split("m")[0].strip()
                 elif "'" in x:
                     x = float(x.split("'")[0])
-                    x = x * 0.0254
+                    x = x * constants.INCHES_TO_METERS
                 elif x.endswith("ft"):
                     x = float(x.split(" ft")[0])
-                    x = x * 0.3048
+                    x = x * constants.FEET_TO_METERS
                 x = float(x)
 
         except Exception as e:
@@ -274,7 +285,7 @@ class OSMWayLoader:
                 ],
                 axis=1,
             ),
-            crs="epsg:4326",
+            crs=srai_constants.WGS84_CRS,
         )
 
         return gdf_edges_wide
