@@ -90,7 +90,7 @@ def stops() -> pd.DataFrame:
     )
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def feed(
     mocker: MockerFixture,
     stop_time_series: pd.DataFrame,
