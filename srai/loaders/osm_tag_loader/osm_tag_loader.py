@@ -1,5 +1,6 @@
 """#TODO module."""
-from typing import Dict, List, Union
+from itertools import product
+from typing import Dict, List, Tuple, Union
 
 import geopandas as gpd
 import osmnx as ox
@@ -13,40 +14,65 @@ from srai.utils.constants import WGS84_CRS
 class OSMTagLoader:
     """#TODO."""
 
+    _PBAR_FORMAT = "Downloading {}: {}"
+
     def load(
-        self, area: gpd.GeoDataFrame, tags: Dict[str, Union[List[str], bool]]
-    ) -> gpd.GeoDataFrame:
+        self,
+        area: gpd.GeoDataFrame,
+        tags: Dict[str, Union[List[str], bool]],
+        return_not_found: bool = False,
+    ) -> Union[gpd.GeoDataFrame, Tuple[gpd.GeoDataFrame, List[Tuple[str, Union[str, bool]]]]]:
         """#TODO."""
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
-        def _group_gdfs(gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-            if len(gdfs) > 1:
-                gdf = pd.concat(gdfs)
+        _tags = self._flatten_tags(tags)
+
+        total_tags_num = len(_tags)
+        total_queries = len(area) * total_tags_num
+
+        max_key_value_name_len = self._get_max_key_value_name_len(_tags)
+        max_desc_len = max_key_value_name_len + len(self._PBAR_FORMAT.format("", ""))
+
+        key_values_not_found = []
+
+        results = []
+
+        pbar = tqdm(product(area_wgs84["geometry"], _tags), total=total_queries)
+        for polygon, (key, value) in pbar:
+            pbar.set_description(self._get_pbar_desc(key, value, max_desc_len))
+            geometries = ox.geometries_from_polygon(polygon, {key: value})
+            if not geometries.empty:
+                results.append(geometries[["geometry", key]])
             else:
-                gdf = gdfs[0]
-            return gdf.groupby(["element_type", "osmid"]).first()
+                key_values_not_found.append((key, value))
 
-        all_tags_num = seq(tags.values()).map(lambda v: 1 if isinstance(v, bool) else len(v)).sum()
-        num_queries = len(area) * all_tags_num
+        result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        with tqdm(total=num_queries) as pbar:
-            results = []
-            for polygon in area_wgs84["geometry"]:
-                polygon_results = []
-                for key, values in tags.items():
-                    key_results = []
-                    if isinstance(values, bool):
-                        values_ = [values]
-                    for value in values_:
-                        pbar.set_description(f"Processing {key}: {value}")
-                        tags = {key: value}
-                        geometries = ox.geometries_from_polygon(polygon, tags)
-                        if geometries.empty:
-                            pass
-                            # warnings.warn(f"No results for {key}:{value}")
-                        else:
-                            key_results.append(geometries[["geometry", key]])
-                        pbar.update(1)
-                    polygon_results.extend(key_results)
-                results.extend(polygon_results)
-            return _group_gdfs(results)
+        if return_not_found:
+            return result_gdf, key_values_not_found
+        return result_gdf
+
+    def _flatten_tags(
+        self, tags: Dict[str, Union[List[str], bool]]
+    ) -> List[Tuple[str, Union[str, bool]]]:
+        tags_flat: List[Tuple[str, Union[str, bool]]] = (
+            seq(tags.items())
+            .starmap(lambda k, v: product([k], [v] if isinstance(v, bool) else v))
+            .flatten()
+            .list()
+        )
+        return tags_flat
+
+    def _get_max_key_value_name_len(self, tags: List[Tuple[str, Union[str, bool]]]) -> int:
+        max_key_val_name_len: int = seq(tags).starmap(lambda k, v: len(k + str(v))).max()
+        return max_key_val_name_len
+
+    def _get_pbar_desc(self, key: str, val: Union[bool, str], max_desc_len: int) -> str:
+        return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
+
+    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
+        if len(gdfs) > 1:
+            gdf = pd.concat(gdfs)
+        else:
+            gdf = gdfs[0]
+        return gdf.groupby(["element_type", "osmid"]).first()

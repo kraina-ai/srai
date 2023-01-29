@@ -26,9 +26,8 @@ def _parse_taginfo_response(
         .filter(lambda t: t["count_all"] >= min_count)
         .filter(lambda t: t["count_all_fraction"] >= min_fraction)
     )
-    # wywalić ==1
     if in_wiki_only:
-        result_tags = result_tags.filter(lambda t: t["in_wiki"] == 1)
+        result_tags = result_tags.filter(lambda t: t["in_wiki"])
     taginfo_grouped: Dict[str, List[str]] = (
         result_tags.map(lambda t: (t["key"], t["value"])).group_by_key().to_dict()
     )
