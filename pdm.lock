@@ -739,10 +739,8 @@ summary = "Variable width build numbers with lexical ordering."
 
 [[package]]
 name = "licensecheck"
-version = "2023"
+version = "2023.0.1"
 requires_python = ">=3.8,<4.0"
-git = "https://github.com/RaczeQ/LicenseCheck"
-revision = "eff6baf46048930ae77d85cad516ce8fc95d779b"
 summary = "Output the licenses used by dependencies and check if these are compatible with the project license"
 dependencies = [
     "fhconfparser<2024,>=2022",
@@ -1496,7 +1494,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.9"
 requires_python = ">=3.7"
-summary = ""
+summary = "Pseudo terminal support for Windows from Python."
 
 [[package]]
 name = "pyyaml"
@@ -1918,8 +1916,8 @@ requires_python = ">=3.7"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
-lock_version = "4.0"
-content_hash = "sha256:cc883ef8e0455ebb869b48aae9937963c2037b708c5fa9c735e74886bfbaba90"
+lock_version = "4.1"
+content_hash = "sha256:99ae6a5eb6509382382ce7372573011833a13e66b255088da782aff6ecb64983"
 
 [metadata.files]
 "anyio 3.6.2" = [
@@ -2576,6 +2574,10 @@ content_hash = "sha256:cc883ef8e0455ebb869b48aae9937963c2037b708c5fa9c735e74886b
 "lexid 2021.1006" = [
     {url = "https://files.pythonhosted.org/packages/60/0b/28a3f9abc75abbf1fa996eb2dd77e1e33a5d1aac62566e3f60a8ec8b8a22/lexid-2021.1006.tar.gz", hash = "sha256:509a3a4cc926d3dbf22b203b18a4c66c25e6473fb7c0e0d30374533ac28bafe5"},
     {url = "https://files.pythonhosted.org/packages/cf/e3/35764404a4b7e2021be1f88f42264c2e92e0c4720273559a62461ce64a47/lexid-2021.1006-py2.py3-none-any.whl", hash = "sha256:5526bb5606fd74c7add23320da5f02805bddd7c77916f2dc1943e6bada8605ed"},
+]
+"licensecheck 2023.0.1" = [
+    {url = "https://files.pythonhosted.org/packages/bb/0b/6f6736426c9683ad008215db4cecb173448ccd1f0afebb2fd954cb0ea5b1/licensecheck-2023.0.1-py3-none-any.whl", hash = "sha256:2da1599982f295871b6c3344c339945d2fe441bca5aef0ec988ca01f662bbdf7"},
+    {url = "https://files.pythonhosted.org/packages/c9/29/f8706e87d825e75ed8a30dc9801994d77173bee27033a9d8a84007c45630/licensecheck-2023.0.1.tar.gz", hash = "sha256:e1c0eb4ab4afccb71bc049711836d636e008ac2cfb74610ac2cde45fd4022dae"},
 ]
 "lxml 4.9.2" = [
     {url = "https://files.pythonhosted.org/packages/00/d9/d2ae5c7032157798df585321fc190b51062eb9970edb017ef15127ac899b/lxml-4.9.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:5344a43228767f53a9df6e5b253f8cdca7dfc7b7aeae52551958192f56d98457"},

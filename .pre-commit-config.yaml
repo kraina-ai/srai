@@ -66,12 +66,9 @@ repos:
         language: python
         language_version: python3.10
         stages: [manual]
-  - repo: https://github.com/RaczeQ/LicenseCheck
-    rev: "test"
-    # repo: https://github.com/FHPythonUtils/LicenseCheck
-    # rev: "2023"
-    # change to original package after pull request is accepted
-    # https://github.com/FHPythonUtils/LicenseCheck/pull/29
+  - repo: https://github.com/FHPythonUtils/LicenseCheck
+    rev: "60e3b8e1ec4f2e9817fa0a02a9c4a3c20c49d560"
+    # change to "2023.0.1" after tag will be created
     hooks:
       - id: licensecheck
         stages: [manual]

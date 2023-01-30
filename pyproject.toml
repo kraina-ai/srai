@@ -93,10 +93,7 @@ docs = [
     "mike<2.0.0",
 ]
 performance = ["scalene>=1.5.14"]
-license = [
-    "licensecheck @ git+https://github.com/RaczeQ/LicenseCheck",
-] # change to original package after pull request is accepted
-# https://github.com/FHPythonUtils/LicenseCheck/pull/29
+license = ["licensecheck>=2023.0.1"]
 
 [tool.black]
 line-length = 100
