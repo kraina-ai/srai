@@ -1,4 +1,9 @@
-"""#TODO module."""
+"""
+OSM Tag Loader.
+
+This module contains loader capable of loading OpenStreetMap tags.
+
+"""
 from itertools import product
 from typing import Dict, List, Tuple, Union
 
@@ -12,17 +17,53 @@ from srai.utils.constants import WGS84_CRS
 
 
 class OSMTagLoader:
-    """#TODO."""
+    """
+    OSMTagLoader.
+
+    OSM(OpenStreetMap)[1] tag loader is a loader capable of downloading objects
+    from a given area from OSM. Tags in this context mean arbitrary
+    key:value pairs, that are used by OSM users to give meaning to geometries.
+
+    This loader is a wrapper around the `osmnx` library. It uses `osmnx.geometries_from_polygon`
+    to make individual queries.
+
+    References:
+        1. https://www.openstreetmap.org/
+
+    """
 
     _PBAR_FORMAT = "Downloading {}: {}"
 
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Dict[str, Union[List[str], bool]],
-        return_not_found: bool = False,
-    ) -> Union[gpd.GeoDataFrame, Tuple[gpd.GeoDataFrame, List[Tuple[str, Union[str, bool]]]]]:
-        """#TODO."""
+        tags: Dict[str, Union[List[str], str, bool]],
+    ) -> gpd.GeoDataFrame:
+        """
+        Download OSM objects with specified tags for a given area.
+
+        The loader first downloads all objects with `tags`. It returns a GeoDataFrame containing
+        the `geometry` column and columns for tag keys.
+
+        Note: some key/value pairs might be missing from the resulting GeoDataFrame,
+            simply because there are no such objects in the given area.
+
+        Args:
+            area (gpd.GeoDataFrame): Area for which to download objects.
+            tags (Dict[str, Union[List[str], str, bool]]): A dictionary
+                specifying which tags to download.
+                The keys should be OSM tags (e.g. `building`, `amenity`).
+                The values should either be `True` for retrieving all objects with the tag,
+                string for retrieving a single tag-value pair
+                or list of strings for retrieving all values specified in the list.
+                `tags={'leisure': 'park}` would return parks from the area.
+                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
+                would return parks, all amenity types, bakeries and bicycle shops.
+
+        Returns:
+            gpd.GeoDataFrame: Downloaded objects as a GeoDataFrame.
+
+        """
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
         _tags = self._flatten_tags(tags)
@@ -33,8 +74,6 @@ class OSMTagLoader:
         max_key_value_name_len = self._get_max_key_value_name_len(_tags)
         max_desc_len = max_key_value_name_len + len(self._PBAR_FORMAT.format("", ""))
 
-        key_values_not_found = []
-
         results = []
 
         pbar = tqdm(product(area_wgs84["geometry"], _tags), total=total_queries)
@@ -43,21 +82,17 @@ class OSMTagLoader:
             geometries = ox.geometries_from_polygon(polygon, {key: value})
             if not geometries.empty:
                 results.append(geometries[["geometry", key]])
-            else:
-                key_values_not_found.append((key, value))
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        if return_not_found:
-            return result_gdf, key_values_not_found
         return result_gdf
 
     def _flatten_tags(
-        self, tags: Dict[str, Union[List[str], bool]]
+        self, tags: Dict[str, Union[List[str], str, bool]]
     ) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
-            .starmap(lambda k, v: product([k], [v] if isinstance(v, bool) else v))
+            .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))
             .flatten()
             .list()
         )
@@ -67,7 +102,7 @@ class OSMTagLoader:
         max_key_val_name_len: int = seq(tags).starmap(lambda k, v: len(k + str(v))).max()
         return max_key_val_name_len
 
-    def _get_pbar_desc(self, key: str, val: Union[bool, str], max_desc_len: int) -> str:
+    def _get_pbar_desc(self, key: str, val: Union[str, bool], max_desc_len: int) -> str:
         return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
 
     def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
