@@ -78,6 +78,7 @@ test = [
     "pytest~=7.1",
     "tox-pdm>=0.6.0",
     "pytest-mock>=3.0.0",
+    "requests-mock>=1.10.0",
 ]
 # pdm add -dG visualization <library>
 visualization = [
