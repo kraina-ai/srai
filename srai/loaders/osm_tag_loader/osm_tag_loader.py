@@ -105,7 +105,7 @@ class OSMTagLoader:
     def _get_pbar_desc(self, key: str, val: Union[str, bool], max_desc_len: int) -> str:
         return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
 
-    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
+    def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
         if len(gdfs) > 1:
             gdf = pd.concat(gdfs)
         else:
