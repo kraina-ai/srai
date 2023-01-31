@@ -95,7 +95,7 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         else:
             self.toposimplify = False
 
-        self.overpass_api = API(debug=True, timeout=60)
+        self.overpass_api = API(timeout=60)
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
