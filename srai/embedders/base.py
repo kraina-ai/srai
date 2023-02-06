@@ -18,6 +18,5 @@ class BaseEmbedder(abc.ABC):
 
         Returns:
             np.ndarray with embedding for each row.
-
         """
         raise NotImplementedError

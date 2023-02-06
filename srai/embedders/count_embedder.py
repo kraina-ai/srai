@@ -2,7 +2,6 @@
 Count Embedder.
 
 This module contains count embedder implementation.
-
 """
 from typing import List, Optional
 
@@ -22,7 +21,6 @@ class CountEmbedder:
                 to be found in the resulting embedding. If not None, the missing features are added
                 and filled with 0. The unexpected features are removed.
                 The resulting columns are sorted accordingly. Defaults to None.
-
         """
         if expected_output_features is not None:
             self.expected_output_features = pd.Series(expected_output_features)
@@ -59,7 +57,6 @@ class CountEmbedder:
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
-
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         if features_gdf.empty:
@@ -130,7 +127,6 @@ class CountEmbedder:
 
         Returns:
             pd.DataFrame: Embeddings with expected columns only.
-
         """
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(region_embeddings.columns)
