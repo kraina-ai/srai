@@ -13,7 +13,11 @@ from functools import reduce
 from typing import Any, Dict, List, Optional
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import pytorch_lightning as pl
+import torch
+from torch.utils.data import DataLoader
 
 from srai.embedders import BaseEmbedder
 from srai.models import GTFS2VecModel
@@ -23,12 +27,14 @@ from srai.utils.exceptions import ModelNotFitException
 class GTFS2VecEmbedder(BaseEmbedder):
     """GTFS2Vec Embedder."""
 
-    TRIP_COLUMNS_PREFIX = "trip_count_at_"
-    DIRECTIONS_COLUMNS_PREFIX = "directions_at_"
+    TRIP_PREFIX = "trip_count_at_"
+    DIRECTIONS_PREFIX = "directions_at_"
 
-    def __init__(self) -> None:
+    def __init__(self, hidden_size: int = 48, embedding_size: int = 64) -> None:
         """Init GTFS2VecEmbedder."""
         self._model: Optional[GTFS2VecModel] = None
+        self._hidden_size = hidden_size
+        self._embedding_size = embedding_size
 
     def transform(
         self,
@@ -56,28 +62,17 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        if self._model is None:
-            raise ModelNotFitException("Model not fit! Run fit() or fit_transform() first.")
 
-        if len(features_gdf.columns) != self._model.n_features:
+        model = self._maybe_get_model()
+        if len(features_gdf.columns) != model.n_features:
             raise ValueError(
                 f"Number of features in features_gdf ({len(features_gdf.columns)}) is "
-                f"incosistent with the model ({self._model.n_features})."
+                f"incosistent with the model ({model.n_features})."
             )
 
-        regions_gdf = self._remove_geometry_if_present(regions_gdf)
-        features_gdf = self._remove_geometry_if_present(features_gdf)
-        joint_gdf = self._remove_geometry_if_present(joint_gdf)
+        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        joint_features = (
-            joint_gdf.join(features_gdf, on="feature_id")
-            .groupby("region_id")
-            .agg(self._get_columns_aggregation(features_gdf.columns))
-        )
-
-        regions_features = regions_gdf.join(joint_features, on="region_id").fillna(0).astype(int)
-
-        return regions_features
+        return self._embedd(features)
 
     def fit(
         self,
@@ -100,7 +95,9 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        self._model = GTFS2VecModel(n_features=len(features_gdf.columns))
+        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+
+        self._model = self._train_model_unsupervised(features)
 
     def fit_transform(
         self,
@@ -125,10 +122,47 @@ class GTFS2VecEmbedder(BaseEmbedder):
             ValueError: If index levels in gdfs don't overlap correctly.
 
         """
-        self.fit(regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf)
-        return self.transform(
-            regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
+        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
+        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+
+        self._model = self._train_model_unsupervised(features)
+
+        return self._embedd(features)
+
+    def _maybe_get_model(self) -> GTFS2VecModel:
+        """Check if model is fit and return it."""
+        if self._model is None:
+            raise ModelNotFitException("Model not fit! Run fit() or fit_transform() first.")
+        return self._model
+
+    def _prepare_features(
+        self,
+        regions_gdf: gpd.GeoDataFrame,
+        features_gdf: gpd.GeoDataFrame,
+        joint_gdf: gpd.GeoDataFrame,
+    ) -> pd.DataFrame:
+        """
+        Prepare features for embedding.
+
+        Args:
+            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
+            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
+            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+
+        """
+        regions_gdf = self._remove_geometry_if_present(regions_gdf)
+        features_gdf = self._remove_geometry_if_present(features_gdf)
+        joint_gdf = self._remove_geometry_if_present(joint_gdf)
+
+        joint_features = (
+            joint_gdf.join(features_gdf, on="feature_id")
+            .groupby("region_id")
+            .agg(self._get_columns_aggregation(features_gdf.columns))
         )
+
+        regions_features = regions_gdf.join(joint_features, on="region_id").fillna(0).astype(int)
+        regions_features = self._normalize_features(regions_features)
+        return regions_features
 
     def _get_columns_aggregation(self, columns: List[str]) -> Dict[str, Any]:
         """
@@ -144,8 +178,92 @@ class GTFS2VecEmbedder(BaseEmbedder):
         agg_dict: Dict[str, Any] = {}
 
         for column in columns:
-            if column.startswith(self.TRIP_COLUMNS_PREFIX):
+            if column.startswith(self.TRIP_PREFIX):
                 agg_dict[column] = "sum"
-            elif column.startswith(self.DIRECTIONS_COLUMNS_PREFIX):
+            elif column.startswith(self.DIRECTIONS_PREFIX):
                 agg_dict[column] = lambda x: len(reduce(set.union, x))
         return agg_dict
+
+    def _normalize_columns_group(self, df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+        """
+        Normalize given columns in df.
+
+        Args:
+            df (pd.DataFrame): DataFrame to normalize.
+            columns (list): List of columns.
+
+        """
+        df[columns] = (df[columns] - df[columns].min().min()) / (
+            df[columns].max().max() - df[columns].min().min()
+        )
+        return df
+
+    def _normalize_features(self, features: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normalize features.
+
+        Args:
+            features (pd.DataFrame): Features.
+
+        Returns:
+            pd.DataFrame: Normalized features.
+
+        """
+        norm_columns = [
+            [column for column in features.columns if column.startswith(self.DIRECTIONS_PREFIX)],
+            [column for column in features.columns if column.startswith(self.TRIP_PREFIX)],
+        ]
+
+        for columns in norm_columns:
+            features = self._normalize_columns_group(features, columns)
+
+        return features
+
+    def _train_model_unsupervised(self, features: pd.DataFrame) -> GTFS2VecModel:
+        """
+        Train model unsupervised.
+
+        Args:
+            features (pd.DataFrame): Features.
+
+        """
+        model = GTFS2VecModel(
+            n_features=len(features.columns),
+            n_hidden=self._hidden_size,
+            emb_size=self._embedding_size,
+        )
+        X = features.to_numpy().astype(np.float32)
+        x_dataloader = DataLoader(X, batch_size=24, shuffle=True, num_workers=4)
+        trainer = pl.Trainer(max_epochs=10)
+
+        trainer.fit(model, x_dataloader)
+
+        return model
+
+    def _embedd(self, features: pd.DataFrame) -> pd.DataFrame:
+        """
+        Embedd features.
+
+        Args:
+            features (pd.DataFrame): Features.
+
+        Returns:
+            pd.DataFrame: Embeddings.
+
+        """
+        model = self._maybe_get_model()
+        if len(features.columns) != model.n_features:
+            raise ValueError(
+                f"Features must have {model.n_features} columns but has {len(features.columns)}."
+            )
+
+        embeddings = (
+            self._maybe_get_model()(torch.Tensor(features.to_numpy().astype(np.float32)))
+            .detach()
+            .numpy()
+        )
+
+        return pd.DataFrame(
+            data=embeddings,
+            index=features.index,
+        )

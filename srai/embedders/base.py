@@ -53,7 +53,6 @@ class BaseEmbedder(abc.ABC):
                 f"joint_gdf.index must be of type pandas.MultiIndex, not {type(joint_gdf.index)}"
             )
 
-        print(joint_gdf.index.names)
         if len(joint_gdf.index.names) != 2:
             raise ValueError(
                 f"joint_gdf.index must have 2 levels, has {len(joint_gdf.index.names)}"
