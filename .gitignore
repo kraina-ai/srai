@@ -140,3 +140,6 @@ requirements.txt
 
 # osmnx
 cache/
+
+# pytorch lightning
+lightning_logs/

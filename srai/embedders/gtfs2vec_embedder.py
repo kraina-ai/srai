@@ -155,12 +155,14 @@ class GTFS2VecEmbedder(BaseEmbedder):
         joint_gdf = self._remove_geometry_if_present(joint_gdf)
 
         joint_features = (
-            joint_gdf.join(features_gdf, on="feature_id")
-            .groupby("region_id")
+            joint_gdf.join(features_gdf, on=features_gdf.index.name)
+            .groupby(regions_gdf.index.name)
             .agg(self._get_columns_aggregation(features_gdf.columns))
         )
 
-        regions_features = regions_gdf.join(joint_features, on="region_id").fillna(0).astype(int)
+        regions_features = (
+            regions_gdf.join(joint_features, on=regions_gdf.index.name).fillna(0).astype(int)
+        )
         regions_features = self._normalize_features(regions_features)
         return regions_features
 
