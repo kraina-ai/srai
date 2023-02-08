@@ -10,9 +10,9 @@ References:
 from typing import Any, Union
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from pytorch_lightning import LightningModule
+from torch import nn
+from torch.nn import functional as F
 
 
 class GTFS2VecModel(LightningModule):  # type: ignore
@@ -36,6 +36,8 @@ class GTFS2VecModel(LightningModule):  # type: ignore
 
         """
         super().__init__()
+        self.n_features = n_features
+
         self.encoder = nn.Sequential(
             nn.Linear(n_features, n_hidden), nn.ReLU(), nn.Linear(n_hidden, emb_size)
         )

@@ -70,3 +70,8 @@ class BaseEmbedder(abc.ABC):
                 f"Name of features_gdf.index ({features_gdf.index.name}) must be equal to the name"
                 f" of the 2nd level of joint_gdf.index ({joint_gdf.index.names[1]})"
             )
+
+    def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
+        if "geometry" in data.columns:
+            data = data.drop(columns="geometry")
+        return pd.DataFrame(data)

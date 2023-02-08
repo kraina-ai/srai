@@ -101,8 +101,3 @@ class CountEmbedder(BaseEmbedder):
         region_embeddings[missing_features] = 0
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings
-
-    def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
-        if "geometry" in data.columns:
-            data = data.drop(columns="geometry")
-        return pd.DataFrame(data)
