@@ -46,7 +46,7 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # pdm add -G osm <library>
-osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "OSMPythonTools>=0.3.5"]
+osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "overpass>=0.7"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 all = ["srai[osm,voronoi]"]
@@ -72,10 +72,7 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = [
-    "pytest~=7.1",
-    "tox-pdm>=0.6.0",
-]
+test = ["pytest~=7.1", "tox-pdm>=0.6.0"]
 # pdm add -dG visualization <library>
 visualization = [
     "keplergl>=0.3.2",
@@ -96,6 +93,7 @@ docs = [
     "mike<2.0.0",
 ]
 performance = ["scalene>=1.5.14"]
+license = ["licensecheck>=2023.0.1"]
 
 [tool.black]
 line-length = 100
@@ -145,3 +143,15 @@ wrap-one-line = true
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+
+[tool.licensecheck]
+using = "requirements"
+zero = false
+ignore_licenses = ["UNKNOWN"]
+ignore_packages = [
+    'srai',           # skip self
+    'scalene',        # uses Apache-2.0 license, takes time to analyse
+    'docformatter',   # uses MIT license, has mismatched license in analysis
+    'pymap3d',        # uses BSD-2 license, has mismatched license in analysis
+    'mkdocs-jupyter', # uses Apache-2.0 license, has mismatched license in analysis
+]
