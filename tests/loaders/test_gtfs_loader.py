@@ -8,6 +8,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from srai.loaders import GTFSLoader
+from srai.utils.constants import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 
 ut = TestCase()
 
@@ -58,10 +59,10 @@ def test_gtfs_loader(feed: Any, mocker: MockerFixture, gtfs_validation_ok: pd.Da
     ut.assertCountEqual(
         features.columns,
         [
-            "trip_count_at_12",
-            "trip_count_at_13",
-            "directions_at_12",
-            "directions_at_13",
+            f"{GTFS2VEC_TRIPS_PREFIX}12",
+            f"{GTFS2VEC_TRIPS_PREFIX}13",
+            f"{GTFS2VEC_DIRECTIONS_PREFIX}12",
+            f"{GTFS2VEC_DIRECTIONS_PREFIX}13",
             "geometry",
         ],
     )

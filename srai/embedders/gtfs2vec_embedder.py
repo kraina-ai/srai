@@ -20,14 +20,12 @@ from torch.utils.data import DataLoader
 
 from srai.embedders import BaseEmbedder
 from srai.models import GTFS2VecModel
+from srai.utils.constants import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 from srai.utils.exceptions import ModelNotFitException
 
 
 class GTFS2VecEmbedder(BaseEmbedder):
     """GTFS2Vec Embedder."""
-
-    TRIP_PREFIX = "trip_count_at_"
-    DIRECTIONS_PREFIX = "directions_at_"
 
     def __init__(
         self, hidden_size: int = 48, embedding_size: int = 64, skip_embedding: bool = False
@@ -191,9 +189,9 @@ class GTFS2VecEmbedder(BaseEmbedder):
         agg_dict: Dict[str, Any] = {}
 
         for column in columns:
-            if column.startswith(self.TRIP_PREFIX):
+            if column.startswith(GTFS2VEC_TRIPS_PREFIX):
                 agg_dict[column] = "sum"
-            elif column.startswith(self.DIRECTIONS_PREFIX):
+            elif column.startswith(GTFS2VEC_DIRECTIONS_PREFIX):
                 agg_dict[column] = lambda x: len(reduce(set.union, x))
         return agg_dict
 
@@ -221,8 +219,12 @@ class GTFS2VecEmbedder(BaseEmbedder):
             pd.DataFrame: Normalized features.
         """
         norm_columns = [
-            [column for column in features.columns if column.startswith(self.DIRECTIONS_PREFIX)],
-            [column for column in features.columns if column.startswith(self.TRIP_PREFIX)],
+            [
+                column
+                for column in features.columns
+                if column.startswith(GTFS2VEC_DIRECTIONS_PREFIX)
+            ],
+            [column for column in features.columns if column.startswith(GTFS2VEC_TRIPS_PREFIX)],
         ]
 
         for columns in norm_columns:
