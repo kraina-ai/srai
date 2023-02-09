@@ -41,6 +41,10 @@ repos:
     rev: 2.4.3
     hooks:
       - id: pdm-lock-check
+      - id: pdm-export
+        args: ["-o", "requirements.txt", "--without-hashes", "-d", "-G", "all"]
+        files: ^pdm.lock$
+        stages: [manual]
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
@@ -61,6 +65,12 @@ repos:
       - id: refurb
         language: python
         language_version: python3.10
+        stages: [manual]
+  - repo: https://github.com/FHPythonUtils/LicenseCheck
+    rev: "60e3b8e1ec4f2e9817fa0a02a9c4a3c20c49d560"
+    # change to "2023.0.1" after tag will be created
+    hooks:
+      - id: licensecheck
         stages: [manual]
 
 ci:

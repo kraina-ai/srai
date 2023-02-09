@@ -16,4 +16,4 @@ jobs:
           python-version: "3.11"
       - uses: pre-commit/action@v3.0.0
         with:
-          extra_args: --all-files --hook-stage manual
+          extra_args: --all-files --hook-stage manual --verbose
