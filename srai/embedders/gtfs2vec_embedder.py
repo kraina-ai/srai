@@ -29,17 +29,22 @@ class GTFS2VecEmbedder(BaseEmbedder):
     TRIP_PREFIX = "trip_count_at_"
     DIRECTIONS_PREFIX = "directions_at_"
 
-    def __init__(self, hidden_size: int = 48, embedding_size: int = 64) -> None:
+    def __init__(
+        self, hidden_size: int = 48, embedding_size: int = 64, skip_embedding: bool = False
+    ) -> None:
         """
         Init GTFS2VecEmbedder.
 
         Args:
             hidden_size (int, optional): Hidden size in encoder and decoder. Defaults to 48.
             embedding_size (int, optional): Embedding size. Defaults to 64.
+            skip_embedding (bool, optional): Skip embedding and return aggregated features instead.
+            Defaults to False.
         """
         self._model: Optional[GTFS2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
+        self._skip_embedding = skip_embedding
 
     def transform(
         self,
@@ -76,7 +81,10 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        return self._embedd(features)
+        if self._skip_embedding:
+            return features
+        else:
+            return self._embedd(features)
 
     def fit(
         self,
@@ -100,7 +108,8 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        self._model = self._train_model_unsupervised(features)
+        if not self._skip_embedding:
+            self._model = self._train_model_unsupervised(features)
 
     def fit_transform(
         self,
@@ -127,9 +136,11 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        self._model = self._train_model_unsupervised(features)
-
-        return self._embedd(features)
+        if self._skip_embedding:
+            return features
+        else:
+            self._model = self._train_model_unsupervised(features)
+            return self._embedd(features)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
         """Check if model is fit and return it."""
