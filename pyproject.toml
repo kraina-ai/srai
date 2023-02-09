@@ -19,6 +19,7 @@ dependencies = [
     "tqdm>=4.64.1",
     "s2>=0.1.9",
     "pytorch-lightning>=1.0.0",
+    "torch<=2.0.0,>=1.11.0",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -75,11 +76,7 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = [
-    "pytest~=7.1",
-    "tox-pdm>=0.6.0",
-    "pytest-mock>=3.0.0",
-]
+test = ["pytest~=7.1", "tox-pdm>=0.6.0", "pytest-mock>=3.0.0"]
 # pdm add -dG visualization <library>
 visualization = [
     "keplergl>=0.3.2",
@@ -100,6 +97,11 @@ docs = [
     "mike<2.0.0",
 ]
 performance = ["scalene>=1.5.14"]
+
+[[tool.pdm.source]]
+type = "index-url"
+url = "https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html"
+name = "pytorch"
 
 [tool.black]
 line-length = 100
