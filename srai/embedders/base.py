@@ -32,7 +32,6 @@ class BaseEmbedder(abc.ABC):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
-
         """
         raise NotImplementedError
 

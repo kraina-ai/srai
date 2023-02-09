@@ -5,7 +5,6 @@ This module contains embedder from gtfs2vec paper [1].
 
 References:
     [1] https://doi.org/10.1145/3486640.3491392
-
 """
 
 
@@ -59,7 +58,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
             ValueError: If index levels in gdfs don't overlap correctly.
             ValueError: If number of features is incosistent with the model.
             ModelNotFitException: If model is not fit.
-
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
 
@@ -92,7 +90,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
-
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
@@ -120,7 +117,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
-
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
@@ -148,7 +144,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
-
         """
         regions_gdf = self._remove_geometry_if_present(regions_gdf)
         features_gdf = self._remove_geometry_if_present(features_gdf)
@@ -175,7 +170,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         Returns:
             dict: Aggregation dict.
-
         """
         agg_dict: Dict[str, Any] = {}
 
@@ -193,7 +187,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
         Args:
             df (pd.DataFrame): DataFrame to normalize.
             columns (list): List of columns.
-
         """
         df[columns] = (df[columns] - df[columns].min().min()) / (
             df[columns].max().max() - df[columns].min().min()
@@ -209,7 +202,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         Returns:
             pd.DataFrame: Normalized features.
-
         """
         norm_columns = [
             [column for column in features.columns if column.startswith(self.DIRECTIONS_PREFIX)],
@@ -227,7 +219,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         Args:
             features (pd.DataFrame): Features.
-
         """
         model = GTFS2VecModel(
             n_features=len(features.columns),
@@ -251,7 +242,6 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         Returns:
             pd.DataFrame: Embeddings.
-
         """
         model = self._maybe_get_model()
         if len(features.columns) != model.n_features:

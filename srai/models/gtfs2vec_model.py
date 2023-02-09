@@ -5,7 +5,6 @@ This module contains embedding model from gtfs2vec paper [1].
 
 References:
     [1] https://doi.org/10.1145/3486640.3491392
-
 """
 from typing import Any, Union
 
@@ -33,7 +32,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
             n_hidden (int, optional): Number of hidden units. Defaults to 48.
             emb_size (int, optional): Embedding size. Defaults to 64.
             sparsity_lambda (Union[float, None], optional): Sparsity lambda. Defaults to None.
-
         """
         super().__init__()
         self.n_features = n_features
@@ -52,7 +50,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
 
         Args:
             x (torch.Tensor): Input tensor.
-
         """
         embedding: torch.Tensor = self.encoder(x)
         return embedding
@@ -69,7 +66,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         Args:
             batch (torch.Tensor): Batch.
             batch_idx (Any): Batch index.
-
         """
         x = batch
         z = self.encoder(x)
