@@ -1070,11 +1070,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mpmath"
-version = "1.2.1"
-summary = "Python library for arbitrary-precision floating-point arithmetic"
-
-[[package]]
 name = "multidict"
 version = "6.0.4"
 requires_python = ">=3.7"
@@ -1243,6 +1238,41 @@ name = "numpy"
 version = "1.24.1"
 requires_python = ">=3.8"
 summary = "Fundamental package for array computing in Python"
+
+[[package]]
+name = "nvidia-cublas-cu11"
+version = "11.10.3.66"
+requires_python = ">=3"
+summary = "CUBLAS native runtime libraries"
+dependencies = [
+    "setuptools",
+    "wheel",
+]
+
+[[package]]
+name = "nvidia-cuda-nvrtc-cu11"
+version = "11.7.99"
+requires_python = ">=3"
+summary = "NVRTC native runtime libraries"
+
+[[package]]
+name = "nvidia-cuda-runtime-cu11"
+version = "11.7.99"
+requires_python = ">=3"
+summary = "CUDA Runtime native Libraries"
+dependencies = [
+    "setuptools",
+    "wheel",
+]
+
+[[package]]
+name = "nvidia-cudnn-cu11"
+version = "8.5.0.96"
+requires_python = ">=3"
+summary = "cuDNN runtime libraries"
+dependencies = [
+    "nvidia-cublas-cu11",
+]
 
 [[package]]
 name = "osmium"
@@ -1623,7 +1653,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.10"
 requires_python = ">=3.7"
-summary = ""
+summary = "Pseudo terminal support for Windows from Python."
 
 [[package]]
 name = "pyyaml"
@@ -1793,15 +1823,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sympy"
-version = "1.11.1"
-requires_python = ">=3.8"
-summary = "Computer algebra system (CAS) in Python"
-dependencies = [
-    "mpmath>=0.19",
-]
-
-[[package]]
 name = "tabulate"
 version = "0.9.0"
 requires_python = ">=3.7"
@@ -1862,13 +1883,14 @@ dependencies = [
 
 [[package]]
 name = "torch"
-version = "2.0.0.dev20230208+cpu"
-requires_python = ">=3.8.0"
+version = "1.13.1"
+requires_python = ">=3.7.0"
 summary = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 dependencies = [
-    "filelock",
-    "networkx",
-    "sympy",
+    "nvidia-cublas-cu11==11.10.3.66; platform_system == \"Linux\"",
+    "nvidia-cuda-nvrtc-cu11==11.7.99; platform_system == \"Linux\"",
+    "nvidia-cuda-runtime-cu11==11.7.99; platform_system == \"Linux\"",
+    "nvidia-cudnn-cu11==8.5.0.96; platform_system == \"Linux\"",
     "typing-extensions",
 ]
 
@@ -2071,7 +2093,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:fcb4662ae9c13b59d745d2ce4ce8ad152e96fab5e434d341ce7de0110b107655"
+content_hash = "sha256:af40fb240fdf18d274d9cbb8155d7281bc765817c30e8c43626e09dc0492ab92"
 
 [metadata.files]
 "aiohttp 3.8.3" = [
@@ -3155,11 +3177,6 @@ content_hash = "sha256:fcb4662ae9c13b59d745d2ce4ce8ad152e96fab5e434d341ce7de0110
     {url = "https://files.pythonhosted.org/packages/2c/30/47c1db07d5a6ecbf9a8ea251e1cfb91ec5f8bc4ab1ead417dcc1932ab616/mkdocstrings-python-0.8.3.tar.gz", hash = "sha256:9ae473f6dc599339b09eee17e4d2b05d6ac0ec29860f3fc9b7512d940fc61adf"},
     {url = "https://files.pythonhosted.org/packages/76/ea/7aba526196a8c6f7bb2748dcdb815e073e730303939768c089b5b357deae/mkdocstrings_python-0.8.3-py3-none-any.whl", hash = "sha256:4e6e1cd6f37a785de0946ced6eb846eb2f5d891ac1cc2c7b832943d3529087a7"},
 ]
-"mpmath 1.2.1" = [
-    {url = "https://download.pytorch.org/whl/nightly/mpmath-1.2.1-py3-none-any.whl", hash = "sha256:604bc21bd22d2322a177c73bdb573994ef76e62edd595d17e00aff24b0667e5c"},
-    {url = "https://files.pythonhosted.org/packages/95/ba/7384cb4db4ed474d4582944053549e02ec25da630810e4a23454bc9fa617/mpmath-1.2.1.tar.gz", hash = "sha256:79ffb45cf9f4b101a807595bcb3e72e0396202e0b1d25d689134b48c4216a81a"},
-    {url = "https://files.pythonhosted.org/packages/d4/cf/3965bddbb4f1a61c49aacae0e78fd1fe36b5dc36c797b31f30cf07dcbbb7/mpmath-1.2.1-py3-none-any.whl", hash = "sha256:604bc21bd22d2322a177c73bdb573994ef76e62edd595d17e00aff24b0667e5c"},
-]
 "multidict 6.0.4" = [
     {url = "https://files.pythonhosted.org/packages/00/bb/1cdffe9b1ab01830bc9255a64524c34b71c20a4affe5d1000b223a41698d/multidict-6.0.4-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:ddd3915998d93fbcd2566ddf9cf62cdb35c9e093075f862935573d265cf8f65d"},
     {url = "https://files.pythonhosted.org/packages/0a/a1/a0446805d76fd6ada6de501c90520c963f8b5bf1f5a7a75ad80ba076897d/multidict-6.0.4-cp37-cp37m-musllinux_1_1_s390x.whl", hash = "sha256:5cad9430ab3e2e4fa4a2ef4450f548768400a2ac635841bc2a56a2052cdbeb87"},
@@ -3349,6 +3366,23 @@ content_hash = "sha256:fcb4662ae9c13b59d745d2ce4ce8ad152e96fab5e434d341ce7de0110
     {url = "https://files.pythonhosted.org/packages/ee/70/c9055fe381e9e5103222e2f5efeb0cfb4524ab3c7d75b4eedc330380f9f5/numpy-1.24.1-cp310-cp310-win_amd64.whl", hash = "sha256:b07b40f5fb4fa034120a5796288f24c1fe0e0580bbfff99897ba6267af42def2"},
     {url = "https://files.pythonhosted.org/packages/f9/03/94ee2d37561d77538e9f2c933a8b22ff234f15404420517b3f51cc3a0749/numpy-1.24.1-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:cfa1161c6ac8f92dea03d625c2d0c05e084668f4a06568b77a25a89111621566"},
     {url = "https://files.pythonhosted.org/packages/fa/c2/00bed438bc58fd80429b7ea2b28382f99156659ebc6dfa750d1520df59d6/numpy-1.24.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:b162ac10ca38850510caf8ea33f89edcb7b0bb0dfa5592d59909419986b72407"},
+]
+"nvidia-cublas-cu11 11.10.3.66" = [
+    {url = "https://files.pythonhosted.org/packages/7a/08/57e6b6481af73590259a9600c32a68eb853966e354fca147cde17ed9ea27/nvidia_cublas_cu11-11.10.3.66-py3-none-win_amd64.whl", hash = "sha256:8ac17ba6ade3ed56ab898a036f9ae0756f1e81052a317bf98f8c6d18dc3ae49e"},
+    {url = "https://files.pythonhosted.org/packages/ce/41/fdeb62b5437996e841d83d7d2714ca75b886547ee8017ee2fe6ea409d983/nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl", hash = "sha256:d32e4d75f94ddfb93ea0a5dda08389bcc65d8916a25cb9f37ac89edaeed3bded"},
+]
+"nvidia-cuda-nvrtc-cu11 11.7.99" = [
+    {url = "https://files.pythonhosted.org/packages/9e/10/c9fc448f33d439981d6a74b693526871c4ef13e8d81a7b4de12e3a12a1b9/nvidia_cuda_nvrtc_cu11-11.7.99-py3-none-win_amd64.whl", hash = "sha256:f2effeb1309bdd1b3854fc9b17eaf997808f8b25968ce0c7070945c4265d64a3"},
+    {url = "https://files.pythonhosted.org/packages/ea/8d/0709ba16c2831c17ec1c2ea1eeb89ada11ffa8d966d773cce0a7463b22bb/nvidia_cuda_nvrtc_cu11-11.7.99-py3-none-manylinux1_x86_64.whl", hash = "sha256:f7d9610d9b7c331fa0da2d1b2858a4a8315e6d49765091d28711c8946e7425e7"},
+    {url = "https://files.pythonhosted.org/packages/ef/25/922c5996aada6611b79b53985af7999fc629aee1d5d001b6a22431e18fec/nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl", hash = "sha256:9f1562822ea264b7e34ed5930567e89242d266448e936b85bc97a3370feabb03"},
+]
+"nvidia-cuda-runtime-cu11 11.7.99" = [
+    {url = "https://files.pythonhosted.org/packages/32/2c/d89ea2b4051fbabff8d2edda8c735dabae6d5d1b8d5215f9749d38dcdb72/nvidia_cuda_runtime_cu11-11.7.99-py3-none-win_amd64.whl", hash = "sha256:bc77fa59a7679310df9d5c70ab13c4e34c64ae2124dd1efd7e5474b71be125c7"},
+    {url = "https://files.pythonhosted.org/packages/36/92/89cf558b514125d2ebd8344dd2f0533404b416486ff681d5434a5832a019/nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl", hash = "sha256:cc768314ae58d2641f07eac350f40f99dcb35719c4faff4bc458a7cd2b119e31"},
+]
+"nvidia-cudnn-cu11 8.5.0.96" = [
+    {url = "https://files.pythonhosted.org/packages/db/69/4d28d4706946f89fffe3f87373a079ae95dc17f9c0fcd840fe570c67e36b/nvidia_cudnn_cu11-8.5.0.96-py3-none-manylinux1_x86_64.whl", hash = "sha256:71f8111eb830879ff2836db3cccf03bbd735df9b0d17cd93761732ac50a8a108"},
+    {url = "https://files.pythonhosted.org/packages/dc/30/66d4347d6e864334da5bb1c7571305e501dcb11b9155971421bb7bb5315f/nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl", hash = "sha256:402f40adfc6f418f9dae9ab402e773cfed9beae52333f6d86ae3107a1b9527e7"},
 ]
 "osmium 3.6.0" = [
     {url = "https://files.pythonhosted.org/packages/01/3a/408e2e6ad6d18a0ed4323f425117713eef3171a7da6a6aec994f730489d6/osmium-3.6.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb99685d18f08e766ba8d971a7f93a3bfb2829b917996591a7cfec053c2711b3"},
@@ -4113,11 +4147,6 @@ content_hash = "sha256:fcb4662ae9c13b59d745d2ce4ce8ad152e96fab5e434d341ce7de0110
     {url = "https://files.pythonhosted.org/packages/6a/81/aa96c25c27f78cdc444fec27d80f4c05194c591465e491a1358d8a035bc1/stack_data-0.6.2-py3-none-any.whl", hash = "sha256:cbb2a53eb64e5785878201a97ed7c7b94883f48b87bfb0bbe8b623c74679e4a8"},
     {url = "https://files.pythonhosted.org/packages/db/18/aa7f2b111aeba2cd83503254d9133a912d7f61f459a0c8561858f0d72a56/stack_data-0.6.2.tar.gz", hash = "sha256:32d2dd0376772d01b6cb9fc996f3c8b57a357089dec328ed4b6553d037eaf815"},
 ]
-"sympy 1.11.1" = [
-    {url = "https://download.pytorch.org/whl/nightly/sympy-1.11.1-py3-none-any.whl", hash = "sha256:938f984ee2b1e8eae8a07b884c8b7a1146010040fccddc6539c54f401c8f6fcf"},
-    {url = "https://files.pythonhosted.org/packages/2d/49/a2d03101e2d28ad528968144831d506344418ef1cc04839acdbe185889c2/sympy-1.11.1-py3-none-any.whl", hash = "sha256:938f984ee2b1e8eae8a07b884c8b7a1146010040fccddc6539c54f401c8f6fcf"},
-    {url = "https://files.pythonhosted.org/packages/5a/36/4667b08bc45131fe655a27b1a112c1730f3244343c53a338f44d730bd6ba/sympy-1.11.1.tar.gz", hash = "sha256:e32380dce63cb7c0108ed525570092fd45168bdae2faa17e528221ef72e88658"},
-]
 "tabulate 0.9.0" = [
     {url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f"},
     {url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c"},
@@ -4150,23 +4179,28 @@ content_hash = "sha256:fcb4662ae9c13b59d745d2ce4ce8ad152e96fab5e434d341ce7de0110
     {url = "https://files.pythonhosted.org/packages/0c/c0/364277ced802f2ee79a776ffd13d1c18d1ada9d78837b01e9b242cd92004/topojson-1.5.tar.gz", hash = "sha256:71c1463b8bb666297953e3c461efd3f0ebff6f4f223d48ea40fd8105caf6ca2e"},
     {url = "https://files.pythonhosted.org/packages/65/2b/98e7b76436d8136efcb8ab0976588e553b2a92437b3ea4743c596ef0c65d/topojson-1.5-py2.py3-none-any.whl", hash = "sha256:2fafc9748b15f77c73d6e6a8d4fe3ad2ca7aaf2f316216618baba528412e30c6"},
 ]
-"torch 2.0.0.dev20230208+cpu" = [
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp310-cp310-linux_x86_64.whl", hash = "sha256:2a4d2b23a3b43f4d81c0c933b2607265154797881b5ad5d6a822ebc56aed0222"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp310-cp310-win_amd64.whl", hash = "sha256:9cf487a626ef23eb9d5a1f70e5e3d3b59272102f2ddb4b1071450654caea15dc"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp311-cp311-linux_x86_64.whl", hash = "sha256:56675bdcf88e89be0b55b109c0541ce7fc5062eb37e3d30128f2f570cf52e03f"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp311-cp311-win_amd64.whl", hash = "sha256:2af31f331b7af2c50ab4598c38381b5ca997f3836a51afac41d6a5fee859db2e"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp38-cp38-linux_x86_64.whl", hash = "sha256:9888de733f7d0e8c8cfe5cbe87a280a6b3a778369a5c8225cd88060bf10ca035"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp38-cp38-win_amd64.whl", hash = "sha256:e97f207568d4bf9f6019bfa3976fd24a0fd900c9fca9cad6b6c1d8dd24251179"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp39-cp39-linux_x86_64.whl", hash = "sha256:2f181d2482f3aba6cc44361d917c9109a5362cd3ee5a4940ac8396b8f61ba660"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208%2Bcpu-cp39-cp39-win_amd64.whl", hash = "sha256:562e1f5bd37b5aab87f5511b39255b31b4c4db60922f66765d4b2652ce30e1e6"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:bd1ef390dde5c7a31eff019378d8ac570ae2ab1bbf4127988fe178e461d6e8ec"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:eda3ef14e2d03ae6b7da98b2144a0c08deaeb58134497aa4a3d9520c37b2413d"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp311-none-macosx_10_9_x86_64.whl", hash = "sha256:3cf31008c0f5926a117e7c93ddf64a4eb95f4a49e85c11649d567920ee4349a5"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:40a288b6e78f8a4bde87e056030a591d368a46b865576c55adb566c079394d00"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:1eb9a287b58c7ed2296aa73cf72bc7695afc8f26f9980821b33fe4e3f91be874"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp38-none-macosx_11_0_arm64.whl", hash = "sha256:f49f63b1bcdb442dc413f10b7fc1bd8df653bf7043a112c50d20b53b029dd76a"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:1055f3011e16ae15ad28712e33e4edaa63f4464edd566981b4d2a2b2c053b139"},
-    {url = "https://download.pytorch.org/whl/nightly/cpu/torch-2.0.0.dev20230208-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:84ad17fbd8d3563fc66c69cea5e45b9f39aad37a3cfe72c747613648e07e465a"},
+"torch 1.13.1" = [
+    {url = "https://files.pythonhosted.org/packages/00/86/77a9eddbf46f1bca2468d16a401911f58917f95b63402d6a7a4522521e5d/torch-1.13.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:76024be052b659ac1304ab8475ab03ea0a12124c3e7626282c9c86798ac7bc11"},
+    {url = "https://files.pythonhosted.org/packages/13/60/6129b3b0ce696e45774ab9b4b4f1a1bf5d74a2b9b2e81c88fb4620e6cad3/torch-1.13.1-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:33e67eea526e0bbb9151263e65417a9ef2d8fa53cbe628e87310060c9dcfa312"},
+    {url = "https://files.pythonhosted.org/packages/19/ae/79b619e5f3abc7c3343c19d99678830369e9d87fe5ed44973e08e5b5bcaa/torch-1.13.1-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:ea8dda84d796094eb8709df0fcd6b56dc20b58fdd6bc4e8d7109930dafc8e419"},
+    {url = "https://files.pythonhosted.org/packages/24/45/61e41ef8a84e1d6200ff10b7cb87e23e211599ab62420396a363295f973c/torch-1.13.1-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:0122806b111b949d21fa1a5f9764d1fd2fcc4a47cb7f8ff914204fd4fc752ed5"},
+    {url = "https://files.pythonhosted.org/packages/24/dd/22d7048ba641ed3699fc2dc04eb3384db1f09b0202b64c9f9fede0243e7d/torch-1.13.1-cp37-none-macosx_11_0_arm64.whl", hash = "sha256:f402ca80b66e9fbd661ed4287d7553f7f3899d9ab54bf5c67faada1555abde28"},
+    {url = "https://files.pythonhosted.org/packages/25/09/184125ce54b2d7e665f3b674a1ac5d96b442f00dd11804490e926231e36b/torch-1.13.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:50ff5e76d70074f6653d191fe4f6a42fdbe0cf942fbe2a3af0b75eaa414ac038"},
+    {url = "https://files.pythonhosted.org/packages/2c/45/43233d36e8e7ec5588fa802bb098337ae73c314863190c68797287f2fbdd/torch-1.13.1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:d9fe785d375f2e26a5d5eba5de91f89e6a3be5d11efb497e76705fdf93fa3c2e"},
+    {url = "https://files.pythonhosted.org/packages/2d/ab/8210e877debc6e16c5f64345b08abfd667ade733329ef8b38dd06a362513/torch-1.13.1-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:e0df902a7c7dd6c795698532ee5970ce898672625635d885eade9976e5a04949"},
+    {url = "https://files.pythonhosted.org/packages/33/bd/e174e6737daba03f8eaa7c051b9971d361022eb37b86cbe5db0b08cab00e/torch-1.13.1-cp310-cp310-win_amd64.whl", hash = "sha256:98124598cdff4c287dbf50f53fb455f0c1e3a88022b39648102957f3445e9b76"},
+    {url = "https://files.pythonhosted.org/packages/56/13/841d298885ca6b48923d502528d51af00a56f93179c152d31ae88d3054cd/torch-1.13.1-cp39-cp39-win_amd64.whl", hash = "sha256:0aa46f0ac95050c604bcf9ef71da9f1172e5037fdf2ebe051962d47b123848e7"},
+    {url = "https://files.pythonhosted.org/packages/5d/91/1adb7b73c7dad9fb64ed26bc9d8c060afb9541fca68d71a9c1b48377f332/torch-1.13.1-cp38-none-macosx_11_0_arm64.whl", hash = "sha256:eeeb204d30fd40af6a2d80879b46a7efbe3cf43cdbeb8838dd4f3d126cc90b2b"},
+    {url = "https://files.pythonhosted.org/packages/6b/0e/c640bda79e61766896fe16dfe0a3ab12b06ad50cf8814950518896dec0a5/torch-1.13.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:727dbf00e2cf858052364c0e2a496684b9cb5aa01dc8a8bc8bbb7c54502bdcdd"},
+    {url = "https://files.pythonhosted.org/packages/81/58/431fd405855553af1a98091848cf97741302416b01462bbf9909d3c422b3/torch-1.13.1-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:fd12043868a34a8da7d490bf6db66991108b00ffbeecb034228bfcbbd4197143"},
+    {url = "https://files.pythonhosted.org/packages/82/d8/0547f8a22a0c8aeb7e7e5e321892f1dcf93ea021829a99f1a25f1f535871/torch-1.13.1-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:393a6273c832e047581063fb74335ff50b4c566217019cc6ace318cd79eb0566"},
+    {url = "https://files.pythonhosted.org/packages/86/08/41315a205bcd103a9698fa8afafbb73a234db8791cdb8b96d1efb10243a7/torch-1.13.1-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:2c3581a3fd81eb1f0f22997cddffea569fea53bafa372b2c0471db373b26aafc"},
+    {url = "https://files.pythonhosted.org/packages/a6/41/122f37c99422566ea74b9cce90eb9218f5e8fb2582466da220f95842a0a0/torch-1.13.1-cp38-cp38-win_amd64.whl", hash = "sha256:5e1e722a41f52a3f26f0c4fcec227e02c6c42f7c094f32e49d4beef7d1e213ea"},
+    {url = "https://files.pythonhosted.org/packages/b1/85/62b8da9d984ae95f6fdda707df4af6552a5cea46fde2b944223daf236524/torch-1.13.1-cp37-cp37m-win_amd64.whl", hash = "sha256:2ee7b81e9c457252bddd7d3da66fb1f619a5d12c24d7074de91c4ddafb832c93"},
+    {url = "https://files.pythonhosted.org/packages/b9/18/d97cdc571b4cb90c0d3613cffb19a55ef1e48e74e0c5a6c293e97234b7d3/torch-1.13.1-cp37-none-macosx_10_9_x86_64.whl", hash = "sha256:0d9b8061048cfb78e675b9d2ea8503bfe30db43d583599ae8626b1263a0c1380"},
+    {url = "https://files.pythonhosted.org/packages/bf/47/d52be83b0ce72e83a6691177f27b110b7efefaae4f228f45e404c521e51d/torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:22128502fd8f5b25ac1cd849ecb64a418382ae81dd4ce2b5cebaa09ab15b0d9b"},
+    {url = "https://files.pythonhosted.org/packages/ce/52/14eaa44345e444be2e2da749a7fdbdec71c45294cff33023de12ac3a9115/torch-1.13.1-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:6930791efa8757cb6974af73d4996b6b50c592882a324b8fb0589c6a9ba2ddaf"},
+    {url = "https://files.pythonhosted.org/packages/f4/e5/003ac2b5b95cfea3a0a87150ede879daad446d581fdf967a8d7b2d4b6e05/torch-1.13.1-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:df8434b0695e9ceb8cc70650afc1310d8ba949e6db2a0525ddd9c3b2b181e5fe"},
 ]
 "torchmetrics 0.11.1" = [
     {url = "https://files.pythonhosted.org/packages/9d/a2/facc6b32b2d959c6e5685f075a6a3884bc5d9dac3e0d96a04665f0ffd09b/torchmetrics-0.11.1-py3-none-any.whl", hash = "sha256:9987d7c21b081cceef246a72be1ce25bf29c842764f59dda54f59e3b4cd1970b"},
