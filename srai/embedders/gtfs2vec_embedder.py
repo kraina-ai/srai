@@ -71,18 +71,9 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        if not self._skip_embedding:
-            model = self._maybe_get_model()
-            if len(features.columns) != model.n_features:
-                raise ValueError(
-                    f"Number of features in features_gdf ({len(features_gdf.columns)}) is "
-                    f"incosistent with the model ({model.n_features})."
-                )
-
         if self._skip_embedding:
             return features
-        else:
-            return self._embedd(features)
+        return self._embedd(features)
 
     def fit(
         self,
