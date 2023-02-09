@@ -30,7 +30,13 @@ class GTFS2VecEmbedder(BaseEmbedder):
     DIRECTIONS_PREFIX = "directions_at_"
 
     def __init__(self, hidden_size: int = 48, embedding_size: int = 64) -> None:
-        """Init GTFS2VecEmbedder."""
+        """
+        Init GTFS2VecEmbedder.
+
+        Args:
+            hidden_size (int, optional): Hidden size in encoder and decoder. Defaults to 48.
+            embedding_size (int, optional): Embedding size. Defaults to 64.
+        """
         self._model: Optional[GTFS2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
