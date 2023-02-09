@@ -2,15 +2,8 @@
 Administrative Boundary Regionizer.
 
 This module contains administrative boundary regionizer implementation.
-
 """
 import time
-import urllib.request
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:  # pragma: no cover
-    from OSMPythonTools.overpass import Element
-
 from typing import Any, Dict, List, Union
 
 import geopandas as gpd
@@ -35,14 +28,13 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
     Administrative boundary regionizer allows the given geometries to be divided
     into boundaries from OpenStreetMap on a given `admin_level` [1].
 
-    Downloads those boundaries online using `OSMPythonTools` and `osmnx` library.
+    Downloads those boundaries online using `overpass` and `osmnx` libraries.
 
     Note: offline .pbf loading will be implemented in the future.
     Note: option to download historic data will be implemented in the future.
 
     References:
         1. https://wiki.openstreetmap.org/wiki/Key:admin_level
-
     """
 
     def __init__(
@@ -78,13 +70,12 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         References:
             1. https://wiki.openstreetmap.org/wiki/Tag:boundary=administrative#10_admin_level_values_for_specific_countries
             2. https://taginfo.openstreetmap.org/keys/admin_level#values
-
         """  # noqa: W505, E501
         import_optional_dependencies(
             dependency_group="osm",
-            modules=["osmnx", "OSMPythonTools"],
+            modules=["osmnx", "overpass"],
         )
-        from OSMPythonTools.overpass import Overpass
+        from overpass import API
 
         if admin_level < 1 or admin_level > 11:
             raise ValueError("admin_level outside of available range.")
@@ -101,13 +92,13 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         else:
             self.toposimplify = False
 
-        self.overpass = Overpass(waitBetweenQueries=1)
+        self.overpass_api = API(timeout=60)
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Regionize a given GeoDataFrame.
 
-        Will query Overpass [1] server using `OSMPythonTools` [2] library for closed administrative
+        Will query Overpass [1] server using `overpass` [2] library for closed administrative
         boundaries on a given admin_level and then download geometries for each relation using
         `osmnx` [3] library.
 
@@ -135,10 +126,9 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
 
         References:
             1. https://wiki.openstreetmap.org/wiki/Overpass_API
-            2. https://github.com/mocnik-science/osm-python-tools
+            2. https://github.com/mvexel/overpass-api-python-wrapper
             3. https://github.com/gboeing/osmnx
             4. https://github.com/mattijn/topojson
-
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
@@ -172,21 +162,20 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
                 unary_geometry = unary_union([r["geometry"] for r in generated_regions])
                 if not geometry.within(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
-                    boundaries = self._query_overpass(query)
-                    boundaries_list = list(boundaries.relations()) if boundaries.relations() else []
+                    boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
-                        if boundary.id() not in elements_ids:
-                            elements_ids.add(boundary.id())
+                        if boundary["id"] not in elements_ids:
+                            elements_ids.add(boundary["id"])
                             generated_regions.append(self._parse_overpass_element(boundary))
                             pbar.update(1)
 
         return generated_regions
 
-    def _query_overpass(self, query: str) -> Any:
+    def _query_overpass(self, query: str) -> List[Dict[str, Any]]:
         """
-        Query Overpass with OSMPythonTools and catch exceptions.
+        Query Overpass and catch exceptions.
 
-        Since OSMPythonTools doesn't have useful http error wrapping like osmnx does [1],
+        Since `overpass` library doesn't have useful http error wrapping like osmnx does [1],
         this method allows for retry after waiting some time.
 
         Args:
@@ -197,25 +186,22 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
                 HTTP code is different than 429 or 504.
 
         Returns:
-            Any: Queries result from OSMPythonTools.
+            List[Dict[str, Any]]: Query elements result from Overpass.
 
         References:
             1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
-
         """
+        from overpass import MultipleRequestsError, ServerLoadError
+
         while True:
             try:
-                return self.overpass.query(query, timeout=60, shallow=False)
-            except Exception as ex:
-                if (
-                    isinstance(ex.args, tuple)
-                    and len(ex.args) >= 2
-                    and isinstance(ex.args[1], urllib.request.HTTPError)
-                    and ex.args[1].getcode() in {429, 504}
-                ):
-                    time.sleep(60)
-                else:
-                    raise ex
+                query_result = self.overpass_api.get(
+                    query, verbosity="ids tags", responseformat="json"
+                )
+                elements: List[Dict[str, Any]] = query_result["elements"]
+                return elements
+            except (MultipleRequestsError, ServerLoadError):
+                time.sleep(60)
 
     def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
         """Flatten all geometries into a list of BaseGeometries."""
@@ -227,15 +213,13 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
 
     def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
         """Generate Overpass query for a geometry."""
-        from OSMPythonTools.overpass import overpassQueryBuilder
-
         if isinstance(g, Point):
             query = (
                 f"is_in({g.y},{g.x});"
                 'area._["boundary"="administrative"]'
                 '["type"~"boundary|multipolygon"]'
                 f'["admin_level"="{self.admin_level}"];'
-                "relation(pivot); out ids tags;"
+                "relation(pivot);"
             )
         else:
             raw_gdf_bounds = g.bounds
@@ -245,35 +229,31 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
                 raw_gdf_bounds[3],
                 raw_gdf_bounds[2],
             )
-            query = overpassQueryBuilder(
-                bbox=overpass_bbox,
-                elementType="relation",
-                selector=[
-                    '"boundary"="administrative"',
-                    '"type"~"boundary|multipolygon"',
-                    f'"admin_level"="{self.admin_level}"',
-                ],
-                out="ids tags",
-                includeGeometry=False,
+            query = (
+                '(relation["boundary"="administrative"]'
+                '["type"~"boundary|multipolygon"]'
+                f'["admin_level"="{self.admin_level}"]'
+                f"({overpass_bbox[0]},{overpass_bbox[1]},{overpass_bbox[2]},{overpass_bbox[3]}););"
             )
         return query
 
-    def _parse_overpass_element(self, element: "Element") -> Dict[str, Any]:
+    def _parse_overpass_element(self, element: Dict[str, Any]) -> Dict[str, Any]:
         """Parse single Overpass Element and return a region."""
+        element_tags = element.get("tags", {})
         region_id = None
         if self.prioritize_english_name:
-            region_id = element.tag("name:en")
+            region_id = element_tags.get("name:en")
         if not region_id:
-            region_id = element.tag("name")
+            region_id = element_tags.get("name")
         if not region_id:
-            region_id = str(element.id())
+            region_id = str(element["id"])
 
         return {
-            "geometry": self._get_boundary_geometry(element.id()),
+            "geometry": self._get_boundary_geometry(element["id"]),
             "region_id": region_id,
         }
 
-    def _get_boundary_geometry(self, relation_id: int) -> BaseGeometry:
+    def _get_boundary_geometry(self, relation_id: str) -> BaseGeometry:
         """Download a geometry of a relation using `osmnx` library."""
         from osmnx import geocode_to_gdf
 

@@ -12,7 +12,6 @@ def write_file(file_path: Path) -> None:
 
     Args:
         file_path (Path): Current file path.
-
     """
     root_path = file_path.relative_to(".")
     print(f"Copying {root_path} file to {root_path}")

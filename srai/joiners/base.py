@@ -21,6 +21,5 @@ class BaseJoiner(abc.ABC):
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex and optionally a geometry with the intersection
-
         """
         raise NotImplementedError

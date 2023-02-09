@@ -21,6 +21,5 @@ class BaseLoader(abc.ABC):
 
         Returns:
             GeoDataFrame with the downloaded data.
-
         """
         raise NotImplementedError

@@ -8,7 +8,7 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 23.1.0
     hooks:
       - id: black-jupyter
   - repo: https://github.com/pycqa/isort
@@ -17,16 +17,16 @@ repos:
       - id: isort
         name: isort (python)
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.0
+    rev: v1.6.0.rc1
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
         args: ["--in-place", "--config", "./pyproject.toml"]
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
+    rev: 6.3.0
     hooks:
       - id: pydocstyle
-        additional_dependencies: ["toml"]
+        additional_dependencies: ["toml", "tomli"]
   - repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
     hooks:
@@ -38,9 +38,13 @@ repos:
     hooks:
       - id: mypy
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.3.1
+    rev: 2.4.3
     hooks:
       - id: pdm-lock-check
+      - id: pdm-export
+        args: ["-o", "requirements.txt", "--without-hashes", "-d", "-G", "all"]
+        files: ^pdm.lock$
+        stages: [manual]
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
@@ -56,11 +60,17 @@ repos:
       - id: check-added-large-files
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v1.8.0
+    rev: v1.11.0
     hooks:
       - id: refurb
         language: python
         language_version: python3.10
+        stages: [manual]
+  - repo: https://github.com/FHPythonUtils/LicenseCheck
+    rev: "60e3b8e1ec4f2e9817fa0a02a9c4a3c20c49d560"
+    # change to "2023.0.1" after tag will be created
+    hooks:
+      - id: licensecheck
         stages: [manual]
 
 ci:
