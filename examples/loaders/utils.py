@@ -13,7 +13,6 @@ def download(url: str, fname: str, chunk_size: int = 1024) -> None:
         chunk_size (str): Chunk size.
 
     Source: https://gist.github.com/yanqd0/c13ed29e29432e3cf3e7c38467f42f51
-
     """
     resp = requests.get(url, stream=True)
     total = int(resp.headers.get("content-length", 0))

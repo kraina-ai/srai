@@ -8,7 +8,6 @@ the gtfs2vec project [2].
 References:
     [1] https://gitlab.com/mrcagney/gtfs_kit
     [2] https://doi.org/10.1145/3486640.3491392
-
 """
 
 from pathlib import Path
@@ -30,7 +29,6 @@ class GTFSLoader:
     GTFSLoader.
 
     This loader is capable of reading GTFS feed and calculates time aggregations in 1H slots.
-
     """
 
     def __init__(self) -> None:
@@ -56,7 +54,6 @@ class GTFSLoader:
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with trip counts and list of directions for stops.
-
         """
         import gtfs_kit as gk
 
@@ -96,7 +93,6 @@ class GTFSLoader:
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with trips.
-
         """
         # FIXME: this takes first wednesday from the feed, may not be the best,
         # but that is what I did in gtfs2vec
@@ -127,7 +123,6 @@ class GTFSLoader:
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with directions.
-
         """
         df = feed.stop_times.merge(feed.trips, on="trip_id")
         df = df.merge(feed.stops, on="stop_id")
@@ -150,7 +145,6 @@ class GTFSLoader:
         Args:
             feed (gk.Feed): GTFS feed.
             fail (bool): Fail if feed is invalid.
-
         """
         validation_result = feed.validate()
 
@@ -173,6 +167,5 @@ class GTFSLoader:
 
         Returns:
             int: Departure time in hours.
-
         """
         return int(departure_time[:2].replace(":", "")) % 24
