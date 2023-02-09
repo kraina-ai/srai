@@ -25,8 +25,7 @@ SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 
 
 def _generate_sphere_parts() -> None:
-    global SPHERE_PARTS
-    global SPHERE_PARTS_BOUNDING_BOXES
+    global SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES
 
     if not SPHERE_PARTS:
         # LON: 0; LAT: 0
