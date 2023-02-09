@@ -38,7 +38,6 @@ def import_optional_dependency(
 
     Returns:
         Optional[ModuleType]: Module or submodule imported using a name. None if not found.
-
     """
     assert error in ImportErrorHandle.__members__.values()
     import importlib
@@ -71,7 +70,6 @@ def import_optional_dependencies(
         modules (List[str]): List of module names that are expected to be imported.
         error (ErrorHandle, {'raise', 'warn', 'ignore'}): Information what to do when any of
             the modules hasn't been found. Defaults to ErrorHandle.RAISE.
-
     """
 
     for module in modules:

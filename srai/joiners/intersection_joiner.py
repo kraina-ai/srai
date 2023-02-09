@@ -2,7 +2,6 @@
 Intersection Joiner.
 
 This module contains intersection joiner implementation.
-
 """
 
 import geopandas as gpd
@@ -15,7 +14,6 @@ class IntersectionJoiner:
 
     Intersection Joiner allows to join two GeoDataFrames and find all overlapping geometries. It
     does not apply any grouping or aggregation.
-
     """
 
     def transform(
@@ -34,7 +32,6 @@ class IntersectionJoiner:
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex and optionaly a geometry with the intersection
-
         """
         if "geometry" not in regions.columns:
             raise ValueError("Regions must have a geometry column.")
@@ -68,7 +65,6 @@ class IntersectionJoiner:
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex and a geometry with the intersection
-
         """
         joined_parts = [
             gpd.overlay(
@@ -96,7 +92,6 @@ class IntersectionJoiner:
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex
-
         """
         joint = (
             gpd.sjoin(

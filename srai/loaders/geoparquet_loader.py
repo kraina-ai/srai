@@ -2,7 +2,6 @@
 Geoparquet loader.
 
 This module contains geoparquet loader implementation.
-
 """
 
 from pathlib import Path
@@ -22,7 +21,6 @@ class GeoparquetLoader:
 
     References:
         1. https://github.com/opengeospatial/geoparquet
-
     """
 
     def load(
@@ -49,7 +47,6 @@ class GeoparquetLoader:
 
         Returns:
             gpd.GeoDataFrame: Loaded geoparquet file as a GeoDataFrame.
-
         """
         if columns and "geometry" not in columns:
             columns.append("geometry")

@@ -13,7 +13,6 @@ def write_file(file_path: Path) -> None:
 
     Args:
         file_path (Path): Current file path.
-
     """
     root_path = file_path.relative_to(MODULE_DIRECTORY_PATH)
     dst_path = (API_DIRECTORY_PATH / file_path.parts[-2]).with_suffix(".md")
