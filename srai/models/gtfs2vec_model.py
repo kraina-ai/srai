@@ -6,7 +6,7 @@ This module contains embedding model from gtfs2vec paper [1].
 References:
     [1] https://doi.org/10.1145/3486640.3491392
 """
-from typing import Any, Union
+from typing import Any
 
 import torch
 from pytorch_lightning import LightningModule
@@ -22,7 +22,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         n_features: int,
         n_hidden: int = 48,
         emb_size: int = 64,
-        sparsity_lambda: Union[float, None] = None,
     ) -> None:
         """
         Init GTFS2VecModel.
@@ -31,7 +30,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
             n_features (int): Number of features.
             n_hidden (int, optional): Number of hidden units. Defaults to 48.
             emb_size (int, optional): Embedding size. Defaults to 64.
-            sparsity_lambda (Union[float, None], optional): Sparsity lambda. Defaults to None.
         """
         super().__init__()
         self.n_features = n_features
@@ -42,7 +40,6 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         self.decoder = nn.Sequential(
             nn.Linear(emb_size, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_features)
         )
-        self.sparsity_lambda = sparsity_lambda
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -71,7 +68,5 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
-        if self.sparsity_lambda is not None:
-            loss = loss + self.sparsity_lambda * torch.mean(torch.abs(z))
         self.log("train_loss", loss)
         return loss
