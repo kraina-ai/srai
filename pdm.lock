@@ -580,6 +580,7 @@ dependencies = [
     "jupyter-client>=6.1.12",
     "jupyter-core!=5.0.*,>=4.12",
     "matplotlib-inline>=0.1",
+    "nest-asyncio",
     "packaging",
     "psutil",
     "pyzmq>=20",
@@ -1839,8 +1840,8 @@ summary = "Pure python rfc3986 validator"
 
 [[package]]
 name = "rich"
-version = "13.1.0"
-requires_python = ">=3.7.0"
+version = "12.6.0"
+requires_python = ">=3.6.3,<4.0.0"
 summary = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
 dependencies = [
     "commonmark<0.10.0,>=0.9.0",
@@ -4222,9 +4223,9 @@ content_hash = "sha256:99c295c599a759eb30a17013697c0d8ed645d53982b5587cce4072894
     {url = "https://files.pythonhosted.org/packages/9e/51/17023c0f8f1869d8806b979a2bffa3f861f26a3f1a66b094288323fba52f/rfc3986_validator-0.1.1-py2.py3-none-any.whl", hash = "sha256:2f235c432ef459970b4306369336b9d5dbdda31b510ca1e327636e01f528bfa9"},
     {url = "https://files.pythonhosted.org/packages/da/88/f270de456dd7d11dcc808abfa291ecdd3f45ff44e3b549ffa01b126464d0/rfc3986_validator-0.1.1.tar.gz", hash = "sha256:3d44bde7921b3b9ec3ae4e3adca370438eccebc676456449b145d533b240d055"},
 ]
-"rich 13.1.0" = [
-    {url = "https://files.pythonhosted.org/packages/20/db/fb6f586e2869440d99601b30f6874842015b0c8ca1a6a094abf4e24163f5/rich-13.1.0.tar.gz", hash = "sha256:81c73a30b144bbcdedc13f4ea0b6ffd7fdc3b0d3cc259a9402309c8e4aee1964"},
-    {url = "https://files.pythonhosted.org/packages/55/19/8b1ed0f3ea49306b8115afe84e8e5cd92925d732260efc75e4e3e3089bf0/rich-13.1.0-py3-none-any.whl", hash = "sha256:f846bff22a43e8508aebf3f0f2410ce1c6f4cde429098bd58d91fde038c57299"},
+"rich 12.6.0" = [
+    {url = "https://files.pythonhosted.org/packages/11/23/814edf09ec6470d52022b9e95c23c1bef77f0bc451761e1504ebd09606d3/rich-12.6.0.tar.gz", hash = "sha256:ba3a3775974105c221d31141f2c116f4fd65c5ceb0698657a11e9f295ec93fd0"},
+    {url = "https://files.pythonhosted.org/packages/32/60/81ac2e7d1e3b861ab478a72e3b20fc91c4302acd2274822e493758941829/rich-12.6.0-py3-none-any.whl", hash = "sha256:a4eb26484f2c82589bd9a17c73d32a010b1e29d89f1604cd9bf3a2097b81bb5e"},
 ]
 "rtree 1.0.1" = [
     {url = "https://files.pythonhosted.org/packages/00/69/e840af94d6b57e7c42a2b7814f642d8d4ea869853d4e6e5d6d953df748cc/Rtree-1.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:582854252b8fd5c8472478af060635434931fb55edd269bac128cbf2eef43620"},
