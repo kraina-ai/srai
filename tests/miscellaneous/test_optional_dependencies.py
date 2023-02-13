@@ -41,6 +41,7 @@ def no_optional_dependencies(monkeypatch):
         "pymap3d",
         "haversine",
         "spherical_geometry",
+        "gtfs_kit",
     ]
     for package in optional_packages:
         sys.modules.pop(package, None)

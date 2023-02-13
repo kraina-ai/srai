@@ -49,7 +49,9 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "overpass>=0.7"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
-all = ["srai[osm,voronoi]"]
+# pdm add -G gtfs <library>
+gtfs = ["gtfs-kit>=5.0.0"]
+all = ["srai[osm,voronoi,gtfs]"]
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
@@ -72,7 +74,11 @@ lint = [
     "docformatter[tomli]>=1.5.0",
 ]
 # pdm add -dG test <library>
-test = ["pytest~=7.1", "tox-pdm>=0.6.0"]
+test = [
+    "pytest~=7.1",
+    "tox-pdm>=0.6.0",
+    "pytest-mock>=3.0.0",
+]
 # pdm add -dG visualization <library>
 visualization = [
     "keplergl>=0.3.2",

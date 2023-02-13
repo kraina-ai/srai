@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2022-MM-DD
 
 ### Added
+- GTFS Loader from gtfs2vec paper
 
 ### Changed
 - Change embedders and joiners interface to have `.transform` method
