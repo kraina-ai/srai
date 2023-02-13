@@ -580,7 +580,6 @@ dependencies = [
     "jupyter-client>=6.1.12",
     "jupyter-core!=5.0.*,>=4.12",
     "matplotlib-inline>=0.1",
-    "nest-asyncio",
     "packaging",
     "psutil",
     "pyzmq>=20",
