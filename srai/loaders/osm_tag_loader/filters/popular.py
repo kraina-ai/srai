@@ -6,7 +6,6 @@ to download the most popular tags from OSM
 
 References:
     1. https://taginfo.openstreetmap.org/
-
 """
 from typing import Any, Dict, List
 
@@ -39,7 +38,6 @@ def get_popular_tags(
 
     References:
         1. https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_tags_popular
-
     """
     taginfo_api_response = requests.get(_TAGINFO_API_TAGS)
     taginfo_api_response.raise_for_status()

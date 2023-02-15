@@ -5,7 +5,6 @@ This module contains the OSM tag filter that was used in Hex2Vec [1].
 
 References:
     1. https://dl.acm.org/doi/10.1145/3486635.3491076
-
 """
 HEX2VEC_FILTER = {
     "aeroway": [

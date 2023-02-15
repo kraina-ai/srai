@@ -2,7 +2,6 @@
 OSM Tag Loader.
 
 This module contains loader capable of loading OpenStreetMap tags.
-
 """
 from itertools import product
 from typing import Dict, List, Tuple, Union
@@ -29,7 +28,6 @@ class OSMTagLoader:
 
     References:
         1. https://www.openstreetmap.org/
-
     """
 
     _PBAR_FORMAT = "Downloading {}: {}"
@@ -62,7 +60,6 @@ class OSMTagLoader:
 
         Returns:
             gpd.GeoDataFrame: Downloaded objects as a GeoDataFrame.
-
         """
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
