@@ -14,14 +14,14 @@ from srai.embedders import GTFS2VecEmbedder
 from srai.utils.exceptions import ModelNotFitException
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def gtfs2vec_features() -> gpd.GeoDataFrame:
     """Get GTFS2Vec features GeoDataFrame."""
     features_gdf = gpd.GeoDataFrame(
         {
-            "trip_count_at_6": [1, 0, 0],
-            "trip_count_at_7": [1, 1, 0],
-            "trip_count_at_8": [0, 0, 1],
+            "trips_at_6": [1, 0, 0],
+            "trips_at_7": [1, 1, 0],
+            "trips_at_8": [0, 0, 1],
             "directions_at_6": [
                 {"A", "A1"},
                 {"B", "B1"},
@@ -35,7 +35,7 @@ def gtfs2vec_features() -> gpd.GeoDataFrame:
     return features_gdf
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def gtfs2vec_regions() -> gpd.GeoDataFrame:
     """Get GTFS2Vec regions GeoDataFrame."""
     regions_gdf = gpd.GeoDataFrame(
@@ -51,7 +51,7 @@ def gtfs2vec_regions() -> gpd.GeoDataFrame:
     return regions_gdf
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def gtfs2vec_joint() -> gpd.GeoDataFrame:
     """Get GTFS2Vec joint GeoDataFrame."""
     joint_gdf = gpd.GeoDataFrame()
@@ -62,21 +62,21 @@ def gtfs2vec_joint() -> gpd.GeoDataFrame:
     return joint_gdf
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def features_not_embedded() -> pd.DataFrame:
     """Get features not embedded."""
     return pd.DataFrame(
         {
-            "trip_count_at_6": [0.5, 0.0, 0.0],
-            "trip_count_at_7": [1.0, 0.0, 0.0],
-            "trip_count_at_8": [0.0, 0.5, 0.0],
+            "trips_at_6": [0.5, 0.0, 0.0],
+            "trips_at_7": [1.0, 0.0, 0.0],
+            "trips_at_8": [0.0, 0.5, 0.0],
             "directions_at_6": [1.0, 0.25, 0.0],
             "region_id": ["ff1", "ff2", "ff3"],
         },
     ).set_index("region_id")
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def features_embedded() -> pd.DataFrame:
     """Get features embedded."""
     embeddings = np.array(
@@ -148,15 +148,15 @@ def test_incorrect_indexes(
     joint_gdf = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        embedder = GTFS2VecEmbedder(skip_embedding=True)
+        embedder = GTFS2VecEmbedder(skip_autoencoder=True)
         embedder.transform(regions_gdf, features_gdf, joint_gdf)
 
     with expectation:
-        embedder = GTFS2VecEmbedder(skip_embedding=True)
+        embedder = GTFS2VecEmbedder(skip_autoencoder=True)
         embedder.fit(regions_gdf, features_gdf, joint_gdf)
 
     with expectation:
-        embedder = GTFS2VecEmbedder(skip_embedding=True)
+        embedder = GTFS2VecEmbedder(skip_autoencoder=True)
         embedder.fit_transform(regions_gdf, features_gdf, joint_gdf)
 
 
@@ -166,7 +166,7 @@ def test_transform_with_unfit_model(
     gtfs2vec_joint: gpd.GeoDataFrame,
 ) -> None:
     """Test GTFS2VecEmbedder transform with unfitted model."""
-    embedder = GTFS2VecEmbedder(skip_embedding=False)
+    embedder = GTFS2VecEmbedder(skip_autoencoder=False)
     with pytest.raises(ModelNotFitException):
         embedder.transform(gtfs2vec_regions, gtfs2vec_features, gtfs2vec_joint)
 
@@ -178,7 +178,7 @@ def test_transform_with_mismatched_features_count(
     mocker: MockerFixture,
 ) -> None:
     """Test GTFS2VecEmbedder transform with mismatched features count."""
-    embedder = GTFS2VecEmbedder(skip_embedding=False)
+    embedder = GTFS2VecEmbedder(skip_autoencoder=False)
     mock_model = mocker.MagicMock()
     mock_model.configure_mock(**{"n_fetures": 42})
     embedder._model = mock_model
@@ -221,7 +221,7 @@ def test_embedder(
     else:
         expected_features = request.getfixturevalue("features_not_embedded")
 
-    embedder = GTFS2VecEmbedder(hidden_size=2, embedding_size=4, skip_embedding=not embedding)
+    embedder = GTFS2VecEmbedder(hidden_size=2, embedding_size=4, skip_autoencoder=not embedding)
 
     seed_everything(42)
     embedder.fit(regions_gdf, features_gdf, joint_gdf)

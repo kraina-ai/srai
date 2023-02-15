@@ -21,7 +21,7 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         self,
         n_features: int,
         n_hidden: int = 48,
-        emb_size: int = 64,
+        n_embed: int = 64,
     ) -> None:
         """
         Init GTFS2VecModel.
@@ -29,16 +29,16 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         Args:
             n_features (int): Number of features.
             n_hidden (int, optional): Number of hidden units. Defaults to 48.
-            emb_size (int, optional): Embedding size. Defaults to 64.
+            n_embed (int, optional): Embedding size. Defaults to 64.
         """
         super().__init__()
         self.n_features = n_features
 
         self.encoder = nn.Sequential(
-            nn.Linear(n_features, n_hidden), nn.ReLU(), nn.Linear(n_hidden, emb_size)
+            nn.Linear(n_features, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_embed)
         )
         self.decoder = nn.Sequential(
-            nn.Linear(emb_size, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_features)
+            nn.Linear(n_embed, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_features)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

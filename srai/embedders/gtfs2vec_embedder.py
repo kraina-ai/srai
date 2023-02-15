@@ -19,8 +19,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from srai.embedders import BaseEmbedder
+from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 from srai.models import GTFS2VecModel
-from srai.utils.constants import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 from srai.utils.exceptions import ModelNotFitException
 
 
@@ -28,7 +28,7 @@ class GTFS2VecEmbedder(BaseEmbedder):
     """GTFS2Vec Embedder."""
 
     def __init__(
-        self, hidden_size: int = 48, embedding_size: int = 64, skip_embedding: bool = False
+        self, hidden_size: int = 48, embedding_size: int = 64, skip_autoencoder: bool = False
     ) -> None:
         """
         Init GTFS2VecEmbedder.
@@ -36,13 +36,13 @@ class GTFS2VecEmbedder(BaseEmbedder):
         Args:
             hidden_size (int, optional): Hidden size in encoder and decoder. Defaults to 48.
             embedding_size (int, optional): Embedding size. Defaults to 64.
-            skip_embedding (bool, optional): Skip embedding and return aggregated features instead.
+            skip_autoencoder (bool, optional): Skip using autoencoder as part of embedding.
             Defaults to False.
         """
         self._model: Optional[GTFS2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
-        self._skip_embedding = skip_embedding
+        self._skip_autoencoder = skip_autoencoder
 
     def transform(
         self,
@@ -71,9 +71,9 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        if self._skip_embedding:
+        if self._skip_autoencoder:
             return features
-        return self._embedd(features)
+        return self._embed(features)
 
     def fit(
         self,
@@ -97,7 +97,7 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        if not self._skip_embedding:
+        if not self._skip_autoencoder:
             self._model = self._train_model_unsupervised(features)
 
     def fit_transform(
@@ -125,11 +125,11 @@ class GTFS2VecEmbedder(BaseEmbedder):
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
-        if self._skip_embedding:
+        if self._skip_autoencoder:
             return features
         else:
             self._model = self._train_model_unsupervised(features)
-            return self._embedd(features)
+            return self._embed(features)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
         """Check if model is fit and return it."""
@@ -233,7 +233,7 @@ class GTFS2VecEmbedder(BaseEmbedder):
         model = GTFS2VecModel(
             n_features=len(features.columns),
             n_hidden=self._hidden_size,
-            emb_size=self._embedding_size,
+            n_embed=self._embedding_size,
         )
         X = features.to_numpy().astype(np.float32)
         x_dataloader = DataLoader(X, batch_size=24, shuffle=True, num_workers=4)
@@ -243,9 +243,9 @@ class GTFS2VecEmbedder(BaseEmbedder):
 
         return model
 
-    def _embedd(self, features: pd.DataFrame) -> pd.DataFrame:
+    def _embed(self, features: pd.DataFrame) -> pd.DataFrame:
         """
-        Embedd features.
+        Embed features.
 
         Args:
             features (pd.DataFrame): Features.
@@ -259,11 +259,7 @@ class GTFS2VecEmbedder(BaseEmbedder):
                 f"Features must have {model.n_features} columns but has {len(features.columns)}."
             )
 
-        embeddings = (
-            self._maybe_get_model()(torch.Tensor(features.to_numpy().astype(np.float32)))
-            .detach()
-            .numpy()
-        )
+        embeddings = model(torch.Tensor(features.to_numpy().astype(np.float32))).detach().numpy()
 
         return pd.DataFrame(
             data=embeddings,

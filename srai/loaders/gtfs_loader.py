@@ -18,14 +18,13 @@ import pandas as pd
 from shapely.geometry import Point
 
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import (
-    GTFS2VEC_DIRECTIONS_PREFIX,
-    GTFS2VEC_TRIPS_PREFIX,
-    WGS84_CRS,
-)
+from srai.utils.constants import WGS84_CRS
 
 if TYPE_CHECKING:  # pragma: no cover
     from gtfs_kit import Feed
+
+GTFS2VEC_DIRECTIONS_PREFIX = "directions_at_"
+GTFS2VEC_TRIPS_PREFIX = "trips_at_"
 
 
 class GTFSLoader:
