@@ -71,14 +71,14 @@ class OSMTagLoader:
         total_tags_num = len(_tags)
         total_queries = len(area) * total_tags_num
 
-        max_key_value_name_len = self._get_max_key_value_name_len(_tags)
-        max_desc_len = max_key_value_name_len + len(self._PBAR_FORMAT.format("", ""))
+        key_value_name_max_len = self._get_max_key_value_name_len(_tags)
+        desc_max_len = key_value_name_max_len + len(self._PBAR_FORMAT.format("", ""))
 
         results = []
 
         pbar = tqdm(product(area_wgs84["geometry"], _tags), total=total_queries)
         for polygon, (key, value) in pbar:
-            pbar.set_description(self._get_pbar_desc(key, value, max_desc_len))
+            pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
             geometries = ox.geometries_from_polygon(polygon, {key: value})
             if not geometries.empty:
                 results.append(geometries[["geometry", key]])

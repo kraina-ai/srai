@@ -2,7 +2,6 @@
 from typing import Any, Dict, List, Union
 
 import geopandas as gpd
-import osmnx as ox
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -56,7 +55,7 @@ def building_gdf() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def mock_osmnx(monkeypatch, area_gdf, amenities_gdf, building_gdf):
+def mock_osmnx(mocker, area_gdf, amenities_gdf, building_gdf):
     """Monkeypatch `ox.geometries_from_polygon` to return data from predefined gdfs."""
     gdfs = {"amenity": amenities_gdf, "building": building_gdf}
     polygon_1, polygon_2 = area_gdf["geometry"]
@@ -78,7 +77,7 @@ def mock_osmnx(monkeypatch, area_gdf, amenities_gdf, building_gdf):
             return tag_res.iloc[1:]
         return None
 
-    monkeypatch.setattr(ox, "geometries_from_polygon", mock_geometries_from_polygon)
+    mocker.patch("osmnx.geometries_from_polygon", new=mock_geometries_from_polygon)
 
 
 @pytest.fixture  # type: ignore
