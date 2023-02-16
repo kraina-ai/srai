@@ -106,7 +106,7 @@ class OSMTagLoader:
         return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
 
     def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-        if gdfs:
+        if not gdfs:
             return self._get_empty_result()
         elif len(gdfs) == 1:
             gdf = gdfs[0]
