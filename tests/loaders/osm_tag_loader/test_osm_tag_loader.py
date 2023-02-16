@@ -94,8 +94,27 @@ def mock_osmnx(mocker, area_gdf, amenities_gdf, building_gdf):
 
 
 @pytest.fixture  # type: ignore
-def expected_result_gdf() -> gpd.GeoDataFrame:
-    """Get the expected result of OSMTagLoader for testing."""
+def expected_result_gdf_simple() -> gpd.GeoDataFrame:
+    """Get the expected result of a simple query for testing."""
+    return gpd.GeoDataFrame(
+        {
+            "amenity": ["restaurant", "restaurant"],
+        },
+        geometry=[Point(0, 0), Point(1, 1)],
+        index=pd.MultiIndex.from_arrays(
+            arrays=[
+                ["node", "node"],
+                [1, 2],
+            ],
+            names=["element_type", "osmid"],
+        ),
+        crs=WGS84_CRS,
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_result_gdf_complex() -> gpd.GeoDataFrame:
+    """Get the expected result of complex query for testing."""
     return gpd.GeoDataFrame(
         {
             "amenity": ["restaurant", "restaurant", "bar"],
@@ -113,20 +132,33 @@ def expected_result_gdf() -> gpd.GeoDataFrame:
     )
 
 
+@pytest.mark.parametrize(  # type: ignore
+    "area_gdf_fixture,query,expected_result_gdf_fixture",
+    [
+        ("area_gdf", {"amenity": "restaurant"}, "expected_result_gdf_simple"),
+        (
+            "area_gdf",
+            {"amenity": ["restaurant", "bar"], "building": True},
+            "expected_result_gdf_complex",
+        ),
+        (
+            "empty_area_gdf",
+            {"amenity": ["restaurant", "bar"], "building": True},
+            "empty_result_gdf",
+        ),
+    ],
+)
 def test_osm_tag_loader(
-    mock_osmnx: Any, area_gdf: gpd.GeoDataFrame, expected_result_gdf: gpd.GeoDataFrame
-) -> None:
+    area_gdf_fixture: str,
+    query: Dict[str, Union[List[str], str, bool]],
+    expected_result_gdf_fixture: str,
+    request: Any,
+):
     """Test `OSMTagLoader.load()`."""
+    _ = request.getfixturevalue("mock_osmnx")
+    area_gdf = request.getfixturevalue(area_gdf_fixture)
+    expected_result_gdf = request.getfixturevalue(expected_result_gdf_fixture)
     loader = OSMTagLoader()
-    res = loader.load(area_gdf, {"amenity": ["restaurant", "bar"], "building": True})
+    res = loader.load(area_gdf, query)
     assert "address" not in res.columns
     assert_frame_equal(res, expected_result_gdf, check_like=True)
-
-
-def test_osm_tag_loader_empty_area(
-    empty_area_gdf: gpd.GeoDataFrame, empty_result_gdf: gpd.GeoDataFrame
-) -> None:
-    """Test `OSMTagLoader.load()` when `area` gdf is empty."""
-    loader = OSMTagLoader()
-    result = loader.load(empty_area_gdf, {"amenity": ["restaurant", "bar"], "building": True})
-    assert_frame_equal(result, empty_result_gdf, check_like=True)
