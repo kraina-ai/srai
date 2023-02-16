@@ -12,6 +12,19 @@ from srai.utils.constants import WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
+def empty_area_gdf() -> gpd.GeoDataFrame:
+    """Get empty OSMTagLoader result gdf."""
+    return gpd.GeoDataFrame(crs=WGS84_CRS, geometry=[])
+
+
+@pytest.fixture  # type: ignore
+def empty_result_gdf() -> gpd.GeoDataFrame:
+    """Get empty OSMTagLoader result gdf."""
+    result_index = pd.MultiIndex.from_arrays(arrays=[[], []], names=["element_type", "osmid"])
+    return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
+
+
+@pytest.fixture  # type: ignore
 def area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with with two polygons."""
     polygon_1 = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
@@ -108,3 +121,12 @@ def test_osm_tag_loader(
     res = loader.load(area_gdf, {"amenity": ["restaurant", "bar"], "building": True})
     assert "address" not in res.columns
     assert_frame_equal(res, expected_result_gdf, check_like=True)
+
+
+def test_osm_tag_loader_empty_area(
+    empty_area_gdf: gpd.GeoDataFrame, empty_result_gdf: gpd.GeoDataFrame
+) -> None:
+    """Test `OSMTagLoader.load()` when `area` gdf is empty."""
+    loader = OSMTagLoader()
+    result = loader.load(empty_area_gdf, {"amenity": ["restaurant", "bar"], "building": True})
+    assert_frame_equal(result, empty_result_gdf, check_like=True)

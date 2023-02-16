@@ -31,6 +31,9 @@ class OSMTagLoader:
     """
 
     _PBAR_FORMAT = "Downloading {}: {}"
+    _ELEMENT_TYPE_INDEX_NAME = "element_type"
+    _OSMID_INDEX_NAME = "osmid"
+    _RESULT_INDEX_NAMES = [_ELEMENT_TYPE_INDEX_NAME, _OSMID_INDEX_NAME]
 
     def load(
         self,
@@ -103,8 +106,15 @@ class OSMTagLoader:
         return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
 
     def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-        if len(gdfs) > 1:
-            gdf = pd.concat(gdfs)
-        else:
+        if len(gdfs) == 0:
+            return self._get_empty_result()
+        elif len(gdfs) == 1:
             gdf = gdfs[0]
-        return gdf.groupby(["element_type", "osmid"]).first()
+        else:
+            gdf = pd.concat(gdfs)
+
+        return gdf.groupby(self._RESULT_INDEX_NAMES).first()
+
+    def _get_empty_result(self) -> gpd.GeoDataFrame:
+        result_index = pd.MultiIndex.from_arrays(arrays=[[], []], names=self._RESULT_INDEX_NAMES)
+        return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
