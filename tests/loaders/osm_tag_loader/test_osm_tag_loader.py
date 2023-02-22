@@ -26,7 +26,7 @@ def area_with_no_objects_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def empty_result_gdf() -> gpd.GeoDataFrame:
     """Get empty OSMTagLoader result gdf."""
-    result_index = pd.MultiIndex.from_arrays(arrays=[[], []], names=["element_type", "osmid"])
+    result_index = pd.Index(data=[], name="feature_id", dtype="object")
     return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
 
 
@@ -120,12 +120,12 @@ def expected_result_single_polygon() -> gpd.GeoDataFrame:
             "amenity": ["restaurant"],
         },
         geometry=[Point(0, 0)],
-        index=pd.MultiIndex.from_arrays(
-            arrays=[
-                ["node"],
-                [1],
+        index=pd.Index(
+            data=[
+                "node/1",
             ],
-            names=["element_type", "osmid"],
+            name="feature_id",
+            dtype="object",
         ),
         crs=WGS84_CRS,
     )
@@ -139,12 +139,13 @@ def expected_result_gdf_simple() -> gpd.GeoDataFrame:
             "amenity": ["restaurant", "restaurant"],
         },
         geometry=[Point(0, 0), Point(1, 1)],
-        index=pd.MultiIndex.from_arrays(
-            arrays=[
-                ["node", "node"],
-                [1, 2],
+        index=pd.Index(
+            data=[
+                "node/1",
+                "node/2",
             ],
-            names=["element_type", "osmid"],
+            name="feature_id",
+            dtype="object",
         ),
         crs=WGS84_CRS,
     )
@@ -159,12 +160,14 @@ def expected_result_gdf_complex() -> gpd.GeoDataFrame:
             "building": ["commercial", None, "retail"],
         },
         geometry=[Point(0, 0), Point(1, 1), Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])],
-        index=pd.MultiIndex.from_arrays(
-            arrays=[
-                ["node", "node", "way"],
-                [1, 2, 3],
+        index=pd.Index(
+            data=[
+                "node/1",
+                "node/2",
+                "way/3",
             ],
-            names=["element_type", "osmid"],
+            name="feature_id",
+            dtype="object",
         ),
         crs=WGS84_CRS,
     )
