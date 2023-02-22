@@ -12,7 +12,7 @@ import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
 class OSMTagLoader:
@@ -121,9 +121,9 @@ class OSMTagLoader:
 
     def _flatten_index(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         gdf = gdf.reset_index()
-        gdf["feature_id"] = (
+        gdf[FEATURES_INDEX] = (
             gdf[self._RESULT_INDEX_NAMES]
             .apply(lambda idx: "/".join(map(str, idx)), axis=1)
             .astype(str)
         )
-        return gdf.set_index("feature_id").drop(columns=self._RESULT_INDEX_NAMES)
+        return gdf.set_index(FEATURES_INDEX).drop(columns=self._RESULT_INDEX_NAMES)
