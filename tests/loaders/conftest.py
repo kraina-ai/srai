@@ -8,7 +8,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def gtfs_validation_ok() -> pd.DataFrame:
     """Get GTFS validation result with no errors."""
     return pd.DataFrame(
@@ -21,7 +21,7 @@ def gtfs_validation_ok() -> pd.DataFrame:
     )
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def gtfs_validation_error() -> pd.DataFrame:
     """Get GTFS validation result with errors."""
     return pd.DataFrame(
@@ -34,7 +34,7 @@ def gtfs_validation_error() -> pd.DataFrame:
     )
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def stop_time_series() -> pd.DataFrame:
     """Get mocked stop time series."""
     ts = pd.DataFrame.from_dict(
@@ -54,7 +54,7 @@ def stop_time_series() -> pd.DataFrame:
     return ts
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def stop_times() -> pd.DataFrame:
     """Get mocked stop times."""
     return pd.DataFrame(
@@ -67,7 +67,7 @@ def stop_times() -> pd.DataFrame:
     )
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def trips() -> pd.DataFrame:
     """Get mocked trips."""
     return pd.DataFrame(
@@ -78,7 +78,7 @@ def trips() -> pd.DataFrame:
     )
 
 
-@pytest.fixture(scope="session")  # type: ignore
+@pytest.fixture  # type: ignore
 def stops() -> pd.DataFrame:
     """Get mocked stops."""
     return pd.DataFrame(

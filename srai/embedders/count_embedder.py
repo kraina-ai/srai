@@ -8,8 +8,10 @@ from typing import List, Optional
 import geopandas as gpd
 import pandas as pd
 
+from srai.embedders import BaseEmbedder
 
-class CountEmbedder:
+
+class CountEmbedder(BaseEmbedder):
     """Simple Embedder that counts occurences of feature values."""
 
     def __init__(self, expected_output_features: Optional[List[str]] = None) -> None:
@@ -83,41 +85,6 @@ class CountEmbedder:
 
         return region_embedding_df
 
-    def _validate_indexes(
-        self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
-    ) -> None:
-        if regions_gdf.index.name is None:
-            raise ValueError("regions_gdf must have a named index.")
-
-        if features_gdf.index.name is None:
-            raise ValueError("features_gdf must have a named index.")
-
-        if not isinstance(joint_gdf.index, pd.MultiIndex):
-            raise ValueError(
-                f"joint_gdf.index must be of type pandas.MultiIndex, not {type(joint_gdf.index)}"
-            )
-
-        print(joint_gdf.index.names)
-        if len(joint_gdf.index.names) != 2:
-            raise ValueError(
-                f"joint_gdf.index must have 2 levels, has {len(joint_gdf.index.names)}"
-            )
-
-        if regions_gdf.index.name != joint_gdf.index.names[0]:
-            raise ValueError(
-                f"Name of regions_gdf.index ({regions_gdf.index.name}) must be equal to the name of"
-                f" the 1st level of joint_gdf.index ({joint_gdf.index.names[0]})"
-            )
-
-        if features_gdf.index.name != joint_gdf.index.names[1]:
-            raise ValueError(
-                f"Name of features_gdf.index ({features_gdf.index.name}) must be equal to the name"
-                f" of the 2nd level of joint_gdf.index ({joint_gdf.index.names[1]})"
-            )
-
     def _filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
         """
         Add missing and remove excessive columns from embeddings.
@@ -134,8 +101,3 @@ class CountEmbedder:
         region_embeddings[missing_features] = 0
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings
-
-    def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
-        if "geometry" in data.columns:
-            data = data.drop(columns="geometry")
-        return pd.DataFrame(data)

@@ -23,6 +23,9 @@ from srai.utils.constants import WGS84_CRS
 if TYPE_CHECKING:  # pragma: no cover
     from gtfs_kit import Feed
 
+GTFS2VEC_DIRECTIONS_PREFIX = "directions_at_"
+GTFS2VEC_TRIPS_PREFIX = "trips_at_"
+
 
 class GTFSLoader:
     """
@@ -108,7 +111,7 @@ class GTFSLoader:
 
         df = pd.DataFrame(records, columns=["stop_id", "hour", "num_trips"])
         df = df.pivot_table(index="stop_id", columns="hour", values="num_trips", fill_value=0)
-        df = df.add_prefix("trip_count_at_")
+        df = df.add_prefix(GTFS2VEC_TRIPS_PREFIX)
 
         return df
 
@@ -134,7 +137,7 @@ class GTFSLoader:
         pivoted = df.pivot_table(
             values="trip_headsign", index="stop_id", columns="hour", aggfunc=set
         )
-        pivoted = pivoted.add_prefix("directions_at_")
+        pivoted = pivoted.add_prefix(GTFS2VEC_DIRECTIONS_PREFIX)
 
         return pivoted
 
