@@ -7,6 +7,8 @@ This module contains intersection joiner implementation.
 import geopandas as gpd
 import pandas as pd
 
+from srai.utils.constants import FEATURES_INDEX, REGIONS_INDEX
+
 
 class IntersectionJoiner:
     """
@@ -68,11 +70,11 @@ class IntersectionJoiner:
         """
         joined_parts = [
             gpd.overlay(
-                single[["geometry"]].reset_index(names="feature_id"),
-                regions[["geometry"]].reset_index(names="region_id"),
+                single[["geometry"]].reset_index(names=FEATURES_INDEX),
+                regions[["geometry"]].reset_index(names=REGIONS_INDEX),
                 how="intersection",
                 keep_geom_type=False,
-            ).set_index(["region_id", "feature_id"])
+            ).set_index([REGIONS_INDEX, FEATURES_INDEX])
             for _, single in features.groupby(features["geometry"].geom_type)
         ]
 
@@ -95,12 +97,12 @@ class IntersectionJoiner:
         """
         joint = (
             gpd.sjoin(
-                regions.reset_index(names="region_id"),
-                features.reset_index(names="feature_id"),
+                regions.reset_index(names=REGIONS_INDEX),
+                features.reset_index(names=FEATURES_INDEX),
                 how="inner",
                 predicate="intersects",
             )
-            .set_index(["region_id", "feature_id"])
+            .set_index([REGIONS_INDEX, FEATURES_INDEX])
             .drop(columns=["index_right", "geometry"])
         )
         return joint

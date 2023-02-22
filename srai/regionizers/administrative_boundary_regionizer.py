@@ -16,7 +16,7 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 from .base import BaseRegionizer
 
@@ -134,7 +134,7 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
 
         regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 
-        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index("region_id")
+        regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index(REGIONS_INDEX)
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
         if self.clip_regions:
@@ -270,7 +270,7 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
             prevent_oversimplify=True,
         )
         regions_gdf = topo.to_gdf(winding_order="CW_CCW", crs=WGS84_CRS, validate=True)
-        regions_gdf.index.rename("region_id", inplace=True)
+        regions_gdf.index.rename(REGIONS_INDEX, inplace=True)
         regions_gdf.geometry = regions_gdf.geometry.apply(make_valid)
         for idx, r in regions_gdf.iterrows():
             if not isinstance(r.geometry, (Polygon, MultiPolygon)):

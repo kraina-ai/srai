@@ -18,7 +18,7 @@ from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 from .base import BaseRegionizer
 
@@ -75,6 +75,8 @@ class S2Regionizer(BaseRegionizer):
         ).drop(columns=["index_right"])
 
         res = res[~res.index.duplicated(keep="first")]
+
+        res.index.name = REGIONS_INDEX
 
         return res
 
