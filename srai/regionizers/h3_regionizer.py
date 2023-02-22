@@ -19,7 +19,7 @@ import h3
 from functional import seq
 from shapely import geometry
 
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 from .base import BaseRegionizer
 
@@ -90,6 +90,8 @@ class H3Regionizer(BaseRegionizer):
             if self.buffer
             else gdf_h3
         )
+
+        gdf_h3_clipped.index.name = REGIONS_INDEX
 
         return gdf_h3_clipped.to_crs(gdf.crs)
 

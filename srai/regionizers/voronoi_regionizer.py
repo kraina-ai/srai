@@ -10,7 +10,7 @@ import geopandas as gpd
 from shapely.geometry import box
 
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 from .base import BaseRegionizer
 
@@ -110,7 +110,7 @@ class VoronoiRegionizer(BaseRegionizer):
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=WGS84_CRS
         )
-        regions_gdf.index.rename("region_id", inplace=True)
+        regions_gdf.index.rename(REGIONS_INDEX, inplace=True)
         clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
         return clipped_regions_gdf
 
