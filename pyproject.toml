@@ -130,10 +130,6 @@ no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
 
-[[tool.mypy.overrides]]
-module = ["requests.*"]
-ignore_missing_imports = true
-
 [tool.pydocstyle]
 convention = "google"
 add-select = ["D213"]
