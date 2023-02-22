@@ -85,7 +85,7 @@ class OSMTagLoader:
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        return result_gdf
+        return self._flatten_index(result_gdf)
 
     def _flatten_tags(
         self, tags: Dict[str, Union[List[str], str, bool]]
@@ -118,3 +118,12 @@ class OSMTagLoader:
     def _get_empty_result(self) -> gpd.GeoDataFrame:
         result_index = pd.MultiIndex.from_arrays(arrays=[[], []], names=self._RESULT_INDEX_NAMES)
         return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
+
+    def _flatten_index(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        gdf = gdf.reset_index()
+        gdf["feature_id"] = (
+            gdf[self._RESULT_INDEX_NAMES]
+            .apply(lambda idx: "/".join(map(str, idx)), axis=1)
+            .astype(str)
+        )
+        return gdf.set_index("feature_id").drop(columns=self._RESULT_INDEX_NAMES)
