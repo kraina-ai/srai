@@ -7,11 +7,11 @@ from itertools import product
 from typing import Dict, List, Tuple, Union
 
 import geopandas as gpd
-import osmnx as ox
 import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
+from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
@@ -34,6 +34,10 @@ class OSMTagLoader:
     _ELEMENT_TYPE_INDEX_NAME = "element_type"
     _OSMID_INDEX_NAME = "osmid"
     _RESULT_INDEX_NAMES = [_ELEMENT_TYPE_INDEX_NAME, _OSMID_INDEX_NAME]
+
+    def __init__(self) -> None:
+        """Initialize OSMTagLoader."""
+        import_optional_dependencies(dependency_group="osm", modules=["osmnx"])
 
     def load(
         self,
@@ -64,6 +68,8 @@ class OSMTagLoader:
         Returns:
             gpd.GeoDataFrame: Downloaded objects as a GeoDataFrame.
         """
+        import osmnx as ox
+
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
         _tags = self._flatten_tags(tags)
