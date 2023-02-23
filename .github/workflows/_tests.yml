@@ -46,10 +46,14 @@ jobs:
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: Wandalen/wretry.action@master
         with:
-          env_vars: OS,PYTHON
-          fail_ci_if_error: true
-          files: ./coverage.python${{ matrix.python-version }}.xml,
-          flags: ${{ matrix.os }}-python${{ matrix.python-version }}
-          verbose: true
+          action: codecov/codecov-action@v3
+          with: |
+            env_vars: OS,PYTHON
+            fail_ci_if_error: true
+            files: ./coverage.python${{ matrix.python-version }}.xml,
+            flags: ${{ matrix.os }}-python${{ matrix.python-version }}
+            verbose: true
+          attempt_limit: 10
+          attempt_delay: 2000
