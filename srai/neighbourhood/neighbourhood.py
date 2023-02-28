@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Generic, List, Tuple, TypeVar
+from typing import Generic, Set, Tuple, TypeVar
 
 from functional import seq
 
@@ -13,23 +13,20 @@ class Neighbourhood(ABC, Generic[IndexType]):
     """Neighbourhood interface."""
 
     @abstractmethod
-    def get_neighbours(self, index: IndexType, exclude_anchor: bool = True) -> List[IndexType]:
+    def get_neighbours(self, index: IndexType) -> Set[IndexType]:
         """
         Get the direct neighbours of a region using its index.
 
         Args:
             index (Any): Unique identifier of the region.
                 Dependant on the implementation.
-            exclude_anchor (bool): Whether to exclude the anchor index from the neighbours.
 
         Returns:
-            List[Any]: Indexes of the neighbours.
+            Set[Any]: Indexes of the neighbours.
         """
         pass
 
-    def get_neighbours_up_to_distance(
-        self, index: IndexType, distance: int, exclude_anchor: bool = True
-    ) -> List[IndexType]:
+    def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """
         Get the neighbours of a region up to a certain distance.
 
@@ -37,18 +34,17 @@ class Neighbourhood(ABC, Generic[IndexType]):
             index (Any): Unique identifier of the region.
                 Dependant on the implementation.
             distance (int): Maximum distance to the neighbours.
-            exclude_anchor (bool): Whether to exclude the anchor index from the neighbours.
 
         Returns:
             List[Any]: Indexes of the neighbours.
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
-        unique_neighbours = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
-        if exclude_anchor and index in unique_neighbours:
-            unique_neighbours.remove(index)
-        return list(unique_neighbours)
+        neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
+        if index in neighbours:
+            neighbours.remove(index)
+        return neighbours
 
-    def get_neighbours_at_distance(self, index: IndexType, distance: int) -> List[IndexType]:
+    def get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """
         Get the neighbours of a region at a certain distance.
 
@@ -61,23 +57,25 @@ class Neighbourhood(ABC, Generic[IndexType]):
             List[Any]: Indexes of the neighbours.
         """
         neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
-        neighbours_at_distance: List[IndexType] = (
+        neighbours_at_distance: Set[IndexType] = (
             seq(neighbours_up_to_distance)
             .filter(lambda x: x[1] == distance)
             .map(lambda x: x[0])
-            .to_list()
+            .to_set()
         )
+        if index in neighbours_at_distance:
+            neighbours_at_distance.remove(index)
         return neighbours_at_distance
 
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
-    ) -> List[Tuple[IndexType, int]]:
+    ) -> Set[Tuple[IndexType, int]]:
         visited = set()
-        visited_with_distances = []
+        visited_with_distances = set()
         to_visit: Queue[Tuple[IndexType, int]] = Queue()
 
         visited.add(index)
-        visited_with_distances.append((index, 0))
+        visited_with_distances.add((index, 0))
         to_visit.put((index, 0))
 
         while not to_visit.empty():
@@ -89,7 +87,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
                 for neighbour in current_neighbours:
                     if neighbour not in visited:
                         to_visit.put((neighbour, current_distance + 1))
-                        visited_with_distances.append((neighbour, current_distance + 1))
+                        visited_with_distances.add((neighbour, current_distance + 1))
                         visited.add(neighbour)
 
         return visited_with_distances
