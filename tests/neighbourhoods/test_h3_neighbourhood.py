@@ -2,7 +2,7 @@ from typing import Set
 
 import pytest
 
-from srai.neighbourhood import H3Neighbourhood
+from srai.neighbourhoods import H3Neighbourhood
 
 
 @pytest.mark.parametrize(  # type: ignore
