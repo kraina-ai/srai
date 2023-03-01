@@ -40,6 +40,9 @@ class H3Neighbourhood(Neighbourhood[str]):
         Returns:
             Set[str]: Indexes of the neighbours up to the given distance.
         """
+        if self._distance_incorrect(distance):
+            return set()
+
         neighbours: Set[str] = h3.grid_disk(index, distance)
         if index in neighbours:
             neighbours.remove(index)
@@ -56,7 +59,13 @@ class H3Neighbourhood(Neighbourhood[str]):
         Returns:
             Set[str]: Indexes of the neighbours at the given distance.
         """
+        if self._distance_incorrect(distance):
+            return set()
+
         neighbours: Set[str] = h3.grid_ring(index, distance)
         if index in neighbours:
             neighbours.remove(index)
         return neighbours
+
+    def _distance_incorrect(self, distance: int) -> bool:
+        return distance <= 0
