@@ -245,7 +245,7 @@ def _create_region(
 def generate_voronoi_regions(
     seeds: List[Point],
     max_meters_between_points: int,
-    num_of_multiprocessing_workers: Optional[int] = -1,
+    num_of_multiprocessing_workers: int = -1,
     multiprocessing_activation_threshold: Optional[int] = None,
 ) -> List[MultiPolygon]:
     """
@@ -258,9 +258,9 @@ def generate_voronoi_regions(
         seeds (List[Point]): List of seeds used for generating regions.
         max_meters_between_points (int): maximal distance between points
             during interpolation of two vertices on a sphere.
-        num_of_multiprocessing_workers (int, optional): Number of workers used for multiprocessing.
+        num_of_multiprocessing_workers (int): Number of workers used for multiprocessing.
             Defaults to -1 which results in a total number of available cpu threads.
-            `None` and `1` values disable multiprocessing.
+            `0` and `1` values disable multiprocessing.
             Similar to `n_jobs` parameter from `scikit-learn` library.
         multiprocessing_activation_threshold (int, optional): Number of seeds required to start
             processing on multiple processes. Activating multiprocessing for a small
@@ -276,7 +276,7 @@ def generate_voronoi_regions(
     if len(seeds) < 4:
         raise ValueError("Minimum 4 seeds are required.")
 
-    if not num_of_multiprocessing_workers:
+    if num_of_multiprocessing_workers == 0:
         num_of_multiprocessing_workers = 1
     elif num_of_multiprocessing_workers < 0:
         num_of_multiprocessing_workers = cpu_count()

@@ -33,7 +33,7 @@ class VoronoiRegionizer(BaseRegionizer):
         self,
         seeds: gpd.GeoDataFrame,
         max_meters_between_points: int = 10_000,
-        num_of_multiprocessing_workers: Optional[int] = -1,
+        num_of_multiprocessing_workers: int = -1,
         multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
         """
@@ -48,9 +48,9 @@ class VoronoiRegionizer(BaseRegionizer):
                 Seeds cannot lie on a single arc. Empty seeds will be removed.
             max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
-            num_of_multiprocessing_workers (int, optional): Number of workers used for
+            num_of_multiprocessing_workers (int): Number of workers used for
                 multiprocessing. Defaults to `-1` which results in a total number of available
-                cpu threads. `None` and `1` values disable multiprocessing.
+                cpu threads. `0` and `1` values disable multiprocessing.
                 Similar to `n_jobs` parameter from `scikit-learn` library.
             multiprocessing_activation_threshold (int, optional): Number of seeds required to start
                 processing on multiple processes. Activating multiprocessing for a small
