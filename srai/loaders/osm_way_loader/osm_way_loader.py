@@ -10,11 +10,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import shapely.geometry as shpg
 from functional import seq
 from tqdm.auto import tqdm
 
-import srai.utils.constants as srai_constants
+from srai.loaders.exceptions import LoadedDataIsEmptyException
 from srai.utils._optional import import_optional_dependencies
+from srai.utils.constants import WGS84_CRS
 
 from . import constants
 
@@ -28,7 +30,7 @@ class NetworkType(str, Enum):
     See [1] for more details.
 
     References:
-        [1] https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_address
+        [1] https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
     """
 
     ALL_PRIVATE = "all_private"
@@ -53,6 +55,7 @@ class OSMWayLoader:
     def __init__(
         self,
         network_type: Union[NetworkType, str],
+        contain_within_area: bool = False,
         preprocess: bool = True,
         wide: bool = True,
         osm_way_tags: Dict[str, List[str]] = constants.OSM_WAY_TAGS,
@@ -63,25 +66,28 @@ class OSMWayLoader:
         Args:
             network_type (Union[NetworkType, str]):
                 Type of the network to download.
+            contain_within_area (bool): defaults to False
+                Whether to remove the roads that have one of their nodes outside of the given area.
             preprocess (bool): defaults to True
                 Whether to preprocess the data.
             wide (bool): defaults to True
-                Whether to return the edges in wide format.
+                Whether to return the roads in wide format.
             osm_way_tags (List[str]): defaults to constants.OSM_WAY_TAGS
                 Dict of tags to take into consideration during computing.
         """
         import_optional_dependencies(dependency_group="osm", modules=["osmnx"])
 
         self.network_type = network_type
+        self.contain_within_area = contain_within_area
         self.preprocess = preprocess
         self.wide = wide
+        self.osm_keys = list(osm_way_tags.keys())
         self.osm_tags_flat = (
             seq(osm_way_tags.items())
             .flat_map(lambda x: [f"{x[0]}-{v}" if x[0] not in ("oneway") else x[0] for v in x[1]])
             .distinct()
             .to_list()
         )
-        self.osm_keys = list(osm_way_tags.keys())
 
     def load(self, area: gpd.GeoDataFrame) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
@@ -92,18 +98,30 @@ class OSMWayLoader:
 
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.
+            ValueError: If provided GeoDataFrame is empty.
+            TypeError: If provided geometries are not of type Polygon or MultiPolygon.
+            LoadedDataIsEmptyException: If all of the supplied area polygons do not contain
+                any road infrastructure data.
 
         Returns:
-            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
         """
         import osmnx as ox
 
         ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
         ox.settings.timeout = constants.OSMNX_TIMEOUT
 
-        gdf_wgs84 = area.to_crs(crs=srai_constants.WGS84_CRS)
+        if area.empty:
+            raise ValueError("Provided `area` GeoDataFrame is empty.")
 
-        gdf_nodes_raw, gdf_edges_raw = self._gdfs_from_polygons(gdf_wgs84)
+        gdf_wgs84 = area.to_crs(crs=WGS84_CRS)
+
+        gdf_nodes_raw, gdf_edges_raw = self._graph_from_gdf(gdf_wgs84)
+        if gdf_edges_raw.empty or gdf_edges_raw.empty:
+            raise LoadedDataIsEmptyException(
+                "It can happen when there is no road infrastructure in the given area."
+            )
+
         gdf_edges = self._explode_cols(gdf_edges_raw)
 
         if self.preprocess:
@@ -114,41 +132,95 @@ class OSMWayLoader:
 
         return gdf_nodes_raw, gdf_edges
 
-    def _gdfs_from_polygons(
-        self, gdf: gpd.GeoDataFrame
-    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    def _graph_from_gdf(self, gdf: gpd.GeoDataFrame) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Obtain the raw road infrastructure data from OSM.
 
         Args:
-            gdf (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
-
-        Notes:
-            * The road infrastructure graph is treated as an undirected graph.
-            * `FIXME` The result may contain duplicated nodes or edges,
-            when nearby polygons are queried.
+            gss (gpd.GeoSeries): (Multi)Polygons for which to download road infrastructure data.
 
         Returns:
-            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (nodes, edges).
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
         """
-        import osmnx as ox
-
         nodes = []
         edges = []
         for polygon in tqdm(gdf["geometry"], desc="Downloading graphs", leave=False):
-            G_directed = ox.graph_from_polygon(
-                polygon, network_type=self.network_type, retain_all=True, clean_periphery=True
-            )
+            gdf_n, gdf_e = self._try_graph_from_polygon(polygon)
 
-            G_undirected = ox.utils_graph.get_undirected(G_directed)
-            gdf_n, gdf_e = ox.graph_to_gdfs(G_undirected)
+            if not gdf_e.empty and not self.contain_within_area:
+                # perform cleaning of edges outside of an area that were incorrectly added,
+                # it occures when two nodes outside of an area happen to be connected by an edge
+                gdf_e = gdf_e.sjoin(
+                    gpd.GeoDataFrame(geometry=[polygon], crs=WGS84_CRS),
+                    how="inner",
+                    predicate="intersects",
+                ).drop(columns="index_right")
+
             nodes.append(gdf_n)
             edges.append(gdf_e)
 
         gdf_nodes = pd.concat(nodes, axis=0)
         gdf_edges = pd.concat(edges, axis=0)
 
+        # remove duplicates, cannot use drop_duplicates()
+        # because some columns contain unhashable type `list`
+        gdf_nodes = gdf_nodes[~gdf_nodes.astype(str).duplicated()]
+        gdf_edges = gdf_edges[~gdf_edges.astype(str).duplicated()]
+
         return gdf_nodes, gdf_edges
+
+    def _try_graph_from_polygon(
+        self, polygon: Union[shpg.Polygon, shpg.MultiPolygon]
+    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Try obtaining the raw road infrastructure data from OSM for a single polygon using `osmnx`.
+
+        If `osmnx` fails, then just return the empty result.
+
+        Args:
+            polygon (Union[shapely.geometry.Polygon, shapely.geometry.MultiPolygon]):
+                Polygon for which to download road infrastructure data.
+
+        Returns:
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
+        """
+        import osmnx._errors
+
+        try:
+            return self._graph_from_polygon(polygon)
+        except (osmnx._errors.EmptyOverpassResponse, ValueError):
+            return gpd.GeoDataFrame(), gpd.GeoDataFrame()
+
+    def _graph_from_polygon(
+        self, polygon: Union[shpg.Polygon, shpg.MultiPolygon]
+    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Obtain the raw road infrastructure data from OSM for a single polygon.
+
+        Args:
+            polygon (Union[shapely.geometry.Polygon, shapely.geometry.MultiPolygon]):
+                Polygon for which to download road infrastructure data.
+
+        Notes:
+            * The road infrastructure graph is treated as an undirected graph.
+
+        Returns:
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
+        """
+        import osmnx as ox
+
+        G_directed = ox.graph_from_polygon(
+            polygon,
+            network_type=self.network_type,
+            retain_all=True,
+            clean_periphery=True,
+            truncate_by_edge=(not self.contain_within_area),
+        )
+
+        G_undirected = ox.utils_graph.get_undirected(G_directed)
+        gdf_n, gdf_e = ox.graph_to_gdfs(G_undirected)
+
+        return gdf_n, gdf_e
 
     def _explode_cols(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
@@ -161,6 +233,8 @@ class OSMWayLoader:
             gpd.GeoDataFrame: Edges with all of their columns exploded.
         """
         for col in self.osm_keys:
+            if col not in gdf.columns:
+                gdf = gdf.assign(**{col: None})
             gdf = gdf.explode(col)
 
         gdf["i"] = range(0, len(gdf))
@@ -211,7 +285,7 @@ class OSMWayLoader:
             elif column_name == "width":
                 x = min(round(x * 2) / 2, 30.0)
         except Exception as e:
-            logger.warning(
+            logger.debug(
                 f"{OSMWayLoader._normalize.__qualname__} | {column_name}: {x} - {type(x)} | {e}"
             )
             return "None"
@@ -249,7 +323,7 @@ class OSMWayLoader:
                 x = float(x)
 
         except Exception as e:
-            logger.warn(
+            logger.debug(
                 f"{OSMWayLoader._sanitize.__qualname__} | {column_name}: {x} - {type(x)} | {e}"
             )
             return "None"
@@ -277,15 +351,16 @@ class OSMWayLoader:
             .astype(np.uint8)
         )
 
+        osm_keys_to_drop = [k for k in self.osm_keys if k in gdf.columns]
         gdf_edges_wide = gpd.GeoDataFrame(
             pd.concat(
                 [
-                    gdf.drop(columns=self.osm_keys),
+                    gdf.drop(columns=osm_keys_to_drop),
                     gdf_edges_wide,
                 ],
                 axis=1,
             ),
-            crs=srai_constants.WGS84_CRS,
+            crs=WGS84_CRS,
         )
 
         return gdf_edges_wide
