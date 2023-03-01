@@ -54,7 +54,42 @@ def test_get_neighbours(index: str, expected: Set[str]) -> None:
         ("811e3ffffffffff", -2, set()),
         ("811e3ffffffffff", -1, set()),
         ("811e3ffffffffff", 0, set()),
-        # TODO: proper cases
+        (
+            "861f09b27ffffff",
+            1,
+            {
+                "861f09b07ffffff",
+                "861f09b2fffffff",
+                "861f09b37ffffff",
+                "861f7248fffffff",
+                "861f7249fffffff",
+                "861f724d7ffffff",
+            },
+        ),
+        (
+            "861f09b27ffffff",
+            2,
+            {
+                "861f0984fffffff",
+                "861f0986fffffff",
+                "861f09b07ffffff",
+                "861f09b0fffffff",
+                "861f09b17ffffff",
+                "861f09b1fffffff",
+                "861f09b2fffffff",
+                "861f09b37ffffff",
+                "861f09b77ffffff",
+                "861f72487ffffff",
+                "861f7248fffffff",
+                "861f72497ffffff",
+                "861f7249fffffff",
+                "861f724afffffff",
+                "861f724c7ffffff",
+                "861f724d7ffffff",
+                "861f724dfffffff",
+                "861f724f7ffffff",
+            },
+        ),
     ],
 )
 def test_get_neighbours_up_to_distance(index: str, distance: int, expected: Set[str]) -> None:
@@ -68,7 +103,36 @@ def test_get_neighbours_up_to_distance(index: str, distance: int, expected: Set[
         ("811e3ffffffffff", -2, set()),
         ("811e3ffffffffff", -1, set()),
         ("811e3ffffffffff", 0, set()),
-        # TODO: proper cases
+        (
+            "862bac507ffffff",
+            1,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862bac52fffffff",
+                "862bac537ffffff",
+            },
+        ),
+        (
+            "862bac507ffffff",
+            2,
+            {
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+                "862bacc9fffffff",
+                "862baccd7ffffff",
+                "862baccdfffffff",
+            },
+        ),
     ],
 )
 def test_get_neighbours_at_distance(index: str, distance: int, expected: Set[str]) -> None:
