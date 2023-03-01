@@ -87,20 +87,17 @@ class Neighbourhood(ABC, Generic[IndexType]):
         visited_with_distances = set()
         to_visit: Queue[Tuple[IndexType, int]] = Queue()
 
-        visited.add(index)
-        visited_with_distances.add((index, 0))
         to_visit.put((index, 0))
 
         while not to_visit.empty():
             current, current_distance = to_visit.get()
 
             visited.add(current)
+            visited_with_distances.add((current, current_distance))
             if current_distance < distance:
                 current_neighbours = self.get_neighbours(current)
                 for neighbour in current_neighbours:
                     if neighbour not in visited:
                         to_visit.put((neighbour, current_distance + 1))
-                        visited_with_distances.add((neighbour, current_distance + 1))
-                        visited.add(neighbour)
 
         return visited_with_distances
