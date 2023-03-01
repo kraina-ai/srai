@@ -1,4 +1,4 @@
-"""OSM way loader."""
+"""OSMWayloader."""
 
 from .osm_way_loader import NetworkType, OSMWayLoader
 

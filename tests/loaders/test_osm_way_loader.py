@@ -6,6 +6,7 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 import shapely.geometry as shpg
+from parametrization import Parametrization as P
 from pytest_check import check
 
 from srai.loaders.exceptions import LoadedDataIsEmptyException
@@ -116,66 +117,67 @@ def valid_and_empty_polygons_area_gdf(
     return pd.concat([first_polygon_area_gdf, empty_polygon_area_gdf], axis=0)
 
 
-@pytest.mark.parametrize(  # type: ignore
-    "area_gdf_fixture,expected_result,loader_params,expectation",
-    [
-        (
-            "empty_area_gdf",
-            None,
-            None,
-            pytest.raises(ValueError),
-        ),
-        (
-            "no_crs_area_gdf",
-            None,
-            None,
-            pytest.raises(ValueError),
-        ),
-        (
-            "bad_geometry_area_gdf",
-            None,
-            None,
-            pytest.raises(TypeError),
-        ),
-        (
-            "empty_polygon_area_gdf",
-            None,
-            None,
-            pytest.raises(LoadedDataIsEmptyException),
-        ),
-        (
-            "first_polygon_area_gdf",
-            (7, 6),
-            None,
-            does_not_raise(),
-        ),
-        (
-            "multiple_polygons_overlaping_area_gdf",
-            (7, 6),
-            None,
-            does_not_raise(),
-        ),
-        (
-            "multiple_polygons_overlaping_area_gdf",
-            (9, 7),  # FIXME: shouldn't contain a node without an edge
-            {"network_type": NetworkType.BIKE, "contain_within_area": True},
-            does_not_raise(),
-        ),
-        (
-            "multipolygons_area_gdf",
-            (11, 9),
-            None,
-            does_not_raise(),
-        ),
-        (
-            "valid_and_empty_polygons_area_gdf",
-            (7, 6),
-            None,
-            does_not_raise(),
-        ),
-    ],
+@P.parameters("area_gdf_fixture", "expected_result", "loader_params", "expectation")  # type: ignore
+@P.case(  # type: ignore
+    "Raise when no geometry", "empty_area_gdf", None, None, pytest.raises(ValueError)
 )
-def test_osm_way_loader(
+@P.case(  # type: ignore
+    "Raise when no CRS",
+    "no_crs_area_gdf",
+    None,
+    None,
+    pytest.raises(ValueError),
+)
+@P.case(  # type: ignore
+    "Raise when invalid geometry",
+    "bad_geometry_area_gdf",
+    None,
+    None,
+    pytest.raises(TypeError),
+)
+@P.case(  # type: ignore
+    "Raise when no road infrastructure",
+    "empty_polygon_area_gdf",
+    None,
+    None,
+    pytest.raises(LoadedDataIsEmptyException),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when single polygon",
+    "first_polygon_area_gdf",
+    (7, 6),
+    None,
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when multiple overlapping polygons",
+    "multiple_polygons_overlaping_area_gdf",
+    (7, 6),
+    None,
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when node without any edges",  # FIXME: shouldn't have a node w/o an edge
+    "multiple_polygons_overlaping_area_gdf",
+    (9, 7),
+    {"network_type": NetworkType.BIKE, "contain_within_area": True},
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when multipolygon",
+    "multipolygons_area_gdf",
+    (11, 9),
+    None,
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when correct polygon and polygon with no road infrastructure",
+    "valid_and_empty_polygons_area_gdf",
+    (7, 6),
+    None,
+    does_not_raise(),
+)
+def test_load(
     area_gdf_fixture: str,
     expected_result: Optional[Tuple[int, int]],
     loader_params: Optional[Dict[str, Any]],

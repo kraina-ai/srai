@@ -1,4 +1,4 @@
-"""TODO."""
+"""Constants for OSMWayLoader."""
 
 from typing import Dict, List
 
