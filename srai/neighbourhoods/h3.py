@@ -44,8 +44,7 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_disk(index, distance)
-        if index in neighbours:
-            neighbours.remove(index)
+        neighbours.discard(index)
         return neighbours
 
     def get_neighbours_at_distance(self, index: str, distance: int) -> Set[str]:
@@ -63,8 +62,7 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_ring(index, distance)
-        if index in neighbours:
-            neighbours.remove(index)
+        neighbours.discard(index)
         return neighbours
 
     def _distance_incorrect(self, distance: int) -> bool:

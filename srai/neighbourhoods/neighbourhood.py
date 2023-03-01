@@ -53,8 +53,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
         neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
-        if index in neighbours:
-            neighbours.remove(index)
+        neighbours.discard(index)
         return neighbours
 
     def get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
@@ -76,8 +75,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             .map(lambda x: x[0])
             .to_set()
         )
-        if index in neighbours_at_distance:
-            neighbours_at_distance.remove(index)
+        neighbours_at_distance.discard(index)
         return neighbours_at_distance
 
     def _get_neighbours_with_distances(
