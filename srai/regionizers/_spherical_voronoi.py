@@ -20,8 +20,6 @@ from spherical_geometry.polygon import SphericalPolygon
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-CPU_COUNT = cpu_count()
-
 SPHERE_PARTS: List[SphericalPolygon] = []
 SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 
@@ -247,8 +245,7 @@ def _create_region(
 def generate_voronoi_regions(
     seeds: List[Point],
     max_meters_between_points: int,
-    allow_multiprocessing: bool,
-    num_of_multiprocessing_workers: Optional[int] = None,
+    num_of_multiprocessing_workers: Optional[int] = -1,
     multiprocessing_activation_threshold: Optional[int] = None,
 ) -> List[MultiPolygon]:
     """
@@ -261,10 +258,10 @@ def generate_voronoi_regions(
         seeds (List[Point]): List of seeds used for generating regions.
         max_meters_between_points (int): maximal distance between points
             during interpolation of two vertices on a sphere.
-        allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
-            accelerating the calculation for more than 100 seeds.
         num_of_multiprocessing_workers (int, optional): Number of workers used for multiprocessing.
-            Defaults to number of available cpu threads - 1.
+            Defaults to -1 which results in a total number of available cpu threads.
+            `None` and `1` values disable multiprocessing.
+            Similar to `n_jobs` parameter from `scikit-learn` library.
         multiprocessing_activation_threshold (int, optional): Number of seeds required to start
             processing on multiple processes. Activating multiprocessing for a small
             amount of points might not be feasible. Defaults to 100.
@@ -280,7 +277,9 @@ def generate_voronoi_regions(
         raise ValueError("Minimum 4 seeds are required.")
 
     if not num_of_multiprocessing_workers:
-        num_of_multiprocessing_workers = CPU_COUNT - 1
+        num_of_multiprocessing_workers = 1
+    elif num_of_multiprocessing_workers < 0:
+        num_of_multiprocessing_workers = cpu_count()
 
     if not multiprocessing_activation_threshold:
         multiprocessing_activation_threshold = 100
@@ -302,7 +301,7 @@ def generate_voronoi_regions(
     region_ids = list(range(total_regions))
 
     generated_regions: List[MultiPolygon] = []
-    if allow_multiprocessing and total_regions >= multiprocessing_activation_threshold:
+    if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
         generated_regions.extend(
             process_map(
                 create_regions_func,
