@@ -293,7 +293,7 @@ class OSMWayLoader:
         return str(x)
 
     def _sanitize(self, x: Any, column_name: str) -> Any:
-        if x in ["", "none", "None", np.nan, "nan", "NaN"]:
+        if x in ("", "none", "None", np.nan, "nan", "NaN"):
             return "None"
 
         try:

@@ -189,7 +189,7 @@ def test_osm_way_loader(
     loader = OSMWayLoader(**loader_params)
 
     area_gdf = request.getfixturevalue(area_gdf_fixture)
-    nodes_expected_len, edges_expected_len = expected_result if expected_result else (None, None)
+    nodes_expected_len, edges_expected_len = expected_result or (None, None)
 
     with expectation:
         nodes, edges = loader.load(area_gdf)
