@@ -49,7 +49,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             distance (int): Maximum distance to the neighbours.
 
         Returns:
-            List[IndexType]: Indexes of the neighbours.
+            Set[IndexType]: Indexes of the neighbours.
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
         neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
@@ -66,7 +66,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             distance (int): Distance to the neighbours.
 
         Returns:
-            List[IndexType]: Indexes of the neighbours.
+            Set[IndexType]: Indexes of the neighbours.
         """
         neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
         neighbours_at_distance: Set[IndexType] = (
