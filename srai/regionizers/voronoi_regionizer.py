@@ -33,7 +33,8 @@ class VoronoiRegionizer(BaseRegionizer):
         self,
         seeds: gpd.GeoDataFrame,
         max_meters_between_points: int = 10_000,
-        allow_multiprocessing: bool = True,
+        num_of_multiprocessing_workers: int = -1,
+        multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
         """
         Init VoronoiRegionizer.
@@ -47,8 +48,13 @@ class VoronoiRegionizer(BaseRegionizer):
                 Seeds cannot lie on a single arc. Empty seeds will be removed.
             max_meters_between_points (int): Maximal distance in meters between two points
                 in a resulting polygon. Higher number results lower resolution of a polygon.
-            allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
-                accelerating the calculation for more than 100 seeds.
+            num_of_multiprocessing_workers (int): Number of workers used for
+                multiprocessing. Defaults to `-1` which results in a total number of available
+                cpu threads. `0` and `1` values disable multiprocessing.
+                Similar to `n_jobs` parameter from `scikit-learn` library.
+            multiprocessing_activation_threshold (int, optional): Number of seeds required to start
+                processing on multiple processes. Activating multiprocessing for a small
+                amount of points might not be feasible. Defaults to 100.
 
         Raises:
             ValueError: If any seed is duplicated.
@@ -62,7 +68,8 @@ class VoronoiRegionizer(BaseRegionizer):
         self.region_ids = []
         self.seeds = []
         self.max_meters_between_points = max_meters_between_points
-        self.allow_multiprocessing = allow_multiprocessing
+        self.num_of_multiprocessing_workers = num_of_multiprocessing_workers
+        self.multiprocessing_activation_threshold = multiprocessing_activation_threshold
         for index, row in seeds_wgs84.iterrows():
             candidate_point = row.geometry.centroid
             if not candidate_point.is_empty:
@@ -105,7 +112,10 @@ class VoronoiRegionizer(BaseRegionizer):
 
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
         generated_regions = generate_voronoi_regions(
-            self.seeds, self.max_meters_between_points, self.allow_multiprocessing
+            seeds=self.seeds,
+            max_meters_between_points=self.max_meters_between_points,
+            num_of_multiprocessing_workers=self.num_of_multiprocessing_workers,
+            multiprocessing_activation_threshold=self.multiprocessing_activation_threshold,
         )
         regions_gdf = gpd.GeoDataFrame(
             data={"geometry": generated_regions}, index=self.region_ids, crs=WGS84_CRS

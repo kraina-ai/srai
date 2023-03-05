@@ -8,7 +8,7 @@ library.
 from functools import partial
 from math import ceil, sqrt
 from multiprocessing import cpu_count
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -243,7 +243,10 @@ def _create_region(
 
 
 def generate_voronoi_regions(
-    seeds: List[Point], max_meters_between_points: int, allow_multiprocessing: bool
+    seeds: List[Point],
+    max_meters_between_points: int,
+    num_of_multiprocessing_workers: int = -1,
+    multiprocessing_activation_threshold: Optional[int] = None,
 ) -> List[MultiPolygon]:
     """
     Generate Thessien polygons for a given list of seeds.
@@ -255,8 +258,13 @@ def generate_voronoi_regions(
         seeds (List[Point]): List of seeds used for generating regions.
         max_meters_between_points (int): maximal distance between points
             during interpolation of two vertices on a sphere.
-        allow_multiprocessing (bool): Whether to allow usage of multiprocessing for
-            accelerating the calculation for more than 100 seeds.
+        num_of_multiprocessing_workers (int): Number of workers used for multiprocessing.
+            Defaults to -1 which results in a total number of available cpu threads.
+            `0` and `1` values disable multiprocessing.
+            Similar to `n_jobs` parameter from `scikit-learn` library.
+        multiprocessing_activation_threshold (int, optional): Number of seeds required to start
+            processing on multiple processes. Activating multiprocessing for a small
+            amount of points might not be feasible. Defaults to 100.
 
     Returns:
         List[MultiPolygon]: List of regions cut into up to 8 polygons based
@@ -267,6 +275,14 @@ def generate_voronoi_regions(
     """
     if len(seeds) < 4:
         raise ValueError("Minimum 4 seeds are required.")
+
+    if num_of_multiprocessing_workers == 0:
+        num_of_multiprocessing_workers = 1
+    elif num_of_multiprocessing_workers < 0:
+        num_of_multiprocessing_workers = cpu_count()
+
+    if not multiprocessing_activation_threshold:
+        multiprocessing_activation_threshold = 100
 
     se = SphereEllipsoid()
     mapped_points = [map_to_geocentric(pt.x, pt.y, se) for pt in seeds]
@@ -284,17 +300,15 @@ def generate_voronoi_regions(
     total_regions = len(sv.regions)
     region_ids = list(range(total_regions))
 
-    num_workers = cpu_count() - 1
-
     generated_regions: List[MultiPolygon] = []
-    if allow_multiprocessing and total_regions >= 100:
+    if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
         generated_regions.extend(
             process_map(
                 create_regions_func,
                 region_ids,
                 desc="Generating regions",
-                max_workers=num_workers,
-                chunksize=ceil(total_regions / (4 * num_workers)),
+                max_workers=num_of_multiprocessing_workers,
+                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
             )
         )
     else:
