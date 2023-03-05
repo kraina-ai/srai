@@ -81,7 +81,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
     ) -> Set[Tuple[IndexType, int]]:
-        visited_indexes = dict()    
+        visited_indexes = dict()
         to_visit: Queue[Tuple[IndexType, int]] = Queue()
 
         to_visit.put((index, 0))
