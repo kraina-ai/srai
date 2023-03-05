@@ -1,8 +1,10 @@
 """Tests for OSMWayLoader."""
 from contextlib import nullcontext as does_not_raise
 from typing import Any, Dict, Optional, Tuple
+from unittest import TestCase
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pytest
 import shapely.geometry as shpg
@@ -12,6 +14,8 @@ from pytest_check import check
 from srai.loaders.exceptions import LoadedDataIsEmptyException
 from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
 from srai.utils.constants import WGS84_CRS
+
+ut = TestCase()
 
 
 @pytest.fixture  # type: ignore
@@ -177,14 +181,35 @@ def valid_and_empty_polygons_area_gdf(
     None,
     does_not_raise(),
 )
-def test_load(
+@P.case(  # type: ignore
+    "Return infrastructure without preprocessing",
+    "first_polygon_area_gdf",
+    (7, 6),
+    {"network_type": NetworkType.DRIVE, "preprocess": False},
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure in long format",
+    "first_polygon_area_gdf",
+    (7, 6),
+    {"network_type": NetworkType.DRIVE, "wide": False},
+    does_not_raise(),
+)
+@P.case(  # type: ignore
+    "Return infrastructure when network_type supplied as a string",
+    "first_polygon_area_gdf",
+    (7, 6),
+    {"network_type": "drive", "wide": False},
+    does_not_raise(),
+)
+def test_contract(
     area_gdf_fixture: str,
     expected_result: Optional[Tuple[int, int]],
     loader_params: Optional[Dict[str, Any]],
     expectation,
     request: pytest.FixtureRequest,
 ):
-    """Test `OSMWayLoader.load()`."""
+    """Test `OSMWayLoader.load`'s contract."""
     if not loader_params:
         loader_params = {"network_type": NetworkType.DRIVE}
 
@@ -199,3 +224,54 @@ def test_load(
         check.equal(len(edges), edges_expected_len)
         check.is_in("geometry", nodes.columns)
         check.is_in("geometry", edges.columns)
+
+
+def test_preprocessing() -> None:
+    """Test `OSMWayLoader._preprocess()` preprocessing."""
+    columns = [
+        "oneway",
+        "lanes",
+        "highway",
+        "maxspeed",
+        "bridge",
+        "access",
+        "junction",
+        "width",
+        "tunnel",
+        "surface",
+        "bicycle",
+        "lit",
+    ]
+
+    data = [
+        [True, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
+        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, np.nan],
+        [True, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
+        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
+        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
+        [False, None, "living_street", np.nan, None, None, None, None, None, np.nan, None, np.nan],
+    ]
+
+    dtypes = {
+        "oneway": bool,
+        "lanes": object,
+        "highway": object,
+        "maxspeed": object,
+        "bridge": object,
+        "access": object,
+        "junction": object,
+        "width": object,
+        "tunnel": object,
+        "surface": object,
+        "bicycle": object,
+        "lit": object,
+    }
+
+    area_gdf = pd.DataFrame(data, columns=columns).astype(dtypes)
+    print(area_gdf)
+    loader = OSMWayLoader(network_type=NetworkType.DRIVE)
+    preprocessed_gdf = loader._preprocess(area_gdf)
+
+    print(preprocessed_gdf)
+    assert preprocessed_gdf is not None
+    ut.assertCountEqual(first=columns, second=preprocessed_gdf.columns)
