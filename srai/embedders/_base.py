@@ -6,8 +6,8 @@ import geopandas as gpd
 import pandas as pd
 
 
-class BaseEmbedder(abc.ABC):
-    """Base abstract class for embedders."""
+class Embedder(abc.ABC):
+    """Abstract class for embedders."""
 
     @abc.abstractmethod
     def transform(

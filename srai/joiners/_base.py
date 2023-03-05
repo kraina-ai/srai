@@ -5,8 +5,8 @@ import abc
 import geopandas as gpd
 
 
-class BaseJoiner(abc.ABC):
-    """Base abstract class for joiners."""
+class Joiner(abc.ABC):
+    """Abstract class for joiners."""
 
     @abc.abstractmethod
     def transform(
