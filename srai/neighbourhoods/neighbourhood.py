@@ -81,21 +81,19 @@ class Neighbourhood(ABC, Generic[IndexType]):
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
     ) -> Set[Tuple[IndexType, int]]:
-        visited = set()
-        visited_with_distances = set()
+        visited_indexes = dict()    
         to_visit: Queue[Tuple[IndexType, int]] = Queue()
 
         to_visit.put((index, 0))
 
         while not to_visit.empty():
-            current, current_distance = to_visit.get()
+            current_index, current_distance = to_visit.get()
 
-            visited.add(current)
-            visited_with_distances.add((current, current_distance))
+            visited_indexes[current_index] = current_distance
             if current_distance < distance:
-                current_neighbours = self.get_neighbours(current)
+                current_neighbours = self.get_neighbours(current_index)
                 for neighbour in current_neighbours:
-                    if neighbour not in visited:
+                    if neighbour not in visited_indexes:
                         to_visit.put((neighbour, current_distance + 1))
 
-        return visited_with_distances
+        return set(visited_indexes.items())
