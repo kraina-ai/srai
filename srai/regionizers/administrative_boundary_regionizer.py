@@ -175,8 +175,9 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         """
         Query Overpass and catch exceptions.
 
-        Since `overpass` library doesn't have useful http error wrapping like osmnx does [1],
-        this method allows for retry after waiting some time.
+        Since `overpass` library doesn't have useful http error wrapping like `osmnx` does [1],
+        this method allows for retry after waiting some time. Additionally, caching mechanism
+        uses `osmnx` internal methods built for this purpose.
 
         Args:
             query (str): Overpass query.
@@ -191,13 +192,17 @@ class AdministrativeBoundaryRegionizer(BaseRegionizer):
         References:
             1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
         """
+        from osmnx.downloader import _retrieve_from_cache, _save_to_cache
         from overpass import MultipleRequestsError, ServerLoadError
 
         while True:
             try:
-                query_result = self.overpass_api.get(
-                    query, verbosity="ids tags", responseformat="json"
-                )
+                query_result = _retrieve_from_cache(url=query, check_remark=False)
+                if query_result is None:
+                    query_result = self.overpass_api.get(
+                        query, verbosity="ids tags", responseformat="json"
+                    )
+                    _save_to_cache(url=query, response_json=query_result, sc=200)
                 elements: List[Dict[str, Any]] = query_result["elements"]
                 return elements
             except (MultipleRequestsError, ServerLoadError):
