@@ -7,8 +7,8 @@ from typing import Union
 import geopandas as gpd
 
 
-class BaseLoader(abc.ABC):
-    """Base abstract class for loaders."""
+class Loader(abc.ABC):
+    """Abstract class for loaders."""
 
     @abc.abstractmethod
     def load(self, area: Union[gpd.GeoDataFrame, Path]) -> gpd.GeoDataFrame:  # pragma: no cover

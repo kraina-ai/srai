@@ -5,8 +5,8 @@ import abc
 import geopandas as gpd
 
 
-class BaseRegionizer(abc.ABC):
-    """Base abstract class for regionizers."""
+class Regionizer(abc.ABC):
+    """Abstract class for regionizers."""
 
     @abc.abstractmethod
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:  # pragma: no cover
