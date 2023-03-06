@@ -8,10 +8,10 @@ from typing import List, Optional
 import geopandas as gpd
 import pandas as pd
 
-from srai.embedders import BaseEmbedder
+from srai.embedders import Embedder
 
 
-class CountEmbedder(BaseEmbedder):
+class CountEmbedder(Embedder):
     """Simple Embedder that counts occurences of feature values."""
 
     def __init__(self, expected_output_features: Optional[List[str]] = None) -> None:

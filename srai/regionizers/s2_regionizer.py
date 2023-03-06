@@ -18,12 +18,11 @@ from functional.pipeline import Sequence
 from s2 import s2
 from shapely.geometry import Polygon
 
+from srai.regionizers import Regionizer
 from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
-from .base import BaseRegionizer
 
-
-class S2Regionizer(BaseRegionizer):
+class S2Regionizer(Regionizer):
     """
     S2 Regionizer.
 

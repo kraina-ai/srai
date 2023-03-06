@@ -9,13 +9,12 @@ from typing import Optional
 import geopandas as gpd
 from shapely.geometry import box
 
+from srai.regionizers import Regionizer
 from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
-from .base import BaseRegionizer
 
-
-class VoronoiRegionizer(BaseRegionizer):
+class VoronoiRegionizer(Regionizer):
     """
     VoronoiRegionizer.
 
