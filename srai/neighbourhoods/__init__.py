@@ -1,5 +1,5 @@
 """Neighbourhoods."""
-from .h3 import H3Neighbourhood
-from .neighbourhood import Neighbourhood
+from ._base import Neighbourhood
+from .h3_neighbourhood import H3Neighbourhood
 
 __all__ = ["Neighbourhood", "H3Neighbourhood"]
