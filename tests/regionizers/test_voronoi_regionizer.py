@@ -52,9 +52,7 @@ def test_single_seed_region() -> None:
 def test_single_seed_algorithm_error() -> None:
     """Test checks if single seed is disallowed."""
     with pytest.raises(ValueError):
-        generate_voronoi_regions(
-            seeds=[Point(0, 0)], max_meters_between_points=10_000, allow_multiprocessing=True
-        )
+        generate_voronoi_regions(seeds=[Point(0, 0)], max_meters_between_points=10_000)
 
 
 def test_multiple_seeds_regions(
@@ -83,7 +81,7 @@ def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbo
         crs=WGS84_CRS,
     )
 
-    vr = VoronoiRegionizer(seeds=random_points_gdf, allow_multiprocessing=True)
+    vr = VoronoiRegionizer(seeds=random_points_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == number_of_points
     assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty

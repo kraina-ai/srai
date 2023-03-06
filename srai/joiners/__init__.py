@@ -1,9 +1,9 @@
 """Joiners."""
 
-from .base import BaseJoiner
+from ._base import Joiner
 from .intersection_joiner import IntersectionJoiner
 
 __all__ = [
-    "BaseJoiner",
+    "Joiner",
     "IntersectionJoiner",
 ]

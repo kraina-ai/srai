@@ -18,13 +18,13 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
-from srai.embedders import BaseEmbedder
+from srai.embedders import Embedder
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 from srai.models import GTFS2VecModel
 from srai.utils.exceptions import ModelNotFitException
 
 
-class GTFS2VecEmbedder(BaseEmbedder):
+class GTFS2VecEmbedder(Embedder):
     """GTFS2Vec Embedder."""
 
     def __init__(
