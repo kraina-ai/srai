@@ -56,4 +56,4 @@ jobs:
             flags: ${{ matrix.os }}-python${{ matrix.python-version }}
             verbose: true
           attempt_limit: 100
-          attempt_delay: 10
+          attempt_delay: 10000
