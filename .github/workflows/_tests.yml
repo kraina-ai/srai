@@ -55,5 +55,5 @@ jobs:
             files: ./coverage.python${{ matrix.python-version }}.xml,
             flags: ${{ matrix.os }}-python${{ matrix.python-version }}
             verbose: true
-          attempt_limit: 10
-          attempt_delay: 2000
+          attempt_limit: 100
+          attempt_delay: 10000

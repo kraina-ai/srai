@@ -1,0 +1,13 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        informational: true
+        threshold: 1%  # the leniency in hitting the target
+    patch:
+      default:
+        informational: true
+
+comment:
+  require_changes: true

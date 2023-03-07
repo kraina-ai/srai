@@ -17,7 +17,7 @@ repos:
       - id: isort
         name: isort (python)
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.6.0-rc1
+    rev: v1.5.1
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
@@ -34,12 +34,12 @@ repos:
         additional_dependencies:
           - flake8-bugbear
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.991
+    rev: v1.0.1
     hooks:
       - id: mypy
         additional_dependencies: ["types-requests"]
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.4.3
+    rev: 2.4.7
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -61,15 +61,14 @@ repos:
       - id: check-added-large-files
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v1.11.0
+    rev: v1.13.0
     hooks:
       - id: refurb
         language: python
         language_version: python3.10
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "60e3b8e1ec4f2e9817fa0a02a9c4a3c20c49d560"
-    # change to "2023.0.1" after tag will be created
+    rev: "2023.1.1"
     hooks:
       - id: licensecheck
         stages: [manual]
