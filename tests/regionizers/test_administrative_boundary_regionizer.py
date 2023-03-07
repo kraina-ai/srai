@@ -68,9 +68,6 @@ def mock_overpass_api(mocker: MockerFixture) -> None:
     )
     mocker.patch("osmnx.geocode_to_gdf", return_value=geocoded_gdf)
 
-    mocker.patch("osmnx.downloader._retrieve_from_cache", return_value=None)
-    mocker.patch("osmnx.downloader._save_to_cache")
-
 
 @pytest.mark.parametrize(  # type: ignore
     "toposimplify",
@@ -124,11 +121,11 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
     "toposimplify",
     [
         (True),
-        # (0.0001),
-        # (0.001),
-        # (0.01),
-        # (False),
-        # (0),
+        (0.0001),
+        (0.001),
+        (0.01),
+        (False),
+        (0),
     ],
 )
 def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> None:
@@ -144,28 +141,28 @@ def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> Non
     assert request_gdf.geometry[0].within(result_gdf.geometry[0])
 
 
-# @pytest.mark.parametrize(  # type: ignore
-#     "toposimplify",
-#     [
-#         (True),
-#         (0.0001),
-#         (0.001),
-#         (0.01),
-#         (False),
-#         (0),
-#     ],
-# )
-# def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
-#     """Test if toposimplify usage covers an entire region."""
-#     madagascar_bbox = box(
-#         minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
-#     )
-#     madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+@pytest.mark.parametrize(  # type: ignore
+    "toposimplify",
+    [
+        (True),
+        (0.0001),
+        (0.001),
+        (0.01),
+        (False),
+        (0),
+    ],
+)
+def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
+    """Test if toposimplify usage covers an entire region."""
+    madagascar_bbox = box(
+        minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
+    )
+    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
 
-#     abr = AdministrativeBoundaryRegionizer(
-#         admin_level=4, return_empty_region=True, toposimplify=toposimplify
-#     )
-#     madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
-#     assert (
-#         _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
-#     )
+    abr = AdministrativeBoundaryRegionizer(
+        admin_level=4, return_empty_region=True, toposimplify=toposimplify
+    )
+    madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
+    assert (
+        _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
+    )
