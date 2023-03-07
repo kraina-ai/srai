@@ -38,7 +38,6 @@ bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
 def test_admin_level(
     admin_level: int,
     expectation: Any,
-    request: Any,
 ) -> None:
     """Test checks if illegal admin_level is disallowed."""
     with expectation:
@@ -60,39 +59,17 @@ def test_no_crs_gdf_value_error(gdf_no_crs) -> None:  # type: ignore
 
 
 @pytest.fixture  # type: ignore
-def mock_for_madagascar(mocker: MockerFixture) -> None:
+def mock_overpass_api(mocker: MockerFixture) -> None:
     """Mock overpass API."""
-    mocker.patch.object(
-        API,
-        "get",
-        return_value={
-            "elements": [
-                {
-                    "type": "relation",
-                    "id": 2137,
-                },
-            ]
-        },
-    )
+    mocker.patch.object(API, "get", return_value={"elements": [{"type": "relation", "id": 2137}]})
 
     geocoded_gdf = gpd.GeoDataFrame(
-        {
-            "geometry": [
-                box(
-                    minx=47,
-                    miny=-15,
-                    maxx=48,
-                    maxy=-14,
-                )
-            ],
-        },
-        crs=WGS84_CRS,
+        {"geometry": [box(minx=0, miny=0, maxx=1, maxy=1)]}, crs=WGS84_CRS
     )
+    mocker.patch("osmnx.geocode_to_gdf", return_value=geocoded_gdf)
 
-    mocker.patch(
-        "osmnx.geocode_to_gdf",
-        return_value=geocoded_gdf,
-    )
+    mocker.patch("osmnx.downloader._retrieve_from_cache", return_value=None)
+    mocker.patch("osmnx.downloader._save_to_cache")
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -108,56 +85,15 @@ def mock_for_madagascar(mocker: MockerFixture) -> None:
 )
 def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], request: Any) -> None:
     """Test checks if empty region fills required bounding box."""
-    request.getfixturevalue("mock_for_madagascar")
-    madagascar_bbox = box(
-        minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
-    )
-    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+    request.getfixturevalue("mock_overpass_api")
+    region_bbox = box(minx=0, miny=0, maxx=2, maxy=2)
+    region_bbox_gdf = gpd.GeoDataFrame({"geometry": [region_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
-    madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
-    assert (
-        _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
-    )
-    print(madagascar_result_gdf)
-    assert "EMPTY" in madagascar_result_gdf.index
-
-
-@pytest.fixture  # type: ignore
-def mock_for_asia(mocker: MockerFixture) -> None:
-    """Mock overpass API."""
-    mocker.patch.object(
-        API,
-        "get",
-        return_value={
-            "elements": [
-                {
-                    "type": "relation",
-                    "id": 2137,
-                },
-            ]
-        },
-    )
-
-    geocoded_gdf = gpd.GeoDataFrame(
-        {
-            "geometry": [
-                box(
-                    minx=69,
-                    miny=23,
-                    maxx=89,
-                    maxy=35,
-                )
-            ],
-        },
-        crs=WGS84_CRS,
-    )
-
-    mocker.patch(
-        "osmnx.geocode_to_gdf",
-        return_value=geocoded_gdf,
-    )
+    result_gdf = abr.transform(gdf=region_bbox_gdf)
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(region_bbox).is_empty
+    assert "EMPTY" in result_gdf.index
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -173,18 +109,39 @@ def mock_for_asia(mocker: MockerFixture) -> None:
 )
 def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], request: Any) -> None:
     """Test checks if no empty region is generated when not needed."""
-    request.getfixturevalue("mock_for_asia")
-    asia_bbox = box(
-        minx=69.73278412113555,
-        miny=24.988848422533074,
-        maxx=88.50230949587835,
-        maxy=34.846427760404225,
-    )
-    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs=WGS84_CRS)
+    request.getfixturevalue("mock_overpass_api")
+    region_bbox = box(minx=0, miny=0, maxx=1, maxy=1)
+    region_bbox_gdf = gpd.GeoDataFrame({"geometry": [region_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )
-    asia_result_gdf = abr.transform(gdf=asia_bbox_gdf)
-    assert _merge_disjointed_gdf_geometries(asia_result_gdf).difference(asia_bbox).is_empty
-    print(asia_result_gdf)
-    assert "EMPTY" not in asia_result_gdf.index
+    result_gdf = abr.transform(gdf=region_bbox_gdf)
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(region_bbox).is_empty
+    assert "EMPTY" not in result_gdf.index
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "toposimplify",
+    [
+        (True),
+        (0.0001),
+        (0.001),
+        (0.01),
+        (False),
+        (0),
+    ],
+)
+def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
+    """Test if toposimplify usage covers an entire region."""
+    madagascar_bbox = box(
+        minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
+    )
+    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+
+    abr = AdministrativeBoundaryRegionizer(
+        admin_level=4, return_empty_region=True, toposimplify=toposimplify
+    )
+    madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
+    assert (
+        _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
+    )
