@@ -68,8 +68,7 @@ repos:
         language_version: python3.10
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "2023"
-    # change to "2023.0.1" after tag will be created
+    rev: "2023.1.1"
     hooks:
       - id: licensecheck
         stages: [manual]
