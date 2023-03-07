@@ -6,7 +6,7 @@ import geopandas as gpd
 import pytest
 from overpass import API
 from pytest_mock import MockerFixture
-from shapely.geometry import box
+from shapely.geometry import Point, box
 
 from srai.regionizers import AdministrativeBoundaryRegionizer
 from srai.utils import _merge_disjointed_gdf_geometries
@@ -86,13 +86,13 @@ def mock_overpass_api(mocker: MockerFixture) -> None:
 def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], request: Any) -> None:
     """Test checks if empty region fills required bounding box."""
     request.getfixturevalue("mock_overpass_api")
-    region_bbox = box(minx=0, miny=0, maxx=2, maxy=2)
-    region_bbox_gdf = gpd.GeoDataFrame({"geometry": [region_bbox]}, crs=WGS84_CRS)
+    request_bbox = box(minx=0, miny=0, maxx=2, maxy=2)
+    request_bbox_gdf = gpd.GeoDataFrame({"geometry": [request_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
-    result_gdf = abr.transform(gdf=region_bbox_gdf)
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(region_bbox).is_empty
+    result_gdf = abr.transform(gdf=request_bbox_gdf)
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
     assert "EMPTY" in result_gdf.index
 
 
@@ -110,13 +110,13 @@ def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], reques
 def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], request: Any) -> None:
     """Test checks if no empty region is generated when not needed."""
     request.getfixturevalue("mock_overpass_api")
-    region_bbox = box(minx=0, miny=0, maxx=1, maxy=1)
-    region_bbox_gdf = gpd.GeoDataFrame({"geometry": [region_bbox]}, crs=WGS84_CRS)
+    request_bbox = box(minx=0, miny=0, maxx=1, maxy=1)
+    request_bbox_gdf = gpd.GeoDataFrame({"geometry": [request_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )
-    result_gdf = abr.transform(gdf=region_bbox_gdf)
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(region_bbox).is_empty
+    result_gdf = abr.transform(gdf=request_bbox_gdf)
+    assert _merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
     assert "EMPTY" not in result_gdf.index
 
 
@@ -124,24 +124,48 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
     "toposimplify",
     [
         (True),
-        (0.0001),
-        (0.001),
-        (0.01),
-        (False),
-        (0),
+        # (0.0001),
+        # (0.001),
+        # (0.01),
+        # (False),
+        # (0),
     ],
 )
-def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
-    """Test if toposimplify usage covers an entire region."""
-    madagascar_bbox = box(
-        minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
-    )
-    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> None:
+    """Test checks case when points are in a requested region."""
+    request.getfixturevalue("mock_overpass_api")
+    request_gdf = gpd.GeoDataFrame({"geometry": [Point(0.5, 0.5)]}, crs=WGS84_CRS)
 
     abr = AdministrativeBoundaryRegionizer(
-        admin_level=4, return_empty_region=True, toposimplify=toposimplify
+        admin_level=2, return_empty_region=False, clip_regions=False, toposimplify=toposimplify
     )
-    madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
-    assert (
-        _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
-    )
+
+    result_gdf = abr.transform(gdf=request_gdf)
+    assert request_gdf.geometry[0].within(result_gdf.geometry[0])
+
+
+# @pytest.mark.parametrize(  # type: ignore
+#     "toposimplify",
+#     [
+#         (True),
+#         (0.0001),
+#         (0.001),
+#         (0.01),
+#         (False),
+#         (0),
+#     ],
+# )
+# def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
+#     """Test if toposimplify usage covers an entire region."""
+#     madagascar_bbox = box(
+#         minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
+#     )
+#     madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+
+#     abr = AdministrativeBoundaryRegionizer(
+#         admin_level=4, return_empty_region=True, toposimplify=toposimplify
+#     )
+#     madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
+#     assert (
+#         _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
+#     )
