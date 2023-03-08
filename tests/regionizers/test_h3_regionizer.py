@@ -25,6 +25,7 @@ def expected_h3_indexes() -> List[str]:
         "83754afffffffff",
     ]
 
+
 @pytest.fixture  # type: ignore
 def expected_unbuffered_h3_indexes() -> List[str]:
     """Get expected h3 index for the unbuffered case."""
