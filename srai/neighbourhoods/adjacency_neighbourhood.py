@@ -10,8 +10,6 @@ import geopandas as gpd
 
 from srai.neighbourhoods import Neighbourhood
 
-# from srai.neighbourhoods._base import IndexType
-
 
 class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     """
