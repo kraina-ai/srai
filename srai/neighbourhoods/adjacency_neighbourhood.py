@@ -24,8 +24,6 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    lookup: Dict[Hashable, Set[Hashable]] = {}
-
     def __init__(self, regions_gdf: gpd.GeoDataFrame) -> None:
         """
         Init AdjacencyNeighbourhood.
@@ -39,6 +37,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         if "geometry" not in regions_gdf.columns:
             raise AttributeError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
+        self.lookup: Dict[Hashable, Set[Hashable]] = {}
 
     def generate_neighbourhoods(self) -> None:
         """Generate the lookup table for all regions."""
