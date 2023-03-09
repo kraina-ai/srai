@@ -4,15 +4,16 @@ Adjacency neighbourhood.
 This module contains the AdjacencyNeighbourhood class, that allows to get the neighbours of any
 region based on its borders.
 """
-from typing import Dict, Set
+from typing import Dict, Hashable, Set
 
 import geopandas as gpd
 
 from srai.neighbourhoods import Neighbourhood
-from srai.neighbourhoods._base import IndexType
+
+# from srai.neighbourhoods._base import IndexType
 
 
-class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
+class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     """
     Adjacency Neighbourhood.
 
@@ -23,7 +24,7 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    lookup: Dict[IndexType, Set[IndexType]] = {}
+    lookup: Dict[Hashable, Set[Hashable]] = {}
 
     def __init__(self, regions_gdf: gpd.GeoDataFrame) -> None:
         """
@@ -33,10 +34,10 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
             regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
 
         Raises:
-            ValueError: If regions_gdf doesn't have geometry column.
+            AttributeError: If regions_gdf doesn't have geometry column.
         """
         if "geometry" not in regions_gdf.columns:
-            raise ValueError("Regions must have a geometry column.")
+            raise AttributeError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
 
     def generate_neighbourhoods(self) -> None:
@@ -45,15 +46,15 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
             if region_id not in self.lookup:
                 self.lookup[region_id] = self._get_adjacent_neighbours(region_id)
 
-    def get_neighbours(self, index: IndexType) -> Set[IndexType]:
+    def get_neighbours(self, index: Hashable) -> Set[Hashable]:
         """
         Get the direct neighbours of any region using its index.
 
         Args:
-            index (IndexType): Unique identifier of the region.
+            index (Hashable): Unique identifier of the region.
 
         Returns:
-            Set[IndexType]: Indexes of the neighbours.
+            Set[Hashable]: Indexes of the neighbours.
         """
         if self._index_incorrect(index):
             return set()
@@ -63,15 +64,15 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
 
         return self.lookup[index]
 
-    def _get_adjacent_neighbours(self, index: IndexType) -> Set[IndexType]:
+    def _get_adjacent_neighbours(self, index: Hashable) -> Set[Hashable]:
         """
         Get the direct neighbours of a region using `touches` [1] operator from the Shapely library.
 
         Args:
-            index (IndexType): Unique identifier of the region.
+            index (Hashable): Unique identifier of the region.
 
         Returns:
-            Set[IndexType]: Indexes of the neighbours.
+            Set[Hashable]: Indexes of the neighbours.
 
         References:
             1. https://shapely.readthedocs.io/en/stable/reference/shapely.touches.html
@@ -80,5 +81,5 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
         neighbours = self.regions_gdf[self.regions_gdf.geometry.touches(current_region["geometry"])]
         return set(neighbours.index)
 
-    def _index_incorrect(self, index: IndexType) -> bool:
+    def _index_incorrect(self, index: Hashable) -> bool:
         return index not in self.regions_gdf.index
