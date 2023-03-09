@@ -24,7 +24,7 @@ def empty_gdf() -> gpd.GeoDataFrame:
 def squares_regions_fixture() -> gpd.GeoDataFrame:
     """
     This GeoDataFrame represents 9 squares on a cartesian plane in a 3 by 3 grid pattern. Squares
-    are adjacent by edges and by vertexes. Squares are given compass directions. Visually it looks
+    are adjacent by edges and by vertices. Squares are given compass directions. Visually it looks
     like this ("C" means "CENTER"):
 
     [["NW", "N", "NE"],
@@ -36,15 +36,15 @@ def squares_regions_fixture() -> gpd.GeoDataFrame:
     """
     regions = gpd.GeoDataFrame(
         geometry=[
-            geometry.box(minx=0, miny=0, maxx=1, maxy=1),
-            geometry.box(minx=1, miny=0, maxx=2, maxy=1),
-            geometry.box(minx=2, miny=0, maxx=3, maxy=1),
-            geometry.box(minx=0, miny=1, maxx=1, maxy=2),
-            geometry.box(minx=1, miny=1, maxx=2, maxy=2),
-            geometry.box(minx=2, miny=1, maxx=3, maxy=2),
-            geometry.box(minx=0, miny=2, maxx=1, maxy=3),
-            geometry.box(minx=1, miny=2, maxx=2, maxy=3),
-            geometry.box(minx=2, miny=2, maxx=3, maxy=3),
+            geometry.box(minx=0, maxx=1, miny=0, maxy=1),
+            geometry.box(minx=1, maxx=2, miny=0, maxy=1),
+            geometry.box(minx=2, maxx=3, miny=0, maxy=1),
+            geometry.box(minx=0, maxx=1, miny=1, maxy=2),
+            geometry.box(minx=1, maxx=2, miny=1, maxy=2),
+            geometry.box(minx=2, maxx=3, miny=1, maxy=2),
+            geometry.box(minx=0, maxx=1, miny=2, maxy=3),
+            geometry.box(minx=1, maxx=2, miny=2, maxy=3),
+            geometry.box(minx=2, maxx=3, miny=2, maxy=3),
         ],
         index=["SW", "S", "SE", "W", "CENTER", "E", "NW", "N", "NE"],  # compass directions
         crs=WGS84_CRS,
@@ -56,7 +56,7 @@ def squares_regions_fixture() -> gpd.GeoDataFrame:
 def rounded_regions_fixture() -> gpd.GeoDataFrame:
     """
     This GeoDataFrame represents 9 small squares with buffer on a cartesian plane in a 3 by 3 grid
-    pattern. Regions are adjacent by edges, but not by vertexes. Regions are given compass
+    pattern. Regions are adjacent by edges, but not by vertices. Regions are given compass
     directions. Visually it looks like this ("C" means "CENTER"):
 
     [["NW", "N", "NE"],
@@ -68,15 +68,15 @@ def rounded_regions_fixture() -> gpd.GeoDataFrame:
     """
     regions = gpd.GeoDataFrame(
         geometry=[
-            geometry.box(minx=0, miny=0, maxx=0.5, maxy=0.5).buffer(0.25),
-            geometry.box(minx=1, miny=0, maxx=1.5, maxy=0.5).buffer(0.25),
-            geometry.box(minx=2, miny=0, maxx=2.5, maxy=0.5).buffer(0.25),
-            geometry.box(minx=0, miny=1, maxx=0.5, maxy=1.5).buffer(0.25),
-            geometry.box(minx=1, miny=1, maxx=1.5, maxy=1.5).buffer(0.25),
-            geometry.box(minx=2, miny=1, maxx=2.5, maxy=1.5).buffer(0.25),
-            geometry.box(minx=0, miny=2, maxx=0.5, maxy=2.5).buffer(0.25),
-            geometry.box(minx=1, miny=2, maxx=1.5, maxy=2.5).buffer(0.25),
-            geometry.box(minx=2, miny=2, maxx=2.5, maxy=2.5).buffer(0.25),
+            geometry.box(minx=0, maxx=0.5, miny=0, maxy=0.5).buffer(0.25),
+            geometry.box(minx=1, maxx=1.5, miny=0, maxy=0.5).buffer(0.25),
+            geometry.box(minx=2, maxx=2.5, miny=0, maxy=0.5).buffer(0.25),
+            geometry.box(minx=0, maxx=0.5, miny=1, maxy=1.5).buffer(0.25),
+            geometry.box(minx=1, maxx=1.5, miny=1, maxy=1.5).buffer(0.25),
+            geometry.box(minx=2, maxx=2.5, miny=1, maxy=1.5).buffer(0.25),
+            geometry.box(minx=0, maxx=0.5, miny=2, maxy=2.5).buffer(0.25),
+            geometry.box(minx=1, maxx=1.5, miny=2, maxy=2.5).buffer(0.25),
+            geometry.box(minx=2, maxx=2.5, miny=2, maxy=2.5).buffer(0.25),
         ],
         index=["SW", "S", "SE", "W", "CENTER", "E", "NW", "N", "NE"],  # compass directions
         crs=WGS84_CRS,
