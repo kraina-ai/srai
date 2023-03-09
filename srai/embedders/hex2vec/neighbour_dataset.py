@@ -24,7 +24,7 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         negative_sample_k_distance: int = 2,
     ):
         """TODO: Docstring for __init__."""
-        self._data = torch.Tensor(self.data.to_numpy())
+        self._data = torch.Tensor(data.to_numpy())
         self._negative_sample_k_distance = negative_sample_k_distance
 
         self._input_df_locs_lookup: np.ndarray
@@ -35,7 +35,7 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
             region_index: i for i, region_index in enumerate(data.index)
         }
         self.df_loc_to_region_index: Dict[int, T] = {
-            i: region_index for region_index, i in self._region_index_to_df_loc.items()
+            i: region_index for region_index, i in self.region_index_to_df_loc.items()
         }
 
         self._build_lookup_tables(data, neighbourhood)
@@ -58,12 +58,12 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
             context_df_locs_lookup.extend(neighbours_df_locs)
 
             indices_excluded_from_negatives = neighbourhood.get_neighbours_up_to_distance(
-                region_index, self.negative_sample_k_distance
+                region_index, self._negative_sample_k_distance
             )
             available_excluded = indices_excluded_from_negatives.intersection(
                 available_regions_indices
             )
-            self.excluded_from_negatives[region_df_loc] = {
+            self._excluded_from_negatives[region_df_loc] = {
                 self.region_index_to_df_loc[excluded_index] for excluded_index in available_excluded
             }
 
@@ -98,7 +98,7 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
 
     def _get_random_negative_df_loc(self, input_df_loc: int) -> int:
         excluded_df_locs = self._excluded_from_negatives[input_df_loc]
-        negative_candidate: int = np.random.randint(0, len(self.data))
+        negative_candidate: int = np.random.randint(0, len(self._data))
         while negative_candidate in excluded_df_locs:
-            negative_candidate = np.random.randint(0, len(self.data))
+            negative_candidate = np.random.randint(0, len(self._data))
         return negative_candidate
