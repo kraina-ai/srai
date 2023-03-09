@@ -84,11 +84,11 @@ class H3Regionizer(Regionizer):
         gdf_h3 = self._gdf_from_h3_indexes(h3_indexes)
 
         # there may be too many cells because of too big buffer
-        gdf_h3_clipped = (
-            gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right").drop_duplicates()
-            if self.buffer
-            else gdf_h3
-        )
+        if self.buffer:
+            gdf_h3_clipped = gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right")
+            gdf_h3_clipped = gdf_h3_clipped[~gdf_h3_clipped.index.duplicated(keep="first")]
+        else:
+            gdf_h3_clipped = gdf_h3
 
         gdf_h3_clipped.index.name = REGIONS_INDEX
 
