@@ -23,8 +23,6 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    lookup: Dict[IndexType, Set[IndexType]] = {}
-
     def __init__(self, regions_gdf: gpd.GeoDataFrame) -> None:
         """
         Init AdjacencyNeighbourhood.
@@ -38,6 +36,7 @@ class AdjacencyNeighbourhood(Neighbourhood[IndexType]):
         if "geometry" not in regions_gdf.columns:
             raise ValueError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
+        self.lookup: Dict[IndexType, Set[IndexType]] = {}
 
     def generate_neighbourhoods(self) -> None:
         """Generate the lookup table for all regions."""
