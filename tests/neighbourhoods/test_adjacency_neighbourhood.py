@@ -99,7 +99,7 @@ def test_empty_gdf_empty_set(empty_gdf: gpd.GeoDataFrame) -> None:
 def test_lazy_loading_empty_set(squares_regions_fixture: gpd.GeoDataFrame) -> None:
     """Test checks if lookup table is empty after init."""
     neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture)
-    assert neighbourhood.lookup == dict()
+    assert neighbourhood.lookup == {}
 
 
 def test_generate_all_neighbourhoods_rounded_regions(
