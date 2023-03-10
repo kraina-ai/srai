@@ -10,13 +10,13 @@ from srai.utils.constants import WGS84_CRS
 
 @pytest.fixture  # type: ignore
 def no_geometry_gdf() -> gpd.GeoDataFrame:
-    """Get empty GeoDataFrame."""
+    """Get GeoDataFrame with no geometry."""
     return gpd.GeoDataFrame()
 
 
 @pytest.fixture  # type: ignore
 def empty_gdf() -> gpd.GeoDataFrame:
-    """Get GeoDataFrame with no geometry."""
+    """Get empty GeoDataFrame."""
     return gpd.GeoDataFrame(geometry=[])
 
 
@@ -102,6 +102,16 @@ def test_lazy_loading_empty_set(squares_regions_fixture: gpd.GeoDataFrame) -> No
     assert neighbourhood.lookup == {}
 
 
+def test_adjacency_lazy_loading(rounded_regions_fixture: gpd.GeoDataFrame) -> None:
+    """Test checks if lookup table is lazily populated."""
+    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture)
+    neighbours = neighbourhood.get_neighbours("SW")
+    assert neighbours == {"W", "S"}
+    assert neighbourhood.lookup == {
+        "SW": {"W", "S"},
+    }
+
+
 def test_generate_all_neighbourhoods_rounded_regions(
     rounded_regions_fixture: gpd.GeoDataFrame,
 ) -> None:
@@ -137,16 +147,6 @@ def test_generate_all_neighbourhoods_squares_regions(
         "NW": {"W", "N", "CENTER"},
         "N": {"W", "CENTER", "E", "NW", "NE"},
         "NE": {"E", "N", "CENTER"},
-    }
-
-
-def test_adjacency_lazy_loading(rounded_regions_fixture: gpd.GeoDataFrame) -> None:
-    """Test checks if lookup table is lazily populated."""
-    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture)
-    neighbours = neighbourhood.get_neighbours("SW")
-    assert neighbours == {"W", "S"}
-    assert neighbourhood.lookup == {
-        "SW": {"W", "S"},
     }
 
 
