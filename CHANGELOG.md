@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OSMTagLoader
 - Neighbourhood
 - H3Neighbourhood
+- AdjacencyNeighbourhood
 
 ### Changed
 - Change embedders and joiners interface to have `.transform` method

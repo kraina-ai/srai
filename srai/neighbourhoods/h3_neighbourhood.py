@@ -7,7 +7,7 @@ from typing import Set
 
 import h3
 
-from .neighbourhood import Neighbourhood
+from srai.neighbourhoods import Neighbourhood
 
 
 class H3Neighbourhood(Neighbourhood[str]):
