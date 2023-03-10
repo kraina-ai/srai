@@ -1,71 +1,8 @@
-from typing import Any, Set
+from typing import Set
 
-import geopandas as gpd
 import pytest
-from shapely.geometry import Polygon
 
 from srai.neighbourhoods import H3Neighbourhood
-
-
-@pytest.fixture  # type: ignore
-def empty_gdf() -> gpd.GeoDataFrame:
-    """Fixture for an empty GeoDataFrame."""
-    return gpd.GeoDataFrame()
-
-
-@pytest.fixture  # type: ignore
-def single_hex_gdf() -> gpd.GeoDataFrame:
-    """Fixture for a GeoDataFrame with a single hexagon."""
-    return gpd.GeoDataFrame(
-        {"index": ["811e3ffffffffff"], "geometry": [Polygon([(0, 0), (0, 1), (1, 0), (1, 1)])]}
-    )
-
-
-@pytest.fixture  # type: ignore
-def hex_without_one_neighbour_gdf() -> gpd.GeoDataFrame:
-    """Fixture for a GeoDataFrame with a single hexagon."""
-    return gpd.GeoDataFrame(
-        geometry=gpd.points_from_xy([0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5]),
-        index=[
-            "811e3ffffffffff",
-            "811f3ffffffffff",
-            "811fbffffffffff",
-            "811ebffffffffff",
-            "811efffffffffff",
-            "811e7ffffffffff",
-        ],
-    )
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "regions_gdf_fixture,expected",
-    [
-        (
-            "empty_gdf",
-            set(),
-        ),
-        (
-            "single_hex_gdf",
-            set(),
-        ),
-        (
-            "hex_without_one_neighbour_gdf",
-            {
-                "811f3ffffffffff",
-                "811fbffffffffff",
-                "811ebffffffffff",
-                "811efffffffffff",
-                "811e7ffffffffff",
-            },
-        ),
-    ],
-)
-def test_get_neighbours_with_regions_gdf(
-    regions_gdf_fixture: str, expected: Set[str], request: Any
-) -> None:
-    """Test get_neighbours of H3Neighbourhood with a specified regions GeoDataFrame."""
-    regions_gdf = request.getfixturevalue(regions_gdf_fixture)
-    assert H3Neighbourhood(regions_gdf).get_neighbours("811e3ffffffffff") == expected
 
 
 @pytest.mark.parametrize(  # type: ignore
