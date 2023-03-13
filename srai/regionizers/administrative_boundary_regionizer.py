@@ -36,6 +36,8 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         1. https://wiki.openstreetmap.org/wiki/Key:admin_level
     """
 
+    EMPTY_REGION_NAME = "EMPTY"
+
     def __init__(
         self,
         admin_level: int,
@@ -133,6 +135,29 @@ class AdministrativeBoundaryRegionizer(Regionizer):
 
         regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 
+        if not regions_dicts:
+            import warnings
+
+            warnings.warn(
+                (
+                    "Couldn't find any administrative boundaries with"
+                    f" `admin_level`={self.admin_level}."
+                ),
+                RuntimeWarning,
+            )
+            if self.return_empty_region:
+                regions_gdf = gpd.GeoDataFrame(
+                    data={
+                        "geometry": [unary_union(gdf_wgs84.geometry)],
+                        REGIONS_INDEX: [AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME],
+                    },
+                    crs=WGS84_CRS,
+                ).set_index(REGIONS_INDEX)
+            else:
+                regions_gdf = gpd.GeoDataFrame()
+
+            return regions_gdf
+
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index(REGIONS_INDEX)
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
@@ -142,7 +167,9 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         if self.return_empty_region:
             empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
-                regions_gdf.loc["EMPTY", "geometry"] = empty_region
+                regions_gdf.loc[AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME, "geometry"] = (
+                    empty_region
+                )
         return regions_gdf
 
     def _generate_regions_from_all_geometries(
@@ -254,7 +281,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
 
         return {
             "geometry": self._get_boundary_geometry(element["id"]),
-            "region_id": region_id,
+            REGIONS_INDEX: region_id,
         }
 
     def _get_boundary_geometry(self, relation_id: str) -> BaseGeometry:
