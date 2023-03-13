@@ -11,9 +11,9 @@ import shapely.geometry as shpg
 from parametrization import Parametrization as P
 from pytest_check import check
 
-from srai.loaders.exceptions import LoadedDataIsEmptyException
 from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
 from srai.utils.constants import WGS84_CRS
+from srai.utils.exceptions import LoadedDataIsEmptyException
 
 ut = TestCase()
 

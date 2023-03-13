@@ -14,9 +14,9 @@ import shapely.geometry as shpg
 from functional import seq
 from tqdm.auto import tqdm
 
-from srai.loaders.exceptions import LoadedDataIsEmptyException
 from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import WGS84_CRS
+from srai.utils.exceptions import LoadedDataIsEmptyException
 
 from . import constants
 
