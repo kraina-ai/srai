@@ -87,6 +87,8 @@ visualization = [
     "matplotlib>=3.6.1",
     "plotly>=5.10.0",
     "kaleido==0.2.1",
+    "folium>=0.14.0",
+    "mapclassify>=2.5.0",
 ]
 # pdm add -dG docs <library>
 docs = [
