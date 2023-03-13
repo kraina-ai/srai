@@ -1,6 +1,6 @@
 # noqa
 """TODO."""
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import geopandas as gpd
 import numpy as np
@@ -8,10 +8,11 @@ import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
 
+from srai.neighbourhoods._base import IndexType
 from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
-def plot_regions_gdf(
+def plot_regions_mapbox(
     regions_gdf: gpd.GeoDataFrame,
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
@@ -46,11 +47,12 @@ def plot_regions_gdf(
     """
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
-    return _plot_regions_gdf(
+    return _plot_regions_mapbox(
         regions_gdf=regions_gdf_copy,
         hover_column_name=REGIONS_INDEX,
         color_feature_column=REGIONS_INDEX,
         hover_data=[],
+        show_legend=False,
         return_plot=return_plot,
         mapbox_style=mapbox_style,
         mapbox_accesstoken=mapbox_accesstoken,
@@ -61,11 +63,46 @@ def plot_regions_gdf(
     )
 
 
-def _plot_regions_gdf(
+def plot_neighbours_mapbox(
+    regions_gdf: gpd.GeoDataFrame,
+    region_id: IndexType,
+    neighbours_ids: Set[IndexType],
+    return_plot: bool = False,
+    mapbox_style: str = "open-street-map",
+    mapbox_accesstoken: Optional[str] = None,
+    renderer: Optional[str] = "notebook_connected",
+    zoom: Optional[float] = None,
+    height: Optional[float] = None,
+    width: Optional[float] = None,
+) -> Optional[go.Figure]:  # noqa
+    regions_gdf_copy = regions_gdf.copy()
+    regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
+    regions_gdf_copy["type"] = "other"
+    regions_gdf_copy.loc[region_id, "type"] = "region"
+    regions_gdf_copy.loc[neighbours_ids, "type"] = "neighbour"
+    return _plot_regions_mapbox(
+        regions_gdf=regions_gdf_copy,
+        hover_column_name=REGIONS_INDEX,
+        color_feature_column="type",
+        hover_data=[],
+        show_legend=True,
+        return_plot=return_plot,
+        mapbox_style=mapbox_style,
+        mapbox_accesstoken=mapbox_accesstoken,
+        renderer=renderer,
+        zoom=zoom,
+        height=height,
+        width=width,
+    )
+    # df.explore(column="type")
+
+
+def _plot_regions_mapbox(
     regions_gdf: gpd.GeoDataFrame,
     hover_column_name: str,
     color_feature_column: str,
     hover_data: List[str],
+    show_legend: bool = False,
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
@@ -84,6 +121,7 @@ def _plot_regions_gdf(
         hover_column_name (str): Column name used for hover popup title.
         color_feature_column (str): Column name used for colouring the plot.
         hover_data (List[str]): List of column names displayed additionally on hover.
+        show_legend (bool, optional): Flag whether to show the legend or not. Defaults to False.
         return_plot (bool, optional): Flag whether to return the Figure object or not.
             If `True`, the plot won't be displayed automatically. Defaults to False.
         mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
@@ -116,8 +154,9 @@ def _plot_regions_gdf(
     )
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     fig.update_traces(marker={"opacity": 0.6}, selector=dict(type="choroplethmapbox"))
-    fig.update_traces(showlegend=False)
-    fig.update_coloraxes(showscale=False)
+    fig.update_traces(showlegend=show_legend)
+    fig.update_coloraxes(showscale=show_legend)
+    # fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
     fig.update_layout(height=height, width=width, margin={"r": 0, "t": 0, "l": 0, "b": 0})
     fig.update_layout(mapbox_style=mapbox_style, mapbox_accesstoken=mapbox_accesstoken)
 
