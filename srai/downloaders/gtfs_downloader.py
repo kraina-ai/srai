@@ -7,9 +7,11 @@ References:
     [1] https://database.mobilitydata.org/
 """
 
+import unicodedata
 from pathlib import Path
 
 import pandas as pd
+from functional import seq
 
 from srai.utils import download_file
 
@@ -46,19 +48,43 @@ class GTFSDownloader:
 
     def search(self, query: str) -> pd.DataFrame:
         """
-        Search catalog.
+        Search catalog using queries in form of "query1, query2, ...".
+
+        Examples: "Wrocław, PL", "New York, US", "Amtrak".
 
         Args:
-            query (str): Search query.
+            query (str): Search query with elements separated by comma.
 
         Returns:
             pd.DataFrame: Search results.
         """
+        query_processed = seq(query.split(",")).map(self._remove_accents).map(str.strip).to_list()
+        catalog_processed = (
+            self.catalog[CATALOG_SEARCH_COLUMNS].fillna("").applymap(self._remove_accents)
+        )
+
         return self.catalog[
-            self.catalog[CATALOG_SEARCH_COLUMNS]
-            .astype(str)
-            .apply(lambda x: x.str.contains("|".join(query.split(","))).any(), axis=1)
+            seq(catalog_processed).map(lambda row: all(q in row for q in query_processed)).to_list()
         ]
+
+    def _remove_accents(self, text: str) -> str:
+        """
+        Remove accents from text.
+
+        Will remove all accents ("ś" -> "s", "ü" -> "u") and replace "ł" with "l".
+
+        Args:
+            text (str): Text to process.
+
+        Returns:
+            str: Text without accents.
+        """
+        result = "".join(
+            c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
+        )
+        result = result.replace("ł", "l")  # required for Polish
+
+        return result
 
     def _load_catalog(self, update_catalog: bool = False) -> pd.DataFrame:
         """
