@@ -11,6 +11,7 @@ from pytorch_lightning import seed_everything
 from shapely.geometry import Polygon
 
 from srai.embedders import GTFS2VecEmbedder
+from srai.utils.constants import REGIONS_INDEX
 from srai.utils.exceptions import ModelNotFitException
 
 
@@ -40,14 +41,14 @@ def gtfs2vec_regions() -> gpd.GeoDataFrame:
     """Get GTFS2Vec regions GeoDataFrame."""
     regions_gdf = gpd.GeoDataFrame(
         {
-            "region_id": ["ff1", "ff2", "ff3"],
+            REGIONS_INDEX: ["ff1", "ff2", "ff3"],
         },
         geometry=[
             Polygon([(0, 0), (0, 3), (3, 3), (3, 0)]),
             Polygon([(4, 0), (4, 3), (7, 3), (7, 0)]),
             Polygon([(8, 0), (8, 3), (11, 3), (11, 0)]),
         ],
-    ).set_index("region_id")
+    ).set_index(REGIONS_INDEX)
     return regions_gdf
 
 
@@ -57,7 +58,7 @@ def gtfs2vec_joint() -> gpd.GeoDataFrame:
     joint_gdf = gpd.GeoDataFrame()
     joint_gdf.index = pd.MultiIndex.from_tuples(
         [("ff1", 1), ("ff1", 2), ("ff2", 3)],
-        names=["region_id", "stop_id"],
+        names=[REGIONS_INDEX, "stop_id"],
     )
     return joint_gdf
 
@@ -71,9 +72,9 @@ def features_not_embedded() -> pd.DataFrame:
             "trips_at_7": [1.0, 0.0, 0.0],
             "trips_at_8": [0.0, 0.5, 0.0],
             "directions_at_6": [1.0, 0.25, 0.0],
-            "region_id": ["ff1", "ff2", "ff3"],
+            REGIONS_INDEX: ["ff1", "ff2", "ff3"],
         },
-    ).set_index("region_id")
+    ).set_index(REGIONS_INDEX)
 
 
 @pytest.fixture  # type: ignore
@@ -89,7 +90,7 @@ def features_embedded() -> pd.DataFrame:
         dtype=np.float32,
     )
     features = pd.DataFrame(embeddings.T)
-    features.index = pd.Index(["ff1", "ff2", "ff3"], name="region_id")
+    features.index = pd.Index(["ff1", "ff2", "ff3"], name=REGIONS_INDEX)
     features.columns = pd.RangeIndex(0, 4, 1)
     return features
 
