@@ -15,6 +15,13 @@ from srai.utils import download_file
 
 CATALOG_URL = "https://bit.ly/catalogs-csv"
 CACHE_DIR = Path.home() / ".cache" / "srai"
+CATALOG_SEARCH_COLUMNS = [
+    "name",
+    "location.country_code",
+    "location.subdivision_name",
+    "location.municipality",
+    "provider",
+]
 
 
 class GTFSDownloader:
@@ -32,6 +39,26 @@ class GTFSDownloader:
             update_catalog (bool, optional): Update catalog file if present. Defaults to False.
         """
         self.catalog = self._load_catalog(update_catalog)
+
+    def update_catalog(self) -> None:
+        """Update catalog file."""
+        self.catalog = self._load_catalog(update_catalog=True)
+
+    def search(self, query: str) -> pd.DataFrame:
+        """
+        Search catalog.
+
+        Args:
+            query (str): Search query.
+
+        Returns:
+            pd.DataFrame: Search results.
+        """
+        return self.catalog[
+            self.catalog[CATALOG_SEARCH_COLUMNS]
+            .astype(str)
+            .apply(lambda x: x.str.contains("|".join(query.split(","))).any(), axis=1)
+        ]
 
     def _load_catalog(self, update_catalog: bool = False) -> pd.DataFrame:
         """
