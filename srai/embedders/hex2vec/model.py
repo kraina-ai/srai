@@ -24,7 +24,7 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
     of features) per region and outputs dense embeddings.
     """
 
-    def __init__(self, encoder_sizes: List[int]):
+    def __init__(self, encoder_sizes: List[int], learning_rate: float = 0.001):
         """
         Initialize Hex2VecModel.
 
@@ -32,8 +32,10 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             encoder_sizes (List[int]): List of sizes for the encoder layers.
                 The first element is the input size (number of features),
                 the last element is the output (embedding) size.
+            learning_rate (float, optional): Learning rate. Defaults to 0.001.
         """
         super().__init__()
+        self.learning_rate = learning_rate
 
         def create_layers(sizes: List[Tuple[int, int]]) -> nn.Sequential:
             layers = []
@@ -146,4 +148,4 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizer."""
-        return torch.optim.Adam(self.parameters(), lr=0.001)
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
