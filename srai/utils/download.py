@@ -19,7 +19,7 @@ def download_file(url: str, filename: Path, chunk_size: int = 1024) -> None:
     resp = requests.get(url, stream=True)
     total = int(resp.headers.get("content-length", 0))
     filename.parent.mkdir(parents=True, exist_ok=True)
-    with open(filename, "wb") as file, tqdm(
+    with filename.open("wb") as file, tqdm(
         desc=filename.name,
         total=total,
         unit="iB",
