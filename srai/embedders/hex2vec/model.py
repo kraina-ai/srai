@@ -50,61 +50,59 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         sizes = list(zip(encoder_sizes[:-1], encoder_sizes[1:]))
         self.encoder = create_layers(sizes)
 
-    def forward(self, X_current: torch.Tensor) -> torch.Tensor:
+    def forward(self, X_anchor: torch.Tensor) -> torch.Tensor:
         """
         Calculate embedding for a region.
 
         Args:
-            X_current (torch.Tensor): Region features.
+            X_anchor (torch.Tensor): Region features.
         """
-        return self.encoder(X_current)
+        return self.encoder(X_anchor)
 
-    def predict_proba(self, X_current: torch.Tensor, X_other: torch.Tensor) -> torch.Tensor:
+    def predict_proba(self, X_anchor: torch.Tensor, X_context: torch.Tensor) -> torch.Tensor:
         """
-        Predict the probability of X_current being neighbours with X_other.
+        Predict the probability of X_anchor being neighbours with X_context.
 
-        X_current and X_other are assumed to have the same batch size.
-        The probabilities are calculated in pairs, i.e. the first element of X_current
-        is compared with the first element of X_other.
+        X_anchor and X_context are assumed to have the same batch size.
+        The probabilities are calculated in pairs, i.e. the first element of X_anchor
+        is compared with the first element of X_context.
 
         Args:
-            X_current (torch.Tensor): Current regions.
-            X_other (torch.Tensor): Other regions.
+            X_anchor (torch.Tensor): Anchor regions.
+            X_context (torch.Tensor): Context regions.
         """
-        score = self.predict_scores(X_current, X_other)
+        score = self.predict_scores(X_anchor, X_context)
         return sigmoid(score)
 
-    def predict_scores(self, X_current: torch.Tensor, X_other: torch.Tensor) -> torch.Tensor:
+    def predict_scores(self, X_anchor: torch.Tensor, X_context: torch.Tensor) -> torch.Tensor:
         """
-        Predict raw unnormalized scores of X_current being neighbours with X_other.
+        Predict raw unnormalized scores of X_anchor being neighbours with X_context.
 
-        X_current and X_other are assumed to have the same batch size.
-        The scores are calculated in pairs, i.e. the first element of X_current
-        is compared with the first element of X_other.
+        X_anchor and X_context are assumed to have the same batch size.
+        The scores are calculated in pairs, i.e. the first element of X_anchor
+        is compared with the first element of X_context.
         In order to get probabilities, use the sigmoid function.
 
         Args:
-            X_current (torch.Tensor): Current regions.
-            X_other (torch.Tensor): Other regions.
+            X_anchor (torch.Tensor): Anchor regions.
+            X_context (torch.Tensor): Context regions.
         """
-        X_current_em = self(X_current)
-        X_other_em = self(X_other)
-        score = torch.mul(X_current_em, X_other_em).sum(dim=1)
+        X_anchor_em = self(X_anchor)
+        X_context_em = self(X_context)
+        score = torch.mul(X_anchor_em, X_context_em).sum(dim=1)
         return score
 
     def training_step(self, batch: List[torch.Tensor], batch_idx: int) -> torch.Tensor:
         """
         Perform one training step.
 
-        One batch of data consists of 5 tensors:
-                - X_current: Current regions.
-                - X_context: Context regions. The regions assumed to be neighbours
-                    of the corresponding regions in X_current.
+        One batch of data consists of 3 tensors:
+                - X_anchor: Anchor regions.
+                - X_positive: Positive regions. The regions assumed to be neighbours
+                    of the corresponding regions in X_anchor.
                 - X_negative: Negative regions. The regions assumed to NOT be neighbours
-                    of the corresponding regions in X_current.
-                - y_pos: Labels for positive pairs. All ones.
-                - y_neg: Labels for negative pairs. All zeros.
-            The regions in X_current, X_context and X_negative are first embedded using the encoder.
+                    of the corresponding regions in X_anchor.
+            The regions in X_anchor, X_positive and X_negative are first embedded using the encoder.
             After that, the dot product of the corresponding embeddings is calculated.
             The loss is calculated as a binary cross-entropy between the dot product and the labels.
 
@@ -112,12 +110,14 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             batch (List[torch.Tensor]): Batch of data.
             batch_idx (int): Batch index.
         """
-        X_current, X_context, X_negative, y_pos, y_neg = batch
-        scores_pos = self.predict_scores(X_current, X_context)
-        scores_neg = self.predict_scores(X_current, X_negative)
+        X_anchor, X_positive, X_negative = batch
+        scores_pos = self.predict_scores(X_anchor, X_positive)
+        scores_neg = self.predict_scores(X_anchor, X_negative)
 
         scores = torch.cat([scores_pos, scores_neg])
-        y = torch.cat([y_pos, y_neg])
+        y_pos = torch.ones_like(scores_pos)
+        y_neg = torch.zeros_like(scores_neg)
+        y = torch.cat([y_pos, y_neg]).to(X_anchor)
 
         loss = F.binary_cross_entropy_with_logits(scores, y)
         f_score = f1(sigmoid(scores), y.int(), task="binary")
@@ -133,12 +133,14 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             batch (List[torch.Tensor]): Batch of data.
             batch_idx (int): Batch index.
         """
-        X_current, X_context, X_negative, y_pos, y_neg = batch
-        scores_pos = self.predict_scores(X_current, X_context)
-        scores_neg = self.predict_scores(X_current, X_negative)
+        X_anchor, X_positive, X_negative = batch
+        scores_pos = self.predict_scores(X_anchor, X_positive)
+        scores_neg = self.predict_scores(X_anchor, X_negative)
 
         scores = torch.cat([scores_pos, scores_neg])
-        y = torch.cat([y_pos, y_neg])
+        y_pos = torch.ones_like(scores_pos)
+        y_neg = torch.zeros_like(scores_neg)
+        y = torch.cat([y_pos, y_neg]).to(X_anchor)
 
         loss = F.binary_cross_entropy_with_logits(scores, y)
         f_score = f1(sigmoid(scores), y.int(), task="binary")

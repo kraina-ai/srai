@@ -1,5 +1,13 @@
-"""TODO: Docstring for neighbour_dataset.py."""
-from typing import Any, Dict, Generic, List, Set, Tuple, TypeVar
+"""
+NeighbourDataset.
+
+This dataset is used to train a model to predict whether regions are neighbours or not.
+As defined in Hex2Vec paper[1].
+
+References:
+    [1] https://dl.acm.org/doi/10.1145/3486635.3491076
+"""
+from typing import Any, Dict, Generic, List, NamedTuple, Set, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -11,11 +19,32 @@ from srai.neighbourhoods import Neighbourhood
 
 T = TypeVar("T")
 
-NeighbourDatasetItem = Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, float]
+
+class NeighbourDatasetItem(NamedTuple):
+    """
+    Neighbour dataset item.
+
+    Attributes:
+        X_anchor (torch.Tensor): Anchor regions.
+        X_positive (torch.Tensor): Positive regions.
+            Data for the regions that are neighbours of regions in X_anchor.
+        X_negative (torch.Tensor): Negative regions.
+            Data for the regions that are NOT neighbours of the regions in X_anchor.
+    """
+
+    X_anchor: torch.Tensor
+    X_positive: torch.Tensor
+    X_negative: torch.Tensor
 
 
 class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: ignore
-    """TODO: Docstring for NeighbourDataset."""
+    """
+    Dataset for training a model to predict neighbours.
+
+    It works by returning triplets of regions: anchor, positive and negative. A model can be trained
+    to predict that the anchor region is a neighbour of the positive region, and that it is not a
+    neighbour of the negative region.
+    """
 
     def __init__(
         self,
@@ -23,12 +52,22 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         neighbourhood: Neighbourhood[T],
         negative_sample_k_distance: int = 2,
     ):
-        """TODO: Docstring for __init__."""
+        """
+        Initialize NeighbourDataset.
+
+        Args:
+            data (pd.DataFrame): Data to use for training. Raw counts of features in regions.
+            neighbourhood (Neighbourhood[T]): Neighbourhood to use for training.
+                It has to be initialized with the same data as the data argument.
+            negative_sample_k_distance (int): How many neighbours away to sample negative regions.
+                For example, if k=2, then the negative regions will be sampled from regions that are
+                at least 3 hops away from the anchor region.
+        """
         self._data = torch.Tensor(data.to_numpy())
         self._negative_sample_k_distance = negative_sample_k_distance
 
-        self._input_df_locs_lookup: np.ndarray
-        self._context_df_locs_lookup: np.ndarray
+        self._anchor_df_locs_lookup: np.ndarray
+        self._positive_df_locs_lookup: np.ndarray
         self._excluded_from_negatives: Dict[int, Set[int]] = {}
 
         self.region_index_to_df_loc: Dict[T, int] = {
@@ -41,60 +80,59 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         self._build_lookup_tables(data, neighbourhood)
 
     def _build_lookup_tables(self, data: pd.DataFrame, neighbourhood: Neighbourhood[T]) -> None:
-        available_regions_indices: Set[T] = set(data.index)
-        input_df_locs_lookup: List[int] = []
-        context_df_locs_lookup: List[int] = []
+        anchor_df_locs_lookup: List[int] = []
+        positive_df_locs_lookup: List[int] = []
 
         for region_df_loc, region_index in tqdm(enumerate(data.index), total=len(data)):
             region_direct_neighbours = neighbourhood.get_neighbours(region_index)
-            neighbours_available_in_data = region_direct_neighbours.intersection(
-                available_regions_indices
-            )
             neighbours_df_locs: Set[int] = {
                 self.region_index_to_df_loc[neighbour_index]
-                for neighbour_index in neighbours_available_in_data
+                for neighbour_index in region_direct_neighbours
             }
-            input_df_locs_lookup.extend([region_df_loc] * len(neighbours_df_locs))
-            context_df_locs_lookup.extend(neighbours_df_locs)
+            anchor_df_locs_lookup.extend([region_df_loc] * len(neighbours_df_locs))
+            positive_df_locs_lookup.extend(neighbours_df_locs)
 
             indices_excluded_from_negatives = neighbourhood.get_neighbours_up_to_distance(
                 region_index, self._negative_sample_k_distance
             )
-            available_excluded = indices_excluded_from_negatives.intersection(
-                available_regions_indices
-            )
             self._excluded_from_negatives[region_df_loc] = {
-                self.region_index_to_df_loc[excluded_index] for excluded_index in available_excluded
+                self.region_index_to_df_loc[excluded_index]
+                for excluded_index in indices_excluded_from_negatives
             }
 
-        self._input_df_locs_lookup = np.array(input_df_locs_lookup)
-        self._context_df_locs_lookup = np.array(context_df_locs_lookup)
+        self._anchor_df_locs_lookup = np.array(anchor_df_locs_lookup)
+        self._positive_df_locs_lookup = np.array(positive_df_locs_lookup)
 
     def __len__(self) -> int:
         """
-        Return the number of input-context pairs available in the dataset.
+        Return the number of anchor-positive pairs available in the dataset.
 
         Returns:
             int: The number of pairs.
         """
-        return len(self._input_df_locs_lookup)
+        return len(self._anchor_df_locs_lookup)
 
-    def __getitem__(
-        self, data_row_index: Any
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, float]:
-        """TODO: Docstring for __getitem__."""
-        input_df_loc = self._input_df_locs_lookup[data_row_index]
-        context_df_loc = self._context_df_locs_lookup[data_row_index]
-        negative_df_loc = self._get_random_negative_df_loc(input_df_loc)
+    def __getitem__(self, data_row_index: Any) -> NeighbourDatasetItem:
+        """
+        Return a single dataset item (anchor, positive, negative).
 
-        input = self._data[input_df_loc]
-        context = self._data[context_df_loc]
-        negative = self._data[negative_df_loc]
+        Args:
+            data_row_index (Any): The index of the dataset item to return.
 
-        y_pos = 1.0
-        y_neg = 0.0
+        Returns:
+            NeighbourDatasetItem: The dataset item.
+                This includes the anchor region, positive region
+                and arandomly sampled negative region.
+        """
+        anchor_df_loc = self._anchor_df_locs_lookup[data_row_index]
+        positive_df_loc = self._positive_df_locs_lookup[data_row_index]
+        negative_df_loc = self._get_random_negative_df_loc(anchor_df_loc)
 
-        return input, context, negative, y_pos, y_neg
+        anchor_region = self._data[anchor_df_loc]
+        positive_region = self._data[positive_df_loc]
+        negative_region = self._data[negative_df_loc]
+
+        return NeighbourDatasetItem(anchor_region, positive_region, negative_region)
 
     def _get_random_negative_df_loc(self, input_df_loc: int) -> int:
         excluded_df_locs = self._excluded_from_negatives[input_df_loc]
