@@ -1,6 +1,9 @@
-# noqa
-"""TODO."""
-from typing import List, Optional, Set
+"""
+Plotly wrapper.
+
+This module contains functions for quick plotting of analysed gdfs.
+"""
+from typing import Any, Dict, List, Optional, Set
 
 import geopandas as gpd
 import numpy as np
@@ -8,11 +11,12 @@ import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
 
+from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
-def plot_regions_mapbox(
+def plot_regions(
     regions_gdf: gpd.GeoDataFrame,
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
@@ -47,10 +51,10 @@ def plot_regions_mapbox(
     """
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
-    return _plot_regions_mapbox(
+    return _plot_regions(
         regions_gdf=regions_gdf_copy,
         hover_column_name=REGIONS_INDEX,
-        color_feature_column=REGIONS_INDEX,
+        color_feature_column=None,
         hover_data=[],
         show_legend=False,
         return_plot=return_plot,
@@ -60,10 +64,13 @@ def plot_regions_mapbox(
         zoom=zoom,
         height=height,
         width=width,
+        color_discrete_sequence=px.colors.qualitative.Safe,
+        opacity=0.4,
+        traces_kwargs=dict(marker_line_width=2),
     )
 
 
-def plot_neighbours_mapbox(
+def plot_neighbours(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
     neighbours_ids: Set[IndexType],
@@ -77,13 +84,13 @@ def plot_neighbours_mapbox(
 ) -> Optional[go.Figure]:  # noqa
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
-    regions_gdf_copy["type"] = "other"
-    regions_gdf_copy.loc[region_id, "type"] = "region"
-    regions_gdf_copy.loc[neighbours_ids, "type"] = "neighbour"
-    return _plot_regions_mapbox(
+    regions_gdf_copy["region"] = "other"
+    regions_gdf_copy.loc[region_id, "region"] = "selected"
+    regions_gdf_copy.loc[neighbours_ids, "region"] = "neighbour"
+    return _plot_regions(
         regions_gdf=regions_gdf_copy,
         hover_column_name=REGIONS_INDEX,
-        color_feature_column="type",
+        color_feature_column="region",
         hover_data=[],
         show_legend=True,
         return_plot=return_plot,
@@ -93,16 +100,22 @@ def plot_neighbours_mapbox(
         zoom=zoom,
         height=height,
         width=width,
+        layout_kwargs=dict(
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, traceorder="normal"),
+        ),
+        category_orders={"region": ["selected", "neighbour", "other"]},
+        color_discrete_sequence=[
+            px.colors.qualitative.Plotly[1],
+            px.colors.qualitative.Plotly[2],
+            px.colors.qualitative.Plotly[0],
+        ],
     )
-    # df.explore(column="type")
 
 
-def _plot_regions_mapbox(
+def plot_all_neighbourhood(
     regions_gdf: gpd.GeoDataFrame,
-    hover_column_name: str,
-    color_feature_column: str,
-    hover_data: List[str],
-    show_legend: bool = False,
+    region_id: IndexType,
+    neighbourhood: Neighbourhood[IndexType],
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
@@ -110,23 +123,81 @@ def _plot_regions_mapbox(
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
+) -> Optional[go.Figure]:  # noqa
+    regions_gdf_copy = regions_gdf.copy()
+    regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
+    regions_gdf_copy["region"] = "other"
+    regions_gdf_copy.loc[region_id, "region"] = "selected"
+
+    distance = 1
+    neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
+        regions_gdf.index
+    )
+    while neighbours_ids:
+        regions_gdf_copy.loc[list(neighbours_ids), "region"] = distance
+        distance += 1
+        neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
+            regions_gdf.index
+        )
+
+    return _plot_regions(
+        regions_gdf=regions_gdf_copy,
+        hover_column_name=REGIONS_INDEX,
+        color_feature_column="region",
+        hover_data=[],
+        show_legend=True,
+        return_plot=return_plot,
+        mapbox_style=mapbox_style,
+        mapbox_accesstoken=mapbox_accesstoken,
+        renderer=renderer,
+        zoom=zoom,
+        height=height,
+        width=width,
+        layout_kwargs=dict(
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01, traceorder="normal"),
+        ),
+        category_orders={"region": ["selected", *range(distance), "other"]},
+        color_discrete_sequence=px.colors.cyclical.Edge,
+    )
+
+
+def _plot_regions(
+    regions_gdf: gpd.GeoDataFrame,
+    hover_column_name: str,
+    hover_data: List[str],
+    color_feature_column: Optional[str] = None,
+    show_legend: bool = False,
+    return_plot: bool = False,
+    mapbox_style: str = "open-street-map",
+    mapbox_accesstoken: Optional[str] = None,
+    opacity: float = 0.6,
+    renderer: Optional[str] = "notebook_connected",
+    zoom: Optional[float] = None,
+    height: Optional[float] = None,
+    width: Optional[float] = None,
+    layout_kwargs: Optional[Dict[str, Any]] = None,
+    traces_kwargs: Optional[Dict[str, Any]] = None,
+    **choropleth_mapbox_kwargs: Any,
 ) -> Optional[go.Figure]:
     """
     Plot regions shapes using Plotly library.
 
+    Uses `choroplethmapbox` function.
     For more info about parameters, check https://plotly.com/python/mapbox-layers/.
 
     Args:
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
         hover_column_name (str): Column name used for hover popup title.
-        color_feature_column (str): Column name used for colouring the plot.
         hover_data (List[str]): List of column names displayed additionally on hover.
+        color_feature_column (str, optional): Column name used for colouring the plot.
+            Can be `None` to disable colouring.
         show_legend (bool, optional): Flag whether to show the legend or not. Defaults to False.
         return_plot (bool, optional): Flag whether to return the Figure object or not.
             If `True`, the plot won't be displayed automatically. Defaults to False.
         mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
         mapbox_accesstoken (str, optional): Access token required for mapbox based map backgrounds.
             Defaults to None.
+        opacity (float, optional): Markers opacity. Defaults to 0.6.
         renderer (str, optional): Name of renderer used for displaying the figure.
             For all descriptions, look here: https://plotly.com/python/renderers/.
             Defaults to "notebook_connected".
@@ -134,6 +205,12 @@ def _plot_regions_mapbox(
             the bounding box of regions. Defaults to None.
         height (float, optional): Height of the plot. Defaults to None.
         width (float, optional): Width of the plot. Defaults to None.
+        layout_kwargs (Dict[str, Any], optional): Additional parameters passed to
+            the `update_layout` function. Defaults to None.
+        traces_kwargs (Dict[str, Any], optional): Additional parameters passed to
+            the `update_traces` function. Defaults to None.
+        **choropleth_mapbox_kwargs: Additional parameters that can be passed to
+            the `choropleth_mapbox` constructor.
 
     Returns:
         Optional[go.Figure]: Figure of the plot. Will be returned if `return_plot` is set to `True`.
@@ -151,14 +228,26 @@ def _plot_regions_mapbox(
         locations=REGIONS_INDEX,
         center={"lon": center_point.x, "lat": center_point.y},
         zoom=zoom,
+        **choropleth_mapbox_kwargs,
     )
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    fig.update_traces(marker={"opacity": 0.6}, selector=dict(type="choroplethmapbox"))
-    fig.update_traces(showlegend=show_legend)
+
+    update_layout_dict = dict(
+        height=height,
+        width=width,
+        margin=dict(r=0, t=0, l=0, b=0),
+        mapbox_style=mapbox_style,
+        mapbox_accesstoken=mapbox_accesstoken,
+    )
+    fig.update_layout(**update_layout_dict)
+    if layout_kwargs:
+        fig.update_layout(**layout_kwargs)
+
+    update_traces_dict = dict(marker_opacity=opacity, showlegend=show_legend)
+    fig.update_traces(**update_traces_dict)
+    if traces_kwargs:
+        fig.update_traces(**traces_kwargs)
+
     fig.update_coloraxes(showscale=show_legend)
-    # fig.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
-    fig.update_layout(height=height, width=width, margin={"r": 0, "t": 0, "l": 0, "b": 0})
-    fig.update_layout(mapbox_style=mapbox_style, mapbox_accesstoken=mapbox_accesstoken)
 
     if return_plot:
         return fig
