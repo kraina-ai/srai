@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GTFS2Vec Embedder using gtfs2vec model
 - OSMOnlineLoader
 - OSMPbfLoader
+- OSMWayLoader
 - Neighbourhood
 - H3Neighbourhood
 - AdjacencyNeighbourhood
