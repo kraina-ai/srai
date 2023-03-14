@@ -261,18 +261,23 @@ class OSMWayLoader:
         max_osm_keys_str_len = max(map(len, self.osm_keys))
         for col in (pbar := tqdm(self.osm_keys, leave=False)):
             pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
-            gdf[col] = gdf[col].apply(lambda x, c=col: self._normalize(self._sanitize(x, c), c))
+            gdf[col] = gdf[col].apply(lambda x, c=col: self._sanitize_and_normalize(x, c))
 
         return gdf if not inplace else None
 
-    def _normalize(self, x: Any, column_name: str) -> Any:
+    def _sanitize_and_normalize(self, x: Any, column_name: str) -> str:
+        return self._normalize(self._sanitize(str(x), column_name), column_name)
+
+    def _normalize(self, x: Any, column_name: str) -> str:
         try:
-            if x == "None":
-                return x
+            if x is None:
+                return "None"
             elif column_name == "lanes":
                 x = min(x, 15)
             elif column_name == "maxspeed":
-                if x <= 5:
+                if x <= 0:
+                    x = 0
+                elif x <= 5:
                     x = 5
                 elif x <= 7:
                     x = 7
@@ -285,48 +290,50 @@ class OSMWayLoader:
             elif column_name == "width":
                 x = min(round(x * 2) / 2, 30.0)
         except Exception as e:
-            logger.debug(
-                f"{OSMWayLoader._normalize.__qualname__} | {column_name}: {x} - {type(x)} | {e}"
+            logger.warning(
+                f"{OSMWayLoader._normalize.__qualname__} | {column_name}: {x} - {type(x)} | {e}."
+                " Returning 'None'"
             )
             return "None"
 
         return str(x)
 
     def _sanitize(self, x: Any, column_name: str) -> Any:
-        if x in ("", "none", "None", np.nan, "nan", "NaN"):
-            return "None"
+        if x in ("", "none", "None", np.nan, "nan", "NaN", None):
+            return None
 
         try:
             if column_name == "lanes":
                 x = int(float(x))
             elif column_name == "maxspeed":
                 if x in ("signals", "variable"):
-                    return "None"
+                    return None
 
                 if x in constants.OSM_IMPLICIT_MAXSPEEDS:
                     x = constants.OSM_IMPLICIT_MAXSPEEDS[x]
 
                 x = x.replace("km/h", "")
                 if "mph" in x:
-                    x = float(x.split(" mph")[0])
+                    x = float(x.split("mph")[0].strip())
                     x = x * constants.MPH_TO_KMH
                 x = float(x)
             elif column_name == "width":
-                if x.endswith(" m") or x.endswith("m") or x.endswith("meter"):
+                if x.endswith("m") or x.endswith("meter"):
                     x = x.split("m")[0].strip()
                 elif "'" in x:
-                    x = float(x.split("'")[0])
+                    x = float(x.split("'")[0].strip())
                     x = x * constants.INCHES_TO_METERS
                 elif x.endswith("ft"):
-                    x = float(x.split(" ft")[0])
+                    x = float(x.split("ft")[0].strip())
                     x = x * constants.FEET_TO_METERS
                 x = float(x)
 
         except Exception as e:
-            logger.debug(
-                f"{OSMWayLoader._sanitize.__qualname__} | {column_name}: {x} - {type(x)} | {e}"
+            logger.warning(
+                f"{OSMWayLoader._sanitize.__qualname__} | {column_name}: {x} - {type(x)} | {e}."
+                " Returning None"
             )
-            return "None"
+            return None
 
         return x
 

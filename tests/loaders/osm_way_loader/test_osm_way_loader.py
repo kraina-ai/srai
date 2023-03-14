@@ -1,15 +1,20 @@
 """Tests for OSMWayLoader."""
+import hashlib
+import pickle as pkl
 from contextlib import nullcontext as does_not_raise
-from typing import Any, Dict, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 from unittest import TestCase
 
 import geopandas as gpd
 import numpy as np
+import osmnx
 import pandas as pd
 import pytest
 import shapely.geometry as shpg
 from parametrization import Parametrization as P
 from pytest_check import check
+from pytest_mock import MockerFixture
 
 from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
 from srai.utils.constants import WGS84_CRS
@@ -208,6 +213,7 @@ def test_contract(
     loader_params: Optional[Dict[str, Any]],
     expectation,
     request: pytest.FixtureRequest,
+    mocker: MockerFixture,
 ):
     """Test `OSMWayLoader.load`'s contract."""
     if not loader_params:
@@ -218,60 +224,201 @@ def test_contract(
     area_gdf = request.getfixturevalue(area_gdf_fixture)
     nodes_expected_len, edges_expected_len = expected_result or (None, None)
 
+    def patched_graph_from_polygon(*args, **kwargs) -> Any:  # type: ignore
+        polygon = args[0]
+
+        name_hashed = hashlib.md5(f"{polygon.wkt}{list(kwargs.values())}".encode()).hexdigest()
+
+        if name_hashed == "785de42ad57bbe33298128212ef9dd71":
+            raise TypeError
+        elif name_hashed == "de17f3ef99794666b8a16931a9df4e49":
+            raise osmnx._errors.EmptyOverpassResponse
+
+        files_path = Path(__file__).parent / "files"
+        file_name = name_hashed + ".pkl"
+        file_path = files_path / file_name
+
+        with open(file_path, "rb") as f:
+            res = pkl.load(f)
+
+        return res
+
     with expectation:
+        mocker.patch("osmnx.graph_from_polygon", wraps=patched_graph_from_polygon)
         nodes, edges = loader.load(area_gdf)
+
         check.equal(len(nodes), nodes_expected_len)
         check.equal(len(edges), edges_expected_len)
         check.is_in("geometry", nodes.columns)
         check.is_in("geometry", edges.columns)
 
 
-def test_preprocessing() -> None:
-    """Test `OSMWayLoader._preprocess()` preprocessing."""
-    columns = [
-        "oneway",
-        "lanes",
-        "highway",
-        "maxspeed",
-        "bridge",
-        "access",
-        "junction",
-        "width",
-        "tunnel",
-        "surface",
-        "bicycle",
-        "lit",
-    ]
-
-    data = [
-        [True, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
-        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, np.nan],
-        [True, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
-        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
-        [False, None, "residential", "30", None, None, None, None, None, "asphalt", None, "yes"],
-        [False, None, "living_street", np.nan, None, None, None, None, None, np.nan, None, np.nan],
-    ]
-
-    dtypes = {
-        "oneway": bool,
-        "lanes": object,
-        "highway": object,
-        "maxspeed": object,
-        "bridge": object,
-        "access": object,
-        "junction": object,
-        "width": object,
-        "tunnel": object,
-        "surface": object,
-        "bicycle": object,
-        "lit": object,
-    }
-
-    area_gdf = pd.DataFrame(data, columns=columns).astype(dtypes)
-    print(area_gdf)
+@P.parameters("column_name", "input", "expected")  # type: ignore
+@P.case(
+    "Return None when `oneway` is missing",
+    "oneway",
+    ("", "none", "None", np.nan, "nan", "NaN", None),
+    None,
+)  # type: ignore
+@P.case(
+    "Return None when `lanes` is missing",
+    "lanes",
+    ("", "none", "None", np.nan, "nan", "NaN", None),
+    None,
+)  # type: ignore
+@P.case(
+    "Return None when `highway` is missing",
+    "highway",
+    ("", "none", "None", np.nan, "nan", "NaN", None),
+    None,
+)  # type: ignore
+@P.case(
+    "Test lanes",
+    "lanes",
+    [-1, 0, 1, 14, 15, 16, 17, 100, 3.7, "a", "2"],
+    [-1, 0, 1, 14, 15, 15, 15, 15, 3, None, 2],
+)  # type: ignore
+@P.case(  # type: ignore
+    "Test maxspeed",
+    "maxspeed",
+    [
+        -1,
+        0,
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        15,
+        16,
+        17,
+        44,
+        45,
+        46,
+        199,
+        200,
+        201,
+        300,
+        6.7,
+        "3",
+        "4.5 km/h",
+        "4.5km/h",
+        "3mph",
+        "4 mph",
+        "signals",
+        "variable",
+        "CZ:pedestrian_zone",
+    ],
+    [
+        0,
+        0,
+        5,
+        5,
+        5,
+        7,
+        7,
+        10,
+        10,
+        10,
+        15,
+        15,
+        15,
+        20,
+        20,
+        40,
+        40,
+        50,
+        200,
+        200,
+        200,
+        200,
+        7,
+        5,
+        5,
+        5,
+        5,
+        7,
+        None,
+        None,
+        20,
+    ],
+)
+@P.case(
+    "Test width",
+    "width",
+    [
+        -1.3,
+        -1,
+        0,
+        1,
+        2,
+        1.0,
+        4.4,
+        4.5,
+        4.6,
+        29,
+        30,
+        31,
+        40,
+        100,
+        "4.6",
+        "12m",
+        "12 m",
+        "12meter",
+        "12 meter",
+        "130.4'",
+        "130.4 '",
+        "25.4ft",
+        "25.4 ft",
+    ],
+    [
+        -1.5,
+        -1.0,
+        0.0,
+        1.0,
+        2.0,
+        1.0,
+        4.5,
+        4.5,
+        4.5,
+        29.0,
+        30.0,
+        30.0,
+        30.0,
+        30.0,
+        4.5,
+        12.0,
+        12.0,
+        12.0,
+        12.0,
+        3.5,
+        3.5,
+        7.5,
+        7.5,
+    ],
+)  # type: ignore
+def test_preprocessing(
+    column_name: str, input: Union[Any, Sequence[Any]], expected: Union[Any, Sequence[Any]]
+) -> None:
+    """Test `OSMWayLoader._sanitize_and_normalize()` preprocessing."""
     loader = OSMWayLoader(network_type=NetworkType.DRIVE)
-    preprocessed_gdf = loader._preprocess(area_gdf)
 
-    print(preprocessed_gdf)
-    assert preprocessed_gdf is not None
-    ut.assertCountEqual(first=columns, second=preprocessed_gdf.columns)
+    input = list(input) if isinstance(input, Sequence) else [input]
+    expected = list(expected) if isinstance(expected, Sequence) else [expected]
+
+    if len(expected) == 1:
+        expected = expected * len(input)
+
+    if len(expected) != len(input):
+        raise ValueError(
+            f"Mismatch in length between input {len(input)} and expected {len(expected)}."
+        )
+
+    for x, y in zip(input, expected):
+        result = loader._sanitize_and_normalize(x, column_name)
+        check.equal(result, str(y))
