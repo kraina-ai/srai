@@ -81,7 +81,9 @@ class CountEmbedder(Embedder):
 
         if self.expected_output_features is not None:
             region_embeddings = self._filter_to_expected_features(region_embeddings)
-        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
+        region_embedding_df = (
+            regions_df.join(region_embeddings, how="left").fillna(0).astype("float32")
+        )
 
         return region_embedding_df
 
@@ -98,6 +100,9 @@ class CountEmbedder(Embedder):
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(region_embeddings.columns)
         ]
-        region_embeddings[missing_features] = 0
+        missing_features_zeros = pd.DataFrame(
+            0, index=region_embeddings.index, columns=missing_features
+        )
+        region_embeddings = pd.concat([region_embeddings, missing_features_zeros], axis=1)
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings
