@@ -238,7 +238,7 @@ def test_contract(
         file_name = name_hashed + ".pkl"
         file_path = files_path / file_name
 
-        with open(file_path, "rb") as f:
+        with file_path.open("rb") as f:
             res = pkl.load(f)
 
         return res
