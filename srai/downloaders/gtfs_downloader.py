@@ -10,10 +10,13 @@ References:
 import unicodedata
 from pathlib import Path
 
+import geopandas as gpd
 import pandas as pd
 from functional import seq
+from shapely.geometry import box
 
 from srai.utils import download_file
+from srai.utils.constants import WGS84_CRS
 
 CATALOG_URL = "https://bit.ly/catalogs-csv"
 CACHE_DIR = Path.home() / ".cache" / "srai"
@@ -23,6 +26,12 @@ CATALOG_SEARCH_COLUMNS = [
     "location.subdivision_name",
     "location.municipality",
     "provider",
+]
+CATALOG_BBOX_COLUMNS = [
+    "location.bounding_box.minimum_longitude",
+    "location.bounding_box.minimum_latitude",
+    "location.bounding_box.maximum_longitude",
+    "location.bounding_box.maximum_latitude",
 ]
 
 
@@ -86,7 +95,7 @@ class GTFSDownloader:
 
         return result
 
-    def _load_catalog(self, update_catalog: bool = False) -> pd.DataFrame:
+    def _load_catalog(self, update_catalog: bool = False) -> gpd.GeoDataFrame:
         """
         Load catalog.
 
@@ -101,4 +110,13 @@ class GTFSDownloader:
         if not catalog_file.exists() or update_catalog:
             download_file(CATALOG_URL, catalog_file)
 
-        return pd.read_csv(catalog_file)
+        df = pd.read_csv(catalog_file)
+
+        df[CATALOG_BBOX_COLUMNS] = df[CATALOG_BBOX_COLUMNS].fillna(0)
+
+        df["geometry"] = df.apply(
+            lambda row: (box(*row[CATALOG_BBOX_COLUMNS].tolist())),
+            axis=1,
+        )
+
+        return gpd.GeoDataFrame(df, geometry="geometry", crs=WGS84_CRS)
