@@ -11,7 +11,7 @@ from shapely.geometry import Point, box
 
 from srai.regionizers import Regionizer
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 
 class VoronoiRegionizer(Regionizer):
@@ -107,7 +107,7 @@ class VoronoiRegionizer(Regionizer):
 
         if gdf is None:
             gdf = gpd.GeoDataFrame(
-                {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
+                {GEOMETRY_COLUMN: [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
             )
 
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
@@ -118,7 +118,7 @@ class VoronoiRegionizer(Regionizer):
             multiprocessing_activation_threshold=self.multiprocessing_activation_threshold,
         )
         regions_gdf = gpd.GeoDataFrame(
-            data={"geometry": generated_regions}, index=self.region_ids, crs=WGS84_CRS
+            data={GEOMETRY_COLUMN: generated_regions}, index=self.region_ids, crs=WGS84_CRS
         )
         regions_gdf.index.rename(REGIONS_INDEX, inplace=True)
         clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
@@ -126,7 +126,9 @@ class VoronoiRegionizer(Regionizer):
 
     def _get_duplicated_seeds_ids(self) -> List[Hashable]:
         """Return all seeds ids that overlap with another using quick sjoin operation."""
-        gdf = gpd.GeoDataFrame(data={"geometry": self.seeds}, index=self.region_ids, crs=WGS84_CRS)
+        gdf = gpd.GeoDataFrame(
+            data={GEOMETRY_COLUMN: self.seeds}, index=self.region_ids, crs=WGS84_CRS
+        )
         duplicated_seeds = gdf.sjoin(gdf).index.value_counts().loc[lambda x: x > 1]
         duplicated_seeds_ids: List[Hashable] = duplicated_seeds.index.to_list()
         return duplicated_seeds_ids

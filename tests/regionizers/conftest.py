@@ -4,7 +4,7 @@ import geopandas as gpd
 import pytest
 from shapely import geometry
 
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -101,7 +101,7 @@ def gdf_earth_poles() -> gpd.GeoDataFrame:
     """Get GeoDataFrame with 6 Earth poles."""
     return gpd.GeoDataFrame(
         {
-            "geometry": [
+            GEOMETRY_COLUMN: [
                 geometry.Point(0, 0),
                 geometry.Point(90, 0),
                 geometry.Point(180, 0),
@@ -132,4 +132,4 @@ def earth_bbox() -> geometry.Polygon:
 @pytest.fixture  # type: ignore
 def gdf_earth_bbox(earth_bbox) -> gpd.GeoDataFrame:
     """Get full bounding box GeoDataFrame."""
-    return gpd.GeoDataFrame({"geometry": [earth_bbox]}, crs=WGS84_CRS)
+    return gpd.GeoDataFrame({GEOMETRY_COLUMN: [earth_bbox]}, crs=WGS84_CRS)

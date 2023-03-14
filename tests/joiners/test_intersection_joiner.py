@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from srai.joiners import IntersectionJoiner
+from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 
@@ -62,4 +63,4 @@ def test_correct_multiindex_intersection_joiner_without_geom(
 
     ut.assertEqual(joint.index.names, joint_multiindex.names)
     ut.assertCountEqual(joint.index, joint_multiindex)
-    ut.assertNotIn("geometry", joint.columns)
+    ut.assertNotIn(GEOMETRY_COLUMN, joint.columns)

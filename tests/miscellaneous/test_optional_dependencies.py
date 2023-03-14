@@ -6,7 +6,7 @@ from typing import Any, List
 import pytest
 
 from srai.utils._optional import ImportErrorHandle, import_optional_dependency
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture(autouse=True)  # type: ignore
@@ -59,7 +59,7 @@ def _test_voronoi_regionizer() -> None:
 
     seeds_gdf = gpd.GeoDataFrame(
         {
-            "geometry": [
+            GEOMETRY_COLUMN: [
                 Point(17.014997869227177, 51.09919872601259),
                 Point(16.935542631959215, 51.09380600286582),
                 Point(16.900425, 51.1162552343),
@@ -72,7 +72,7 @@ def _test_voronoi_regionizer() -> None:
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     vr.transform(
         gdf=gpd.GeoDataFrame(
-            {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
+            {GEOMETRY_COLUMN: [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
         )
     )
 
@@ -91,7 +91,7 @@ def _test_administrative_boundary_regionizer() -> None:
         maxx=88.50230949587835,
         maxy=34.846427760404225,
     )
-    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs=WGS84_CRS)
+    asia_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [asia_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=0.001
     )

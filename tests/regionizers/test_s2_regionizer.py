@@ -7,6 +7,7 @@ import geopandas as gpd
 import pytest
 
 from srai.regionizers import S2Regionizer
+from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 S2_RESOLUTION = 7
@@ -55,4 +56,4 @@ def test_transform(
         gdf_s2 = S2Regionizer(resolution).transform(gdf)
 
         ut.assertCountEqual(first=gdf_s2.index.to_list(), second=s2_indexes)
-        assert "geometry" in gdf_s2
+        assert GEOMETRY_COLUMN in gdf_s2

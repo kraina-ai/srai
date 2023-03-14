@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from srai.regionizers import Regionizer
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 
 class AdministrativeBoundaryRegionizer(Regionizer):
@@ -148,13 +148,19 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             if self.return_empty_region:
                 regions_gdf = gpd.GeoDataFrame(
                     data={
-                        "geometry": [unary_union(gdf_wgs84.geometry)],
+                        GEOMETRY_COLUMN: [unary_union(gdf_wgs84.geometry)],
                         REGIONS_INDEX: [AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME],
                     },
                     crs=WGS84_CRS,
                 ).set_index(REGIONS_INDEX)
             else:
-                regions_gdf = gpd.GeoDataFrame()
+                regions_gdf = gpd.GeoDataFrame(
+                    data={
+                        GEOMETRY_COLUMN: [],
+                        REGIONS_INDEX: [],
+                    },
+                    crs=WGS84_CRS,
+                )
 
             return regions_gdf
 
@@ -167,9 +173,9 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         if self.return_empty_region:
             empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
-                regions_gdf.loc[AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME, "geometry"] = (
-                    empty_region
-                )
+                regions_gdf.loc[
+                    AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME, GEOMETRY_COLUMN
+                ] = empty_region
         return regions_gdf
 
     def _generate_regions_from_all_geometries(
@@ -185,7 +191,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
 
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
-                unary_geometry = unary_union([r["geometry"] for r in generated_regions])
+                unary_geometry = unary_union([r[GEOMETRY_COLUMN] for r in generated_regions])
                 if not geometry.within(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
@@ -280,7 +286,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             region_id = str(element["id"])
 
         return {
-            "geometry": self._get_boundary_geometry(element["id"]),
+            GEOMETRY_COLUMN: self._get_boundary_geometry(element["id"]),
             REGIONS_INDEX: region_id,
         }
 

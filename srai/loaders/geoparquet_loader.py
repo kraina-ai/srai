@@ -9,7 +9,7 @@ from typing import List, Optional, Union
 
 import geopandas as gpd
 
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 class GeoparquetLoader:
@@ -48,8 +48,8 @@ class GeoparquetLoader:
         Returns:
             gpd.GeoDataFrame: Loaded geoparquet file as a GeoDataFrame.
         """
-        if columns and "geometry" not in columns:
-            columns.append("geometry")
+        if columns and GEOMETRY_COLUMN not in columns:
+            columns.append(GEOMETRY_COLUMN)
 
         gdf = gpd.read_parquet(path=file_path, columns=columns)
 

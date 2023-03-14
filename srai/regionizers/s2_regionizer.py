@@ -19,7 +19,7 @@ from s2 import s2
 from shapely.geometry import Polygon
 
 from srai.regionizers import Regionizer
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 
 class S2Regionizer(Regionizer):
@@ -83,7 +83,7 @@ class S2Regionizer(Regionizer):
         geo_json = json.loads(gdf.to_json())
         cells = (
             seq(geo_json["features"])
-            .flat_map(lambda f: self._geojson_to_cells(f["geometry"], self.resolution))
+            .flat_map(lambda f: self._geojson_to_cells(f[GEOMETRY_COLUMN], self.resolution))
             .to_dict()
         )
         cells_gdf = gpd.GeoDataFrame(
@@ -97,6 +97,6 @@ class S2Regionizer(Regionizer):
 
     def _geojson_to_cells(self, geo_json: Dict[str, Any], res: int) -> Sequence:
         raw_cells = s2.polyfill(geo_json, res, with_id=True, geo_json_conformant=True)
-        cells: Sequence = seq(raw_cells).map(lambda c: (c["id"], Polygon(c["geometry"])))
+        cells: Sequence = seq(raw_cells).map(lambda c: (c["id"], Polygon(c[GEOMETRY_COLUMN])))
 
         return cells

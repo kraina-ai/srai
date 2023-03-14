@@ -7,6 +7,7 @@ import geopandas as gpd
 import pytest
 
 from srai.regionizers import H3Regionizer
+from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 H3_RESOLUTION = 3
@@ -61,4 +62,4 @@ def test_transform(
         gdf_h3 = H3Regionizer(resolution, buffer=buffer).transform(gdf)
 
         ut.assertCountEqual(first=gdf_h3.index.to_list(), second=h3_indexes)
-        assert "geometry" in gdf_h3
+        assert GEOMETRY_COLUMN in gdf_h3

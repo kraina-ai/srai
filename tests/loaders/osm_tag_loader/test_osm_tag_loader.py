@@ -8,7 +8,7 @@ from pandas.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 from srai.loaders.osm_tag_loader import OSMTagLoader
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -34,7 +34,7 @@ def empty_result_gdf() -> gpd.GeoDataFrame:
 def single_polygon_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with with one polygon."""
     polygon_1 = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
-    gdf = gpd.GeoDataFrame({"geometry": [polygon_1]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon_1]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -43,7 +43,7 @@ def two_polygons_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with with two polygons."""
     polygon_1 = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     polygon_2 = Polygon([(1, 1), (2, 2), (2, 1), (1, 0)])
-    gdf = gpd.GeoDataFrame({"geometry": [polygon_1, polygon_2]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon_1, polygon_2]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -87,8 +87,8 @@ def mock_osmnx(
 ):
     """Patch `ox.geometries_from_polygon` to return data from predefined gdfs."""
     gdfs = {"amenity": amenities_gdf, "building": building_gdf}
-    polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
-    empty_polygon = area_with_no_objects_gdf["geometry"][0]
+    polygon_1, polygon_2 = two_polygons_area_gdf[GEOMETRY_COLUMN]
+    empty_polygon = area_with_no_objects_gdf[GEOMETRY_COLUMN][0]
 
     def mock_geometries_from_polygon(
         polygon: Polygon, tags: Dict[str, Union[List[str], str, bool]]

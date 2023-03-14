@@ -5,6 +5,8 @@ import abc
 import geopandas as gpd
 import pandas as pd
 
+from srai.utils.constants import GEOMETRY_COLUMN
+
 
 class Embedder(abc.ABC):
     """Abstract class for embedders."""
@@ -70,6 +72,6 @@ class Embedder(abc.ABC):
             )
 
     def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
-        if "geometry" in data.columns:
-            data = data.drop(columns="geometry")
+        if GEOMETRY_COLUMN in data.columns:
+            data = data.drop(columns=GEOMETRY_COLUMN)
         return pd.DataFrame(data)
