@@ -61,9 +61,13 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
                 It has to be initialized with the same data as the data argument.
             negative_sample_k_distance (int): How many neighbours away to sample negative regions.
                 For example, if k=2, then the negative regions will be sampled from regions that are
-                at least 3 hops away from the anchor region.
+                at least 3 hops away from the anchor region. Has to be >= 2.
+
+        Raises:
+            ValueError: If negative_sample_k_distance < 2.
         """
         self._data = torch.Tensor(data.to_numpy())
+        self._assert_negative_sample_k_distance_correct(negative_sample_k_distance)
         self._negative_sample_k_distance = negative_sample_k_distance
 
         self._anchor_df_locs_lookup: np.ndarray
@@ -140,3 +144,10 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         while negative_candidate in excluded_df_locs:
             negative_candidate = np.random.randint(0, len(self._data))
         return negative_candidate
+
+    def _assert_negative_sample_k_distance_correct(self, negative_sample_k_distance: int) -> None:
+        if negative_sample_k_distance < 2:
+            raise ValueError(
+                "negative_sample_k_distance must be at least 2, "
+                f"but was {negative_sample_k_distance}"
+            )

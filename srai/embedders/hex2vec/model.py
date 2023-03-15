@@ -24,12 +24,12 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
     of features) per region and outputs dense embeddings.
     """
 
-    def __init__(self, encoder_sizes: List[int], learning_rate: float = 0.001):
+    def __init__(self, layer_sizes: List[int], learning_rate: float = 0.001):
         """
         Initialize Hex2VecModel.
 
         Args:
-            encoder_sizes (List[int]): List of sizes for the encoder layers.
+            layer_sizes (List[int]): List of sizes for the model layers.
                 The first element is the input size (number of features),
                 the last element is the output (embedding) size.
             learning_rate (float, optional): Learning rate. Defaults to 0.001.
@@ -47,7 +47,7 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
                     layers.append(nn.ReLU())
             return nn.Sequential(*layers)
 
-        sizes = list(zip(encoder_sizes[:-1], encoder_sizes[1:]))
+        sizes = list(zip(layer_sizes[:-1], layer_sizes[1:]))
         self.encoder = create_layers(sizes)
 
     def forward(self, X_anchor: torch.Tensor) -> torch.Tensor:
