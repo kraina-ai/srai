@@ -112,6 +112,9 @@ preview = true
 
 [tool.isort]
 profile = "black"
+known_first_party = ["srai"]
+skip_gitignore = true
+color_output = true
 
 [tool.bumpver]
 current_version = "0.0.1"
