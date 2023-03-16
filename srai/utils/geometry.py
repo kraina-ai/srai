@@ -30,5 +30,4 @@ def remove_interiors(polygon: Polygon) -> Polygon:
     """Close polygon holes by limitation to the exterior ring."""
     if polygon.interiors:
         return Polygon(list(polygon.exterior.coords))
-    else:
-        return polygon
+    return polygon
