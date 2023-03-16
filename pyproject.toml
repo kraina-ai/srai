@@ -176,3 +176,6 @@ ignore_packages = [
     'nvidia-nccl-cu11',         # uses NVIDIA license
     'nvidia-nvtx-cu11',         # uses NVIDIA license
 ]
+
+[tool.refurb]
+disable = ["FURB124"]
