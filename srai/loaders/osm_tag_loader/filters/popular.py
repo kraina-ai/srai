@@ -12,13 +12,15 @@ from typing import Any, Dict, List
 import requests
 from functional import seq
 
+from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
+
 _TAGINFO_API_ADDRESS = "https://taginfo.openstreetmap.org"
 _TAGINFO_API_TAGS = _TAGINFO_API_ADDRESS + "/api/4/tags/popular"
 
 
 def get_popular_tags(
     in_wiki_only: bool = False, min_count: int = 0, min_fraction: float = 0.0
-) -> Dict[str, List[str]]:
+) -> osm_tags_type:
     """
     Download the OSM's most popular tags from taginfo api.
 
@@ -47,7 +49,7 @@ def get_popular_tags(
 
 def _parse_taginfo_response(
     taginfo_data: List[Dict[str, Any]], in_wiki_only: bool, min_count: int, min_fraction: float
-) -> Dict[str, List[str]]:
+) -> osm_tags_type:
     result_tags = (
         seq(taginfo_data)
         .filter(lambda t: t["count_all"] >= min_count)
@@ -55,7 +57,7 @@ def _parse_taginfo_response(
     )
     if in_wiki_only:
         result_tags = result_tags.filter(lambda t: t["in_wiki"])
-    taginfo_grouped: Dict[str, List[str]] = (
+    taginfo_grouped: osm_tags_type = (
         result_tags.map(lambda t: (t["key"], t["value"])).group_by_key().to_dict()
     )
     return taginfo_grouped

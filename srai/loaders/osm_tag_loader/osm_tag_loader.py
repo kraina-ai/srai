@@ -4,13 +4,14 @@ OSM Tag Loader.
 This module contains loader capable of loading OpenStreetMap tags.
 """
 from itertools import product
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import geopandas as gpd
 import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
+from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
 from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
@@ -42,7 +43,7 @@ class OSMTagLoader:
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Dict[str, Union[List[str], str, bool]],
+        tags: osm_tags_type,
     ) -> gpd.GeoDataFrame:
         """
         Download OSM objects with specified tags for a given area.
@@ -55,7 +56,7 @@ class OSMTagLoader:
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Dict[str, Union[List[str], str, bool]]): A dictionary
+            tags (osm_tags_type): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -93,9 +94,7 @@ class OSMTagLoader:
 
         return self._flatten_index(result_gdf)
 
-    def _flatten_tags(
-        self, tags: Dict[str, Union[List[str], str, bool]]
-    ) -> List[Tuple[str, Union[str, bool]]]:
+    def _flatten_tags(self, tags: osm_tags_type) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))

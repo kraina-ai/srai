@@ -1,5 +1,5 @@
 """Tests for OSMTagLoader."""
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import geopandas as gpd
 import pandas as pd
@@ -8,6 +8,7 @@ from pandas.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
 from srai.loaders.osm_tag_loader import OSMTagLoader
+from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
 from srai.utils.constants import WGS84_CRS
 
 
@@ -90,9 +91,7 @@ def mock_osmnx(
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
     empty_polygon = area_with_no_objects_gdf["geometry"][0]
 
-    def mock_geometries_from_polygon(
-        polygon: Polygon, tags: Dict[str, Union[List[str], str, bool]]
-    ) -> gpd.GeoDataFrame:
+    def mock_geometries_from_polygon(polygon: Polygon, tags: osm_tags_type) -> gpd.GeoDataFrame:
         tag_key, tag_value = list(tags.items())[0]
         gdf = gdfs[tag_key]
         if tag_value is True:
@@ -197,7 +196,7 @@ def expected_result_gdf_complex() -> gpd.GeoDataFrame:
 )
 def test_osm_tag_loader(
     area_gdf_fixture: str,
-    query: Dict[str, Union[List[str], str, bool]],
+    query: osm_tags_type,
     expected_result_gdf_fixture: str,
     request: Any,
 ):
