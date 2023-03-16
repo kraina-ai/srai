@@ -124,10 +124,7 @@ class GTFSDownloader:
             pd.Series: Series of booleans indicating if row matches the area.
         """
         area = area.to_crs(WGS84_CRS)
-
-        result = pd.Series([False] * len(self.catalog), dtype=bool)
-        for _, row in area.iterrows():
-            result = result | self.catalog.intersects(row["geometry"])
+        result = self.catalog.intersects(area.geometry.unary_union)
         return result
 
     def _remove_accents(self, text: str) -> str:
