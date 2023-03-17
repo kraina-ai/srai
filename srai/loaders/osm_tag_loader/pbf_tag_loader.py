@@ -77,20 +77,20 @@ class PbfTagLoader:
 
         downloaded_pbf_files: Mapping[str, Sequence[Union[str, Path]]]
         if self.pbf_file is not None:
-            downloaded_pbf_files = {region_id: [self.pbf_file] for region_id in area_wgs84.index}
+            downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
         else:
             downloaded_pbf_files = PbfFileDownloader().download_pbf_files_for_region_gdf(
                 region_gdf=area_wgs84
             )
 
-        pbf_handler = PbfFileHandler(tags=tags)
+        clipping_polygon = area_wgs84.geometry.unary_union
+
+        pbf_handler = PbfFileHandler(tags=tags, region_geometry=clipping_polygon)
 
         results = []
         for region_id, pbf_files in downloaded_pbf_files.items():
-            clipping_polygon = area_wgs84.loc[[region_id]].geometry.unary_union
-
             features_gdf = pbf_handler.get_features_gdf(file_paths=pbf_files, region_id=region_id)
-            features_gdf = features_gdf[features_gdf.intersects(clipping_polygon)]
+            # features_gdf = features_gdf[features_gdf.intersects(clipping_polygon)]
             results.append(features_gdf)
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)

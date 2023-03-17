@@ -1,5 +1,7 @@
 """DOCSTRING TODO."""
 import hashlib
+import json
+import warnings
 from pathlib import Path
 from time import sleep, time
 from typing import Any, Dict, Sequence
@@ -15,7 +17,7 @@ from tqdm import tqdm
 
 from srai.utils.constants import WGS84_CRS
 from srai.utils.download import download
-from srai.utils.geometry import flatten_geometry, remove_interiors
+from srai.utils.geometry import buffer_geometry, flatten_geometry, remove_interiors
 
 
 class PbfFileDownloader:
@@ -63,13 +65,14 @@ class PbfFileDownloader:
 
     def download_pbf_file_for_polygon(self, polygon: Polygon) -> Path:
         """DOCSTRING TODO."""
-        closed_polygon = remove_interiors(polygon)
-        simplified_polygon = self._simplify_polygon(closed_polygon)
-        geometry_hash = self._get_geometry_hash(simplified_polygon)
+        buffered_polygon = buffer_geometry(polygon, meters=50)
+        simplified_polygon = self._simplify_polygon(buffered_polygon)
+        closed_polygon = remove_interiors(simplified_polygon)
+        geometry_hash = self._get_geometry_hash(closed_polygon)
         pbf_file_path = Path().resolve() / "files" / f"{geometry_hash}.pbf"
 
         if not pbf_file_path.exists():
-            geometry_geojson = mapping(simplified_polygon)
+            geometry_geojson = mapping(closed_polygon)
 
             s = requests.Session()
 
@@ -96,8 +99,12 @@ class PbfFileDownloader:
             start_extract_request.raise_for_status()
 
             start_extract_result = start_extract_request.json()
-            extraction_uuid = start_extract_result["uuid"]
-            status_check_url = start_extract_result["url"]
+            try:
+                extraction_uuid = start_extract_result["uuid"]
+                status_check_url = start_extract_result["url"]
+            except KeyError:
+                warnings.warn(json.dumps(start_extract_result))
+                raise
 
             with tqdm() as pbar:
                 status_response: Dict[str, Any] = {}
