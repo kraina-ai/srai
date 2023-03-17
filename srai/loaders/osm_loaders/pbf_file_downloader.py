@@ -7,7 +7,7 @@ import hashlib
 import json
 import warnings
 from pathlib import Path
-from time import sleep, time
+from time import sleep
 from typing import Any, Dict, Sequence
 
 import geopandas as gpd
@@ -168,24 +168,18 @@ class PbfFileDownloader:
                         pbar.set_description(self._PBAR_FORMAT.format("Cells"))
                         pbar.total = cells_total
                         pbar.n = cells_prog
-                        pbar.last_print_n = cells_prog
                     elif nodes_total > 0 and nodes_prog is not None and nodes_prog < nodes_total:
                         pbar.set_description(self._PBAR_FORMAT.format("Nodes"))
-                        pbar.total = nodes_total
-                        pbar.n = nodes_prog
-                        pbar.last_print_n = nodes_prog
+                        pbar.total = cells_total + nodes_total
+                        pbar.n = cells_total + nodes_prog
                     elif elems_total > 0 and elems_prog is not None and elems_prog < elems_total:
                         pbar.set_description(self._PBAR_FORMAT.format("Elements"))
-                        pbar.total = elems_total
-                        pbar.n = elems_prog
-                        pbar.last_print_n = elems_prog
+                        pbar.total = cells_total + nodes_total + elems_total
+                        pbar.n = cells_total + nodes_total + elems_prog
                     else:
-                        pbar.total = elems_total
-                        pbar.n = elems_total
-                        pbar.last_print_n = elems_total
+                        pbar.total = cells_total + nodes_total + elems_total
+                        pbar.n = cells_total + nodes_total + elems_total
 
-                    pbar.start_t = time()
-                    pbar.last_print_t = time()
                     pbar.refresh()
 
             download_file(

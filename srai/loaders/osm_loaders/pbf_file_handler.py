@@ -4,6 +4,7 @@ PBF File Handler.
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
 import os
+import warnings
 from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import geopandas as gpd
@@ -170,15 +171,10 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
         matching_tags = self._get_matching_tags(osm_object)
         if matching_tags:
-            wkb = parse_to_wkb_function(osm_object)
-            geometry = wkblib.loads(wkb, hex=True)
-            if self.region_geometry is None or geometry.intersects(self.region_geometry):
-                if full_osm_id not in self.features_cache:
-                    self.features_cache[full_osm_id] = {
-                        FEATURES_INDEX: full_osm_id,
-                        "geometry": geometry,
-                    }
-                self.features_cache[full_osm_id].update(matching_tags)
+            geometry = self._get_osm_geometry(osm_object, parse_to_wkb_function)
+            self._add_feature_to_cache(
+                full_osm_id=full_osm_id, matching_tags=matching_tags, geometry=geometry
+            )
 
     def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
         """Find matching tags between provided filter and currently parsed OSM object."""
@@ -196,3 +192,33 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                     matching_tags[tag_key] = object_tag_value
 
         return matching_tags
+
+    def _get_osm_geometry(
+        self, osm_object: osmium.osm.OSMObject[T_obj], parse_to_wkb_function: Callable[..., str]
+    ) -> BaseGeometry:
+        """Get geometry from currently parsed OSM object."""
+        geometry = None
+        try:
+            wkb = parse_to_wkb_function(osm_object)
+            geometry = wkblib.loads(wkb, hex=True)
+        except RuntimeError as ex:
+            message = str(ex)
+            warnings.warn(message, RuntimeWarning)
+
+        return geometry
+
+    def _add_feature_to_cache(
+        self, full_osm_id: str, matching_tags: Dict[str, str], geometry: Optional[BaseGeometry]
+    ) -> None:
+        """Add OSM feature to cache or update existing one based on ID."""
+        if geometry is not None and self._geometry_is_in_region(geometry):
+            if full_osm_id not in self.features_cache:
+                self.features_cache[full_osm_id] = {
+                    FEATURES_INDEX: full_osm_id,
+                    "geometry": geometry,
+                }
+            self.features_cache[full_osm_id].update(matching_tags)
+
+    def _geometry_is_in_region(self, geometry: BaseGeometry) -> bool:
+        """Check if OSM geometry intersects with provided region."""
+        return self.region_geometry is None or geometry.intersects(self.region_geometry)
