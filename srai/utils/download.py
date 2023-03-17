@@ -1,4 +1,4 @@
-"""Utility functions for loaders examples."""
+"""Utility download function."""
 from pathlib import Path
 
 import requests

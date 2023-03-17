@@ -1,4 +1,4 @@
-"""DOCSTRING TODO."""
+"""Utility geometry operations functions."""
 from typing import List
 
 import geopandas as gpd
