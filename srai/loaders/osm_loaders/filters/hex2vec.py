@@ -1,12 +1,12 @@
 """
 Hex2Vec filter.
 
-This module contains the OSM tag filter that was used in Hex2Vec [1].
+This module contains the OSM tags filter that was used in Hex2Vec [1].
 
 References:
     1. https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 
 HEX2VEC_FILTER: osm_tags_type = {
     "aeroway": [

@@ -5,7 +5,7 @@ import requests
 from tqdm import tqdm
 
 
-def download(url: str, fname: str, chunk_size: int = 1024) -> None:
+def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
     """
     Download a file with progress bar.
 

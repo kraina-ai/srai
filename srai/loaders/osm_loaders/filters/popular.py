@@ -1,5 +1,5 @@
 """
-OSM popular tag downloader.
+OSM popular tags downloader.
 
 This module exposes a function `get_popular_tags` that uses taginfo[1] API
 to download the most popular tags from OSM
@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 import requests
 from functional import seq
 
-from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 
 _TAGINFO_API_ADDRESS = "https://taginfo.openstreetmap.org"
 _TAGINFO_API_TAGS = _TAGINFO_API_ADDRESS + "/api/4/tags/popular"

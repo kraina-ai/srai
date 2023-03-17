@@ -1,4 +1,8 @@
-"""DOCSTRING TODO."""
+"""
+PBF File Downloader.
+
+This module contains a downloader capable of downloading a PBF file from a free Protomaps service.
+"""
 import hashlib
 import json
 import warnings
@@ -16,12 +20,24 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.utils.constants import WGS84_CRS
-from srai.utils.download import download
+from srai.utils.download import download_file
 from srai.utils.geometry import buffer_geometry, flatten_geometry, remove_interiors
 
 
 class PbfFileDownloader:
-    """DOCSTRING TODO."""
+    """
+    PbfFileDownloader.
+
+    PBF(Protocolbuffer Binary Format)[1] file downloader is a downloader
+    capable of downloading `*.osm.pbf` files with OSM data for a given area.
+
+    This downloader uses free Protomaps[2] download service to extract a PBF
+    file for a given region.
+
+    References:
+        1. https://wiki.openstreetmap.org/wiki/PBF_Format
+        2. https://protomaps.com/
+    """
 
     PROTOMAPS_API_START_URL = "https://app.protomaps.com/downloads/osm"
     PROTOMAPS_API_DOWNLOAD_URL = "https://app.protomaps.com/downloads/{}/download"
@@ -49,13 +65,24 @@ class PbfFileDownloader:
         0.05,
     ]
 
-    def download_pbf_files_for_region_gdf(
-        self, region_gdf: gpd.GeoDataFrame
+    def download_pbf_files_for_regions_gdf(
+        self, regions_gdf: gpd.GeoDataFrame
     ) -> Dict[str, Sequence[Path]]:
-        """DOCSTRING TODO."""
+        """
+        Download PBF files for regions GeoDataFrame.
+
+        Function will split each multipolygon into single polygons and download PBF files
+        for each of them.
+
+        Args:
+            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
+
+        Returns:
+            Dict[str, Sequence[Path]]: List of Paths to downloaded PBF files per each region_id.
+        """
         regions_mapping: Dict[str, Sequence[Path]] = {}
 
-        for region_id, row in region_gdf.iterrows():
+        for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
             regions_mapping[region_id] = [
                 self.download_pbf_file_for_polygon(polygon) for polygon in polygons
@@ -64,12 +91,27 @@ class PbfFileDownloader:
         return regions_mapping
 
     def download_pbf_file_for_polygon(self, polygon: Polygon) -> Path:
-        """DOCSTRING TODO."""
+        """
+        Download PBF file for a single Polygon.
+
+        Function will buffer polygon by 50 meters, simplify exterior boundary to be
+        below 1000 points (which is a limit of Protomaps API) and close all holes within it.
+
+        Boundary of the polygon will be sent to Protomaps service and an `*.osm.pbf` file
+        will be downloaded with a hash based on WKT representation of the parsed polygon.
+        If file exists, it won't be downloaded again.
+
+        Args:
+            polygon (Polygon): Polygon boundary of an area to be extracted.
+
+        Returns:
+            Path: Path to a downloaded `*.osm.pbf` file.
+        """
         buffered_polygon = buffer_geometry(polygon, meters=50)
         simplified_polygon = self._simplify_polygon(buffered_polygon)
         closed_polygon = remove_interiors(simplified_polygon)
         geometry_hash = self._get_geometry_hash(closed_polygon)
-        pbf_file_path = Path().resolve() / "files" / f"{geometry_hash}.pbf"
+        pbf_file_path = Path().resolve() / "files" / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():
             geometry_geojson = mapping(closed_polygon)
@@ -146,7 +188,7 @@ class PbfFileDownloader:
                     pbar.last_print_t = time()
                     pbar.refresh()
 
-            download(
+            download_file(
                 url=self.PROTOMAPS_API_DOWNLOAD_URL.format(extraction_uuid),
                 fname=pbf_file_path.as_posix(),
             )
@@ -154,6 +196,7 @@ class PbfFileDownloader:
         return pbf_file_path
 
     def _simplify_polygon(self, polygon: Polygon) -> Polygon:
+        """Simplify a polygon boundary to up to 1000 points."""
         simplified_polygon = polygon
 
         for simplify_tolerance in self.SIMPLIFICATION_TOLERANCE_VALUES:
@@ -179,6 +222,7 @@ class PbfFileDownloader:
         return simplified_polygon
 
     def _get_geometry_hash(self, geometry: BaseGeometry) -> str:
+        """Generate SHA256 hash based on WKT representation of the polygon."""
         wkt_string = wktlib.dumps(geometry)
         h = hashlib.new("sha256")
         h.update(wkt_string.encode())

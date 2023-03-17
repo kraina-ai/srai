@@ -1,4 +1,4 @@
-"""Tests for OSMTagLoader."""
+"""Tests for OSMOnlineLoader."""
 from typing import Any
 
 import geopandas as gpd
@@ -7,8 +7,8 @@ import pytest
 from pandas.testing import assert_frame_equal
 from shapely.geometry import Point, Polygon
 
-from srai.loaders.osm_tag_loader import OSMTagLoader
-from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders import OSMOnlineLoader
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils.constants import WGS84_CRS
 
 
@@ -26,7 +26,7 @@ def area_with_no_objects_gdf() -> gpd.GeoDataFrame:
 
 @pytest.fixture  # type: ignore
 def empty_result_gdf() -> gpd.GeoDataFrame:
-    """Get empty OSMTagLoader result gdf."""
+    """Get empty OSMOnlineLoader result gdf."""
     result_index = pd.Index(data=[], name="feature_id", dtype="object")
     return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
 
@@ -194,17 +194,17 @@ def expected_result_gdf_complex() -> gpd.GeoDataFrame:
         ),
     ],
 )
-def test_osm_tag_loader(
+def test_osm_online_loader(
     area_gdf_fixture: str,
     query: osm_tags_type,
     expected_result_gdf_fixture: str,
     request: Any,
 ):
-    """Test `OSMTagLoader.load()`."""
+    """Test `OSMOnlineLoader.load()`."""
     _ = request.getfixturevalue("mock_osmnx")
     area_gdf = request.getfixturevalue(area_gdf_fixture)
     expected_result_gdf = request.getfixturevalue(expected_result_gdf_fixture)
-    loader = OSMTagLoader()
+    loader = OSMOnlineLoader()
     res = loader.load(area_gdf, query)
     assert "address" not in res.columns
     assert_frame_equal(res, expected_result_gdf, check_like=True)

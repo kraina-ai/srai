@@ -1,4 +1,4 @@
-"""Tests for osm tag loader filters."""
+"""Tests for OSM Online Loader filters."""
 import json
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
@@ -8,7 +8,7 @@ import pytest
 import requests_mock as r_mock
 from requests import HTTPError
 
-from srai.loaders.osm_tag_loader.filters import get_popular_tags
+from srai.loaders.osm_loaders.filters import get_popular_tags
 
 
 @pytest.fixture  # type: ignore

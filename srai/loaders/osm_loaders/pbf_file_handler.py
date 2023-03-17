@@ -1,4 +1,8 @@
-"""DOCSTRING TODO."""
+"""
+PBF File Handler.
+
+This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
+"""
 import os
 from typing import Any, Callable, Dict, Optional, Sequence, Union
 
@@ -10,17 +14,49 @@ from osmium.osm.types import T_obj
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from srai.loaders.osm_tag_loader.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
 class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
-    """DOCSTRING TODO."""
+    """
+    PbfFileHandler.
+
+    PBF(Protocolbuffer Binary Format)[1] file handler is a wrapper around
+    a `SimpleHandler`[2] from the `pyosmium`[3] library capable of parsing an `*.osm.pbf` file.
+
+    Handler requires tags filter to only unpack required objects and additionally can use
+    a geometry to filter only intersecting objects.
+
+    Handler inherits functions from the `SimpleHandler`, such as `apply_file` and `apply_buffer`
+    but it's discouraged to use them on your own, and instead use dedicated `get_features_gdf`
+    function.
+
+    References:
+        1. https://wiki.openstreetmap.org/wiki/PBF_Format
+        2. https://docs.osmcode.org/pyosmium/latest/ref_osmium.html#osmium.SimpleHandler
+        3. https://osmcode.org/pyosmium/
+    """
 
     _PBAR_FORMAT = "[{}] Parsing pbf file #{}"
 
     def __init__(self, tags: osm_tags_type, region_geometry: Optional[BaseGeometry] = None) -> None:
-        """DOCSTRING TODO."""
+        """
+        Initialize PbfFileHandler.
+
+        Args:
+            tags (osm_tags_type): A dictionary
+                specifying which tags to download.
+                The keys should be OSM tags (e.g. `building`, `amenity`).
+                The values should either be `True` for retrieving all objects with the tag,
+                string for retrieving a single tag-value pair
+                or list of strings for retrieving all values specified in the list.
+                `tags={'leisure': 'park}` would return parks from the area.
+                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
+                would return parks, all amenity types, bakeries and bicycle shops.
+            region_geometry (BaseGeometry, optional): Region which can be used to filter only
+                intersecting OSM objects. Defaults to None.
+        """
         super(PbfFileHandler, self).__init__()
         self.filter_tags = tags
         self.filter_tags_keys = set(self.filter_tags.keys())
@@ -30,7 +66,23 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
     ) -> gpd.GeoDataFrame:
-        """DOCSTRING TODO."""
+        """
+        Get features GeoDataFrame from a list of PBF files.
+
+        Function parses multiple PBF files and returns a single GeoDataFrame with parsed
+        OSM objects.
+
+        This function is a dedicated wrapper around the inherited function `apply_file`.
+
+        Args:
+            file_paths (Sequence[Union[str, os.PathLike[str]]]): List of paths to `*.osm.pbf`
+                files to be parsed.
+            region_id (str, optional): Region name to be set in progress bar.
+                Defaults to "OSM".
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame with OSM features.
+        """
         with tqdm(desc="Parsing pbf file") as self.pbar:
             self._clear_cache()
             for path_no, path in enumerate(file_paths):
@@ -47,19 +99,49 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         return features_gdf
 
     def node(self, node: osmium.osm.Node) -> None:
-        """DOCSTRING TODO."""
+        """
+        Implementation of the required `node` function.
+
+        See [1] for more information.
+
+        Args:
+            node (osmium.osm.Node): Node to be parsed.
+
+        References:
+            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Node
+        """
         self._parse_osm_object(
             osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
         )
 
     def way(self, way: osmium.osm.Way) -> None:
-        """DOCSTRING TODO."""
+        """
+        Implementation of the required `way` function.
+
+        See [1] for more information.
+
+        Args:
+            way (osmium.osm.Way): Way to be parsed.
+
+        References:
+            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Way
+        """
         self._parse_osm_object(
             osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
         )
 
     def area(self, area: osmium.osm.Area) -> None:
-        """DOCSTRING TODO."""
+        """
+        Implementation of the required `area` function.
+
+        See [1] for more information.
+
+        Args:
+            area (osmium.osm.Area): Area to be parsed.
+
+        References:
+            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Area
+        """
         self._parse_osm_object(
             osm_object=area,
             osm_type="way" if area.from_way() else "relation",
@@ -68,6 +150,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         )
 
     def _clear_cache(self) -> None:
+        """Clear memory from accumulated features."""
         self.features_cache: Dict[str, Dict[str, Any]] = {}
 
     def _parse_osm_object(
@@ -77,6 +160,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         parse_to_wkb_function: Callable[..., str],
         osm_id: Optional[int] = None,
     ) -> None:
+        """Parse OSM object into a feature with geometry and tags if it matches given criteria."""
         self.pbar.update(n=1)
 
         if osm_id is None:
@@ -97,6 +181,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 self.features_cache[full_osm_id].update(matching_tags)
 
     def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
+        """Find matching tags between provided filter and currently parsed OSM object."""
         matching_tags: Dict[str, str] = {}
 
         for tag_key in self.filter_tags_keys:
