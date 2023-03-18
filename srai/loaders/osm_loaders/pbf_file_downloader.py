@@ -166,11 +166,11 @@ class PbfFileDownloader:
 
                     if cells_total > 0 and cells_prog is not None and cells_prog < cells_total:
                         pbar.set_description(self._PBAR_FORMAT.format("Cells"))
-                        pbar.total = cells_total
+                        pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_prog
                     elif nodes_total > 0 and nodes_prog is not None and nodes_prog < nodes_total:
                         pbar.set_description(self._PBAR_FORMAT.format("Nodes"))
-                        pbar.total = cells_total + nodes_total
+                        pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_total + nodes_prog
                     elif elems_total > 0 and elems_prog is not None and elems_prog < elems_total:
                         pbar.set_description(self._PBAR_FORMAT.format("Elements"))
