@@ -12,6 +12,7 @@ import osmium
 import osmium.osm
 import shapely.wkb as wkblib
 from osmium.osm.types import T_obj
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
@@ -210,13 +211,23 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
     def _add_feature_to_cache(
         self, full_osm_id: str, matching_tags: Dict[str, str], geometry: Optional[BaseGeometry]
     ) -> None:
-        """Add OSM feature to cache or update existing one based on ID."""
+        """
+        Add OSM feature to cache or update existing one based on ID.
+
+        Some of the `way` features are parsed twice, in form of `LineStrings` and `Polygons` /
+        `MultiPolygons`. Additional check ensures that a closed geometry will be always preffered
+        over a `LineString`.
+        """
         if geometry is not None and self._geometry_is_in_region(geometry):
             if full_osm_id not in self.features_cache:
                 self.features_cache[full_osm_id] = {
                     FEATURES_INDEX: full_osm_id,
                     "geometry": geometry,
                 }
+
+            if isinstance(geometry, (Polygon, MultiPolygon)):
+                self.features_cache[full_osm_id]["geometry"] = geometry
+
             self.features_cache[full_osm_id].update(matching_tags)
 
     def _geometry_is_in_region(self, geometry: BaseGeometry) -> bool:
