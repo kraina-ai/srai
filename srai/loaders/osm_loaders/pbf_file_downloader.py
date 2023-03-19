@@ -107,14 +107,13 @@ class PbfFileDownloader:
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
         """
-        buffered_polygon = buffer_geometry(polygon, meters=50)
-        simplified_polygon = self._simplify_polygon(buffered_polygon)
-        closed_polygon = remove_interiors(simplified_polygon)
-        geometry_hash = self._get_geometry_hash(closed_polygon)
+        boundary_polygon = self._prepare_polygon_for_download(polygon)
+
+        geometry_hash = self._get_geometry_hash(boundary_polygon)
         pbf_file_path = Path().resolve() / "files" / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():
-            geometry_geojson = mapping(closed_polygon)
+            geometry_geojson = mapping(boundary_polygon)
 
             s = requests.Session()
 
@@ -188,6 +187,18 @@ class PbfFileDownloader:
             )
 
         return pbf_file_path
+
+    def _prepare_polygon_for_download(self, polygon: Polygon) -> Polygon:
+        """
+        Prepare polygon for download.
+
+        Function buffers the polygon, closes internal holes and simplifies its boundary to 1000
+        points.
+        """
+        buffered_polygon = buffer_geometry(polygon, meters=50)
+        simplified_polygon = self._simplify_polygon(buffered_polygon)
+        closed_polygon = remove_interiors(simplified_polygon)
+        return closed_polygon
 
     def _simplify_polygon(self, polygon: Polygon) -> Polygon:
         """Simplify a polygon boundary to up to 1000 points."""
