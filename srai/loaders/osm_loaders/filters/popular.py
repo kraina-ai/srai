@@ -41,7 +41,10 @@ def get_popular_tags(
     References:
         1. https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_tags_popular
     """
-    taginfo_api_response = requests.get(_TAGINFO_API_TAGS)
+    taginfo_api_response = requests.get(
+        _TAGINFO_API_TAGS,
+        headers={"User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)"},
+    )
     taginfo_api_response.raise_for_status()
     taginfo_data = taginfo_api_response.json()["data"]
     return _parse_taginfo_response(taginfo_data, in_wiki_only, min_count, min_fraction)
