@@ -50,6 +50,8 @@ def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
     Projects geometry into azimuthal projection before applying buffer and then changes values
     back to WGS84 coordinates.
 
+    Doesn't work with polygons covering the whole earth (from -180 to 180 longitude).
+
     Args:
         geometry (BaseGeometry): Geometry to buffer.
         meters (float): Radius distance in meters.

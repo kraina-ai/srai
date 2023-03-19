@@ -16,6 +16,7 @@ from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
+from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
@@ -42,7 +43,11 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     _PBAR_FORMAT = "[{}] Parsing pbf file #{}"
 
-    def __init__(self, tags: osm_tags_type, region_geometry: Optional[BaseGeometry] = None) -> None:
+    def __init__(
+        self,
+        tags: Optional[osm_tags_type] = HEX2VEC_FILTER,
+        region_geometry: Optional[BaseGeometry] = None,
+    ) -> None:
         """
         Initialize PbfFileHandler.
 
@@ -56,12 +61,17 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
+                If `None`, handler will allow all of the tags to be parsed.
+                Defaults to the predefined HEX2VEC_FILTER.
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """
         super(PbfFileHandler, self).__init__()
         self.filter_tags = tags
-        self.filter_tags_keys = set(self.filter_tags.keys())
+        if self.filter_tags:
+            self.filter_tags_keys = set(self.filter_tags.keys())
+        else:
+            self.filter_tags_keys = set()
         self.region_geometry = region_geometry
         self.wkbfab = osmium.geom.WKBFactory()
 
@@ -92,11 +102,16 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 description = self._PBAR_FORMAT.format(region_id, str(self.path_no))
                 self.pbar.set_description(description)
                 self.apply_file(path)
-            features_gdf = (
-                gpd.GeoDataFrame(data=self.features_cache.values())
-                .set_crs(WGS84_CRS)
-                .set_index(FEATURES_INDEX)
-            )
+            if self.features_cache:
+                features_gdf = (
+                    gpd.GeoDataFrame(data=self.features_cache.values())
+                    .set_crs(WGS84_CRS)
+                    .set_index(FEATURES_INDEX)
+                )
+            else:
+                features_gdf = gpd.GeoDataFrame(
+                    index=gpd.pd.Index(name=FEATURES_INDEX, data=[]), crs=WGS84_CRS, geometry=[]
+                )
             self._clear_cache()
         return features_gdf
 
@@ -178,19 +193,33 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             )
 
     def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
-        """Find matching tags between provided filter and currently parsed OSM object."""
+        """
+        Find matching tags between provided filter and currently parsed OSM object.
+
+        If tags filter is `None`, it will copy all tags from the OSM object.
+        """
         matching_tags: Dict[str, str] = {}
 
-        for tag_key in self.filter_tags_keys:
-            if tag_key in osm_object.tags:
-                object_tag_value = osm_object.tags[tag_key]
-                filter_tag_value = self.filter_tags[tag_key]
-                if (
-                    (isinstance(filter_tag_value, bool) and filter_tag_value)
-                    or (isinstance(filter_tag_value, str) and object_tag_value == filter_tag_value)
-                    or (isinstance(filter_tag_value, list) and object_tag_value in filter_tag_value)
-                ):
-                    matching_tags[tag_key] = object_tag_value
+        if self.filter_tags:
+            for tag_key in self.filter_tags_keys:
+                if tag_key in osm_object.tags:
+                    object_tag_value = osm_object.tags[tag_key]
+                    filter_tag_value = self.filter_tags[tag_key]
+                    if (
+                        (isinstance(filter_tag_value, bool) and filter_tag_value)
+                        or (
+                            isinstance(filter_tag_value, str)
+                            and object_tag_value == filter_tag_value
+                        )
+                        or (
+                            isinstance(filter_tag_value, list)
+                            and object_tag_value in filter_tag_value
+                        )
+                    ):
+                        matching_tags[tag_key] = object_tag_value
+        else:
+            for tag in osm_object.tags:
+                matching_tags[tag.k] = tag.v
 
         return matching_tags
 

@@ -8,7 +8,7 @@ import json
 import warnings
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Hashable, Sequence, Union
 
 import geopandas as gpd
 import requests
@@ -65,9 +65,19 @@ class PbfFileDownloader:
         0.05,
     ]
 
+    def __init__(self, download_directory: Union[str, Path] = "files") -> None:
+        """
+        Initialize PbfFileDownloader.
+
+        Args:
+            download_directory (Union[str, Path], optional): Directory where to save
+                the downloaded `*.osm.pbf` files. Defaults to "files".
+        """
+        self.download_directory = download_directory
+
     def download_pbf_files_for_regions_gdf(
         self, regions_gdf: gpd.GeoDataFrame
-    ) -> Dict[str, Sequence[Path]]:
+    ) -> Dict[Hashable, Sequence[Path]]:
         """
         Download PBF files for regions GeoDataFrame.
 
@@ -78,9 +88,10 @@ class PbfFileDownloader:
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
 
         Returns:
-            Dict[str, Sequence[Path]]: List of Paths to downloaded PBF files per each region_id.
+            Dict[Hashable, Sequence[Path]]: List of Paths to downloaded PBF files per
+                each region_id.
         """
-        regions_mapping: Dict[str, Sequence[Path]] = {}
+        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
 
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
@@ -110,7 +121,7 @@ class PbfFileDownloader:
         boundary_polygon = self._prepare_polygon_for_download(polygon)
 
         geometry_hash = self._get_geometry_hash(boundary_polygon)
-        pbf_file_path = Path().resolve() / "files" / f"{geometry_hash}.osm.pbf"
+        pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():
             geometry_geojson = mapping(boundary_polygon)
@@ -194,10 +205,18 @@ class PbfFileDownloader:
 
         Function buffers the polygon, closes internal holes and simplifies its boundary to 1000
         points.
+
+        Makes sure that the generated polygon with fully cover the original one by increasing
+        the buffer size incrementally.
         """
-        buffered_polygon = buffer_geometry(polygon, meters=50)
-        simplified_polygon = self._simplify_polygon(buffered_polygon)
-        closed_polygon = remove_interiors(simplified_polygon)
+        is_fully_covered = False
+        buffer_size_meters = 50
+        while not is_fully_covered:
+            buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
+            simplified_polygon = self._simplify_polygon(buffered_polygon)
+            closed_polygon = remove_interiors(simplified_polygon)
+            is_fully_covered = polygon.covered_by(closed_polygon)
+            buffer_size_meters += 50
         return closed_polygon
 
     def _simplify_polygon(self, polygon: Polygon) -> Polygon:

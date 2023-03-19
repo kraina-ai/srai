@@ -4,14 +4,14 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 from pathlib import Path
-from typing import List, Mapping, Optional, Sequence, Union
+from typing import Hashable, List, Mapping, Optional, Sequence, Union
 
 import geopandas as gpd
 import pandas as pd
 
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import WGS84_CRS
+from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
 class OSMPbfLoader:
@@ -32,7 +32,11 @@ class OSMPbfLoader:
         3. https://osmcode.org/pyosmium/
     """
 
-    def __init__(self, pbf_file: Optional[Union[str, Path]] = None) -> None:
+    def __init__(
+        self,
+        pbf_file: Optional[Union[str, Path]] = None,
+        download_directory: Union[str, Path] = "files",
+    ) -> None:
         """
         Initialize OSMPbfLoader.
 
@@ -40,9 +44,12 @@ class OSMPbfLoader:
             pbf_file (Union[str, Path], optional): Downloaded `*.osm.pbf` file to be used by
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
+            download_directory (Union[str, Path], optional): Directory where to save the downloaded
+                `*.osm.pbf` files. Doesn't matter when `pbf_file` is provided. Defaults to "files"
         """
         import_optional_dependencies(dependency_group="osm", modules=["osmium"])
         self.pbf_file = pbf_file
+        self.download_directory = download_directory
 
     def load(
         self,
@@ -80,13 +87,13 @@ class OSMPbfLoader:
 
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
-        downloaded_pbf_files: Mapping[str, Sequence[Union[str, Path]]]
+        downloaded_pbf_files: Mapping[Hashable, Sequence[Union[str, Path]]]
         if self.pbf_file is not None:
             downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
         else:
-            downloaded_pbf_files = PbfFileDownloader().download_pbf_files_for_regions_gdf(
-                regions_gdf=area_wgs84
-            )
+            downloaded_pbf_files = PbfFileDownloader(
+                download_directory=self.download_directory
+            ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
         clipping_polygon = area_wgs84.geometry.unary_union
 
@@ -94,7 +101,9 @@ class OSMPbfLoader:
 
         results = []
         for region_id, pbf_files in downloaded_pbf_files.items():
-            features_gdf = pbf_handler.get_features_gdf(file_paths=pbf_files, region_id=region_id)
+            features_gdf = pbf_handler.get_features_gdf(
+                file_paths=pbf_files, region_id=str(region_id)
+            )
             results.append(features_gdf)
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
@@ -115,4 +124,4 @@ class OSMPbfLoader:
         return gdf[~gdf.index.duplicated(keep="first")]
 
     def _get_empty_result(self) -> gpd.GeoDataFrame:
-        return gpd.GeoDataFrame(index=[], crs=WGS84_CRS, geometry=[])
+        return gpd.GeoDataFrame(index=pd.Index(name=FEATURES_INDEX), crs=WGS84_CRS, geometry=[])
