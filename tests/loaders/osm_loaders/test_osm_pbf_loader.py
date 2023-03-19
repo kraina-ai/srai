@@ -69,11 +69,11 @@ def test_geometry_preparing(test_polygon: BaseGeometry):
     [
         (
             Point([(-73.981883, 40.768081)]),
-            ["c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf"],
+            ["d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"],
         ),
         (
             Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
-            ["2dbaa121223d0f604bd1c327a9574ddb79fab5c66558f71a0ae1c53fee8f0cde.osm.pbf"],
+            ["eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf"],
         ),
         (
             Polygon(
@@ -93,7 +93,7 @@ def test_geometry_preparing(test_polygon: BaseGeometry):
                     ]
                 ],
             ),
-            ["d6deffc61e6ad808ef3877098ed6521dc8ff1aea0670940a7469afe1840b6fda.osm.pbf"],
+            ["529cdcbb7a3cc103658ef31b39bed24984e421127d319c867edf2f86ff3bb098.osm.pbf"],
         ),
         (
             MultiPolygon(
@@ -114,8 +114,8 @@ def test_geometry_preparing(test_polygon: BaseGeometry):
                 ]
             ),
             [
-                "53dd78e53429e265489d5af87e22cc9af281e0292bf2467e8c4b13189599ae1f.osm.pbf",
-                "a459f56fc8da4e8a2cfe9379ad3198df1252f0b4c2efc071e9a81f6469332379.osm.pbf",
+                "7a0163cb721992d6219d486b3d29517d06aa0db19dd7be049f4f1fabf6146073.osm.pbf",
+                "aa756ad3a961ba6d9da46c712b0d979d0c7d4768641ceea7409b287e2d18a48f.osm.pbf",
             ],
         ),
     ],
@@ -137,26 +137,26 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
     "test_file_name,query,expected_result_length,expected_features_columns_length",
     [
         (
-            "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf",
+            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
             678,
             274,
         ),
         (
-            "2dbaa121223d0f604bd1c327a9574ddb79fab5c66558f71a0ae1c53fee8f0cde.osm.pbf",
+            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
             None,
             1,
             23,
         ),
-        ("d6deffc61e6ad808ef3877098ed6521dc8ff1aea0670940a7469afe1840b6fda.osm.pbf", None, 0, 0),
+        ("529cdcbb7a3cc103658ef31b39bed24984e421127d319c867edf2f86ff3bb098.osm.pbf", None, 0, 0),
         (
-            "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf",
+            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
             97,
             10,
         ),
         (
-            "2dbaa121223d0f604bd1c327a9574ddb79fab5c66558f71a0ae1c53fee8f0cde.osm.pbf",
+            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
             HEX2VEC_FILTER,
             0,
             0,
@@ -180,7 +180,7 @@ def test_pbf_handler(
 
 def test_pbf_handler_geometry_filtering():  # type: ignore
     """Test proper spatial data filtering in `PbfFileHandler`."""
-    file_name = "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf"
+    file_name = "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"
     handler = PbfFileHandler(
         tags=HEX2VEC_FILTER, region_geometry=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     )
@@ -200,7 +200,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
             / "test_files"
-            / "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf",
+            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
             10,
             38,
@@ -209,7 +209,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
             / "test_files"
-            / "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf",
+            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
             2,
             3,
@@ -218,7 +218,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
             Path(__file__).parent
             / "test_files"
-            / "c5aedb967d13547767cc51218666d0d613f43a3480320f0ce794c2f6e7a87429.osm.pbf",
+            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
             0,
             0,

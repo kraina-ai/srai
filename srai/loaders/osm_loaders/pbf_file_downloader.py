@@ -118,12 +118,11 @@ class PbfFileDownloader:
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
         """
-        boundary_polygon = self._prepare_polygon_for_download(polygon)
-
-        geometry_hash = self._get_geometry_hash(boundary_polygon)
+        geometry_hash = self._get_geometry_hash(polygon)
         pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():
+            boundary_polygon = self._prepare_polygon_for_download(polygon)
             geometry_geojson = mapping(boundary_polygon)
 
             s = requests.Session()
