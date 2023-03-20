@@ -1,4 +1,4 @@
-"""Module contains dedicated typing wrapper for OSM tags filter."""
+"""Module contains a dedicated type alias for OSM tags filter."""
 from typing import Dict, List, Union
 
 osm_tags_type = Dict[str, Union[List[str], str, bool]]
