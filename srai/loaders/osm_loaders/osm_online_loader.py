@@ -52,7 +52,7 @@ class OSMOnlineLoader:
         The loader first downloads all objects with `tags`. It returns a GeoDataFrame containing
         the `geometry` column and columns for tag keys.
 
-        Note: some key/value pairs might be missing from the resulting GeoDataFrame,
+        Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
 
         Args:

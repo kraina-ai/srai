@@ -64,8 +64,13 @@ class OSMPbfLoader:
         using `PbfFileHandler`. It will return a GeoDataFrame containing the `geometry` column
         and columns for tag keys.
 
-        Note: some key/value pairs might be missing from the resulting GeoDataFrame,
+        Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
+
+        Note: If you want to extract data for a big area (like country, or more), it's encouraged
+            to use existing `*.osm.pbf` extracts from GeoFabrik (https://download.geofabrik.de/)
+            or BBBike (https://extract.bbbike.org/). You can provide those predownloaded files in
+            the constructor of the `OSMPbfLoader`.
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
