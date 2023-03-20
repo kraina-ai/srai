@@ -11,7 +11,7 @@ from pytorch_lightning import seed_everything
 from shapely.geometry import Polygon
 
 from srai.embedders import GTFS2VecEmbedder
-from srai.utils.exceptions import ModelNotFitException
+from srai.exceptions import ModelNotFitException
 
 
 @pytest.fixture  # type: ignore

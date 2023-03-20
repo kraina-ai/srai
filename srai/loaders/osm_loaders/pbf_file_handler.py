@@ -16,9 +16,9 @@ from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
+from srai.constants import FEATURES_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
-from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
 class PbfFileHandler(osmium.SimpleHandler):  # type: ignore

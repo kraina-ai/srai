@@ -19,9 +19,9 @@ import h3
 from functional import seq
 from shapely import geometry
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
-from srai.utils.geometry import buffer_geometry
+from srai.utils import buffer_geometry
 
 
 class H3Regionizer(Regionizer):

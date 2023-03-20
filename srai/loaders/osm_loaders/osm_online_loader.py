@@ -11,9 +11,9 @@ import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
+from srai.constants import FEATURES_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import FEATURES_INDEX, WGS84_CRS
 
 
 class OSMOnlineLoader:

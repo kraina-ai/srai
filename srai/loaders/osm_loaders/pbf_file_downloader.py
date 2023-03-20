@@ -19,9 +19,13 @@ from shapely.geometry.base import BaseGeometry
 from shapely.validation import make_valid
 from tqdm import tqdm
 
-from srai.utils.constants import WGS84_CRS
-from srai.utils.download import download_file
-from srai.utils.geometry import buffer_geometry, flatten_geometry, remove_interiors
+from srai.constants import WGS84_CRS
+from srai.utils import (
+    buffer_geometry,
+    download_file,
+    flatten_geometry,
+    remove_interiors,
+)
 
 
 class PbfFileDownloader:

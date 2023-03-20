@@ -14,10 +14,10 @@ from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
+from srai.utils import flatten_geometry_series
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
-from srai.utils.geometry import flatten_geometry_series
 
 
 class AdministrativeBoundaryRegionizer(Regionizer):

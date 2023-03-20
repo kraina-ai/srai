@@ -7,12 +7,12 @@ import pytest
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
 from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
 @pytest.mark.parametrize(  # type: ignore

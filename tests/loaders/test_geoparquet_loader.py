@@ -5,8 +5,8 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import box
 
+from srai.constants import WGS84_CRS
 from srai.loaders import GeoparquetLoader
-from srai.utils.constants import WGS84_CRS
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
 bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]})

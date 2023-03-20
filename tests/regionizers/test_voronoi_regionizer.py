@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 from shapely.geometry import Point, Polygon
 
+from srai.constants import WGS84_CRS
 from srai.regionizers import VoronoiRegionizer
 from srai.regionizers._spherical_voronoi import generate_voronoi_regions
-from srai.utils import _merge_disjointed_gdf_geometries
-from srai.utils.constants import WGS84_CRS
+from srai.utils import merge_disjointed_gdf_geometries
 
 
 def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:
@@ -62,7 +62,7 @@ def test_multiple_seeds_regions(
     vr = VoronoiRegionizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 6
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
 def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
@@ -84,7 +84,7 @@ def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbo
     vr = VoronoiRegionizer(seeds=random_points_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == number_of_points
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
 def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
@@ -104,7 +104,7 @@ def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Po
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 4
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
 def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
@@ -112,7 +112,7 @@ def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygo
     vr = VoronoiRegionizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
     assert len(result_gdf.index) == 6
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -132,4 +132,4 @@ def test_clipping_parameter(
     gdf_earth_poles: gpd.GeoDataFrame = request.getfixturevalue("gdf_earth_poles")
     vr = VoronoiRegionizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=gdf)
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(gdf.iloc[0].geometry).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(gdf.iloc[0].geometry).is_empty
