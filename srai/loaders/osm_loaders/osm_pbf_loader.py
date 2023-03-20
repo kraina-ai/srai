@@ -45,7 +45,7 @@ class OSMPbfLoader:
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
-                `*.osm.pbf` files. Doesn't matter when `pbf_file` is provided. Defaults to "files"
+                `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files"
         """
         import_optional_dependencies(dependency_group="osm", modules=["osmium"])
         self.pbf_file = pbf_file
