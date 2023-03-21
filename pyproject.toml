@@ -164,8 +164,15 @@ ignore_packages = [
     'docformatter',             # uses MIT license, has mismatched license in analysis
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
+    'nvidia-cublas-cu11',       # uses NVIDIA license
+    'nvidia-cuda-cupti-cu11',   # uses NVIDIA license
+    'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license
     'nvidia-cuda-runtime-cu11', # uses NVIDIA license
     'nvidia-cudnn-cu11',        # uses NVIDIA license
-    'nvidia-cublas-cu11',       # uses NVIDIA license
-    'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license
+    'nvidia-cufft-cu11',        # uses NVIDIA license
+    'nvidia-curand-cu11',       # uses NVIDIA license
+    'nvidia-cusolver-cu11',     # uses NVIDIA license
+    'nvidia-cusparse-cu11',     # uses NVIDIA license
+    'nvidia-nccl-cu11',         # uses NVIDIA license
+    'nvidia-nvtx-cu11',         # uses NVIDIA license
 ]

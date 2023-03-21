@@ -7,7 +7,7 @@ This module contains intersection joiner implementation.
 import geopandas as gpd
 import pandas as pd
 
-from srai.utils.constants import FEATURES_INDEX, REGIONS_INDEX
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX
 
 
 class IntersectionJoiner:

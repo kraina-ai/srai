@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 import geopandas as gpd
 import osmnx as ox
 
-from srai.utils.constants import REGIONS_INDEX
+from srai.constants import REGIONS_INDEX
 
 
 def geocode_to_region_gdf(

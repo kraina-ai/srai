@@ -8,9 +8,9 @@ from overpass import API
 from pytest_mock import MockerFixture
 from shapely.geometry import Point, box
 
+from srai.constants import WGS84_CRS
 from srai.regionizers import AdministrativeBoundaryRegionizer
-from srai.utils import _merge_disjointed_gdf_geometries
-from srai.utils.constants import WGS84_CRS
+from srai.utils import merge_disjointed_gdf_geometries
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
 bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
@@ -89,7 +89,7 @@ def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], reques
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
     result_gdf = abr.transform(gdf=request_bbox_gdf)
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
     assert "EMPTY" in result_gdf.index
 
 
@@ -113,7 +113,7 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )
     result_gdf = abr.transform(gdf=request_bbox_gdf)
-    assert _merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
+    assert merge_disjointed_gdf_geometries(result_gdf).difference(request_bbox).is_empty
     assert "EMPTY" not in result_gdf.index
 
 
@@ -164,5 +164,5 @@ def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
     )
     madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
     assert (
-        _merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
+        merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
     )

@@ -19,8 +19,9 @@ import h3
 from functional import seq
 from shapely import geometry
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
+from srai.utils import buffer_geometry
 
 
 class H3Regionizer(Regionizer):
@@ -181,11 +182,12 @@ class H3Regionizer(Regionizer):
         References:
             1. https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas
         """
+        buffer_distance_meters = 2 * h3.average_hexagon_edge_length(self.resolution, unit="m")
+        buffered_geometries = gdf.geometry.apply(
+            lambda polygon: buffer_geometry(polygon, buffer_distance_meters)
+        )
+
         return gpd.GeoDataFrame(
-            geometry=(
-                gdf.to_crs(epsg=3395)
-                .buffer(2 * h3.average_hexagon_edge_length(self.resolution, unit="m"))
-                .to_crs(crs=WGS84_CRS)
-            ),
+            geometry=buffered_geometries,
             index=gdf.index,
         )

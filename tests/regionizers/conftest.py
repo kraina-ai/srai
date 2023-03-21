@@ -4,7 +4,7 @@ import geopandas as gpd
 import pytest
 from shapely import geometry
 
-from srai.utils.constants import WGS84_CRS
+from srai.constants import WGS84_CRS
 
 
 @pytest.fixture  # type: ignore

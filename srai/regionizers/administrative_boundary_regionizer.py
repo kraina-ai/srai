@@ -8,16 +8,16 @@ from typing import Any, Dict, List, Union
 
 import geopandas as gpd
 import topojson as tp
-from functional import seq
 from shapely.geometry import MultiPolygon, Point, Polygon
-from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
+from srai.utils import flatten_geometry_series
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
 class AdministrativeBoundaryRegionizer(Regionizer):
@@ -152,9 +152,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         elements_ids = set()
         generated_regions: List[Dict[str, Any]] = []
 
-        all_geometries = (
-            seq([self._flatten_geometries(g) for g in gdf_wgs84.geometry]).flatten().list()
-        )
+        all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
@@ -206,14 +204,6 @@ class AdministrativeBoundaryRegionizer(Regionizer):
                 return elements
             except (MultipleRequestsError, ServerLoadError):
                 time.sleep(60)
-
-    def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
-        """Flatten all geometries into a list of BaseGeometries."""
-        if isinstance(g, BaseMultipartGeometry):
-            return list(
-                seq([self._flatten_geometries(sub_geom) for sub_geom in g.geoms]).flatten().list()
-            )
-        return [g]
 
     def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
         """Generate Overpass query for a geometry."""
