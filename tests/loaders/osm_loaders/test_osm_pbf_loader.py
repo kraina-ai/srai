@@ -56,8 +56,8 @@ from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 )
 def test_geometry_preparing(test_polygon: BaseGeometry):
     """Test proper geometry preparing in `PbfFileDownloader`."""
-    loader = PbfFileDownloader()
-    prepared_polygon = loader._prepare_polygon_for_download(test_polygon)
+    downloader = PbfFileDownloader()
+    prepared_polygon = downloader._prepare_polygon_for_download(test_polygon)
 
     assert len(prepared_polygon.exterior.coords) <= 1000
     assert len(prepared_polygon.interiors) == 0

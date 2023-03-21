@@ -74,6 +74,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             self.filter_tags_keys = set()
         self.region_geometry = region_geometry
         self.wkbfab = osmium.geom.WKBFactory()
+        self.features_cache: Dict[str, Dict[str, Any]] = {}
 
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
@@ -168,7 +169,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     def _clear_cache(self) -> None:
         """Clear memory from accumulated features."""
-        self.features_cache: Dict[str, Dict[str, Any]] = {}
+        self.features_cache.clear()
 
     def _parse_osm_object(
         self,
