@@ -127,8 +127,8 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
         index=gpd.pd.Index(name=REGIONS_INDEX, data=[1]),
         crs=WGS84_CRS,
     )
-    loader = PbfFileDownloader(download_directory=Path(__file__).parent / "test_files")
-    files = loader.download_pbf_files_for_regions_gdf(regions_gdf)
+    downloader = PbfFileDownloader(download_directory=Path(__file__).parent / "test_files")
+    files = downloader.download_pbf_files_for_regions_gdf(regions_gdf)
     file_names = [path.name for path in files[1]]
     assert set(file_names) == set(test_file_names)
 
