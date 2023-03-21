@@ -4,7 +4,7 @@ Folium wrapper.
 This module contains functions for quick plotting of analysed gdfs using Geopandas `explore()`
 function.
 """
-from typing import List, Set, Union
+from typing import List, Optional, Set, Union
 
 import folium
 import geopandas as gpd
@@ -21,6 +21,7 @@ def plot_regions(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
+    map: Optional[folium.Map] = None,
 ) -> folium.Map:
     """
     Plot regions shapes using Folium library.
@@ -30,6 +31,8 @@ def plot_regions(
         tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
+        map (folium.Map, optional): Existing map instance on which to draw the plot.
+            Defaults to None.
 
     Returns:
         folium.Map: Generated map.
@@ -44,6 +47,7 @@ def plot_regions(
         legend=False,
         cmap=px.colors.qualitative.Bold,
         style_kwds=dict(fillOpacity=0.4, weight=2),
+        m=map,
     )
 
 
@@ -54,6 +58,7 @@ def plot_neighbours(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
+    map: Optional[folium.Map] = None,
 ) -> folium.Map:
     """
     Plot neighbours on a map using Folium library.
@@ -65,6 +70,8 @@ def plot_neighbours(
         tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
+        map (folium.Map, optional): Existing map instance on which to draw the plot.
+            Defaults to None.
 
     Returns:
         folium.Map: Generated map.
@@ -85,6 +92,7 @@ def plot_neighbours(
             px.colors.qualitative.Plotly[0],
         ],
         categories=["selected", "neighbour", "other"],
+        m=map,
     )
 
 
@@ -96,6 +104,7 @@ def plot_all_neighbourhood(
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: List[str] = px.colors.sequential.Sunsetdark,
+    map: Optional[folium.Map] = None,
 ) -> folium.Map:
     """
     Plot full neighbourhood on a map using Folium library.
@@ -110,6 +119,8 @@ def plot_all_neighbourhood(
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (List[str], optional): Colormap to apply to the nieghbourhoods.
             Defaults to `px.colors.sequential.Sunsetdark` from plotly library.
+        map (folium.Map, optional): Existing map instance on which to draw the plot.
+            Defaults to None.
 
     Returns:
         folium.Map: Generated map.
@@ -137,6 +148,7 @@ def plot_all_neighbourhood(
         width=width,
         cmap=_resample_plotly_colorscale(colormap, min(distance, 10)),
         categories=["selected", *list(range(distance + 1))[1:], "other"],
+        m=map,
     )
 
 
