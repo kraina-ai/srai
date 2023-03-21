@@ -1,7 +1,7 @@
 """
-Embedding model for highway2vec.
+Embedding model for Highway2Vec.
 
-This module contains the embedding model from `highway2vec` paper [1].
+This module contains the embedding model from the `highway2vec` paper [1].
 
 References:
     [1] https://doi.org/10.1145/3557918.3565865
@@ -16,7 +16,15 @@ class Highway2VecModel(pl.LightningModule):  # type: ignore
     """Autoencoder based embedding model for highway2vec."""
 
     def __init__(self, in_dim: int, hidden_dim: int = 64, latent_dim: int = 30, lr: float = 1e-3):
-        """TODO."""
+        """
+        Init Highway2VecModel.
+
+        Args:
+            in_dim (int): Number of features.
+            hidden_dim (int, optional): Number of hidden units. Defaults to 64.
+            latent_dim (int, optional): Embedding size. Defaults to 30.
+            lr (float, optional): Learning rate. Defaults to 1e-3.
+        """
         super().__init__()
 
         self.save_hyperparameters()
@@ -34,30 +42,35 @@ class Highway2VecModel(pl.LightningModule):  # type: ignore
         self.lr = lr
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """TODO."""
+        """
+        Forward pass.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+        """
         z: torch.Tensor = self.encoder(x)
         return z
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        """TODO."""
+        """
+        Training step.
+
+        Args:
+            batch (torch.Tensor): Batch.
+            batch_idx (int): Batch index.
+        """
         return self._common_step(batch, batch_idx, "train")
 
-    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        """TODO."""
-        return self._common_step(batch, batch_idx, "val")
-
-    def test_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        """TODO."""
-        return self._common_step(batch, batch_idx, "test")
-
-    # def _prepare_batch(self, batch, batch_idx):
-    #     x = batch
-    #     # x = x.view(x.size(0), -1)
-    #     return x
-
     def _common_step(self, batch: torch.Tensor, batch_idx: int, stage: str) -> torch.Tensor:
-        """TODO."""
-        x = self._prepare_batch(batch, batch_idx)
+        """
+        Perform common step.
+
+        Args:
+            batch (torch.Tensor): Batch.
+            batch_idx (int): Batch index.
+            stage (str): Name of the stage - e.g. train, valid, test.
+        """
+        x = batch
         z = self.encoder(x)
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
@@ -67,6 +80,6 @@ class Highway2VecModel(pl.LightningModule):  # type: ignore
         return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
-        """TODO."""
+        """Configure optimizer."""
         optimizer = optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
