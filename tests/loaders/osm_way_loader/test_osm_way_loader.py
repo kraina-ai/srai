@@ -16,9 +16,9 @@ from parametrization import Parametrization as P
 from pytest_check import check
 from pytest_mock import MockerFixture
 
+from srai.constants import WGS84_CRS
+from srai.exceptions import LoadedDataIsEmptyException
 from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
-from srai.utils.constants import WGS84_CRS
-from srai.utils.exceptions import LoadedDataIsEmptyException
 
 ut = TestCase()
 
