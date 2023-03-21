@@ -1,8 +1,6 @@
 """Utilities."""
-
-from .merge import _merge_disjointed_gdf_geometries, _merge_disjointed_polygons
-
-__all__ = [
-    "_merge_disjointed_gdf_geometries",
-    "_merge_disjointed_polygons",
-]
+# flake8: noqa F401
+from .download import *
+from .geocode import *
+from .geometry import *
+from .merge import *

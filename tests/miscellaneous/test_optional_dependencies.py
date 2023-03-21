@@ -5,8 +5,8 @@ from typing import Any, List
 
 import pytest
 
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.utils._optional import ImportErrorHandle, import_optional_dependency
-from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture(autouse=True)  # type: ignore

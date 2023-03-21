@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from shapely import geometry
 
-from srai.utils.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore

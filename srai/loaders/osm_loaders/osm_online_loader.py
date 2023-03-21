@@ -1,26 +1,27 @@
 """
-OSM Tag Loader.
+OSM Online Loader.
 
-This module contains loader capable of loading OpenStreetMap tags.
+This module contains loader capable of loading OpenStreetMap features from Overpass.
 """
 from itertools import product
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import geopandas as gpd
 import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 
 
-class OSMTagLoader:
+class OSMOnlineLoader:
     """
-    OSMTagLoader.
+    OSMOnlineLoader.
 
-    OSM(OpenStreetMap)[1] tag loader is a loader capable of downloading objects
-    from a given area from OSM. Tags in this context mean arbitrary
+    OSM(OpenStreetMap)[1] online loader is a loader capable of downloading objects
+    from a given area from OSM. It filters features based on OSM tags[2] in form of
     key:value pairs, that are used by OSM users to give meaning to geometries.
 
     This loader is a wrapper around the `osmnx` library. It uses `osmnx.geometries_from_polygon`
@@ -28,6 +29,7 @@ class OSMTagLoader:
 
     References:
         1. https://www.openstreetmap.org/
+        2. https://wiki.openstreetmap.org/wiki/Tags
     """
 
     _PBAR_FORMAT = "Downloading {}: {}"
@@ -36,26 +38,26 @@ class OSMTagLoader:
     _RESULT_INDEX_NAMES = [_ELEMENT_TYPE_INDEX_NAME, _OSMID_INDEX_NAME]
 
     def __init__(self) -> None:
-        """Initialize OSMTagLoader."""
+        """Initialize OSMOnlineLoader."""
         import_optional_dependencies(dependency_group="osm", modules=["osmnx"])
 
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Dict[str, Union[List[str], str, bool]],
+        tags: osm_tags_type,
     ) -> gpd.GeoDataFrame:
         """
-        Download OSM objects with specified tags for a given area.
+        Download OSM features with specified tags for a given area.
 
         The loader first downloads all objects with `tags`. It returns a GeoDataFrame containing
         the `geometry` column and columns for tag keys.
 
-        Note: some key/value pairs might be missing from the resulting GeoDataFrame,
+        Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Dict[str, Union[List[str], str, bool]]): A dictionary
+            tags (osm_tags_type): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -66,7 +68,7 @@ class OSMTagLoader:
                 would return parks, all amenity types, bakeries and bicycle shops.
 
         Returns:
-            gpd.GeoDataFrame: Downloaded objects as a GeoDataFrame.
+            gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
         import osmnx as ox
 
@@ -93,9 +95,7 @@ class OSMTagLoader:
 
         return self._flatten_index(result_gdf)
 
-    def _flatten_tags(
-        self, tags: Dict[str, Union[List[str], str, bool]]
-    ) -> List[Tuple[str, Union[str, bool]]]:
+    def _flatten_tags(self, tags: osm_tags_type) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))

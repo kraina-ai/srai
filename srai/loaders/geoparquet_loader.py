@@ -9,7 +9,7 @@ from typing import List, Optional, Union
 
 import geopandas as gpd
 
-from srai.utils.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 class GeoparquetLoader:

@@ -9,9 +9,9 @@ from typing import Hashable, List, Optional
 import geopandas as gpd
 from shapely.geometry import Point, box
 
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 
 class VoronoiRegionizer(Regionizer):

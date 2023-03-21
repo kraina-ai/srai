@@ -1,5 +1,5 @@
 """
-OSM popular tag downloader.
+OSM popular tags downloader.
 
 This module exposes a function `get_popular_tags` that uses taginfo[1] API
 to download the most popular tags from OSM
@@ -12,13 +12,15 @@ from typing import Any, Dict, List
 import requests
 from functional import seq
 
+from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+
 _TAGINFO_API_ADDRESS = "https://taginfo.openstreetmap.org"
 _TAGINFO_API_TAGS = _TAGINFO_API_ADDRESS + "/api/4/tags/popular"
 
 
 def get_popular_tags(
     in_wiki_only: bool = False, min_count: int = 0, min_fraction: float = 0.0
-) -> Dict[str, List[str]]:
+) -> osm_tags_type:
     """
     Download the OSM's most popular tags from taginfo api.
 
@@ -39,7 +41,10 @@ def get_popular_tags(
     References:
         1. https://taginfo.openstreetmap.org/taginfo/apidoc#api_4_tags_popular
     """
-    taginfo_api_response = requests.get(_TAGINFO_API_TAGS)
+    taginfo_api_response = requests.get(
+        _TAGINFO_API_TAGS,
+        headers={"User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)"},
+    )
     taginfo_api_response.raise_for_status()
     taginfo_data = taginfo_api_response.json()["data"]
     return _parse_taginfo_response(taginfo_data, in_wiki_only, min_count, min_fraction)
@@ -47,7 +52,7 @@ def get_popular_tags(
 
 def _parse_taginfo_response(
     taginfo_data: List[Dict[str, Any]], in_wiki_only: bool, min_count: int, min_fraction: float
-) -> Dict[str, List[str]]:
+) -> osm_tags_type:
     result_tags = (
         seq(taginfo_data)
         .filter(lambda t: t["count_all"] >= min_count)
@@ -55,7 +60,7 @@ def _parse_taginfo_response(
     )
     if in_wiki_only:
         result_tags = result_tags.filter(lambda t: t["in_wiki"])
-    taginfo_grouped: Dict[str, List[str]] = (
+    taginfo_grouped: osm_tags_type = (
         result_tags.map(lambda t: (t["key"], t["value"])).group_by_key().to_dict()
     )
     return taginfo_grouped
