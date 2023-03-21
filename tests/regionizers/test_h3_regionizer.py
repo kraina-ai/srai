@@ -6,8 +6,8 @@ from unittest import TestCase
 import geopandas as gpd
 import pytest
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.regionizers import H3Regionizer
-from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 H3_RESOLUTION = 3

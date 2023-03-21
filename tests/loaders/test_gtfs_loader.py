@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.loaders import GTFSLoader
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
-from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 

@@ -5,8 +5,8 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.joiners import IntersectionJoiner
-from srai.utils.constants import GEOMETRY_COLUMN
 
 ut = TestCase()
 

@@ -5,7 +5,7 @@ import abc
 import geopandas as gpd
 import pandas as pd
 
-from srai.utils.constants import GEOMETRY_COLUMN
+from srai.constants import GEOMETRY_COLUMN
 
 
 class Embedder(abc.ABC):

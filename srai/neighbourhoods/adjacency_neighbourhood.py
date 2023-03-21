@@ -8,8 +8,8 @@ from typing import Dict, Hashable, Set
 
 import geopandas as gpd
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.neighbourhoods import Neighbourhood
-from srai.utils.constants import GEOMETRY_COLUMN
 
 
 class AdjacencyNeighbourhood(Neighbourhood[Hashable]):

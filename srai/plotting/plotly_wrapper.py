@@ -1,7 +1,7 @@
 """
 Plotly wrapper.
 
-This module contains functions for quick plotting of analysed gdfs.
+This module contains functions for quick plotting of analysed gdfs using Plotly library.
 """
 from typing import Any, Dict, List, Optional, Set
 
@@ -11,9 +11,9 @@ import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
 
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
 def plot_regions(
@@ -81,7 +81,32 @@ def plot_neighbours(
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
-) -> Optional[go.Figure]:  # noqa
+) -> Optional[go.Figure]:
+    """
+    Plot neighbours on a map using Plotly library.
+
+    For more info about parameters, check https://plotly.com/python/mapbox-layers/.
+
+    Args:
+        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
+        neighbours_ids (Set[IndexType]): List of neighbours to highlight.
+        return_plot (bool, optional): Flag whether to return the Figure object or not.
+            If `True`, the plot won't be displayed automatically. Defaults to False.
+        mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
+        mapbox_accesstoken (str, optional): Access token required for mapbox based map backgrounds.
+            Defaults to None.
+        renderer (str, optional): Name of renderer used for displaying the figure.
+            For all descriptions, look here: https://plotly.com/python/renderers/.
+            Defaults to "notebook_connected".
+        zoom (float, optional): Map zoom. If not filled, will be approximated based on
+            the bounding box of regions. Defaults to None.
+        height (float, optional): Height of the plot. Defaults to None.
+        width (float, optional): Width of the plot. Defaults to None.
+
+    Returns:
+        Optional[go.Figure]: Figure of the plot. Will be returned if `return_plot` is set to `True`.
+    """
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
     regions_gdf_copy["region"] = "other"
@@ -123,7 +148,33 @@ def plot_all_neighbourhood(
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
-) -> Optional[go.Figure]:  # noqa
+) -> Optional[go.Figure]:
+    """
+    Plot full neighbourhood on a map using Plotly library.
+
+    For more info about parameters, check https://plotly.com/python/mapbox-layers/.
+
+    Args:
+        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
+        neighbourhood (Neighbourhood[IndexType]): `Neighbourhood` class required for finding
+            neighbours.
+        return_plot (bool, optional): Flag whether to return the Figure object or not.
+            If `True`, the plot won't be displayed automatically. Defaults to False.
+        mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
+        mapbox_accesstoken (str, optional): Access token required for mapbox based map backgrounds.
+            Defaults to None.
+        renderer (str, optional): Name of renderer used for displaying the figure.
+            For all descriptions, look here: https://plotly.com/python/renderers/.
+            Defaults to "notebook_connected".
+        zoom (float, optional): Map zoom. If not filled, will be approximated based on
+            the bounding box of regions. Defaults to None.
+        height (float, optional): Height of the plot. Defaults to None.
+        width (float, optional): Width of the plot. Defaults to None.
+
+    Returns:
+        Optional[go.Figure]: Figure of the plot. Will be returned if `return_plot` is set to `True`.
+    """
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
     regions_gdf_copy["region"] = "other"

@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal
 
+from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
-from srai.utils.constants import REGIONS_INDEX
 
 
 @pytest.fixture  # type: ignore
