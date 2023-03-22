@@ -4,6 +4,7 @@ Folium wrapper.
 This module contains functions for quick plotting of analysed gdfs using Geopandas `explore()`
 function.
 """
+from itertools import cycle, islice
 from typing import List, Optional, Set, Union
 
 import folium
@@ -46,7 +47,7 @@ def plot_regions(
         width=width,
         legend=False,
         cmap=px.colors.qualitative.Bold,
-        style_kwds=dict(fillOpacity=0.4, weight=2),
+        style_kwds=dict(color="#444", opacity=0.8, fillOpacity=0.5),
         m=map,
     )
 
@@ -76,6 +77,9 @@ def plot_neighbours(
     Returns:
         folium.Map: Generated map.
     """
+    if region_id not in regions_gdf.index:
+        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
     regions_gdf_copy.loc[region_id, "region"] = "selected"
@@ -87,11 +91,15 @@ def plot_neighbours(
         height=height,
         width=width,
         cmap=[
-            px.colors.qualitative.Plotly[1],
-            px.colors.qualitative.Plotly[2],
-            px.colors.qualitative.Plotly[0],
+            "rgb(242, 242, 242)",
+            px.colors.sequential.Sunsetdark[-1],
+            px.colors.sequential.Sunsetdark[2],
+            # px.colors.qualitative.Plotly[1],
+            # px.colors.qualitative.Plotly[2],
+            # px.colors.qualitative.Plotly[0],
         ],
         categories=["selected", "neighbour", "other"],
+        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.8),
         m=map,
     )
 
@@ -103,7 +111,7 @@ def plot_all_neighbourhood(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
-    colormap: List[str] = px.colors.sequential.Sunsetdark,
+    colormap: List[str] = px.colors.sequential.Agsunset_r,
     map: Optional[folium.Map] = None,
 ) -> folium.Map:
     """
@@ -118,13 +126,16 @@ def plot_all_neighbourhood(
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (List[str], optional): Colormap to apply to the nieghbourhoods.
-            Defaults to `px.colors.sequential.Sunsetdark` from plotly library.
+            Defaults to `px.colors.sequential.Agsunset_r` from plotly library.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
 
     Returns:
         folium.Map: Generated map.
     """
+    if region_id not in regions_gdf.index:
+        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
     regions_gdf_copy.loc[region_id, "region"] = "selected"
@@ -140,14 +151,20 @@ def plot_all_neighbourhood(
             regions_gdf.index
         )
 
+    colorscale = _generate_colorscale(
+        distance, colorscale=_resample_plotly_colorscale(colormap, min(distance, 10))
+    )
+
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=[REGIONS_INDEX, "region"],
         tiles=tiles_style,
         height=height,
         width=width,
-        cmap=_resample_plotly_colorscale(colormap, min(distance, 10)),
-        categories=["selected", *list(range(distance + 1))[1:], "other"],
+        cmap=colorscale,
+        categories=["selected", *list(range(distance))[1:], "other"],
+        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.8),
+        legend=distance <= 11,
         m=map,
     )
 
@@ -157,3 +174,12 @@ def _resample_plotly_colorscale(colorscale: List[str], steps: int) -> List[str]:
         colorscale, np.linspace(0, 1, num=steps)
     )
     return resampled_colorscale
+
+
+def _generate_colorscale(
+    distance: int,
+    colorscale: List[str],
+    selected_color: str = "rgb(242, 242, 242)",
+    other_color: str = "rgb(153, 153, 153)",
+) -> List[str]:
+    return [selected_color, *islice(cycle(colorscale), None, distance - 1), other_color]
