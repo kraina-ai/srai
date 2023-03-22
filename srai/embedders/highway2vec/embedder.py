@@ -100,7 +100,9 @@ class Highway2VecEmbedder(Embedder):
         features_df = self._remove_geometry_if_present(features_gdf)
 
         num_features = len(features_df.columns)
-        self._model = Highway2VecModel(in_dim=num_features)
+        self._model = Highway2VecModel(
+            in_dim=num_features, hidden_dim=self._hidden_size, latent_dim=self._embedding_size
+        )
 
         dataloader_kwargs = dataloader_kwargs or {}
         if "batch_size" not in dataloader_kwargs:
