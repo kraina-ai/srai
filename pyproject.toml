@@ -80,6 +80,8 @@ test = [
     "tox-pdm>=0.6.0",
     "pytest-mock>=3.0.0",
     "requests-mock>=1.10.0",
+    "pytest-check>=2.1.4",
+    "pytest-parametrization>=2022.2.1",
 ]
 # pdm add -dG visualization <library>
 visualization = [
@@ -107,7 +109,7 @@ license = ["licensecheck>=2023.0.1"]
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310"]
+target-version = ["py38", "py39", "py310", "py311"]
 preview = true
 
 [tool.isort]
