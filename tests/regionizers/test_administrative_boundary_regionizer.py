@@ -138,7 +138,7 @@ def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> Non
     )
 
     result_gdf = abr.transform(gdf=request_gdf)
-    assert request_gdf.geometry[0].within(result_gdf.geometry[0])
+    assert request_gdf.geometry[0].covered_by(result_gdf.geometry[0])
 
 
 @pytest.mark.parametrize(  # type: ignore

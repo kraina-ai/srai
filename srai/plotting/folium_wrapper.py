@@ -22,6 +22,7 @@ def plot_regions(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
+    colormap: List[str] = px.colors.qualitative.Bold,
     map: Optional[folium.Map] = None,
 ) -> folium.Map:
     """
@@ -32,6 +33,8 @@ def plot_regions(
         tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
+        colormap (List[str], optional): Colormap to apply to the regions.
+            Defaults to `px.colors.sequential.Bold` from plotly library.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
 
@@ -46,7 +49,7 @@ def plot_regions(
         height=height,
         width=width,
         legend=False,
-        cmap=px.colors.qualitative.Bold,
+        cmap=colormap,
         categorical=True,
         style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.5),
         m=map,
@@ -124,7 +127,7 @@ def plot_all_neighbourhood(
         tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
-        colormap (List[str], optional): Colormap to apply to the nieghbourhoods.
+        colormap (List[str], optional): Colormap to apply to the neighbourhoods.
             Defaults to `px.colors.sequential.Agsunset_r` from plotly library.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.

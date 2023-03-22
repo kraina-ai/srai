@@ -73,7 +73,7 @@ def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbo
     randy = np.random.uniform(miny, maxy, number_of_points)
     coords = np.vstack((randx, randy)).T
 
-    pts = [p for p in list(map(Point, coords)) if p.within(earth_bbox)]
+    pts = [p for p in list(map(Point, coords)) if p.covered_by(earth_bbox)]
 
     random_points_gdf = gpd.GeoDataFrame(
         {GEOMETRY_COLUMN: pts},

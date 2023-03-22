@@ -45,6 +45,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         return_empty_region: bool = False,
         prioritize_english_name: bool = True,
         toposimplify: Union[bool, float] = True,
+        remove_artefact_regions: bool = True,
     ) -> None:
         """
         Init AdministrativeBoundaryRegionizer.
@@ -52,7 +53,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         Args:
             admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of
                 available values.
-            clip_regions (bool, optional): Whether to to clip regions using a provided mask.
+            clip_regions (bool, optional): Whether to clip regions using a provided mask.
                 Turning it off can an be useful when trying to load regions using list a of points.
                 Defaults to True.
             return_empty_region (bool, optional): Whether to return an empty region to fill
@@ -63,6 +64,10 @@ class AdministrativeBoundaryRegionizer(Regionizer):
                 geometries size or not. Value is passed to `topojson` library for topology-aware
                 simplification. Since provided values are treated like degrees, values between
                 1e-4 and 1.0 are recommended. Defaults to True (which results in value equal 1e-4).
+            remove_artefact_regions (bool, optional): Whether to remove small regions barely
+                intersecting queried area. Turning it off can sometimes load unnecessary boundaries
+                that touch on the edge. It removes regions that intersect with an area smaller
+                than 1% of total self. Defaults to True.
 
         Raises:
             ValueError: If admin_level is outside available range (1-11). See [2] for list of
@@ -85,6 +90,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         self.prioritize_english_name = prioritize_english_name
         self.clip_regions = clip_regions
         self.return_empty_region = return_empty_region
+        self.remove_artefact_regions = remove_artefact_regions
 
         if isinstance(toposimplify, (int, float)) and toposimplify > 0:
             self.toposimplify = toposimplify
@@ -167,6 +173,18 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index(REGIONS_INDEX)
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
+        if self.remove_artefact_regions:
+            clipping_area = gdf_wgs84.geometry.unary_union
+            regions_to_keep = [
+                region_id
+                for region_id in regions_gdf.index
+                if self._calculate_intersection_area_fraction(
+                    regions_gdf.loc[region_id]["geometry"], clipping_area
+                )
+                > 0.01
+            ]
+            regions_gdf = regions_gdf.loc[regions_to_keep]
+
         if self.clip_regions:
             regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
 
@@ -190,7 +208,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
                 unary_geometry = unary_union([r[GEOMETRY_COLUMN] for r in generated_regions])
-                if not geometry.within(unary_geometry):
+                if not geometry.covered_by(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
@@ -314,3 +332,11 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         joined_mask = unary_union(mask.geometry)
         joined_geometry = unary_union(regions_gdf.geometry)
         return joined_mask.difference(joined_geometry)
+
+    def _calculate_intersection_area_fraction(
+        self, region_geometry: BaseGeometry, clipping_area: BaseGeometry
+    ) -> float:
+        """Calculate intersection area fraction to check if it's big enough."""
+        full_area = float(region_geometry.area)
+        clip_area = float(region_geometry.intersection(clipping_area).area)
+        return clip_area / full_area
