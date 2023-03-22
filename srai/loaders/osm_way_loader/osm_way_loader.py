@@ -48,8 +48,8 @@ class OSMWayLoader:
     OSMWayLoader loader is a wrapper for the `osmnx.graph_from_polygon()`
     and `osmnx.graph_to_gdfs()` that simplifies obtaining the road infrastructure data
     from OpenStreetMap. As the OSM data is often noisy, it can also take an opinionated approach
-    on preprocessing it having standarisation in mind - e.g. converting to the same units,
-    disgarding non-wiki values and rounding them.
+    to preprocessing it, with standardisation in mind - e.g. unification of units,
+    discarding non-wiki values and rounding them.
     """
 
     def __init__(
@@ -100,7 +100,7 @@ class OSMWayLoader:
             ValueError: If provided GeoDataFrame has no crs defined.
             ValueError: If provided GeoDataFrame is empty.
             TypeError: If provided geometries are not of type Polygon or MultiPolygon.
-            LoadedDataIsEmptyException: If all of the supplied area polygons do not contain
+            LoadedDataIsEmptyException: If none of the supplied area polygons contains
                 any road infrastructure data.
 
         Returns:
@@ -137,7 +137,7 @@ class OSMWayLoader:
         Obtain the raw road infrastructure data from OSM.
 
         Args:
-            gss (gpd.GeoSeries): (Multi)Polygons for which to download road infrastructure data.
+            gss (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
 
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
