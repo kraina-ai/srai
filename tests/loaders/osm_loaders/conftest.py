@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point, Polygon
 
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -22,7 +22,7 @@ def area_with_no_objects_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def empty_result_gdf() -> gpd.GeoDataFrame:
     """Get empty OSMOnlineLoader result gdf."""
-    result_index = pd.Index(data=[], name="feature_id", dtype="object")
+    result_index = pd.Index(data=[], name=FEATURES_INDEX, dtype="object")
     return gpd.GeoDataFrame(index=result_index, crs=WGS84_CRS, geometry=[])
 
 
@@ -89,7 +89,7 @@ def expected_result_single_polygon() -> gpd.GeoDataFrame:
             data=[
                 "node/1",
             ],
-            name="feature_id",
+            name=FEATURES_INDEX,
             dtype="object",
         ),
         crs=WGS84_CRS,
@@ -109,7 +109,7 @@ def expected_result_gdf_simple() -> gpd.GeoDataFrame:
                 "node/1",
                 "node/2",
             ],
-            name="feature_id",
+            name=FEATURES_INDEX,
             dtype="object",
         ),
         crs=WGS84_CRS,
@@ -131,7 +131,7 @@ def expected_result_gdf_complex() -> gpd.GeoDataFrame:
                 "node/2",
                 "way/3",
             ],
-            name="feature_id",
+            name=FEATURES_INDEX,
             dtype="object",
         ),
         crs=WGS84_CRS,

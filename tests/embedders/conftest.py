@@ -160,7 +160,7 @@ def gdf_features() -> gpd.GeoDataFrame:
         ],
         index=pd.Index(
             data=["way/312457804", "way/1533817161", "way/312457812", "way/312457834"],
-            name="feature_id",
+            name=FEATURES_INDEX,
         ),
         crs=WGS84_CRS,
     )
