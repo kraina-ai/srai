@@ -67,7 +67,9 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             remove_artefact_regions (bool, optional): Whether to remove small regions barely
                 intersecting queried area. Turning it off can sometimes load unnecessary boundaries
                 that touch on the edge. It removes regions that intersect with an area smaller
-                than 1% of total self. Defaults to True.
+                than 1% of total self. Takes into consideration if provided query GeoDataFrame
+                contains points and then skips calculating area when intersects any point.
+                Defaults to True.
 
         Raises:
             ValueError: If admin_level is outside available range (1-11). See [2] for list of
@@ -320,6 +322,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         return joined_mask.difference(joined_geometry)
 
     def _get_empty_geodataframe(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Get empty GeoDataFrame when zero boundaries have been found."""
         if self.return_empty_region:
             regions_gdf = gpd.GeoDataFrame(
                 data={
