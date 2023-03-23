@@ -174,12 +174,14 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
         if self.remove_artefact_regions:
-            clipping_area = gdf_wgs84.geometry.unary_union
+            points_collection = gdf_wgs84[gdf_wgs84.geom_type == "Point"].geometry.unary_union
+            clipping_polygon_area = gdf_wgs84[gdf_wgs84.geom_type != "Point"].geometry.unary_union
             regions_to_keep = [
                 region_id
-                for region_id in regions_gdf.index
-                if self._calculate_intersection_area_fraction(
-                    regions_gdf.loc[region_id]["geometry"], clipping_area
+                for region_id, row in regions_gdf.iterrows()
+                if row["geometry"].intersects(points_collection)
+                or self._calculate_intersection_area_fraction(
+                    row["geometry"], clipping_polygon_area
                 )
                 > 0.01
             ]
