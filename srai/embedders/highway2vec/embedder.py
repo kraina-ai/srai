@@ -96,12 +96,12 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        _, _ = regions_gdf, joint_gdf  # not used
+        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
 
         num_features = len(features_df.columns)
         self._model = Highway2VecModel(
-            in_dim=num_features, hidden_dim=self._hidden_size, latent_dim=self._embedding_size
+            n_features=num_features, n_hidden=self._hidden_size, n_embed=self._embedding_size
         )
 
         dataloader_kwargs = dataloader_kwargs or {}

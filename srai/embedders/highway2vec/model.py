@@ -15,14 +15,14 @@ from torch import nn, optim
 class Highway2VecModel(pl.LightningModule):  # type: ignore
     """Autoencoder based embedding model for highway2vec."""
 
-    def __init__(self, in_dim: int, hidden_dim: int = 64, latent_dim: int = 30, lr: float = 1e-3):
+    def __init__(self, n_features: int, n_hidden: int = 64, n_embed: int = 30, lr: float = 1e-3):
         """
         Init Highway2VecModel.
 
         Args:
-            in_dim (int): Number of features.
-            hidden_dim (int, optional): Number of hidden units. Defaults to 64.
-            latent_dim (int, optional): Embedding size. Defaults to 30.
+            n_features (int): Number of features.
+            n_hidden (int, optional): Number of hidden units. Defaults to 64.
+            n_embed (int, optional): Embedding size. Defaults to 30.
             lr (float, optional): Learning rate. Defaults to 1e-3.
         """
         super().__init__()
@@ -30,14 +30,14 @@ class Highway2VecModel(pl.LightningModule):  # type: ignore
         self.save_hyperparameters()
 
         self.encoder = nn.Sequential(
-            nn.Linear(in_dim, hidden_dim),
+            nn.Linear(n_features, n_hidden),
             nn.ReLU(),
-            nn.Linear(hidden_dim, latent_dim),
+            nn.Linear(n_hidden, n_embed),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, hidden_dim),
+            nn.Linear(n_embed, n_hidden),
             nn.ReLU(),
-            nn.Linear(hidden_dim, in_dim),
+            nn.Linear(n_hidden, n_features),
         )
         self.lr = lr
 
