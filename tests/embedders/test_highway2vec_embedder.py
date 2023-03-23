@@ -6,6 +6,7 @@ import pytest
 from pytorch_lightning import seed_everything
 from shapely.geometry import LineString, Polygon
 
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX
 from srai.embedders import Highway2VecEmbedder
 from srai.exceptions import ModelNotFitException
 
@@ -27,7 +28,7 @@ def highway2vec_features() -> gpd.GeoDataFrame:
         ],
         index=[1, 2, 3],
     )
-    features_gdf.index.name = "feature_id"
+    features_gdf.index.name = FEATURES_INDEX
     return features_gdf
 
 
@@ -36,14 +37,14 @@ def highway2vec_regions() -> gpd.GeoDataFrame:
     """Get Highway2Vec regions GeoDataFrame."""
     regions_gdf = gpd.GeoDataFrame(
         {
-            "region_id": ["ff1", "ff2", "ff3"],
+            REGIONS_INDEX: ["ff1", "ff2", "ff3"],
         },
         geometry=[
             Polygon([(0, 0), (0, 3), (3, 3), (3, 0)]),
             Polygon([(4, 0), (4, 3), (7, 3), (7, 0)]),
             Polygon([(8, 0), (8, 3), (11, 3), (11, 0)]),
         ],
-    ).set_index("region_id")
+    ).set_index(REGIONS_INDEX)
     return regions_gdf
 
 
@@ -53,7 +54,7 @@ def highway2vec_joint() -> gpd.GeoDataFrame:
     joint_gdf = gpd.GeoDataFrame()
     joint_gdf.index = pd.MultiIndex.from_tuples(
         [("ff1", 1), ("ff1", 2), ("ff2", 3), ("ff3", 3)],
-        names=["region_id", "feature_id"],
+        names=[REGIONS_INDEX, FEATURES_INDEX],
     )
     return joint_gdf
 
@@ -72,7 +73,7 @@ def highway2vec_embeddings() -> pd.DataFrame:
 
     features = pd.DataFrame(
         embeddings,
-        index=pd.Index(["ff1", "ff2", "ff3"], name="region_id"),
+        index=pd.Index(["ff1", "ff2", "ff3"], name=REGIONS_INDEX),
         columns=pd.RangeIndex(0, 4, 1),
     )
     return features

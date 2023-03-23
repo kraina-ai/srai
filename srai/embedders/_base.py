@@ -28,7 +28,6 @@ class Embedder(abc.ABC):
             pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
