@@ -5,6 +5,12 @@ This module contains functions for quick plotting of analysed gdfs using Plotly 
 """
 from typing import Any, Dict, List, Optional, Set
 
+from srai.utils._optional import import_optional_dependencies
+
+import_optional_dependencies(dependency_group="plotting", modules=["plotly"])
+
+# flake8: noqa E402
+
 import geopandas as gpd
 import numpy as np
 import plotly.express as px

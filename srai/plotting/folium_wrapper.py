@@ -7,6 +7,12 @@ function.
 from itertools import cycle, islice
 from typing import List, Optional, Set, Union
 
+from srai.utils._optional import import_optional_dependencies
+
+import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
+
+# flake8: noqa E402
+
 import branca.colormap as cm
 import folium
 import geopandas as gpd
