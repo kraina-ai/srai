@@ -16,7 +16,7 @@ from parametrization import Parametrization as P
 from pytest_check import check
 from pytest_mock import MockerFixture
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
 from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
 
@@ -33,7 +33,7 @@ def empty_area_gdf() -> gpd.GeoDataFrame:
 def no_crs_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf without crs defined."""
     polygon = shpg.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
-    gdf = gpd.GeoDataFrame({"geometry": [polygon]})
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]})
     return gdf
 
 
@@ -41,7 +41,7 @@ def no_crs_area_gdf() -> gpd.GeoDataFrame:
 def bad_geometry_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with unsupported geometry (not Polygon or Multipolygon)."""
     point = shpg.Point(0, 0)
-    gdf = gpd.GeoDataFrame({"geometry": [point]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [point]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -49,7 +49,7 @@ def bad_geometry_area_gdf() -> gpd.GeoDataFrame:
 def empty_polygon_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf where there is no road infrastructure."""
     polygon = shpg.Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
-    gdf = gpd.GeoDataFrame({"geometry": [polygon]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -66,7 +66,7 @@ def first_polygon_area_gdf() -> gpd.GeoDataFrame:
         ]
     )
 
-    gdf = gpd.GeoDataFrame({"geometry": [polygon]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -82,7 +82,7 @@ def second_polygon_area_gdf() -> gpd.GeoDataFrame:
         ]
     )
 
-    gdf = gpd.GeoDataFrame({"geometry": [polygon]}, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]}, crs=WGS84_CRS)
     return gdf
 
 
@@ -249,8 +249,8 @@ def test_contract(
 
         check.equal(len(nodes), nodes_expected_len)
         check.equal(len(edges), edges_expected_len)
-        check.is_in("geometry", nodes.columns)
-        check.is_in("geometry", edges.columns)
+        check.is_in(GEOMETRY_COLUMN, nodes.columns)
+        check.is_in(GEOMETRY_COLUMN, edges.columns)
 
 
 @P.parameters("column_name", "input", "expected")  # type: ignore

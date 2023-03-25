@@ -14,7 +14,7 @@ import shapely.geometry as shpg
 from functional import seq
 from tqdm.auto import tqdm
 
-from srai.constants import WGS84_CRS
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
 from srai.utils._optional import import_optional_dependencies
 
@@ -58,6 +58,7 @@ class OSMWayLoader:
         contain_within_area: bool = False,
         preprocess: bool = True,
         wide: bool = True,
+        metadata: bool = False,
         osm_way_tags: Dict[str, List[str]] = constants.OSM_WAY_TAGS,
     ) -> None:
         """
@@ -72,6 +73,8 @@ class OSMWayLoader:
                 Whether to preprocess the data.
             wide (bool): defaults to True
                 Whether to return the roads in wide format.
+            metadata (bool): defaults to False
+                Whether to return metadata for roads.
             osm_way_tags (List[str]): defaults to constants.OSM_WAY_TAGS
                 Dict of tags to take into consideration during computing.
         """
@@ -81,6 +84,7 @@ class OSMWayLoader:
         self.contain_within_area = contain_within_area
         self.preprocess = preprocess
         self.wide = wide
+        self.metadata = metadata
         self.osm_keys = list(osm_way_tags.keys())
         self.osm_tags_flat = (
             seq(osm_way_tags.items())
@@ -125,10 +129,12 @@ class OSMWayLoader:
         gdf_edges = self._explode_cols(gdf_edges_raw)
 
         if self.preprocess:
-            self._preprocess(gdf_edges, inplace=True)
+            gdf_edges = self._preprocess(gdf_edges)
 
         if self.wide:
             gdf_edges = self._to_wide(gdf_edges_raw, gdf_edges)
+
+        gdf_edges = self._unify_index_and_columns_names(gdf_edges)
 
         return gdf_nodes_raw, gdf_edges
 
@@ -371,3 +377,23 @@ class OSMWayLoader:
         )
 
         return gdf_edges_wide
+
+    def _unify_index_and_columns_names(self, gdf_edges: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Make naming of index and columns consistent.
+
+        Args:
+            gdf_edges (gpd.GeoDataFrame): Edges to unify
+
+        Returns:
+            gpd.GeoDataFrame: Edges with unified index and columns names
+        """
+        gdf = gdf_edges.reset_index().drop(columns=["u", "v"])
+        gdf.index.rename(FEATURES_INDEX, inplace=True)
+
+        reindex_columns = constants.METADATA_COLUMNS if self.metadata else []
+        reindex_columns += self.osm_tags_flat if self.wide else self.osm_keys
+        reindex_columns += [GEOMETRY_COLUMN]
+        gdf = gdf.reindex(columns=reindex_columns)
+
+        return gdf

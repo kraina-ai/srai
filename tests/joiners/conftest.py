@@ -39,6 +39,7 @@ def regions_gdf() -> gpd.GeoDataFrame:
 def features_gdf() -> gpd.GeoDataFrame:
     """Get GeoDataFrame with example features."""
     features = gpd.GeoDataFrame(
+        [1, 2, 3, 4],
         geometry=[
             geometry.Polygon([(-1.5, 0.5), (-1.5, 0), (-0.5, 0), (-0.5, 0.5)]),
             geometry.Polygon([(-1.5, -1.5), (-1.5, -2.5), (-0.5, -2.5), (-0.5, -1.5)]),
