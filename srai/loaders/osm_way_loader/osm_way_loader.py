@@ -23,9 +23,6 @@ from . import constants
 logger = logging.getLogger(__name__)
 
 
-METADATA_COLUMNS = ["from", "to", "key", "osmid", "name", "reversed", "length", "ref"]
-
-
 class NetworkType(str, Enum):
     """
     Type of the street network.
@@ -392,9 +389,9 @@ class OSMWayLoader:
             gpd.GeoDataFrame: Edges with unified index and columns names
         """
         gdf = gdf_edges.reset_index().drop(columns=["u", "v"])
-        gdf.index.name = FEATURES_INDEX
+        gdf.index.rename(FEATURES_INDEX, inplace=True)
 
-        reindex_columns = METADATA_COLUMNS if self.metadata else []
+        reindex_columns = constants.METADATA_COLUMNS if self.metadata else []
         reindex_columns += self.osm_tags_flat if self.wide else self.osm_keys
         reindex_columns += [GEOMETRY_COLUMN]
         gdf = gdf.reindex(columns=reindex_columns)
