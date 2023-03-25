@@ -18,8 +18,6 @@ dependencies = [
     "topojson>=1.5",
     "tqdm>=4.64.1",
     "s2>=0.1.9",
-    "pytorch-lightning>=1.0.0",
-    "torch",
     "typeguard>=3.0.2",
 ]
 requires-python = ">=3.8"
@@ -55,7 +53,10 @@ voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 gtfs = ["gtfs-kit>=5.0.0"]
 # pdm add -G plotting <library>
 plotting = ["folium>=0.14.0", "mapclassify>=2.5.0", "plotly>=5.10.0", "kaleido==0.2.1"]
-all = ["srai[osm,voronoi,gtfs,plotting]"]
+# pdm add -G torch <library>
+torch = ["pytorch-lightning>=1.0.0", "torch"]
+all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
+
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]

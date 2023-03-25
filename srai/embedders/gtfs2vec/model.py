@@ -6,15 +6,16 @@ This module contains embedding model from gtfs2vec paper [1].
 References:
     1. https://doi.org/10.1145/3486640.3491392
 """
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import torch
-from pytorch_lightning import LightningModule
-from torch import nn
-from torch.nn import functional as F
+from srai.utils._optional import import_optional_dependencies
+
+if TYPE_CHECKING:  # pragma: no cover
+    # import pytorch_lightning as pl
+    import torch
 
 
-class GTFS2VecModel(LightningModule):  # type: ignore
+class GTFS2VecModel("pl.LightningModule"):  # type: ignore
     """Autoencoder based embedding model for gtfs2vec."""
 
     def __init__(
@@ -32,6 +33,11 @@ class GTFS2VecModel(LightningModule):  # type: ignore
             n_embed (int, optional): Embedding size. Defaults to 64.
         """
         super().__init__()
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
+        from torch import nn
+
         self.n_features = n_features
 
         self.encoder = nn.Sequential(
@@ -41,7 +47,7 @@ class GTFS2VecModel(LightningModule):  # type: ignore
             nn.Linear(n_embed, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_features)
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: "torch.Tensor") -> "torch.Tensor":
         """
         Forward pass.
 
@@ -51,12 +57,12 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         embedding: torch.Tensor = self.encoder(x)
         return embedding
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
+    def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Configure optimizer."""
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
-    def training_step(self, batch: torch.Tensor, batch_idx: Any) -> torch.Tensor:
+    def training_step(self, batch: "torch.Tensor", batch_idx: Any) -> "torch.Tensor":
         """
         Training step.
 
@@ -64,6 +70,8 @@ class GTFS2VecModel(LightningModule):  # type: ignore
             batch (torch.Tensor): Batch.
             batch_idx (Any): Batch index.
         """
+        from torch.nn import functional as F
+
         x = batch
         z = self.encoder(x)
         x_hat = self.decoder(z)

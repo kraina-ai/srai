@@ -48,6 +48,8 @@ def no_optional_dependencies(monkeypatch):
         "mapclassify",
         "plotly",
         "kaleido",
+        "pytorch-lightning",
+        "torch",
     ]
     for package in optional_packages:
         sys.modules.pop(package, None)
