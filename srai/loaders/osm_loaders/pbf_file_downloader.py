@@ -159,7 +159,7 @@ class PbfFileDownloader:
                 extraction_uuid = start_extract_result["uuid"]
                 status_check_url = start_extract_result["url"]
             except KeyError:
-                warnings.warn(json.dumps(start_extract_result))
+                warnings.warn(json.dumps(start_extract_result), stacklevel=2)
                 raise
 
             with tqdm() as pbar:

@@ -66,7 +66,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """
-        super(PbfFileHandler, self).__init__()
+        super().__init__()
         self.filter_tags = tags
         if self.filter_tags:
             self.filter_tags_keys = set(self.filter_tags.keys())
@@ -234,7 +234,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             geometry = wkblib.loads(wkb, hex=True)
         except RuntimeError as ex:
             message = str(ex)
-            warnings.warn(message, RuntimeWarning)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
 
         return geometry
 

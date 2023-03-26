@@ -85,6 +85,7 @@ def map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, fl
     Args:
         lon (float): longitude of a point in a wgs84 crs.
         lat (float): latitude of a point in a wgs84 crs.
+        ell (Ellipsoid): an ellipsoid.
 
     Returns:
         Tuple[float, float, float]: (x, y, z) coordinates tuple.
@@ -101,6 +102,7 @@ def map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[f
         x (float): X cartesian coordinate.
         y (float): Y cartesian coordinate.
         z (float): Z cartesian coordinate.
+        ell (Ellipsoid): an ellipsoid.
 
     Returns:
         Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.

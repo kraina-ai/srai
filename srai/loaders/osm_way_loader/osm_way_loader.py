@@ -143,7 +143,7 @@ class OSMWayLoader:
         Obtain the raw road infrastructure data from OSM.
 
         Args:
-            gss (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
+            gdf (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
 
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)

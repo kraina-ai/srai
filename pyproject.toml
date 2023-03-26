@@ -67,12 +67,9 @@ dev = ["bumpver>=2022.1118"]
 lint = [
     "pre-commit~=2.20",
     "black[jupyter]>=22.10.0",
-    "flake8~=5.0",
-    "pydocstyle[toml]>=6.1.1",
-    "flake8-docstrings>=1.6.0",
-    "isort~=5.10",
     "mypy~=0.982",
     "docformatter[tomli]>=1.5.0",
+    "ruff>=0.0.259",
 ]
 # pdm add -dG test <library>
 test = [
@@ -112,19 +109,25 @@ line-length = 100
 target-version = ["py38", "py39", "py310", "py311"]
 preview = true
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = [
+    "E",  # pycodestyle
+    "F",  # pyflakes
+    "UP", # pyupgrade
+    "D",  # pydocstyle
+    "I",  # isort
+    "B",   # flake8-bugbear
+    "NPY"  # NumPy
+]
+ignore = ["D212"]
 
-[tool.bumpver]
-current_version = "0.0.1"
-version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
-commit_message = "chore: bump version {old_version} -> {new_version}"
-commit = true
-tag = true
-push = false
+[tool.ruff.pydocstyle]
+convention = "google"
 
-[tool.bumpver.file_patterns]
-"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+[tool.ruff.pycodestyle]
+max-doc-length = 100
 
 [tool.mypy]
 strict = true
@@ -133,11 +136,6 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
-
-[tool.pydocstyle]
-convention = "google"
-add-select = ["D213"]
-add-ignore = ["D202", "D212"]
 
 [tool.docformatter]
 syntax = 'google'
@@ -151,6 +149,17 @@ blank = false
 pre-summary-newline = true
 close-quotes-on-newline = true
 wrap-one-line = true
+
+[tool.bumpver]
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "chore: bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
