@@ -1,12 +1,14 @@
 """Tests for H3Regionizer."""
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 from unittest import TestCase
 
-import geopandas as gpd
 import pytest
 
 from srai.regionizers import S2Regionizer
+
+if TYPE_CHECKING:
+    import geopandas as gpd
 
 ut = TestCase()
 S2_RESOLUTION = 7

@@ -1,14 +1,16 @@
 """Tests for OSMOnlineLoader."""
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
 import pytest
 from pandas.testing import assert_frame_equal
-from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+
+if TYPE_CHECKING:
+    from shapely.geometry import Polygon
 
 
 @pytest.fixture  # type: ignore

@@ -37,7 +37,6 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Returns:
             Set[IndexType]: Indexes of the neighbours.
         """
-        pass  # pragma: no cover
 
     def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """

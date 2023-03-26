@@ -3,9 +3,8 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
-import os
 import warnings
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union
 
 import geopandas as gpd
 import osmium
@@ -19,6 +18,9 @@ from tqdm import tqdm
 from srai.constants import FEATURES_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+
+if TYPE_CHECKING:
+    import os
 
 
 class PbfFileHandler(osmium.SimpleHandler):  # type: ignore

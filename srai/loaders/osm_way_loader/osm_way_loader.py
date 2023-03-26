@@ -324,7 +324,7 @@ class OSMWayLoader:
                     x = x * constants.MPH_TO_KMH
                 x = float(x)
             elif column_name == "width":
-                if x.endswith("m") or x.endswith("meter"):
+                if x.endswith(("m", "meter")):
                     x = x.split("m")[0].strip()
                 elif "'" in x:
                     x = float(x.split("'")[0].strip())
