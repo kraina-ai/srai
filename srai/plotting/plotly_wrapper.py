@@ -27,7 +27,7 @@ def plot_regions(
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
-    renderer: Optional[str] = "notebook_connected",
+    renderer: Optional[str] = None,
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
@@ -46,7 +46,7 @@ def plot_regions(
             Defaults to None.
         renderer (str, optional): Name of renderer used for displaying the figure.
             For all descriptions, look here: https://plotly.com/python/renderers/.
-            Defaults to "notebook_connected".
+            Defaults to None.
         zoom (float, optional): Map zoom. If not filled, will be approximated based on
             the bounding box of regions. Defaults to None.
         height (float, optional): Height of the plot. Defaults to None.
@@ -83,7 +83,7 @@ def plot_neighbours(
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
-    renderer: Optional[str] = "notebook_connected",
+    renderer: Optional[str] = None,
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
@@ -104,7 +104,7 @@ def plot_neighbours(
             Defaults to None.
         renderer (str, optional): Name of renderer used for displaying the figure.
             For all descriptions, look here: https://plotly.com/python/renderers/.
-            Defaults to "notebook_connected".
+            Defaults to None.
         zoom (float, optional): Map zoom. If not filled, will be approximated based on
             the bounding box of regions. Defaults to None.
         height (float, optional): Height of the plot. Defaults to None.
@@ -150,7 +150,7 @@ def plot_all_neighbourhood(
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
-    renderer: Optional[str] = "notebook_connected",
+    renderer: Optional[str] = None,
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
@@ -172,7 +172,7 @@ def plot_all_neighbourhood(
             Defaults to None.
         renderer (str, optional): Name of renderer used for displaying the figure.
             For all descriptions, look here: https://plotly.com/python/renderers/.
-            Defaults to "notebook_connected".
+            Defaults to None.
         zoom (float, optional): Map zoom. If not filled, will be approximated based on
             the bounding box of regions. Defaults to None.
         height (float, optional): Height of the plot. Defaults to None.
@@ -228,7 +228,7 @@ def _plot_regions(
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
     opacity: float = 0.6,
-    renderer: Optional[str] = "notebook_connected",
+    renderer: Optional[str] = None,
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
@@ -257,7 +257,7 @@ def _plot_regions(
         opacity (float, optional): Markers opacity. Defaults to 0.6.
         renderer (str, optional): Name of renderer used for displaying the figure.
             For all descriptions, look here: https://plotly.com/python/renderers/.
-            Defaults to "notebook_connected".
+            Defaults to None.
         zoom (float, optional): Map zoom. If not filled, will be approximated based on
             the bounding box of regions. Defaults to None.
         height (float, optional): Height of the plot. Defaults to None.
