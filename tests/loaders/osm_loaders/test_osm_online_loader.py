@@ -22,7 +22,7 @@ def mock_osmnx(
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
     empty_polygon = area_with_no_objects_gdf["geometry"][0]
 
-    def mock_geometries_from_polygon(polygon: Polygon, tags: osm_tags_type) -> gpd.GeoDataFrame:
+    def mock_geometries_from_polygon(polygon: "Polygon", tags: osm_tags_type) -> gpd.GeoDataFrame:
         tag_key, tag_value = list(tags.items())[0]
         gdf = gdfs[tag_key]
         if tag_value is True:
