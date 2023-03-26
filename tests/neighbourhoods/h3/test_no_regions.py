@@ -1,3 +1,4 @@
+"""Tests for neigbourhoods with no regions."""
 from typing import Set
 
 import pytest

@@ -180,7 +180,7 @@ def test_transform_with_mismatched_features_count(
     """Test GTFS2VecEmbedder transform with mismatched features count."""
     embedder = GTFS2VecEmbedder(skip_autoencoder=False)
     mock_model = mocker.MagicMock()
-    mock_model.configure_mock(**{"n_fetures": 42})
+    mock_model.configure_mock(n_features=42)
     embedder._model = mock_model
 
     with pytest.raises(ValueError):

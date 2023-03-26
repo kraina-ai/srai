@@ -154,7 +154,7 @@ class GTFSLoader:
         if (validation_result["type"] == "error").sum() > 0:
             import warnings
 
-            warnings.warn(f"Invalid GTFS feed: \n{validation_result}", RuntimeWarning)
+            warnings.warn(f"Invalid GTFS feed: \n{validation_result}", RuntimeWarning, stacklevel=2)
             if fail:
                 raise ValueError("Invalid GTFS feed.")
 

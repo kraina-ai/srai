@@ -1,3 +1,4 @@
+"""Tests for LookupNeighbourhood."""
 from typing import Dict, Set, TypeVar
 
 import pytest
@@ -8,16 +9,32 @@ T = TypeVar("T")
 
 
 class LookupNeighbourhood(Neighbourhood[T]):
+    """LookupNeighbourhood."""
+
     def __init__(self, lookup: Dict[T, Set[T]]) -> None:
+        """
+        LookupNeighbourhood constructor.
+
+        Args:
+            lookup (Dict[T, Set[T]]): Mapping of region to its neighbours.
+        """
         self.lookup = lookup
 
     def get_neighbours(self, index: T) -> Set[T]:
+        """
+        Get neighbours for region at index.
+
+        Args:
+            index (T): Index of region in mapping.
+        """
         return self.lookup[index]
 
 
 @pytest.fixture  # type: ignore
 def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
     """
+    Get grid neighbourhood.
+
     This dict represents a simple 3 by 3 grid-like neighbourhood. The tiles are numbered from 1 to
     9, from left to right, top to bottom. The tiles are considered neighbours if they are adjacent
     by edge, not by vertex. Visually it looks like this:
@@ -65,6 +82,7 @@ def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
 def test_get_neighbours_at_distance(
     index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
 ) -> None:
+    """Test neighbours at distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected
@@ -93,6 +111,7 @@ def test_get_neighbours_at_distance(
 def test_get_neighbours_up_to_distance(
     index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
 ) -> None:
+    """Test neighbours up to a distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected

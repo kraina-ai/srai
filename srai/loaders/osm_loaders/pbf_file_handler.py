@@ -3,9 +3,8 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
-import os
 import warnings
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union
 
 import geopandas as gpd
 import osmium
@@ -19,6 +18,9 @@ from tqdm import tqdm
 from srai.constants import FEATURES_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+
+if TYPE_CHECKING:
+    import os
 
 
 class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
@@ -66,7 +68,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """
-        super(PbfFileHandler, self).__init__()
+        super().__init__()
         self.filter_tags = tags
         if self.filter_tags:
             self.filter_tags_keys = set(self.filter_tags.keys())
@@ -234,7 +236,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             geometry = wkblib.loads(wkb, hex=True)
         except RuntimeError as ex:
             message = str(ex)
-            warnings.warn(message, RuntimeWarning)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
 
         return geometry
 

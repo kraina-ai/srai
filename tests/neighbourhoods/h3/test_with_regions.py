@@ -1,3 +1,4 @@
+"""Tests for neigbourhoods with regions."""
 from typing import Any, Set
 
 import geopandas as gpd
@@ -42,7 +43,6 @@ def two_rings_regions_some_missing() -> gpd.GeoDataFrame:
 
     Some regions are missing.
     """
-
     initial_region = ["862bac507ffffff"]
     first_ring = [
         "862bac50fffffff",
@@ -150,9 +150,7 @@ def test_get_neighbours_with_regions_gdf(
 def test_get_neighbours_up_to_distance_with_regions_gdf(
     distance: int, expected: Set[str], request: Any
 ) -> None:
-    """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions
-    GeoDataFrame.
-    """
+    """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions."""
     regions_gdf = request.getfixturevalue("two_rings_regions_some_missing")
     neighbourhood = H3Neighbourhood(regions_gdf)
     initial_region_index = "862bac507ffffff"

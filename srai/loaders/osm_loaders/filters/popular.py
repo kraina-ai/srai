@@ -27,6 +27,7 @@ def get_popular_tags(
     This is a wrapper around the `popular` taginfo api endpoint [1].
     It queries the API, and optionally filters the results
     according to argument values.
+
     Args:
         in_wiki_only (bool, optional): If True, only return results tags
             that have at least one wiki page. Defaults to False.
