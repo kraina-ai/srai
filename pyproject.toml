@@ -131,29 +131,8 @@ select = [
     # "ANN",          # flake8-annotations
 ]
 ignore = ["D212"]
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+extend-exclude = [
     "old",
-    "__pycache__"
 ]
 
 [tool.ruff.pydocstyle]
