@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GTFS Loader from gtfs2vec paper
 - GTFS2Vec Model from gtfs2vec paper
 - GTFS2Vec Embedder using gtfs2vec model
+- Highway2Vec Model from highway2vec paper
+- Highway2Vec Embedder using highway2vec model
 - OSMOnlineLoader
 - OSMPbfLoader
 - OSMWayLoader
@@ -28,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
+- IntersectionJoiner incorrectly returned feature columns when `return_geom=False` ([#208](https://github.com/srai-lab/srai/issues/208))
 
 ### Security
 

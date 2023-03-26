@@ -8,6 +8,8 @@ MPH_TO_KMH = 1.609344
 INCHES_TO_METERS = 0.0254
 FEET_TO_METERS = 0.3048
 
+METADATA_COLUMNS = ["from", "to", "key", "osmid", "name", "reversed", "length", "ref"]
+
 OSMNX_TIMEOUT: int = 180
 """The timeout interval in seconds for HTTP requests."""
 
@@ -284,6 +286,7 @@ OSM_IMPLICIT_MAXSPEEDS = {
     "PH:urban": "30",
     "PH:rural": "80",
     "PH:express": "100",
+    "PL:urban": "50",
     "PT:urban": "50",
     "PT:rural": "90",
     "PT:trunk": "100",

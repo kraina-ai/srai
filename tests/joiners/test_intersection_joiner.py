@@ -64,3 +64,4 @@ def test_correct_multiindex_intersection_joiner_without_geom(
     ut.assertEqual(joint.index.names, joint_multiindex.names)
     ut.assertCountEqual(joint.index, joint_multiindex)
     ut.assertNotIn(GEOMETRY_COLUMN, joint.columns)
+    ut.assertIs(len(joint.columns), 0)

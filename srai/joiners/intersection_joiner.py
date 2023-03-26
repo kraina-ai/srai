@@ -98,7 +98,7 @@ class IntersectionJoiner:
         joint = (
             gpd.sjoin(
                 regions.reset_index(names=REGIONS_INDEX),
-                features.reset_index(names=FEATURES_INDEX),
+                features[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
                 how="inner",
                 predicate="intersects",
             )
