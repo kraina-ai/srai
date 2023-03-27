@@ -8,18 +8,20 @@ References:
 """
 from typing import TYPE_CHECKING
 
-from typing_extensions import TypeAlias
-
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
-    import pytorch_lightning as pl
     import torch
 
-LightningModuleType: TypeAlias = "pl.LightningModule"
+
+try:  # pragma: no cover
+    from pytorch_lightning import LightningModule
+
+except ImportError:
+    from srai.utils._pytorch_stubs import LightningModule
 
 
-class Highway2VecModel(LightningModuleType):  # type: ignore
+class Highway2VecModel(LightningModule):  # type: ignore
     """Autoencoder based embedding model for highway2vec."""
 
     def __init__(self, n_features: int, n_hidden: int = 64, n_embed: int = 30, lr: float = 1e-3):
