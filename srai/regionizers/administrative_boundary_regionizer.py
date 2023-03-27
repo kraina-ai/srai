@@ -168,8 +168,8 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             regions_to_keep = [
                 region_id
                 for region_id, row in regions_gdf.iterrows()
-                if self._check_intersects_with_points(row["geometry"])
-                or self._calculate_intersection_area_fraction(row["geometry"]) > 0.01
+                if self._check_intersects_with_points(row[GEOMETRY_COLUMN])
+                or self._calculate_intersection_area_fraction(row[GEOMETRY_COLUMN]) > 0.01
             ]
             regions_gdf = regions_gdf.loc[regions_to_keep]
 

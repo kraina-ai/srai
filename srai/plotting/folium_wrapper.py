@@ -38,7 +38,9 @@ def plot_regions(
 
     Args:
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
-        tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
+        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+            https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
+            Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
@@ -49,8 +51,7 @@ def plot_regions(
     Returns:
         folium.Map: Generated map.
     """
-    regions_gdf_copy = regions_gdf.copy()
-    return regions_gdf_copy.reset_index().explore(
+    return regions_gdf.reset_index().explore(
         column=REGIONS_INDEX,
         tooltip=REGIONS_INDEX,
         tiles=tiles_style,
@@ -82,7 +83,9 @@ def plot_numeric_data(
         embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame]): Region indexes and numerical data
             to plot.
         data_column (str): Name of the column used to colour the regions.
-        tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
+        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+            https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
+            Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
@@ -133,7 +136,9 @@ def plot_neighbours(
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbours_ids (Set[IndexType]): List of neighbours to highlight.
-        tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
+        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+            https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
+            Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         map (folium.Map, optional): Existing map instance on which to draw the plot.
@@ -171,6 +176,7 @@ def plot_all_neighbourhood(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
+    neighbourhood_max_distance: int = 100,
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
@@ -185,7 +191,12 @@ def plot_all_neighbourhood(
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbourhood (Neighbourhood[IndexType]): `Neighbourhood` class required for finding
             neighbours.
-        tiles_style (str, optional): Map style background. Defaults to "OpenStreetMap".
+        neighbourhood_max_distance (int, optional): Max distance for rendering neighbourhoods.
+            Neighbours farther away won't be coloured, and will be left as "other" regions.
+            Defaults to 100.
+        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+            https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
+            Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the neighbourhoods.
@@ -207,7 +218,7 @@ def plot_all_neighbourhood(
     neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
         regions_gdf.index
     )
-    while neighbours_ids:
+    while neighbours_ids and distance <= neighbourhood_max_distance:
         regions_gdf_copy.loc[list(neighbours_ids), "region"] = distance
         distance += 1
         neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
