@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - H3Neighbourhood
 - AdjacencyNeighbourhood
 - (CI) Changelog Enforcer
-- Utility plotting module base on Folium and Plotly
+- Utility plotting module based on Folium and Plotly
 
 ### Changed
 
