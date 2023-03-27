@@ -99,7 +99,8 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If index levels in gdfs don't overlap correctly.
         """
         import pytorch_lightning as pl
-        from torch.utils.data import DataLoader, torch
+        import torch
+        from torch.utils.data import DataLoader
 
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
