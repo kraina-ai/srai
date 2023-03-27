@@ -58,11 +58,13 @@ class GTFS2VecModel(LightningModuleType):  # type: ignore
         Args:
             x (torch.Tensor): Input tensor.
         """
-        embedding: torch.Tensor = self.encoder(x)
+        embedding: "torch.Tensor" = self.encoder(x)
         return embedding
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Configure optimizer."""
+        import torch
+
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 
@@ -81,5 +83,4 @@ class GTFS2VecModel(LightningModuleType):  # type: ignore
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
         self.log("train_loss", loss)
-        return loss
         return loss

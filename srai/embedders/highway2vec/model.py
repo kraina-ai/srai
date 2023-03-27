@@ -60,7 +60,7 @@ class Highway2VecModel(LightningModuleType):  # type: ignore
         Args:
             x (torch.Tensor): Input tensor.
         """
-        z: torch.Tensor = self.encoder(x)
+        z: "torch.Tensor" = self.encoder(x)
         return z
 
     def training_step(self, batch: "torch.Tensor", batch_idx: int) -> "torch.Tensor":
@@ -95,5 +95,7 @@ class Highway2VecModel(LightningModuleType):  # type: ignore
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Configure optimizer."""
+        import torch
+
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
