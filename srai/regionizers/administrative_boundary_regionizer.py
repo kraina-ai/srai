@@ -152,6 +152,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
                     f" `admin_level`={self.admin_level}."
                 ),
                 RuntimeWarning,
+                stacklevel=2,
             )
 
             return self._get_empty_geodataframe(gdf_wgs84)

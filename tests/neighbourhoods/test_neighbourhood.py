@@ -62,6 +62,8 @@ def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
 @pytest.fixture  # type: ignore
 def grid_3_by_3_irrregular_neighbourhood() -> Dict[int, Set[int]]:
     """
+    Get irregular grid neighbourhood.
+
     This dict represents a simple 3 by 3 grid-like neighbourhood. The tiles are numbered from 1 to
     4, from left to right, top to bottom. The tiles are considered neighbours if they are adjacent
     by edge, not by vertex. Tiles are irregular, not single squares 1 by 1. Visually it looks like
@@ -164,6 +166,7 @@ def test_get_neighbours_at_distance_irregular(
     expected: Set[str],
     grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
 ) -> None:
+    """Test neighbours at distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected
@@ -193,6 +196,7 @@ def test_get_neighbours_up_to_distance_irregular(
     expected: Set[str],
     grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
 ) -> None:
+    """Test neighbours up to a distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected
