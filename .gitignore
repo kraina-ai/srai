@@ -146,3 +146,6 @@ lightning_logs/
 
 # files_cache
 files/
+
+# ruff
+.ruff_cache

@@ -45,17 +45,17 @@ def import_optional_dependency(
     try:
         imported_module = importlib.import_module(module)
         return imported_module if name is None else getattr(imported_module, name)
-    except ImportError:
+    except ImportError as exc:
         error_msg = (
             f'Missing optional dependency "{module}". Please install required packages using '
             f"`pip install srai[{dependency_group}]`."
         )
         if error == ImportErrorHandle.RAISE:
-            raise ImportError(error_msg)
+            raise ImportError(error_msg) from exc
         if error == ImportErrorHandle.WARN:
             import warnings
 
-            warnings.warn(f"{error_msg} Skipping import.", ImportWarning)
+            warnings.warn(f"{error_msg} Skipping import.", ImportWarning, stacklevel=2)
     return None
 
 
@@ -71,6 +71,5 @@ def import_optional_dependencies(
         error (ErrorHandle, {'raise', 'warn', 'ignore'}): Information what to do when any of
             the modules hasn't been found. Defaults to ErrorHandle.RAISE.
     """
-
     for module in modules:
         import_optional_dependency(dependency_group=dependency_group, module=module, error=error)

@@ -69,8 +69,9 @@ def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbo
     """Test checks if regions are generated correctly and multiprocessing working."""
     number_of_points = 1000
     minx, miny, maxx, maxy = earth_bbox.bounds
-    randx = np.random.uniform(minx, maxx, number_of_points)
-    randy = np.random.uniform(miny, maxy, number_of_points)
+    rng = np.random.default_rng()
+    randx = rng.uniform(minx, maxx, number_of_points)
+    randy = rng.uniform(miny, maxy, number_of_points)
     coords = np.vstack((randx, randy)).T
 
     pts = [p for p in list(map(Point, coords)) if p.covered_by(earth_bbox)]

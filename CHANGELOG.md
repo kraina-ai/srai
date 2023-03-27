@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Change embedders and joiners interface to have `.transform` method
+- Change linter to Ruff and removed flake8, isort, pydocstyle
 
 ### Deprecated
 

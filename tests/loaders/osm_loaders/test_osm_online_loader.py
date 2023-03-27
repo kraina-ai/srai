@@ -1,14 +1,16 @@
 """Tests for OSMOnlineLoader."""
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
 import pytest
 from pandas.testing import assert_frame_equal
-from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+
+if TYPE_CHECKING:
+    from shapely.geometry import Polygon
 
 
 @pytest.fixture  # type: ignore
@@ -20,7 +22,7 @@ def mock_osmnx(
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
     empty_polygon = area_with_no_objects_gdf["geometry"][0]
 
-    def mock_geometries_from_polygon(polygon: Polygon, tags: osm_tags_type) -> gpd.GeoDataFrame:
+    def mock_geometries_from_polygon(polygon: "Polygon", tags: osm_tags_type) -> gpd.GeoDataFrame:
         tag_key, tag_value = list(tags.items())[0]
         gdf = gdfs[tag_key]
         if tag_value is True:
