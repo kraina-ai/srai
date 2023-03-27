@@ -8,14 +8,18 @@ References:
 """
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import TypeAlias
+
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
-    # import pytorch_lightning as pl
+    import pytorch_lightning as pl
     import torch
 
+LightningModuleType: TypeAlias = "pl.LightningModule"
 
-class GTFS2VecModel("pl.LightningModule"):  # type: ignore
+
+class GTFS2VecModel(LightningModuleType):  # type: ignore
     """Autoencoder based embedding model for gtfs2vec."""
 
     def __init__(
@@ -77,4 +81,5 @@ class GTFS2VecModel("pl.LightningModule"):  # type: ignore
         x_hat = self.decoder(z)
         loss = F.mse_loss(x_hat, x)
         self.log("train_loss", loss)
+        return loss
         return loss
