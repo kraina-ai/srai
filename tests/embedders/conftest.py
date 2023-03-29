@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from shapely import geometry
 
-from srai.constants import WGS84_CRS
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -31,20 +31,21 @@ def gdf_empty() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def gdf_regions_empty() -> gpd.GeoDataFrame:
     """Get empty GeoDataFrame with region_id as index name."""
-    return gpd.GeoDataFrame(index=pd.Index([], name="region_id"), geometry=[])
+    return gpd.GeoDataFrame(index=pd.Index([], name=REGIONS_INDEX), geometry=[])
 
 
 @pytest.fixture  # type: ignore
 def gdf_features_empty() -> gpd.GeoDataFrame:
     """Get empty GeoDataFrame with feature_id as index name."""
-    return gpd.GeoDataFrame(index=pd.Index([], name="feature_id"), geometry=[])
+    return gpd.GeoDataFrame(index=pd.Index([], name=FEATURES_INDEX), geometry=[])
 
 
 @pytest.fixture  # type: ignore
 def gdf_joint_empty() -> gpd.GeoDataFrame:
     """Get empty GeoDataFrame with MultiIndex and [region_id, feature_id] as index names."""
     return gpd.GeoDataFrame(
-        index=pd.MultiIndex.from_arrays([[], []], names=["region_id", "feature_id"]), geometry=[]
+        index=pd.MultiIndex.from_arrays([[], []], names=[REGIONS_INDEX, FEATURES_INDEX]),
+        geometry=[],
     )
 
 
@@ -106,7 +107,7 @@ def gdf_regions() -> gpd.GeoDataFrame:
             ),
         ],
         index=pd.Index(
-            data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"], name="region_id"
+            data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"], name=REGIONS_INDEX
         ),
         crs=WGS84_CRS,
     )
@@ -159,7 +160,7 @@ def gdf_features() -> gpd.GeoDataFrame:
         ],
         index=pd.Index(
             data=["way/312457804", "way/1533817161", "way/312457812", "way/312457834"],
-            name="feature_id",
+            name=FEATURES_INDEX,
         ),
         crs=WGS84_CRS,
     )
@@ -215,7 +216,7 @@ def gdf_joint() -> gpd.GeoDataFrame:
                 ["891e2040d4bffff", "891e2040897ffff", "891e2040897ffff", "891e2040d5bffff"],
                 ["way/312457804", "way/1533817161", "way/312457834", "way/312457812"],
             ],
-            names=["region_id", "feature_id"],
+            names=[REGIONS_INDEX, FEATURES_INDEX],
         ),
         crs=WGS84_CRS,
     )

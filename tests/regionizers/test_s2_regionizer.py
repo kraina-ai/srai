@@ -5,6 +5,7 @@ from unittest import TestCase
 
 import pytest
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.regionizers import S2Regionizer
 
 if TYPE_CHECKING:
@@ -57,4 +58,4 @@ def test_transform(
         gdf_s2 = S2Regionizer(resolution).transform(gdf)
 
         ut.assertCountEqual(first=gdf_s2.index.to_list(), second=s2_indexes)
-        assert "geometry" in gdf_s2
+        assert GEOMETRY_COLUMN in gdf_s2

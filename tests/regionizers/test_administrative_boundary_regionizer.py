@@ -8,12 +8,12 @@ from overpass import API
 from pytest_mock import MockerFixture
 from shapely.geometry import Point, box
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.regionizers import AdministrativeBoundaryRegionizer
 from srai.utils import merge_disjointed_gdf_geometries
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
-bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
+bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [bbox]}, crs=WGS84_CRS)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -64,7 +64,7 @@ def mock_overpass_api(mocker: MockerFixture) -> None:
     mocker.patch.object(API, "get", return_value={"elements": [{"type": "relation", "id": 2137}]})
 
     geocoded_gdf = gpd.GeoDataFrame(
-        {"geometry": [box(minx=0, miny=0, maxx=1, maxy=1)]}, crs=WGS84_CRS
+        {GEOMETRY_COLUMN: [box(minx=0, miny=0, maxx=1, maxy=1)]}, crs=WGS84_CRS
     )
     mocker.patch("osmnx.geocode_to_gdf", return_value=geocoded_gdf)
 
@@ -84,7 +84,7 @@ def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], reques
     """Test checks if empty region fills required bounding box."""
     request.getfixturevalue("mock_overpass_api")
     request_bbox = box(minx=0, miny=0, maxx=2, maxy=2)
-    request_bbox_gdf = gpd.GeoDataFrame({"geometry": [request_bbox]}, crs=WGS84_CRS)
+    request_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [request_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
@@ -108,7 +108,7 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
     """Test checks if no empty region is generated when not needed."""
     request.getfixturevalue("mock_overpass_api")
     request_bbox = box(minx=0, miny=0, maxx=1, maxy=1)
-    request_bbox_gdf = gpd.GeoDataFrame({"geometry": [request_bbox]}, crs=WGS84_CRS)
+    request_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [request_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )
@@ -131,14 +131,14 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
 def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> None:
     """Test checks case when points are in a requested region."""
     request.getfixturevalue("mock_overpass_api")
-    request_gdf = gpd.GeoDataFrame({"geometry": [Point(0.5, 0.5)]}, crs=WGS84_CRS)
+    request_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [Point(0.5, 0.5)]}, crs=WGS84_CRS)
 
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=False, clip_regions=False, toposimplify=toposimplify
     )
 
     result_gdf = abr.transform(gdf=request_gdf)
-    assert request_gdf.geometry[0].within(result_gdf.geometry[0])
+    assert request_gdf.geometry[0].covered_by(result_gdf.geometry[0])
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -157,7 +157,7 @@ def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
     madagascar_bbox = box(
         minx=43.2541870461, miny=-25.6014344215, maxx=50.4765368996, maxy=-12.0405567359
     )
-    madagascar_bbox_gdf = gpd.GeoDataFrame({"geometry": [madagascar_bbox]}, crs=WGS84_CRS)
+    madagascar_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [madagascar_bbox]}, crs=WGS84_CRS)
 
     abr = AdministrativeBoundaryRegionizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
@@ -166,3 +166,32 @@ def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
     assert (
         merge_disjointed_gdf_geometries(madagascar_result_gdf).difference(madagascar_bbox).is_empty
     )
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "return_empty_region",
+    [
+        (True),
+        (False),
+    ],
+)
+def test_regions_not_found_on_real_data(return_empty_region: bool) -> None:
+    """Test if warns when can't find any regions."""
+    null_island_region = box(minx=0, miny=0, maxx=0.1, maxy=0.1)
+    null_island_region_gdf = gpd.GeoDataFrame(
+        {GEOMETRY_COLUMN: [null_island_region]}, crs=WGS84_CRS
+    )
+
+    abr = AdministrativeBoundaryRegionizer(admin_level=10, return_empty_region=return_empty_region)
+
+    with pytest.warns(RuntimeWarning):
+        madagascar_result_gdf = abr.transform(gdf=null_island_region_gdf)
+
+    if return_empty_region:
+        assert (
+            merge_disjointed_gdf_geometries(madagascar_result_gdf)
+            .difference(null_island_region)
+            .is_empty
+        )
+    else:
+        assert merge_disjointed_gdf_geometries(madagascar_result_gdf).is_empty

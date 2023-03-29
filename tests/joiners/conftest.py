@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from shapely import geometry
 
-from srai.constants import WGS84_CRS
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -55,5 +55,5 @@ def features_gdf() -> gpd.GeoDataFrame:
 def joint_multiindex() -> pd.MultiIndex:
     """Get MultiIndex for joint GeoDataFrame."""
     return pd.MultiIndex.from_tuples(
-        [(0, 2), (0, 3), (1, 2), (0, 0), (3, 0), (2, 1)], names=["region_id", "feature_id"]
+        [(0, 2), (0, 3), (1, 2), (0, 0), (3, 0), (2, 1)], names=[REGIONS_INDEX, FEATURES_INDEX]
     )

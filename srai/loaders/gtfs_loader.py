@@ -17,7 +17,7 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -69,13 +69,13 @@ class GTFSLoader:
         directions_df = self._load_directions(feed)
 
         stops_df = feed.stops[["stop_id", "stop_lat", "stop_lon"]].set_index("stop_id")
-        stops_df["geometry"] = stops_df.apply(
+        stops_df[GEOMETRY_COLUMN] = stops_df.apply(
             lambda row: Point([row["stop_lon"], row["stop_lat"]]), axis=1
         )
 
         result_gdf = gpd.GeoDataFrame(
-            trips_df.merge(stops_df["geometry"], how="inner", on="stop_id"),
-            geometry="geometry",
+            trips_df.merge(stops_df[GEOMETRY_COLUMN], how="inner", on="stop_id"),
+            geometry=GEOMETRY_COLUMN,
             crs=WGS84_CRS,
         )
 

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from shapely.geometry import Point, Polygon
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.regionizers import VoronoiRegionizer
 from srai.regionizers._spherical_voronoi import generate_voronoi_regions
 from srai.utils import merge_disjointed_gdf_geometries
@@ -31,7 +31,7 @@ def test_duplicate_seeds_value_error() -> None:
     """Test checks if duplicate points are disallowed."""
     with pytest.raises(ValueError):
         seeds_gdf = gpd.GeoDataFrame(
-            {"geometry": [Point(0, 0), Point(0, 0), Point(-1, -1), Point(2, 2)]},
+            {GEOMETRY_COLUMN: [Point(0, 0), Point(0, 0), Point(-1, -1), Point(2, 2)]},
             index=[1, 2, 3, 4],
             crs=WGS84_CRS,
         )
@@ -42,7 +42,7 @@ def test_single_seed_region() -> None:
     """Test checks if single seed is disallowed."""
     with pytest.raises(ValueError):
         seeds_gdf = gpd.GeoDataFrame(
-            {"geometry": [Point(0, 0)]},
+            {GEOMETRY_COLUMN: [Point(0, 0)]},
             index=[1],
             crs=WGS84_CRS,
         )
@@ -74,10 +74,10 @@ def test_big_number_of_seeds_regions(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbo
     randy = rng.uniform(miny, maxy, number_of_points)
     coords = np.vstack((randx, randy)).T
 
-    pts = [p for p in list(map(Point, coords)) if p.within(earth_bbox)]
+    pts = [p for p in list(map(Point, coords)) if p.covered_by(earth_bbox)]
 
     random_points_gdf = gpd.GeoDataFrame(
-        {"geometry": pts},
+        {GEOMETRY_COLUMN: pts},
         index=list(range(len(pts))),
         crs=WGS84_CRS,
     )
@@ -92,7 +92,7 @@ def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Po
     """Test checks if four close seeds are properly evaluated."""
     seeds_gdf = gpd.GeoDataFrame(
         {
-            "geometry": [
+            GEOMETRY_COLUMN: [
                 Point(17.014997869227177, 51.09919872601259),
                 Point(16.935542631959215, 51.09380600286582),
                 Point(16.900425, 51.1162552343),

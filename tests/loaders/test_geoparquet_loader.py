@@ -5,11 +5,11 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import box
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders import GeoparquetLoader
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
-bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]})
+bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [bbox]})
 
 
 def test_wrong_path_error() -> None:
@@ -59,7 +59,7 @@ def test_setting_index() -> None:
 def test_clipping() -> None:
     """Test if properly clips the data."""
     bbox = box(minx=-106.645646, maxx=-93.508292, miny=25.837377, maxy=36.500704)
-    bbox_gdf = gpd.GeoDataFrame({"geometry": [bbox]}, crs=WGS84_CRS)
+    bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [bbox]}, crs=WGS84_CRS)
     gdf = GeoparquetLoader().load(
         file_path=Path(__file__).parent / "test_files" / "example.parquet", area=bbox_gdf
     )

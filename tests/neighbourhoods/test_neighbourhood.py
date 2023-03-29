@@ -59,6 +59,31 @@ def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
     }
 
 
+@pytest.fixture  # type: ignore
+def grid_3_by_3_irrregular_neighbourhood() -> Dict[int, Set[int]]:
+    """
+    Get irregular grid neighbourhood.
+
+    This dict represents a simple 3 by 3 grid-like neighbourhood. The tiles are numbered from 1 to
+    4, from left to right, top to bottom. The tiles are considered neighbours if they are adjacent
+    by edge, not by vertex. Tiles are irregular, not single squares 1 by 1. Visually it looks like
+    this:
+
+    [[1, 1, 2],
+     [1, 1, 2],
+     [3, 4, 4]]
+
+    Returns:
+        Dict[int, Set[int]]: A dict representing 3 by 3 grid neighbourhood.
+    """
+    return {
+        1: {2, 3, 4},
+        2: {1, 4},
+        3: {1, 4},
+        4: {1, 2, 3},
+    }
+
+
 @pytest.mark.parametrize(  # type: ignore
     "index, distance, expected",
     [
@@ -113,5 +138,65 @@ def test_get_neighbours_up_to_distance(
 ) -> None:
     """Test neighbours up to a distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
+    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
+    assert neighbours == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "index, distance, expected",
+    [
+        (1, -2, set()),
+        (1, -1, set()),
+        (1, 0, set()),
+        (1, 1, {2, 3, 4}),
+        (1, 2, set()),
+        (2, 1, {1, 4}),
+        (2, 2, {3}),
+        (2, 3, set()),
+        (3, 1, {1, 4}),
+        (3, 2, {2}),
+        (3, 3, set()),
+        (4, 1, {1, 2, 3}),
+        (4, 2, set()),
+    ],
+)
+def test_get_neighbours_at_distance_irregular(
+    index: str,
+    distance: int,
+    expected: Set[str],
+    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
+) -> None:
+    """Test neighbours at distance."""
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
+    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
+    assert neighbours == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "index, distance, expected",
+    [
+        (1, -2, set()),
+        (1, -1, set()),
+        (1, 0, set()),
+        (1, 1, {2, 3, 4}),
+        (1, 2, {2, 3, 4}),
+        (2, 1, {1, 4}),
+        (2, 2, {1, 3, 4}),
+        (2, 3, {1, 3, 4}),
+        (3, 1, {1, 4}),
+        (3, 2, {1, 2, 4}),
+        (3, 3, {1, 2, 4}),
+        (4, 1, {1, 2, 3}),
+        (4, 2, {1, 2, 3}),
+    ],
+)
+def test_get_neighbours_up_to_distance_irregular(
+    index: str,
+    distance: int,
+    expected: Set[str],
+    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
+) -> None:
+    """Test neighbours up to a distance."""
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected

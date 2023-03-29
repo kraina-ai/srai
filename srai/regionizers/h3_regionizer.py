@@ -19,7 +19,7 @@ import h3
 from functional import seq
 from shapely import geometry
 
-from srai.constants import REGIONS_INDEX, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
 from srai.utils import buffer_geometry
 
@@ -75,7 +75,7 @@ class H3Regionizer(Regionizer):
         gdf_buffered = self._buffer(gdf_exploded) if self.buffer else gdf_exploded
 
         h3_indexes = (
-            seq(gdf_buffered["geometry"])
+            seq(gdf_buffered[GEOMETRY_COLUMN])
             .map(self._polygon_shapely_to_h3)
             .flat_map(lambda polygon: h3.polygon_to_cells(polygon, self.resolution))
             .distinct()
@@ -86,7 +86,9 @@ class H3Regionizer(Regionizer):
 
         # there may be too many cells because of too big buffer
         if self.buffer:
-            gdf_h3_clipped = gdf_h3.sjoin(gdf_exploded[["geometry"]]).drop(columns="index_right")
+            gdf_h3_clipped = gdf_h3.sjoin(gdf_exploded[[GEOMETRY_COLUMN]]).drop(
+                columns="index_right"
+            )
             gdf_h3_clipped = gdf_h3_clipped[~gdf_h3_clipped.index.duplicated(keep="first")]
         else:
             gdf_h3_clipped = gdf_h3

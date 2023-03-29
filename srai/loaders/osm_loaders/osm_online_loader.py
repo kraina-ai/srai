@@ -11,7 +11,7 @@ import pandas as pd
 from functional import seq
 from tqdm import tqdm
 
-from srai.constants import FEATURES_INDEX, WGS84_CRS
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
 
@@ -84,12 +84,12 @@ class OSMOnlineLoader:
 
         results = []
 
-        pbar = tqdm(product(area_wgs84["geometry"], _tags), total=total_queries)
+        pbar = tqdm(product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries)
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
             geometries = ox.geometries_from_polygon(polygon, {key: value})
             if not geometries.empty:
-                results.append(geometries[["geometry", key]])
+                results.append(geometries[[GEOMETRY_COLUMN, key]])
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
