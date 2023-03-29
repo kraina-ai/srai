@@ -5,6 +5,8 @@ import abc
 import geopandas as gpd
 import pandas as pd
 
+from srai.constants import GEOMETRY_COLUMN
+
 
 class Embedder(abc.ABC):
     """Abstract class for embedders."""
@@ -28,7 +30,6 @@ class Embedder(abc.ABC):
             pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
@@ -70,6 +71,6 @@ class Embedder(abc.ABC):
             )
 
     def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
-        if "geometry" in data.columns:
-            data = data.drop(columns="geometry")
+        if GEOMETRY_COLUMN in data.columns:
+            data = data.drop(columns=GEOMETRY_COLUMN)
         return pd.DataFrame(data)

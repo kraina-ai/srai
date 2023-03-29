@@ -16,7 +16,11 @@ def download_file(url: str, filename: Path, chunk_size: int = 1024) -> None:
 
     Source: https://gist.github.com/yanqd0/c13ed29e29432e3cf3e7c38467f42f51
     """
-    resp = requests.get(url, stream=True)
+    resp = requests.get(
+        url,
+        headers={"User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)"},
+        stream=True,
+    )
     total = int(resp.headers.get("content-length", 0))
     filename.parent.mkdir(parents=True, exist_ok=True)
     with filename.open("wb") as file, tqdm(

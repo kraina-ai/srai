@@ -1,0 +1,18 @@
+name: "Run changelog enforcer"
+on:
+  pull_request:
+    # The specific activity types are listed here to include "labeled" and "unlabeled"
+    # (which are not included by default for the "pull_request" trigger).
+    # This is needed to allow skipping enforcement of the changelog in PRs with specific labels,
+    # as defined in the (optional) "skipLabels" property.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    branches:
+      - main
+
+jobs:
+  run-changelog-enforcer:
+    name: Run changelog enforcer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dangoslen/changelog-enforcer@v3

@@ -1,13 +1,19 @@
 {
-  "editor.formatOnSave": true,
-  "python.formatting.provider": "black",
-  "python.linting.flake8Enabled": true,
   "python.linting.enabled": true,
   "python.linting.mypyEnabled": true,
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true,
+      "source.organizeImports": true
+    }
+  },
+  "python.formatting.provider": "black",
   "autoDocstring.docstringFormat": "google",
   "python.testing.pytestArgs": [
     "tests"
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
+  "python.analysis.typeCheckingMode": "off",
 }

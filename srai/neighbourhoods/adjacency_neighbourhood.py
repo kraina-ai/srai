@@ -8,6 +8,7 @@ from typing import Dict, Hashable, Set
 
 import geopandas as gpd
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.neighbourhoods import Neighbourhood
 
 
@@ -32,7 +33,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         Raises:
             AttributeError: If regions_gdf doesn't have geometry column.
         """
-        if "geometry" not in regions_gdf.columns:
+        if GEOMETRY_COLUMN not in regions_gdf.columns:
             raise AttributeError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
         self.lookup: Dict[Hashable, Set[Hashable]] = {}
@@ -75,7 +76,9 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             1. https://shapely.readthedocs.io/en/stable/reference/shapely.touches.html
         """
         current_region = self.regions_gdf.loc[index]
-        neighbours = self.regions_gdf[self.regions_gdf.geometry.touches(current_region["geometry"])]
+        neighbours = self.regions_gdf[
+            self.regions_gdf.geometry.touches(current_region[GEOMETRY_COLUMN])
+        ]
         return set(neighbours.index)
 
     def _index_incorrect(self, index: Hashable) -> bool:

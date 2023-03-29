@@ -7,7 +7,7 @@ This module contains intersection joiner implementation.
 import geopandas as gpd
 import pandas as pd
 
-from srai.utils.constants import FEATURES_INDEX, REGIONS_INDEX
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
 
 
 class IntersectionJoiner:
@@ -35,9 +35,9 @@ class IntersectionJoiner:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex and optionaly a geometry with the intersection
         """
-        if "geometry" not in regions.columns:
+        if GEOMETRY_COLUMN not in regions.columns:
             raise ValueError("Regions must have a geometry column.")
-        if "geometry" not in features.columns:
+        if GEOMETRY_COLUMN not in features.columns:
             raise ValueError("Features must have a geometry column.")
 
         if len(regions) == 0:
@@ -70,12 +70,12 @@ class IntersectionJoiner:
         """
         joined_parts = [
             gpd.overlay(
-                single[["geometry"]].reset_index(names=FEATURES_INDEX),
-                regions[["geometry"]].reset_index(names=REGIONS_INDEX),
+                single[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
+                regions[[GEOMETRY_COLUMN]].reset_index(names=REGIONS_INDEX),
                 how="intersection",
                 keep_geom_type=False,
             ).set_index([REGIONS_INDEX, FEATURES_INDEX])
-            for _, single in features.groupby(features["geometry"].geom_type)
+            for _, single in features.groupby(features[GEOMETRY_COLUMN].geom_type)
         ]
 
         joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
@@ -98,11 +98,11 @@ class IntersectionJoiner:
         joint = (
             gpd.sjoin(
                 regions.reset_index(names=REGIONS_INDEX),
-                features.reset_index(names=FEATURES_INDEX),
+                features[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
                 how="inner",
                 predicate="intersects",
             )
             .set_index([REGIONS_INDEX, FEATURES_INDEX])
-            .drop(columns=["index_right", "geometry"])
+            .drop(columns=["index_right", GEOMETRY_COLUMN])
         )
         return joint

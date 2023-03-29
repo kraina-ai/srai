@@ -4,20 +4,20 @@ Administrative Boundary Regionizer.
 This module contains administrative boundary regionizer implementation.
 """
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import geopandas as gpd
 import topojson as tp
-from functional import seq
 from shapely.geometry import MultiPolygon, Point, Polygon
-from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
+from srai.utils import flatten_geometry_series
 from srai.utils._optional import import_optional_dependencies
-from srai.utils.constants import REGIONS_INDEX, WGS84_CRS
 
 
 class AdministrativeBoundaryRegionizer(Regionizer):
@@ -36,6 +36,8 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         1. https://wiki.openstreetmap.org/wiki/Key:admin_level
     """
 
+    EMPTY_REGION_NAME = "EMPTY"
+
     def __init__(
         self,
         admin_level: int,
@@ -43,6 +45,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         return_empty_region: bool = False,
         prioritize_english_name: bool = True,
         toposimplify: Union[bool, float] = True,
+        remove_artefact_regions: bool = True,
     ) -> None:
         """
         Init AdministrativeBoundaryRegionizer.
@@ -50,7 +53,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         Args:
             admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of
                 available values.
-            clip_regions (bool, optional): Whether to to clip regions using a provided mask.
+            clip_regions (bool, optional): Whether to clip regions using a provided mask.
                 Turning it off can an be useful when trying to load regions using list a of points.
                 Defaults to True.
             return_empty_region (bool, optional): Whether to return an empty region to fill
@@ -61,6 +64,12 @@ class AdministrativeBoundaryRegionizer(Regionizer):
                 geometries size or not. Value is passed to `topojson` library for topology-aware
                 simplification. Since provided values are treated like degrees, values between
                 1e-4 and 1.0 are recommended. Defaults to True (which results in value equal 1e-4).
+            remove_artefact_regions (bool, optional): Whether to remove small regions barely
+                intersecting queried area. Turning it off can sometimes load unnecessary boundaries
+                that touch on the edge. It removes regions that intersect with an area smaller
+                than 1% of total self. Takes into consideration if provided query GeoDataFrame
+                contains points and then skips calculating area when intersects any point.
+                Defaults to True.
 
         Raises:
             ValueError: If admin_level is outside available range (1-11). See [2] for list of
@@ -83,6 +92,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         self.prioritize_english_name = prioritize_english_name
         self.clip_regions = clip_regions
         self.return_empty_region = return_empty_region
+        self.remove_artefact_regions = remove_artefact_regions
 
         if isinstance(toposimplify, (int, float)) and toposimplify > 0:
             self.toposimplify = toposimplify
@@ -133,8 +143,41 @@ class AdministrativeBoundaryRegionizer(Regionizer):
 
         regions_dicts = self._generate_regions_from_all_geometries(gdf_wgs84)
 
+        if not regions_dicts:
+            import warnings
+
+            warnings.warn(
+                (
+                    "Couldn't find any administrative boundaries with"
+                    f" `admin_level`={self.admin_level}."
+                ),
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
+            return self._get_empty_geodataframe(gdf_wgs84)
+
         regions_gdf = gpd.GeoDataFrame(data=regions_dicts, crs=WGS84_CRS).set_index(REGIONS_INDEX)
         regions_gdf = self._toposimplify_gdf(regions_gdf)
+
+        if self.remove_artefact_regions:
+            points_collection: Optional[BaseGeometry] = gdf_wgs84[
+                gdf_wgs84.geom_type == "Point"
+            ].geometry.unary_union
+            clipping_polygon_area: Optional[BaseGeometry] = gdf_wgs84[
+                gdf_wgs84.geom_type != "Point"
+            ].geometry.unary_union
+
+            regions_to_keep = [
+                region_id
+                for region_id, row in regions_gdf.iterrows()
+                if self._check_intersects_with_points(row["geometry"], points_collection)
+                or self._calculate_intersection_area_fraction(
+                    row["geometry"], clipping_polygon_area
+                )
+                > 0.01
+            ]
+            regions_gdf = regions_gdf.loc[regions_to_keep]
 
         if self.clip_regions:
             regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
@@ -142,7 +185,10 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         if self.return_empty_region:
             empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
-                regions_gdf.loc["EMPTY", "geometry"] = empty_region
+                regions_gdf.loc[
+                    AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME, GEOMETRY_COLUMN
+                ] = empty_region
+
         return regions_gdf
 
     def _generate_regions_from_all_geometries(
@@ -152,14 +198,12 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         elements_ids = set()
         generated_regions: List[Dict[str, Any]] = []
 
-        all_geometries = (
-            seq([self._flatten_geometries(g) for g in gdf_wgs84.geometry]).flatten().list()
-        )
+        all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
-                unary_geometry = unary_union([r["geometry"] for r in generated_regions])
-                if not geometry.within(unary_geometry):
+                unary_geometry = unary_union([r[GEOMETRY_COLUMN] for r in generated_regions])
+                if not geometry.covered_by(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
@@ -207,14 +251,6 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             except (MultipleRequestsError, ServerLoadError):
                 time.sleep(60)
 
-    def _flatten_geometries(self, g: BaseGeometry) -> List[BaseGeometry]:
-        """Flatten all geometries into a list of BaseGeometries."""
-        if isinstance(g, BaseMultipartGeometry):
-            return list(
-                seq([self._flatten_geometries(sub_geom) for sub_geom in g.geoms]).flatten().list()
-            )
-        return [g]
-
     def _generate_query_for_single_geometry(self, g: BaseGeometry) -> str:
         """Generate Overpass query for a geometry."""
         if isinstance(g, Point):
@@ -253,8 +289,8 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             region_id = str(element["id"])
 
         return {
-            "geometry": self._get_boundary_geometry(element["id"]),
-            "region_id": region_id,
+            GEOMETRY_COLUMN: self._get_boundary_geometry(element["id"]),
+            REGIONS_INDEX: region_id,
         }
 
     def _get_boundary_geometry(self, relation_id: str) -> BaseGeometry:
@@ -288,6 +324,46 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         self, mask: gpd.GeoDataFrame, regions_gdf: gpd.GeoDataFrame
     ) -> BaseGeometry:
         """Generate a region filling the space between regions and full clipping mask."""
-        joined_mask = unary_union(mask.geometry)
-        joined_geometry = unary_union(regions_gdf.geometry)
+        joined_mask = mask.geometry.unary_union
+        joined_geometry = regions_gdf.geometry.unary_union
         return joined_mask.difference(joined_geometry)
+
+    def _get_empty_geodataframe(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Get empty GeoDataFrame when zero boundaries have been found."""
+        if self.return_empty_region:
+            regions_gdf = gpd.GeoDataFrame(
+                data={
+                    GEOMETRY_COLUMN: [gdf.geometry.unary_union],
+                    REGIONS_INDEX: [AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME],
+                },
+                crs=WGS84_CRS,
+            ).set_index(REGIONS_INDEX)
+        else:
+            regions_gdf = gpd.GeoDataFrame(
+                data={
+                    GEOMETRY_COLUMN: [],
+                    REGIONS_INDEX: [],
+                },
+                crs=WGS84_CRS,
+            )
+        return regions_gdf
+
+    def _check_intersects_with_points(
+        self, region_geometry: BaseGeometry, points_collection: Optional[BaseGeometry]
+    ) -> bool:
+        """Check if region intersects with any point in query regions."""
+        return (
+            points_collection is not None
+            and not points_collection.is_empty
+            and region_geometry.intersects(points_collection)
+        )
+
+    def _calculate_intersection_area_fraction(
+        self, region_geometry: BaseGeometry, clipping_polygon_area: Optional[BaseGeometry]
+    ) -> float:
+        """Calculate intersection area fraction to check if it's big enough."""
+        if clipping_polygon_area is None or clipping_polygon_area.is_empty:
+            return 0
+        full_area = float(region_geometry.area)
+        clip_area = float(region_geometry.intersection(clipping_polygon_area).area)
+        return clip_area / full_area
