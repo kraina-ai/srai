@@ -1,14 +1,13 @@
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
-import numpy as np
+import pandas as pd
 import requests
-import shapely.geometry as shpg
-from matplotlib import pyplot as plt
 from PIL import Image
 
+from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
 from srai.utils import geocode_to_region_gdf
 
 from .osm_tile_data_collector import DataCollector, InMemoryDataCollector, SavingDataCollector
@@ -69,8 +68,8 @@ class TileLoader:
             if collector_factory is not None
             else lambda: InMemoryDataCollector()
         )
+        self.regionizer = SlippyMapRegionizer(z=self.zoom)
 
-    # TODO cover with save
     def _get_collector_factory(
         self, storage_strategy: str | Callable[[], DataCollector]
     ) -> Callable[[], DataCollector]:
@@ -83,30 +82,6 @@ class TileLoader:
             }[storage_strategy]
         else:
             return storage_strategy
-
-    def coordinates_to_x_y(self, latitude: float, longitude: float) -> Tuple[int, int]:
-        """
-        Counts x and y from latitude and longitude using self.zoom.
-
-        Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
-        """
-        n_rows = 2**self.zoom
-        x_tile = int(n_rows * ((longitude + 180) / 360))
-        lat_radian = np.radians(latitude)
-        y_tile = int((1 - np.arcsinh(np.tan(lat_radian)) / np.pi) / 2 * n_rows)
-        return x_tile, y_tile
-
-    def x_y_to_coordinates(self, x: int, y: int) -> Tuple[float, float]:
-        """
-        Counts latitude and longitude from x, y using self.zoom.
-
-        Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
-        """
-        n = 2.0**self.zoom
-        lon_deg = x / n * 360.0 - 180.0
-        lat_rad = np.arctan(np.sinh(np.pi * (1 - 2 * y / n)))
-        lat_deg = np.degrees(lat_rad)
-        return (lat_deg, lon_deg)
 
     def get_tile_by_x_y(self, x: int, y: int) -> Image.Image:
         """
@@ -122,9 +97,7 @@ class TileLoader:
         content = requests.get(url, params={"access_token": f"{self.auth_token}"}).content
         return Image.open(BytesIO(content))
 
-    def get_tile_by_region_name(
-        self, name: str, return_rect: bool = False
-    ) -> List[List[str]] | List[List[Image.Image]]:
+    def get_tile_by_region_name(self, name: str) -> pd.DataFrame:
         """
         Returns all tiles of region.
 
@@ -133,64 +106,12 @@ class TileLoader:
             return_rect: if true returns tiles out of area to keep rectangle shape of img of joined
                 tiles.
         """
-        gdf = geocode_to_region_gdf(name)["geometry"].item()
-        gdf_bounds = gdf.bounds
-        x_start, y_start = self.coordinates_to_x_y(gdf_bounds[1], gdf_bounds[0])
-        x_end, y_end = self.coordinates_to_x_y(gdf_bounds[3], gdf_bounds[2])
-        tiles = self.collector_factory()
-        for y in range(y_end, y_start + 1):
-            for x in range(x_start, x_end + 1):
-                if return_rect or self._should_not_skip(gdf, x, y):
-                    tile = self.get_tile_by_x_y(x, y)
-                    tiles.store(x, y, tile)
-                else:
-                    tiles.store(x, y, None)
-                    if self.verbose:
-                        print(f"Skipping {x}, {y}")
-        return tiles.collect()
+        tiles_collector = self.collector_factory()
+        gdf = geocode_to_region_gdf(name)
+        regions = self.regionizer.transform(gdf=gdf)
+        return regions.apply(lambda row: self._get_tile_for_area(row, tiles_collector), axis=1)
 
-    def _should_not_skip(self, bounds: shpg.Polygon, x: int, y: int) -> bool:
-        latitude_start, longitude_start = self.x_y_to_coordinates(x, y)
-        latitude_end, longitude_end = self.x_y_to_coordinates(x + 1, y + 1)
-        tile_polygon = shpg.Polygon(
-            [
-                (longitude_start, latitude_start),
-                (longitude_end, latitude_start),
-                (longitude_end, latitude_end),
-                (longitude_start, latitude_end),
-            ]
-        )
-        return tile_polygon.intersects(bounds)
-
-
-# TODO should be covered?
-def tiles_to_img(tiles: List[List[Image.Image]]) -> Image.Image:
-    """
-    Creates one Image from list of tiles generated with TileLoader and InMemoryDataCollector.
-
-    Args:
-        tiles (List[List[Image.Image]]): tiles made with TileLoader.get_tile_by_region_name
-
-    Returns:
-        Image.Image: Image of all tiles
-    """
-    first_img = tiles[0][0]
-    tile_width = first_img.width
-    tile_height = first_img.height
-    merged_width = len(tiles[0]) * tile_width
-    merged_height = len(tiles) * tile_height
-
-    img = Image.new("RGB", (merged_width, merged_height))
-
-    for r, row in enumerate(tiles):
-        for t, tile in enumerate(row):
-            img.paste(tile, box=(t * tile_width, r * tile_height))
-    print(img.width, img.height)
-    return img
-
-
-if __name__ == "__main__":
-    loader = TileLoader("https://tile.openstreetmap.de", zoom=6, verbose=True)
-    tiles = loader.get_tile_by_region_name("Wroclaw, Poland")
-    plt.imshow(tiles_to_img(tiles))
-    plt.show()
+    def _get_tile_for_area(self, row: pd.Series, tiles_collector: DataCollector) -> Any:
+        x, y = row.name
+        tile = self.get_tile_by_x_y(x, y)
+        return tiles_collector.store(x, y, tile)

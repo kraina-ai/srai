@@ -4,13 +4,14 @@ from urllib.parse import urljoin
 import geopandas as gpd
 import pytest
 import requests_mock
-import shapely.geometry as shpg
-from functional import seq
 from numpy.random import default_rng
 from PIL import Image
 from pytest_mock import MockerFixture
+from shapely.geometry import Polygon
 
+from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import TileLoader
+from srai.regionizers.slippy_map_regionizer import SlippyMapId
 
 TEST_DOMAIN = "http://mock_server"
 RESOURCE_TYPE = "png"
@@ -39,48 +40,31 @@ def images() -> list[bytes]:
     """Creates list of images as bytes."""
     return [
         to_bytes(Image.fromarray(rng.integers(low=0, high=256, size=(4, 4, 3), dtype="uint8")))
-        for _ in range(4)
+        for _ in range(3)
     ]
 
 
 @pytest.fixture
 def gdf() -> gpd.GeoDataFrame:
     """GeoDataFrame approximating Wroclaw bounds."""
-    polygon = shpg.Polygon(
+    polygon = Polygon(
         [
-            (20.8516882, 52.2009766),
-            (20.9915988, 52.103114),
-            (21.2711512, 52.1721505),
-            (21.2504688, 52.2626919),
-            (21.1050091, 52.2739945),
-            (21.0738087, 52.3672883),
-            (20.912429, 52.3529758),
-            (20.8516882, 52.2009766),
+            (16.8073393, 51.1389477),
+            (17.0278673, 51.0426754),
+            (17.1762192, 51.1063195),
+            (16.9580276, 51.2093551),
+            (16.8073393, 51.1389477),
         ]
     )
-    gdf = gpd.GeoDataFrame({"geometry": [polygon]})
+    gdf = gpd.GeoDataFrame({"geometry": [polygon]}, crs=WGS84_CRS)
     return gdf
 
 
 def mock_requests(images: list[bytes], m: requests_mock.Mocker) -> None:
     """Make mocks for requests."""
-    m.get(urljoin(TEST_DOMAIN, f"10/571/336.{RESOURCE_TYPE}"), content=images[0])
-    m.get(urljoin(TEST_DOMAIN, f"10/572/336.{RESOURCE_TYPE}"), content=images[1])
-    m.get(urljoin(TEST_DOMAIN, f"10/571/337.{RESOURCE_TYPE}"), content=images[2])
-    m.get(urljoin(TEST_DOMAIN, f"10/572/337.{RESOURCE_TYPE}"), content=images[3])
-
-
-def test_coordinates_cast(loader: TileLoader) -> None:
-    """Tests if coordinates_to_x_y gives proper x and y value."""
-    # given
-    latitude, longitude = 51, 16.8
-
-    # when
-    x, y = loader.coordinates_to_x_y(latitude=latitude, longitude=longitude)
-
-    # then
-    assert x == 559
-    assert y == 342
+    m.get(urljoin(TEST_DOMAIN, f"10/560/341.{RESOURCE_TYPE}"), content=images[0])
+    m.get(urljoin(TEST_DOMAIN, f"10/559/342.{RESOURCE_TYPE}"), content=images[1])
+    m.get(urljoin(TEST_DOMAIN, f"10/560/342.{RESOURCE_TYPE}"), content=images[2])
 
 
 def test_get_tiles_returns_images_properly(
@@ -90,7 +74,6 @@ def test_get_tiles_returns_images_properly(
     loader: TileLoader,
 ) -> None:
     """Tests if get_tile_by_region_name returns proper images list according to location."""
-    # given
     mocker.patch(
         "srai.loaders.osm_loaders.osm_tile_loader.geocode_to_region_gdf",
         return_value=gdf,
@@ -98,48 +81,12 @@ def test_get_tiles_returns_images_properly(
     )
     with requests_mock.Mocker() as m:
         mock_requests(images, m)
-        tiles = loader.get_tile_by_region_name(LOCATION, return_rect=True)
+        tiles = loader.get_tile_by_region_name(LOCATION)
 
-        assert len(m.request_history) == 4
-    assert to_bytes(tiles[0][0]) == images[0]
-    assert to_bytes(tiles[0][1]) == images[1]
-    assert to_bytes(tiles[1][0]) == images[2]
-    assert to_bytes(tiles[1][1]) == images[3]
-
-
-def test_should_skip_intersections(images: list[bytes], loader: TileLoader) -> None:
-    """Tests if tiles out of area are skipped if specified."""
-    # given
-    zoom_with_skips = 11
-    x_to_skip = 1119
-    y_to_skip = 683
-    should_skip_uri = f"{zoom_with_skips}/{x_to_skip}/{y_to_skip}.{RESOURCE_TYPE}"
-    loader.zoom = zoom_with_skips
-    with requests_mock.Mocker() as m:
-        m.get(requests_mock.ANY, content=images[0])
-
-        tiles = loader.get_tile_by_region_name(LOCATION, return_rect=False)
-
-        assert len(m.request_history) == 8
-        assert should_skip_uri not in seq(m.request_history).map(lambda x: x.path).to_set()
-        for row in tiles:
-            assert len(row) == 3
-
-
-def test_x_y_to_coordinates_should_be_inverse_to_coordinates_to_x_y(
-    loader: TileLoader,
-) -> None:
-    """Tests if `x_y_to_coordinates` is reversible with `coordinates_to_x_y`."""
-    # given
-    x, y = 50, 100
-
-    # when
-    latitude, longitude = loader.x_y_to_coordinates(x, y)
-    x_reverse, y_reverse = loader.coordinates_to_x_y(latitude, longitude)
-
-    # then
-    assert x_reverse == x
-    assert y_reverse == y
+        assert len(m.request_history) == 3, f"Got {len(m.request_history)} requests."
+    assert to_bytes(tiles[SlippyMapId(560, 341)]) == images[0]
+    assert to_bytes(tiles[SlippyMapId(559, 342)]) == images[1]
+    assert to_bytes(tiles[SlippyMapId(560, 342)]) == images[2]
 
 
 def test_should_throw_with_save_and_not_path() -> None:
