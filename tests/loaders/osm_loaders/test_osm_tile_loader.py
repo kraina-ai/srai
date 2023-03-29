@@ -84,9 +84,10 @@ def test_get_tiles_returns_images_properly(
         tiles = loader.get_tile_by_region_name(LOCATION)
 
         assert len(m.request_history) == 3, f"Got {len(m.request_history)} requests."
-    assert to_bytes(tiles[SlippyMapId(560, 341)]) == images[0]
-    assert to_bytes(tiles[SlippyMapId(559, 342)]) == images[1]
-    assert to_bytes(tiles[SlippyMapId(560, 342)]) == images[2]
+
+    assert to_bytes(tiles.loc[SlippyMapId(560, 341), "tile"]) == images[0]
+    assert to_bytes(tiles.loc[SlippyMapId(559, 342), "tile"]) == images[1]
+    assert to_bytes(tiles.loc[SlippyMapId(560, 342), "tile"]) == images[2]
 
 
 def test_should_throw_with_save_and_not_path() -> None:

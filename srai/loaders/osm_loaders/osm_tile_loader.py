@@ -109,7 +109,10 @@ class TileLoader:
         tiles_collector = self.collector_factory()
         gdf = geocode_to_region_gdf(name)
         regions = self.regionizer.transform(gdf=gdf)
-        return regions.apply(lambda row: self._get_tile_for_area(row, tiles_collector), axis=1)
+        data_series = regions.apply(
+            lambda row: self._get_tile_for_area(row, tiles_collector), axis=1
+        )
+        return pd.DataFrame(data_series, columns=["tile"])
 
     def _get_tile_for_area(self, row: pd.Series, tiles_collector: DataCollector) -> Any:
         x, y = row.name
