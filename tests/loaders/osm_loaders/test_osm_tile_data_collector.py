@@ -23,7 +23,6 @@ class TestSavingDataCollector:
     def test_save_to_disk(self, mocker: MockerFixture, col: collectors.SavingDataCollector) -> None:
         """Tests if save to disk saves image properly."""
         _path_image_save(mocker)
-        # col = collectors.SavingDataCollector(PATH, FILE_TYPE)
         x, y = 1, 1
         expected = _get_expected_path(x, y)
 
