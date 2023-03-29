@@ -4,7 +4,7 @@ Administrative Boundary Regionizer.
 This module contains administrative boundary regionizer implementation.
 """
 import time
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import geopandas as gpd
 import topojson as tp
@@ -161,15 +161,21 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         regions_gdf = self._toposimplify_gdf(regions_gdf)
 
         if self.remove_artefact_regions:
-            self.points_collection = gdf_wgs84[gdf_wgs84.geom_type == "Point"].geometry.unary_union
-            self.clipping_polygon_area = gdf_wgs84[
+            points_collection: Optional[BaseGeometry] = gdf_wgs84[
+                gdf_wgs84.geom_type == "Point"
+            ].geometry.unary_union
+            clipping_polygon_area: Optional[BaseGeometry] = gdf_wgs84[
                 gdf_wgs84.geom_type != "Point"
             ].geometry.unary_union
+
             regions_to_keep = [
                 region_id
                 for region_id, row in regions_gdf.iterrows()
-                if self._check_intersects_with_points(row["geometry"])
-                or self._calculate_intersection_area_fraction(row["geometry"]) > 0.01
+                if self._check_intersects_with_points(row["geometry"], points_collection)
+                or self._calculate_intersection_area_fraction(
+                    row["geometry"], clipping_polygon_area
+                )
+                > 0.01
             ]
             regions_gdf = regions_gdf.loc[regions_to_keep]
 
@@ -342,18 +348,22 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             )
         return regions_gdf
 
-    def _check_intersects_with_points(self, region_geometry: BaseGeometry) -> bool:
+    def _check_intersects_with_points(
+        self, region_geometry: BaseGeometry, points_collection: Optional[BaseGeometry]
+    ) -> bool:
         """Check if region intersects with any point in query regions."""
         return (
-            self.points_collection is not None
-            and not self.points_collection.is_empty
-            and region_geometry.intersects(self.points_collection)
+            points_collection is not None
+            and not points_collection.is_empty
+            and region_geometry.intersects(points_collection)
         )
 
-    def _calculate_intersection_area_fraction(self, region_geometry: BaseGeometry) -> float:
+    def _calculate_intersection_area_fraction(
+        self, region_geometry: BaseGeometry, clipping_polygon_area: Optional[BaseGeometry]
+    ) -> float:
         """Calculate intersection area fraction to check if it's big enough."""
-        if self.clipping_polygon_area is None or self.clipping_polygon_area.is_empty:
+        if clipping_polygon_area is None or clipping_polygon_area.is_empty:
             return 0
         full_area = float(region_geometry.area)
-        clip_area = float(region_geometry.intersection(self.clipping_polygon_area).area)
+        clip_area = float(region_geometry.intersection(clipping_polygon_area).area)
         return clip_area / full_area
