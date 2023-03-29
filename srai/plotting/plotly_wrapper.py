@@ -147,6 +147,7 @@ def plot_all_neighbourhood(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
+    neighbourhood_max_distance: int = 100,
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
@@ -165,6 +166,9 @@ def plot_all_neighbourhood(
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbourhood (Neighbourhood[IndexType]): `Neighbourhood` class required for finding
             neighbours.
+        neighbourhood_max_distance (int, optional): Max distance for rendering neighbourhoods.
+            Neighbours farther away won't be coloured, and will be left as "other" regions.
+            Defaults to 100.
         return_plot (bool, optional): Flag whether to return the Figure object or not.
             If `True`, the plot won't be displayed automatically. Defaults to False.
         mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
@@ -190,7 +194,7 @@ def plot_all_neighbourhood(
     neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
         regions_gdf.index
     )
-    while neighbours_ids:
+    while neighbours_ids and distance <= neighbourhood_max_distance:
         regions_gdf_copy.loc[list(neighbours_ids), "region"] = distance
         distance += 1
         neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
