@@ -198,7 +198,7 @@ class PbfFileDownloader:
 
             download_file(
                 url=self.PROTOMAPS_API_DOWNLOAD_URL.format(extraction_uuid),
-                fname=pbf_file_path.as_posix(),
+                filename=pbf_file_path,
             )
 
         return pbf_file_path
