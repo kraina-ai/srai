@@ -4,10 +4,13 @@ coverage:
       default:
         target: auto
         informational: true
-        threshold: 1%  # the leniency in hitting the target
+        threshold: 1% # the leniency in hitting the target
     patch:
       default:
         informational: true
 
 comment:
   require_changes: true
+
+ignore:
+  - "srai/plotting" # disable coverage for plotting module

@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.loaders import GTFSLoader
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 
@@ -63,7 +64,7 @@ def test_gtfs_loader(feed: Any, mocker: MockerFixture, gtfs_validation_ok: pd.Da
             f"{GTFS2VEC_TRIPS_PREFIX}13",
             f"{GTFS2VEC_DIRECTIONS_PREFIX}12",
             f"{GTFS2VEC_DIRECTIONS_PREFIX}13",
-            "geometry",
+            GEOMETRY_COLUMN,
         ],
     )
 

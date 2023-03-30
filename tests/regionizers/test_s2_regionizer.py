@@ -1,12 +1,15 @@
 """Tests for H3Regionizer."""
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 from unittest import TestCase
 
-import geopandas as gpd
 import pytest
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.regionizers import S2Regionizer
+
+if TYPE_CHECKING:
+    import geopandas as gpd
 
 ut = TestCase()
 S2_RESOLUTION = 7
@@ -55,4 +58,4 @@ def test_transform(
         gdf_s2 = S2Regionizer(resolution).transform(gdf)
 
         ut.assertCountEqual(first=gdf_s2.index.to_list(), second=s2_indexes)
-        assert "geometry" in gdf_s2
+        assert GEOMETRY_COLUMN in gdf_s2

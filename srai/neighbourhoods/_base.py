@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Generic, Set, Tuple, TypeVar
+from typing import Dict, Generic, Set, Tuple, TypeVar
 
 from functional import seq
 
@@ -37,7 +37,6 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Returns:
             Set[IndexType]: Indexes of the neighbours.
         """
-        pass  # pragma: no cover
 
     def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """
@@ -81,15 +80,16 @@ class Neighbourhood(ABC, Generic[IndexType]):
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
     ) -> Set[Tuple[IndexType, int]]:
-        visited_indexes = {}
+        visited_indexes: Dict[IndexType, int] = {}
         to_visit: Queue[Tuple[IndexType, int]] = Queue()
 
         to_visit.put((index, 0))
-
         while not to_visit.empty():
             current_index, current_distance = to_visit.get()
 
-            visited_indexes[current_index] = current_distance
+            visited_indexes[current_index] = min(
+                current_distance, visited_indexes.get(current_index, distance)
+            )
             if current_distance < distance:
                 current_neighbours = self.get_neighbours(current_index)
                 for neighbour in current_neighbours:

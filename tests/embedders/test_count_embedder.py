@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal
 
+from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
 
 
@@ -15,13 +16,13 @@ def expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output for the default case."""
     expected_df = pd.DataFrame(
         {
-            "region_id": ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
             "leisure_adult_gaming_centre": [0, 0, 1],
             "leisure_playground": [0, 1, 0],
             "amenity_pub": [1, 0, 1],
         },
     )
-    expected_df.set_index("region_id", inplace=True)
+    expected_df.set_index(REGIONS_INDEX, inplace=True)
 
     return expected_df
 
@@ -38,13 +39,13 @@ def specified_features_expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output for the case with specified features."""
     expected_df = pd.DataFrame(
         {
-            "region_id": ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [1, 0, 1],
         },
     )
-    expected_df.set_index("region_id", inplace=True)
+    expected_df.set_index(REGIONS_INDEX, inplace=True)
 
     return expected_df
 

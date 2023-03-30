@@ -1,11 +1,12 @@
+"""Tests for AdjacencyNeighbourhood."""
 from typing import Set
 
 import geopandas as gpd
 import pytest
 from shapely import geometry
 
+from srai.constants import WGS84_CRS
 from srai.neighbourhoods import AdjacencyNeighbourhood
-from srai.utils.constants import WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -23,6 +24,8 @@ def empty_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def squares_regions_fixture() -> gpd.GeoDataFrame:
     """
+    Get 9 square regions.
+
     This GeoDataFrame represents 9 squares on a cartesian plane in a 3 by 3 grid pattern. Squares
     are adjacent by edges and by vertices. Squares are given compass directions. Visually it looks
     like this ("C" means "CENTER"):
@@ -55,6 +58,8 @@ def squares_regions_fixture() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def rounded_regions_fixture() -> gpd.GeoDataFrame:
     """
+    Get 9 small rounded square regions.
+
     This GeoDataFrame represents 9 small squares with buffer on a cartesian plane in a 3 by 3 grid
     pattern. Regions are adjacent by edges, but not by vertices. Regions are given compass
     directions. Visually it looks like this ("C" means "CENTER"):

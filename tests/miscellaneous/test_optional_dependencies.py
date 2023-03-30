@@ -3,10 +3,12 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from typing import Any, List
 
+import geopandas as gpd
 import pytest
+from shapely.geometry import box
 
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.utils._optional import ImportErrorHandle, import_optional_dependency
-from srai.utils.constants import WGS84_CRS
 
 
 @pytest.fixture(autouse=True)  # type: ignore
@@ -42,6 +44,10 @@ def no_optional_dependencies(monkeypatch):
         "haversine",
         "spherical_geometry",
         "gtfs_kit",
+        "folium",
+        "mapclassify",
+        "plotly",
+        "kaleido",
     ]
     for package in optional_packages:
         sys.modules.pop(package, None)
@@ -59,7 +65,7 @@ def _test_voronoi_regionizer() -> None:
 
     seeds_gdf = gpd.GeoDataFrame(
         {
-            "geometry": [
+            GEOMETRY_COLUMN: [
                 Point(17.014997869227177, 51.09919872601259),
                 Point(16.935542631959215, 51.09380600286582),
                 Point(16.900425, 51.1162552343),
@@ -72,15 +78,12 @@ def _test_voronoi_regionizer() -> None:
     vr = VoronoiRegionizer(seeds=seeds_gdf)
     vr.transform(
         gdf=gpd.GeoDataFrame(
-            {"geometry": [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
+            {GEOMETRY_COLUMN: [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
         )
     )
 
 
 def _test_administrative_boundary_regionizer() -> None:
-    import geopandas as gpd
-    from shapely.geometry import box
-
     from srai.regionizers.administrative_boundary_regionizer import (
         AdministrativeBoundaryRegionizer,
     )
@@ -91,11 +94,40 @@ def _test_administrative_boundary_regionizer() -> None:
         maxx=88.50230949587835,
         maxy=34.846427760404225,
     )
-    asia_bbox_gdf = gpd.GeoDataFrame({"geometry": [asia_bbox]}, crs=WGS84_CRS)
+    asia_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [asia_bbox]}, crs=WGS84_CRS)
     abr = AdministrativeBoundaryRegionizer(
         admin_level=2, return_empty_region=True, toposimplify=0.001
     )
     abr.transform(gdf=asia_bbox_gdf)
+
+
+def _test_plotting_folium_module() -> None:
+    from srai.plotting import folium_wrapper
+
+    folium_wrapper.plot_regions(_get_regions_gdf())
+
+
+def _test_plotting_plotly_module() -> None:
+    from srai.plotting import plotly_wrapper
+
+    plotly_wrapper.plot_regions(_get_regions_gdf())
+
+
+def _get_regions_gdf() -> gpd.GeoDataFrame:
+    return gpd.GeoDataFrame(
+        data={
+            GEOMETRY_COLUMN: [
+                box(
+                    minx=0,
+                    miny=0,
+                    maxx=1,
+                    maxy=1,
+                )
+            ],
+            REGIONS_INDEX: [1],
+        },
+        crs=WGS84_CRS,
+    )
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -103,6 +135,8 @@ def _test_administrative_boundary_regionizer() -> None:
     [
         (_test_voronoi_regionizer),
         (_test_administrative_boundary_regionizer),
+        (_test_plotting_folium_module),
+        (_test_plotting_plotly_module),
     ],
 )
 def test_optional_available(test_fn):
@@ -116,6 +150,8 @@ def test_optional_available(test_fn):
     [
         (_test_voronoi_regionizer),
         (_test_administrative_boundary_regionizer),
+        (_test_plotting_folium_module),
+        (_test_plotting_plotly_module),
     ],
 )
 def test_optional_missing(test_fn):
