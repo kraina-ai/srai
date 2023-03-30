@@ -22,7 +22,11 @@ class DataCollector(ABC):
 
 
 class SavingDataCollector(DataCollector):
-    """Saves in disk collected images. Stores paths."""
+    """
+    Saves in disk collected images.
+
+    Stores paths.
+    """
 
     def __init__(self, save_path: str | Path, f_extension: str) -> None:
         """
