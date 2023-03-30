@@ -1,3 +1,4 @@
+"""Tests for TileLoader class."""
 from io import BytesIO
 from urllib.parse import urljoin
 
@@ -29,13 +30,13 @@ def to_bytes(img: Image.Image) -> bytes:
     return img_bytes.getvalue()
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def loader() -> TileLoader:
     """Creates default TileLoader object."""
     return TileLoader(TEST_DOMAIN, zoom=ZOOM, verbose=False)
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def images() -> list[bytes]:
     """Creates list of images as bytes."""
     return [
@@ -44,7 +45,7 @@ def images() -> list[bytes]:
     ]
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def gdf() -> gpd.GeoDataFrame:
     """GeoDataFrame approximating Wroclaw bounds."""
     polygon = Polygon(

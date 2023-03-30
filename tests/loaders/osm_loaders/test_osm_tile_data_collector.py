@@ -1,3 +1,4 @@
+"""Tests for DataCollector subclasses."""
 import os
 
 import PIL
@@ -15,7 +16,7 @@ FILE_TYPE = "png"
 class TestSavingDataCollector:
     """Tests for class SavingDataCollector."""
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def col(self) -> collectors.SavingDataCollector:
         """Fixture for SavingDataCollector."""
         return collectors.SavingDataCollector(PATH, FILE_TYPE)
@@ -45,7 +46,7 @@ def _path_image_save(mocker: MockerFixture) -> None:
 class TestInMemoryDataCollector:
     """Tests for class InMemoryDataCollector."""
 
-    @pytest.fixture
+    @pytest.fixture  # type: ignore
     def col(self) -> collectors.InMemoryDataCollector:
         """Fixture for InMemoryDataCollector."""
         return collectors.InMemoryDataCollector()

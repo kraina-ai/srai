@@ -1,3 +1,4 @@
+"""Tests for SlippyMapRegionizer class."""
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -9,7 +10,7 @@ from srai.constants import WGS84_CRS
 from srai.regionizers import SlippyMapRegionizer
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def gdf() -> gpd.GeoDataFrame:
     """GeoDataFrame approximating Warsaw bounds."""
     polygon = Polygon(
@@ -25,7 +26,7 @@ def gdf() -> gpd.GeoDataFrame:
     return gdf
 
 
-@pytest.fixture
+@pytest.fixture  # type: ignore
 def regionizer() -> SlippyMapRegionizer:
     """Regionizer fixture."""
     return SlippyMapRegionizer(z=11)
@@ -40,7 +41,7 @@ def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> No
         assert (x, y) in regions.index, f"{(x, y)} not in index but expected"
 
 
-@pytest.mark.parametrize(
+@pytest.mark.parametrize(  # type: ignore
     "z, expectation",
     [
         (-1, pytest.raises(ValueError)),

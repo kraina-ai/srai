@@ -1,3 +1,4 @@
+"""This module contains classes of strategy for handling downloaded tiles."""
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
