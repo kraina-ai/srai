@@ -1,3 +1,8 @@
+"""
+OSM tile loader.
+
+This module implements downloading tiles from given OSM tile server.
+"""
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -71,13 +76,15 @@ class TileLoader:
         self.regionizer = SlippyMapRegionizer(z=self.zoom)
 
     def _get_collector_factory(
-        self, storage_strategy: str | Callable[[], DataCollector]
+        self, storage_strategy: Union[str, Callable[[], DataCollector]]
     ) -> Callable[[], DataCollector]:
         if isinstance(storage_strategy, str):
-            if storage_strategy == "save":
-                assert self.save_path is not None
+            if storage_strategy == "save" and self.save_path is None:
+                raise ValueError
+            elif self.save_path is not None:
+                save_path: Union[Path, str] = self.save_path
             return {
-                "save": lambda: SavingDataCollector(self.save_path, f_extension=self.resource_type),
+                "save": lambda: SavingDataCollector(save_path, f_extension=self.resource_type),
                 "return": lambda: InMemoryDataCollector(),
             }[storage_strategy]
         else:

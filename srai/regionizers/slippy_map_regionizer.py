@@ -91,7 +91,8 @@ class SlippyMapRegionizer(Regionizer):
 
     def _should_not_skip(self, area: shpg.Polygon, tile: shpg.Polygon) -> bool:
         """Checks if tile is inside area boundaries."""
-        return tile.intersects(area)
+        intersects: bool = tile.intersects(area)
+        return intersects
 
     def _coordinates_to_x_y(self, latitude: float, longitude: float) -> tuple[int, int]:
         """
