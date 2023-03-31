@@ -2,7 +2,7 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 from PIL import Image
 
@@ -29,7 +29,7 @@ class SavingDataCollector(DataCollector):
     Stores paths.
     """
 
-    def __init__(self, save_path: str | Path, f_extension: str) -> None:
+    def __init__(self, save_path: Union[str, Path], f_extension: str) -> None:
         """
         Initialize SavingDataCollector.
 
