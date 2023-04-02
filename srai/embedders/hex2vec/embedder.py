@@ -17,8 +17,8 @@ from torch.utils.data import DataLoader
 from srai.embedders import CountEmbedder
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
+from srai.exceptions import ModelNotFitException
 from srai.neighbourhoods import Neighbourhood
-from srai.utils.exceptions import ModelNotFitException
 
 T = TypeVar("T")
 
