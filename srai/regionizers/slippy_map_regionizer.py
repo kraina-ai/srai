@@ -55,14 +55,13 @@ class SlippyMapRegionizer(Regionizer):
             seq(gdf_exploded["geometry"])
             .map(self._to_cells)
             .flat_map(lambda x: x)
-            .distinct()
             .map(lambda item: {"geometry": item[2], REGIONS_INDEX: SlippyMapId(item[0], item[1])})
             .to_list()
         )
 
         gdf = gpd.GeoDataFrame(values, geometry="geometry", crs=WGS84_CRS)
         gdf = gdf.set_index(REGIONS_INDEX)
-        return gdf
+        return gdf.drop_duplicates()
 
     def _to_cells(self, polygon: shpg.Polygon) -> list[Any]:
         gdf_bounds = polygon.bounds
