@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change embedders and joiners interface to have `.transform` method
 - Change linter to Ruff and removed flake8, isort, pydocstyle
 - Change default value inside `transform` function of IntersectionJoiner to not return geometry.
+- Make torch and pytorch-lightning as optional dependencies ([#210](https://github.com/srai-lab/srai/issues/210))
 
 ### Deprecated
 
