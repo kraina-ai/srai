@@ -33,9 +33,16 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
                 The first element is the input size (number of features),
                 the last element is the output (embedding) size.
             learning_rate (float, optional): Learning rate. Defaults to 0.001.
+
+
+        Raises:
+            ValueError: If layer_sizes contains less than 2 elements.
         """
         super().__init__()
         self.learning_rate = learning_rate
+
+        if len(layer_sizes) < 2:
+            raise ValueError("layer_sizes must contain at least 2 elements")
 
         def create_layers(sizes: List[Tuple[int, int]]) -> nn.Sequential:
             layers = []
