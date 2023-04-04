@@ -1,5 +1,4 @@
 """This module contains classes of strategy for handling downloaded tiles."""
-import os
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
@@ -30,21 +29,21 @@ class SavingDataCollector(DataCollector):
     Stores paths.
     """
 
-    def __init__(self, save_path: Union[str, Path], f_extension: str) -> None:
+    def __init__(self, save_path: Union[str, Path], file_extension: str) -> None:
         """
         Initialize SavingDataCollector.
 
         Args:
             save_path (Union[str, Path]): root path for data
-            f_extension (str): file name extension
+            file_extension (str): file name extension
         """
         super().__init__()
-        if save_path is None or f_extension is None:
+        if save_path is None or file_extension is None:
             raise ValueError
-        self.save_path = save_path
-        self.format = f_extension
+        self.save_path = Path(save_path)
+        self.format = file_extension
 
-    def store(self, x: int, y: int, data: Image.Image) -> str:
+    def store(self, x: int, y: int, data: Image.Image) -> Path:
         """
         Saves image on disk. Returns path.
 
@@ -53,7 +52,7 @@ class SavingDataCollector(DataCollector):
             y (int): y coordinate of tile, used as id
             data (Image.Image): tile
         """
-        path = os.path.join(self.save_path, f"{x}_{y}.{self.format}")
+        path = self.save_path / f"{x}_{y}.{self.format}"
         data.save(path)
         return path
 

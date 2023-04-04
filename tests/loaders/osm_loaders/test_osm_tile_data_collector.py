@@ -1,5 +1,6 @@
 """Tests for DataCollector subclasses."""
 import os
+from pathlib import Path
 from typing import Union
 
 import PIL
@@ -36,8 +37,8 @@ class TestSavingDataCollector:
         assert path == _get_expected_path(x, y)
 
 
-def _get_expected_path(x: int, y: int) -> str:
-    return os.path.join(PATH, f"{x}_{y}.{FILE_TYPE}")
+def _get_expected_path(x: int, y: int) -> Path:
+    return Path(os.path.join(PATH, f"{x}_{y}.{FILE_TYPE}"))
 
 
 def _path_image_save(mocker: MockerFixture) -> None:
@@ -81,11 +82,11 @@ def test_saving_collector_creation(
     collector_type: Union[str, collectors.DataCollectorType]
 ) -> None:
     """Tests if factory creates properly SavingDataCollector."""
-    created = collectors.get_collector(collector_type, save_path=PATH, f_extension=FILE_TYPE)
+    created = collectors.get_collector(collector_type, save_path=PATH, file_extension=FILE_TYPE)
 
     assert isinstance(created, collectors.SavingDataCollector), f"Invalid type {type(created)}"
     assert created.format == FILE_TYPE
-    assert created.save_path == PATH
+    assert str(created.save_path) == PATH
 
 
 def test_invalid_type() -> None:
