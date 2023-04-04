@@ -7,7 +7,7 @@ References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
 from collections import namedtuple
-from typing import Any, List
+from typing import Any, List, Tuple
 
 import geopandas as gpd
 import numpy as np
@@ -97,7 +97,7 @@ class SlippyMapRegionizer(Regionizer):
         intersects: bool = tile.intersects(area)
         return not intersects
 
-    def _coordinates_to_x_y(self, latitude: float, longitude: float) -> tuple[int, int]:
+    def _coordinates_to_x_y(self, latitude: float, longitude: float) -> Tuple[int, int]:
         """
         Counts x and y from latitude and longitude using self.zoom.
 
