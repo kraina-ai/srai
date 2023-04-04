@@ -1,5 +1,6 @@
 """Tests for DataCollector subclasses."""
 import os
+from typing import Union
 
 import PIL
 import pytest
@@ -59,3 +60,35 @@ class TestInMemoryDataCollector:
         stored = col.store(x, y, img)
 
         assert stored == img
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "collector_type", [(collectors.DataCollectorType.RETURN), "return"]
+)
+def test_in_memory_collector_creation(
+    collector_type: Union[str, collectors.DataCollectorType]
+) -> None:
+    """Tests if factory creates properly InMemoryDataCollector."""
+    created = collectors.get_collector(collector_type)
+
+    assert isinstance(created, collectors.InMemoryDataCollector)
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "collector_type", [(collectors.DataCollectorType.SAVE), "save"]
+)
+def test_saving_collector_creation(
+    collector_type: Union[str, collectors.DataCollectorType]
+) -> None:
+    """Tests if factory creates properly SavingDataCollector."""
+    created = collectors.get_collector(collector_type, save_path=PATH, f_extension=FILE_TYPE)
+
+    assert isinstance(created, collectors.SavingDataCollector), f"Invalid type {type(created)}"
+    assert created.format == FILE_TYPE
+    assert created.save_path == PATH
+
+
+def test_invalid_type() -> None:
+    """Tests if throws on unknown type."""
+    with pytest.raises(ValueError):
+        collectors.get_collector("Some weird type")

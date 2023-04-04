@@ -5,7 +5,7 @@ This module implements downloading tiles from given OSM tile server.
 """
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import urljoin
 
 import pandas as pd
@@ -15,12 +15,17 @@ from PIL import Image
 from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
 from srai.utils import geocode_to_region_gdf
 
-from .osm_tile_data_collector import DataCollector, InMemoryDataCollector, SavingDataCollector
+from .osm_tile_data_collector import (
+    DataCollector,
+    DataCollectorType,
+    InMemoryDataCollector,
+    get_collector,
+)
 
 
-class TileLoader:
+class OSMTileLoader:
     """
-    Tile Loader.
+    OSM Tile Loader.
 
     Downloads raster tiles from user specified tile server, like listed in [1]. Loader founds x, y
     coordinates [2] for specified area and downloads tiles. Address is built with schema
@@ -38,7 +43,7 @@ class TileLoader:
         verbose: bool = False,
         resource_type: str = "png",
         auth_token: Optional[str] = None,
-        collector_factory: Optional[Union[str, Callable[[], DataCollector]]] = None,
+        data_collector: Optional[Union[str, DataCollector]] = None,
         storage_path: Optional[Union[str, Path]] = None,
     ) -> None:
         """
@@ -52,15 +57,15 @@ class TileLoader:
                 Defaults to "png".
             auth_token (Optional[str], optional): auth token. Added as access_token parameter
                 to request. Defaults to None.
-            collector_factory (Optional[Union[str, Callable[[], DataCollector]]], optional):Function
-                returning DataCollector. If None uses InMemoryDataCollector. Defaults to None.
-                    If `return` uses  InMemoryDataCollector
-                    If `save` uses  SavingDataCollector
+            data_collector (Optional[Union[str, DataCollector]], optional): DataCollector object or
+            enum defining default collector. If None uses InMemoryDataCollector. Defaults to None.
+            If `return` uses  InMemoryDataCollector
+            If `save` uses  SavingDataCollector
             storage_path (Optional[Union[str, Path]], optional): path to save data,
                 used with SavingDataCollector. Defaults to None.
 
         References:
-        1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+            1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
         """
         self.zoom = zoom
         self.verbose = verbose
@@ -68,25 +73,20 @@ class TileLoader:
         self.base_url = urljoin(tile_server_url, "{0}/{1}/{2}." + resource_type)
         self.auth_token = auth_token
         self.save_path = storage_path
-        self.collector_factory = (
-            self._get_collector_factory(collector_factory)
-            if collector_factory is not None
-            else lambda: InMemoryDataCollector()
+        self.data_collector = (
+            self._get_collector(data_collector)
+            if data_collector is not None
+            else InMemoryDataCollector()
         )
         self.regionizer = SlippyMapRegionizer(z=self.zoom)
 
-    def _get_collector_factory(
-        self, storage_strategy: Union[str, Callable[[], DataCollector]]
-    ) -> Callable[[], DataCollector]:
+    def _get_collector(
+        self, storage_strategy: Union[str, DataCollectorType, DataCollector]
+    ) -> DataCollector:
         if isinstance(storage_strategy, str):
-            if storage_strategy == "save" and self.save_path is None:
-                raise ValueError
-            elif self.save_path is not None:
-                save_path: Union[Path, str] = self.save_path
-            return {
-                "save": lambda: SavingDataCollector(save_path, f_extension=self.resource_type),
-                "return": lambda: InMemoryDataCollector(),
-            }[storage_strategy]
+            return get_collector(
+                storage_strategy, save_path=self.save_path, f_extension=self.resource_type
+            )
         else:
             return storage_strategy
 
@@ -95,14 +95,15 @@ class TileLoader:
         Downloads single tile from tile server.
 
         Args:
-            x: x tile x coordinate
-            y: y tile y coordinate
+            x: x tile coordinate
+            y: y tile coordinate
         """
         url = self.base_url.format(self.zoom, x, y)
         if self.verbose:
             print(f"Getting tile from url: {url}")
         content = requests.get(url, params={"access_token": f"{self.auth_token}"}).content
-        return Image.open(BytesIO(content))
+        tile = Image.open(BytesIO(content))
+        return self.data_collector.store(x, y, tile)
 
     def get_tile_by_region_name(self, name: str) -> pd.DataFrame:
         """
@@ -110,18 +111,12 @@ class TileLoader:
 
         Args:
             name: area name, as in geocode_to_region_gdf
-            return_rect: if true returns tiles out of area to keep rectangle shape of img of joined
-                tiles.
         """
-        tiles_collector = self.collector_factory()
         gdf = geocode_to_region_gdf(name)
         regions = self.regionizer.transform(gdf=gdf)
-        data_series = regions.apply(
-            lambda row: self._get_tile_for_area(row, tiles_collector), axis=1
-        )
+        data_series = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
         return pd.DataFrame(data_series, columns=["tile"])
 
-    def _get_tile_for_area(self, row: pd.Series, tiles_collector: DataCollector) -> Any:
+    def _get_tile_for_area(self, row: pd.Series) -> Any:
         x, y = row.name
-        tile = self.get_tile_by_x_y(x, y)
-        return tiles_collector.store(x, y, tile)
+        return self.get_tile_by_x_y(x, y)

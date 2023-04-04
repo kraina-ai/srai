@@ -2,6 +2,6 @@
 
 from .osm_online_loader import OSMOnlineLoader
 from .osm_pbf_loader import OSMPbfLoader
-from .osm_tile_loader import TileLoader
+from .osm_tile_loader import OSMTileLoader
 
-__all__ = ["OSMOnlineLoader", "OSMPbfLoader", "TileLoader"]
+__all__ = ["OSMOnlineLoader", "OSMPbfLoader", "OSMTileLoader"]

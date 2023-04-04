@@ -1,6 +1,7 @@
 """This module contains classes of strategy for handling downloaded tiles."""
 import os
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
 from typing import Any, Union
 
@@ -38,6 +39,8 @@ class SavingDataCollector(DataCollector):
             f_extension (str): file name extension
         """
         super().__init__()
+        if save_path is None or f_extension is None:
+            raise ValueError
         self.save_path = save_path
         self.format = f_extension
 
@@ -50,7 +53,7 @@ class SavingDataCollector(DataCollector):
             y (int): y coordinate of tile, used as id
             data (Image.Image): tile
         """
-        path = os.path.join(self.save_path, f"{x}_{y}.png")
+        path = os.path.join(self.save_path, f"{x}_{y}.{self.format}")
         data.save(path)
         return path
 
@@ -72,3 +75,30 @@ class InMemoryDataCollector(DataCollector):
             data (Image.Image): tile
         """
         return data
+
+
+class DataCollectorType(str, Enum):
+    """Defines enums to choose one of known DataCollector implementations."""
+
+    SAVE = "save"
+    RETURN = "return"
+
+
+def get_collector(collector_type: Union[DataCollectorType, str], **kwargs: Any) -> DataCollector:
+    """
+    Returns DataCollector object of type specified by DataCollectorType enum.
+
+    Args:
+        collector_type (DataCollectorType): If SAVE returns SavingDataCollector.
+        If RETURN returns InMemoryDataCollector.
+        **kwargs (Any): Extra arguments used for SavingDataCollector object creation arguments.
+
+    Returns:
+        DataCollector: newly created object
+    """
+    if collector_type == DataCollectorType.SAVE:
+        return SavingDataCollector(**kwargs)
+    elif collector_type == DataCollectorType.RETURN:
+        return InMemoryDataCollector()
+    else:
+        raise ValueError

@@ -11,7 +11,7 @@ from pytest_mock import MockerFixture
 from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
-from srai.loaders.osm_loaders import TileLoader
+from srai.loaders.osm_loaders import OSMTileLoader
 from srai.regionizers.slippy_map_regionizer import SlippyMapId
 
 TEST_DOMAIN = "http://mock_server"
@@ -31,9 +31,9 @@ def to_bytes(img: Image.Image) -> bytes:
 
 
 @pytest.fixture  # type: ignore
-def loader() -> TileLoader:
+def loader() -> OSMTileLoader:
     """Creates default TileLoader object."""
-    return TileLoader(TEST_DOMAIN, zoom=ZOOM, verbose=False)
+    return OSMTileLoader(TEST_DOMAIN, zoom=ZOOM, verbose=False)
 
 
 @pytest.fixture  # type: ignore
@@ -72,7 +72,7 @@ def test_get_tiles_returns_images_properly(
     images: list[bytes],
     mocker: MockerFixture,
     gdf: gpd.GeoDataFrame,
-    loader: TileLoader,
+    loader: OSMTileLoader,
 ) -> None:
     """Tests if get_tile_by_region_name returns proper images list according to location."""
     mocker.patch(
@@ -93,7 +93,7 @@ def test_get_tiles_returns_images_properly(
 
 def test_should_throw_with_save_and_not_path() -> None:
     """Test checking if throws on none path with save strategy."""
-    with pytest.raises(AssertionError):
-        _ = TileLoader(
-            tile_server_url=TEST_DOMAIN, zoom=ZOOM, collector_factory="save", storage_path=None
+    with pytest.raises(ValueError):
+        _ = OSMTileLoader(
+            tile_server_url=TEST_DOMAIN, zoom=ZOOM, data_collector="save", storage_path=None
         )
