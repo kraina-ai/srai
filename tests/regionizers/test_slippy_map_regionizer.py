@@ -29,7 +29,7 @@ def gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def regionizer() -> SlippyMapRegionizer:
     """Regionizer fixture."""
-    return SlippyMapRegionizer(z=11)
+    return SlippyMapRegionizer(zoom=11)
 
 
 def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> None:
@@ -50,10 +50,10 @@ def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> No
         (20, pytest.raises(ValueError)),
     ],
 )
-def test_zoom_check(z: int, expectation: Any, gdf: gpd.GeoDataFrame) -> None:
+def test_zoom_check(z: int, expectation: Any) -> None:
     """Tests value checks."""
     with expectation:
-        SlippyMapRegionizer(z=z).transform(gdf)
+        SlippyMapRegionizer(zoom=z)
 
 
 def test_coordinates_cast(regionizer: SlippyMapRegionizer) -> None:

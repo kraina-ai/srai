@@ -78,7 +78,7 @@ class OSMTileLoader:
             if data_collector is not None
             else InMemoryDataCollector()
         )
-        self.regionizer = SlippyMapRegionizer(z=self.zoom)
+        self.regionizer = SlippyMapRegionizer(zoom=self.zoom)
 
     def _get_collector(
         self, storage_strategy: Union[str, DataCollectorType, DataCollector]

@@ -7,7 +7,7 @@ References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
 from collections import namedtuple
-from typing import Any
+from typing import Any, List
 
 import geopandas as gpd
 import numpy as np
@@ -23,19 +23,19 @@ SlippyMapId = namedtuple("SlippyMapId", "x y")
 class SlippyMapRegionizer(Regionizer):
     """Regionizer class."""
 
-    def __init__(self, z: int) -> None:
+    def __init__(self, zoom: int) -> None:
         """
         Initialize SlippyMapRegionizer.
 
         Args:
-            z (int): zoom level
+            zoom (int): zoom level
 
         Raises:
             ValueError: if zoom is not in [0, 19]
         """
-        if not 0 <= z <= 19:
+        if not 0 <= zoom <= 19:
             raise ValueError
-        self.zoom = z
+        self.zoom = zoom
         super().__init__()
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -47,6 +47,10 @@ class SlippyMapRegionizer(Regionizer):
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
+
+
+        Raises:
+            ValueError: If provided GeoDataFrame has no crs defined.
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
         gdf_exploded = self._explode_multipolygons(gdf_wgs84)
@@ -63,7 +67,7 @@ class SlippyMapRegionizer(Regionizer):
         gdf = gdf.set_index(REGIONS_INDEX)
         return gdf.drop_duplicates()
 
-    def _to_cells(self, polygon: shpg.Polygon) -> list[Any]:
+    def _to_cells(self, polygon: shpg.Polygon) -> List[Any]:
         gdf_bounds = polygon.bounds
         x_start, y_start = self._coordinates_to_x_y(gdf_bounds[1], gdf_bounds[0])
         x_end, y_end = self._coordinates_to_x_y(gdf_bounds[3], gdf_bounds[2])
@@ -71,7 +75,7 @@ class SlippyMapRegionizer(Regionizer):
         for y in range(y_end, y_start + 1):
             for x in range(x_start, x_end + 1):
                 tile_polygon = self._polygon_from_x_y(x, y)
-                if self._should_not_skip(polygon, tile_polygon):
+                if not self._should_skip_tile(polygon, tile_polygon):
                     tiles.append((x, y, tile_polygon))
         return tiles
 
@@ -88,10 +92,10 @@ class SlippyMapRegionizer(Regionizer):
         )
         return tile_polygon
 
-    def _should_not_skip(self, area: shpg.Polygon, tile: shpg.Polygon) -> bool:
+    def _should_skip_tile(self, area: shpg.Polygon, tile: shpg.Polygon) -> bool:
         """Checks if tile is inside area boundaries."""
         intersects: bool = tile.intersects(area)
-        return intersects
+        return not intersects
 
     def _coordinates_to_x_y(self, latitude: float, longitude: float) -> tuple[int, int]:
         """
