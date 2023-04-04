@@ -7,7 +7,6 @@ import pytest
 import requests_mock
 from numpy.random import default_rng
 from PIL import Image
-from pytest_mock import MockerFixture
 from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
@@ -68,21 +67,15 @@ def mock_requests(images: list[bytes], m: requests_mock.Mocker) -> None:
     m.get(urljoin(TEST_DOMAIN, f"10/560/342.{RESOURCE_TYPE}"), content=images[2])
 
 
-def test_get_tiles_returns_images_properly(
+def test_load_images_properly(
     images: list[bytes],
-    mocker: MockerFixture,
     gdf: gpd.GeoDataFrame,
     loader: OSMTileLoader,
 ) -> None:
-    """Tests if get_tile_by_region_name returns proper images list according to location."""
-    mocker.patch(
-        "srai.loaders.osm_loaders.osm_tile_loader.geocode_to_region_gdf",
-        return_value=gdf,
-        autospec=True,
-    )
+    """Tests if load returns proper images list according to location."""
     with requests_mock.Mocker() as m:
         mock_requests(images, m)
-        tiles = loader.get_tile_by_region_name(LOCATION)
+        tiles = loader.load(gdf)
 
         assert len(m.request_history) == 3, f"Got {len(m.request_history)} requests."
 

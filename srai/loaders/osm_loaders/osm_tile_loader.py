@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Any, Optional, Union
 from urllib.parse import urljoin
 
+import geopandas as gpd
 import pandas as pd
 import requests
 from PIL import Image
 
 from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
-from srai.utils import geocode_to_region_gdf
 
 from .osm_tile_data_collector import (
     DataCollector,
@@ -85,14 +85,35 @@ class OSMTileLoader:
     ) -> DataCollector:
         if isinstance(storage_strategy, str):
             return get_collector(
-                storage_strategy, save_path=self.save_path, f_extension=self.resource_type
+                storage_strategy, save_path=self.save_path, file_extension=self.resource_type
             )
         else:
             return storage_strategy
 
-    def get_tile_by_x_y(self, x: int, y: int) -> Image.Image:
+    def load(
+        self,
+        area: gpd.GeoDataFrame,
+    ) -> gpd.GeoDataFrame:
         """
-        Downloads single tile from tile server.
+        Returns all tiles of region.
+
+        Args:
+            area (gpd.GeoDataFrame): Area for which to download objects.
+
+        Returns:
+            gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
+        """
+        regions = self.regionizer.transform(gdf=area)
+        regions["tile"] = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
+        return regions
+
+    def _get_tile_for_area(self, row: pd.Series) -> Any:
+        x, y = row.name
+        return self.get_tile_by_x_y(x, y)
+
+    def get_tile_by_x_y(self, x: int, y: int) -> Any:
+        """
+        Downloads single tile from tile server. Returns tile processed by DataCollector.
 
         Args:
             x: x tile coordinate
@@ -104,19 +125,3 @@ class OSMTileLoader:
         content = requests.get(url, params={"access_token": f"{self.auth_token}"}).content
         tile = Image.open(BytesIO(content))
         return self.data_collector.store(x, y, tile)
-
-    def get_tile_by_region_name(self, name: str) -> pd.DataFrame:
-        """
-        Returns all tiles of region.
-
-        Args:
-            name: area name, as in geocode_to_region_gdf
-        """
-        gdf = geocode_to_region_gdf(name)
-        regions = self.regionizer.transform(gdf=gdf)
-        data_series = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
-        return pd.DataFrame(data_series, columns=["tile"])
-
-    def _get_tile_for_area(self, row: pd.Series) -> Any:
-        x, y = row.name
-        return self.get_tile_by_x_y(x, y)
