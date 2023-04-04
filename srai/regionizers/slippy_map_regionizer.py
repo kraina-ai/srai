@@ -109,7 +109,7 @@ class SlippyMapRegionizer(Regionizer):
         y_tile = int((1 - np.arcsinh(np.tan(lat_radian)) / np.pi) / 2 * n_rows)
         return x_tile, y_tile
 
-    def _x_y_to_coordinates(self, x: int, y: int) -> tuple[float, float]:
+    def _x_y_to_coordinates(self, x: int, y: int) -> Tuple[float, float]:
         """
         Counts latitude and longitude from x, y using self.zoom.
 
