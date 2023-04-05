@@ -15,6 +15,11 @@ PATH = "path"
 FILE_TYPE = "png"
 
 
+def create_id(x: int, y: int) -> str:
+    """Creates test id."""
+    return f"{x}_{y}_ZOOM"
+
+
 class TestSavingDataCollector:
     """Tests for class SavingDataCollector."""
 
@@ -30,15 +35,15 @@ class TestSavingDataCollector:
         expected = _get_expected_path(x, y)
 
         path = col.store(
-            x, y, PIL.Image.fromarray(rng.integers(0, 256, size=(3, 3), dtype="uint8"))
+            create_id(x, y), PIL.Image.fromarray(rng.integers(0, 256, size=(3, 3), dtype="uint8"))
         )
 
         PIL.Image.Image.save.assert_called_once_with(expected)
-        assert path == _get_expected_path(x, y)
+        assert _get_expected_path(x, y) == path
 
 
 def _get_expected_path(x: int, y: int) -> Path:
-    return Path(os.path.join(PATH, f"{x}_{y}.{FILE_TYPE}"))
+    return Path(os.path.join(PATH, f"{create_id(x,y)}.{FILE_TYPE}"))
 
 
 def _path_image_save(mocker: MockerFixture) -> None:
@@ -58,7 +63,7 @@ class TestInMemoryDataCollector:
         x, y = 1, 1
         img = PIL.Image.fromarray(rng.integers(0, 256, size=(3, 3), dtype="uint8"))
 
-        stored = col.store(x, y, img)
+        stored = col.store(create_id(x, y), img)
 
         assert stored == img
 

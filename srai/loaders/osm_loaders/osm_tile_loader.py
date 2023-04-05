@@ -107,20 +107,23 @@ class OSMTileLoader:
         return regions
 
     def _get_tile_for_area(self, row: pd.Series) -> Any:
-        x, y = row.name
-        return self.get_tile_by_x_y(x, y)
+        idx = row.name
+        return self.get_tile_by_x_y(row["x"], row["y"], idx=idx)
 
-    def get_tile_by_x_y(self, x: int, y: int) -> Any:
+    def get_tile_by_x_y(self, x: int, y: int, idx: Any = None) -> Any:
         """
         Downloads single tile from tile server. Returns tile processed by DataCollector.
 
         Args:
-            x: x tile coordinate
-            y: y tile coordinate
+            x(int): x tile coordinate
+            y(int): y tile coordinate
+            idx (Any): id of tile, if non created as x_y_self.zoom
         """
+        if idx is None:
+            idx = f"{x}_{y}_{self.zoom}"
         url = self.base_url.format(self.zoom, x, y)
         if self.verbose:
             print(f"Getting tile from url: {url}")
         content = requests.get(url, params={"access_token": f"{self.auth_token}"}).content
         tile = Image.open(BytesIO(content))
-        return self.data_collector.store(x, y, tile)
+        return self.data_collector.store(idx, tile)

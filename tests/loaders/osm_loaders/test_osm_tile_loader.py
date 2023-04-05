@@ -6,13 +6,13 @@ from urllib.parse import urljoin
 import geopandas as gpd
 import pytest
 import requests_mock
+from functional import seq
 from numpy.random import default_rng
 from PIL import Image
 from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMTileLoader
-from srai.regionizers.slippy_map_regionizer import SlippyMapId
 
 TEST_DOMAIN = "http://mock_server"
 RESOURCE_TYPE = "png"
@@ -80,9 +80,17 @@ def test_load_images_properly(
 
         assert len(m.request_history) == 3, f"Got {len(m.request_history)} requests."
 
-    assert to_bytes(tiles.loc[SlippyMapId(560, 341), "tile"]) == images[0]
-    assert to_bytes(tiles.loc[SlippyMapId(559, 342), "tile"]) == images[1]
-    assert to_bytes(tiles.loc[SlippyMapId(560, 342), "tile"]) == images[2]
+    assert to_bytes(tiles.loc[f"560_341_{ZOOM}", "tile"]) == images[0]
+    assert to_bytes(tiles.loc[f"559_342_{ZOOM}", "tile"]) == images[1]
+    assert to_bytes(tiles.loc[f"560_342_{ZOOM}", "tile"]) == images[2]
+
+    xs_by_index = seq(tiles.index).map(lambda x: int(x[:3])).to_list()
+    ys_by_index = seq(tiles.index).map(lambda x: int(x[4:7])).to_list()
+    zs_by_index = seq(tiles.index).map(lambda x: int(x[8:])).to_list()
+
+    assert xs_by_index == tiles["x"].tolist()
+    assert ys_by_index == tiles["y"].tolist()
+    assert zs_by_index == tiles["z"].tolist()
 
 
 def test_should_throw_with_save_and_not_path() -> None:

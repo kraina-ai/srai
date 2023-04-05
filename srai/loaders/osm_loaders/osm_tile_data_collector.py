@@ -11,13 +11,12 @@ class DataCollector(ABC):
     """Stores collected images."""
 
     @abstractmethod
-    def store(self, x: int, y: int, data: Image.Image) -> Any:
+    def store(self, idx: str, data: Image.Image) -> Any:
         """
         Apply action for object storage and returns data of it.
 
         Args:
-            x (int): x coordinate of tile, used as id
-            y (int): y coordinate of tile, used as id
+            idx (str): id of tile
             data (Image.Image): tile
         """
 
@@ -43,16 +42,15 @@ class SavingDataCollector(DataCollector):
         self.save_path = Path(save_path)
         self.format = file_extension
 
-    def store(self, x: int, y: int, data: Image.Image) -> Path:
+    def store(self, idx: str, data: Image.Image) -> Path:
         """
         Saves image on disk. Returns path.
 
         Args:
-            x (int): x coordinate of tile, used as id
-            y (int): y coordinate of tile, used as id
+            idx (str): id of tile
             data (Image.Image): tile
         """
-        path = self.save_path / f"{x}_{y}.{self.format}"
+        path = self.save_path / f"{idx}.{self.format}"
         data.save(path)
         return path
 
@@ -64,13 +62,12 @@ class InMemoryDataCollector(DataCollector):
         """Initialize InMemoryDataCollector."""
         super().__init__()
 
-    def store(self, x: int, y: int, data: Image.Image) -> Image.Image:
+    def store(self, idx: str, data: Image.Image) -> Image.Image:
         """
         Simply removes object for usage.
 
         Args:
-            x (int): x coordinate of tile, used as id
-            y (int): y coordinate of tile, used as id
+            idx (str): id of tile
             data (Image.Image): tile
         """
         return data
