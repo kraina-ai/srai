@@ -87,8 +87,7 @@ class OSMTileLoader:
             return get_collector(
                 storage_strategy, save_path=self.save_path, file_extension=self.resource_type
             )
-        else:
-            return storage_strategy
+        return storage_strategy
 
     def load(
         self,
