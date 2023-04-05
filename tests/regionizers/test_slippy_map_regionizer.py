@@ -9,6 +9,8 @@ from shapely.geometry import Polygon
 from srai.constants import WGS84_CRS
 from srai.regionizers import SlippyMapRegionizer
 
+ZOOM = 11
+
 
 @pytest.fixture  # type: ignore
 def gdf() -> gpd.GeoDataFrame:
@@ -29,7 +31,7 @@ def gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def regionizer() -> SlippyMapRegionizer:
     """Regionizer fixture."""
-    return SlippyMapRegionizer(zoom=11)
+    return SlippyMapRegionizer(zoom=ZOOM)
 
 
 def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> None:
@@ -38,7 +40,11 @@ def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> No
 
     assert regions.shape[0] == 6, f"Invalid length {regions.shape[0]}"
     for x, y in zip([1120, 1119, 1120, 1121, 1120, 1121], [683, 684, 684, 684, 685, 685]):
-        assert (x, y) in regions.index, f"{(x, y)} not in index but expected"
+        expected_id = f"{x}_{y}_{ZOOM}"
+        assert expected_id in regions.index, f"{expected_id} not in index but expected"
+        assert regions.loc[expected_id]["x"] == x
+        assert regions.loc[expected_id]["y"] == y
+        assert regions.loc[expected_id]["z"] == ZOOM
 
 
 @pytest.mark.parametrize(  # type: ignore

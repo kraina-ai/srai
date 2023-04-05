@@ -6,7 +6,6 @@ This module implements Slippy map tilenames [1] as regionizer.
 References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
-from collections import namedtuple
 from typing import Any, List, Tuple
 
 import geopandas as gpd
@@ -16,8 +15,6 @@ from functional import seq
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
-
-SlippyMapId = namedtuple("SlippyMapId", "x y")
 
 
 class SlippyMapRegionizer(Regionizer):
@@ -59,7 +56,15 @@ class SlippyMapRegionizer(Regionizer):
             seq(gdf_exploded["geometry"])
             .map(self._to_cells)
             .flat_map(lambda x: x)
-            .map(lambda item: {"geometry": item[2], REGIONS_INDEX: SlippyMapId(item[0], item[1])})
+            .map(
+                lambda item: {
+                    "geometry": item[2],
+                    REGIONS_INDEX: f"{item[0]}_{item[1]}_{self.zoom}",
+                    "x": item[0],
+                    "y": item[1],
+                    "z": self.zoom,
+                }
+            )
             .to_list()
         )
 
