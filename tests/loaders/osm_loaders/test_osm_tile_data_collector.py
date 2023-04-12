@@ -16,7 +16,7 @@ FILE_TYPE = "png"
 
 
 def create_id(x: int, y: int) -> str:
-    """Creates test id."""
+    """Create test id."""
     return f"{x}_{y}_ZOOM"
 
 
@@ -29,7 +29,7 @@ class TestSavingDataCollector:
         return collectors.SavingDataCollector(PATH, FILE_TYPE)
 
     def test_save_to_disk(self, mocker: MockerFixture, col: collectors.SavingDataCollector) -> None:
-        """Tests if save to disk saves image properly."""
+        """Test if save to disk saves image properly."""
         _path_image_save(mocker)
         x, y = 1, 1
         expected = _get_expected_path(x, y)
@@ -51,7 +51,7 @@ def _path_image_save(mocker: MockerFixture) -> None:
 
 
 class TestInMemoryDataCollector:
-    """Tests for class InMemoryDataCollector."""
+    """Test for class InMemoryDataCollector."""
 
     @pytest.fixture  # type: ignore
     def col(self) -> collectors.InMemoryDataCollector:
@@ -59,7 +59,7 @@ class TestInMemoryDataCollector:
         return collectors.InMemoryDataCollector()
 
     def test_should_return_stored(self, col: collectors.InMemoryDataCollector) -> None:
-        """Tests values of collected images."""
+        """Test values of collected images."""
         x, y = 1, 1
         img = PIL.Image.fromarray(rng.integers(0, 256, size=(3, 3), dtype="uint8"))
 
@@ -74,7 +74,7 @@ class TestInMemoryDataCollector:
 def test_in_memory_collector_creation(
     collector_type: Union[str, collectors.DataCollectorType]
 ) -> None:
-    """Tests if factory creates properly InMemoryDataCollector."""
+    """Test if factory creates properly InMemoryDataCollector."""
     created = collectors.get_collector(collector_type)
 
     assert isinstance(created, collectors.InMemoryDataCollector)
@@ -86,7 +86,7 @@ def test_in_memory_collector_creation(
 def test_saving_collector_creation(
     collector_type: Union[str, collectors.DataCollectorType]
 ) -> None:
-    """Tests if factory creates properly SavingDataCollector."""
+    """Test if factory creates properly SavingDataCollector."""
     created = collectors.get_collector(collector_type, save_path=PATH, file_extension=FILE_TYPE)
 
     assert isinstance(created, collectors.SavingDataCollector), f"Invalid type {type(created)}"

@@ -35,7 +35,7 @@ def regionizer() -> SlippyMapRegionizer:
 
 
 def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> None:
-    """Tests returned regions."""
+    """Test returned regions."""
     regions = regionizer.transform(gdf)
 
     assert regions.shape[0] == 6, f"Invalid length {regions.shape[0]}"
@@ -57,13 +57,13 @@ def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> No
     ],
 )
 def test_zoom_check(z: int, expectation: Any) -> None:
-    """Tests value checks."""
+    """Test value checks."""
     with expectation:
         SlippyMapRegionizer(zoom=z)
 
 
 def test_coordinates_cast(regionizer: SlippyMapRegionizer) -> None:
-    """Tests if coordinates_to_x_y gives proper x and y value."""
+    """Test if coordinates_to_x_y gives proper x and y value."""
     # given
     latitude, longitude = 51, 16.8
     regionizer.zoom = 10
@@ -79,7 +79,7 @@ def test_coordinates_cast(regionizer: SlippyMapRegionizer) -> None:
 def test_x_y_to_coordinates_should_be_inverse_to_coordinates_to_x_y(
     regionizer: SlippyMapRegionizer,
 ) -> None:
-    """Tests if `x_y_to_coordinates` is reversible with `coordinates_to_x_y`."""
+    """Test if `x_y_to_coordinates` is reversible with `coordinates_to_x_y`."""
     # given
     x, y = 50, 100
 

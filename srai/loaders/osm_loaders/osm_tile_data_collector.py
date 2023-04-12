@@ -8,7 +8,7 @@ from PIL import Image
 
 
 class DataCollector(ABC):
-    """Stores collected images."""
+    """Store collected images."""
 
     @abstractmethod
     def store(self, idx: str, data: Image.Image) -> Any:
@@ -23,9 +23,9 @@ class DataCollector(ABC):
 
 class SavingDataCollector(DataCollector):
     """
-    Saves in disk collected images.
+    Save in disk collected images.
 
-    Stores paths.
+    Store paths.
     """
 
     def __init__(self, save_path: Union[str, Path], file_extension: str) -> None:
@@ -44,7 +44,7 @@ class SavingDataCollector(DataCollector):
 
     def store(self, idx: str, data: Image.Image) -> Path:
         """
-        Saves image on disk. Returns path.
+        Save image on disk. Returns path.
 
         Args:
             idx (str): id of tile
@@ -56,7 +56,7 @@ class SavingDataCollector(DataCollector):
 
 
 class InMemoryDataCollector(DataCollector):
-    """Stores data in object memory."""
+    """Store data in object memory."""
 
     def __init__(self) -> None:
         """Initialize InMemoryDataCollector."""
@@ -64,7 +64,7 @@ class InMemoryDataCollector(DataCollector):
 
     def store(self, idx: str, data: Image.Image) -> Image.Image:
         """
-        Simply removes object for usage.
+        Simply return object for usage.
 
         Args:
             idx (str): id of tile
@@ -74,7 +74,7 @@ class InMemoryDataCollector(DataCollector):
 
 
 class DataCollectorType(str, Enum):
-    """Defines enums to choose one of known DataCollector implementations."""
+    """Define enums to choose one of known DataCollector implementations."""
 
     SAVE = "save"
     RETURN = "return"
@@ -82,7 +82,7 @@ class DataCollectorType(str, Enum):
 
 def get_collector(collector_type: Union[DataCollectorType, str], **kwargs: Any) -> DataCollector:
     """
-    Returns DataCollector object of type specified by DataCollectorType enum.
+    Return DataCollector object of type specified by DataCollectorType enum.
 
     Args:
         collector_type (DataCollectorType): If SAVE returns SavingDataCollector.

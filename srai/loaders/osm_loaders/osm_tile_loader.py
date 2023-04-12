@@ -27,7 +27,7 @@ class OSMTileLoader:
     """
     OSM Tile Loader.
 
-    Downloads raster tiles from user specified tile server, like listed in [1]. Loader founds x, y
+    Download raster tiles from user specified tile server, like listed in [1]. Loader founds x, y
     coordinates [2] for specified area and downloads tiles. Address is built with schema
     {tile_server_url}/{zoom}/{x}/{y}.{resource_type}
 
@@ -94,7 +94,7 @@ class OSMTileLoader:
         area: gpd.GeoDataFrame,
     ) -> gpd.GeoDataFrame:
         """
-        Returns all tiles of region.
+        Return all tiles of region.
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
@@ -112,7 +112,7 @@ class OSMTileLoader:
 
     def get_tile_by_x_y(self, x: int, y: int, idx: Any = None) -> Any:
         """
-        Downloads single tile from tile server. Returns tile processed by DataCollector.
+        Download single tile from tile server. Return tile processed by DataCollector.
 
         Args:
             x(int): x tile coordinate

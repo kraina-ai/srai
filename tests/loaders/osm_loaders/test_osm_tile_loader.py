@@ -24,7 +24,7 @@ rng = default_rng()
 
 
 def to_bytes(img: Image.Image) -> bytes:
-    """Converts image into bytes."""
+    """Convert image into bytes."""
     img_bytes = BytesIO()
     img.save(img_bytes, RESOURCE_TYPE)
     return img_bytes.getvalue()
@@ -32,13 +32,13 @@ def to_bytes(img: Image.Image) -> bytes:
 
 @pytest.fixture  # type: ignore
 def loader() -> OSMTileLoader:
-    """Creates default TileLoader object."""
+    """Create default TileLoader object."""
     return OSMTileLoader(TEST_DOMAIN, zoom=ZOOM, verbose=False)
 
 
 @pytest.fixture  # type: ignore
 def images() -> List[bytes]:
-    """Creates list of images as bytes."""
+    """Create list of images as bytes."""
     return [
         to_bytes(Image.fromarray(rng.integers(low=0, high=256, size=(4, 4, 3), dtype="uint8")))
         for _ in range(3)
@@ -73,7 +73,7 @@ def test_load_images_properly(
     gdf: gpd.GeoDataFrame,
     loader: OSMTileLoader,
 ) -> None:
-    """Tests if load returns proper images list according to location."""
+    """Test if load returns proper images list according to location."""
     with requests_mock.Mocker() as m:
         mock_requests(images, m)
         tiles = loader.load(gdf)

@@ -104,7 +104,7 @@ class SlippyMapRegionizer(Regionizer):
 
     def _coordinates_to_x_y(self, latitude: float, longitude: float) -> Tuple[int, int]:
         """
-        Counts x and y from latitude and longitude using self.zoom.
+        Count x and y from latitude and longitude using self.zoom.
 
         Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
         """
@@ -116,7 +116,7 @@ class SlippyMapRegionizer(Regionizer):
 
     def _x_y_to_coordinates(self, x: int, y: int) -> Tuple[float, float]:
         """
-        Counts latitude and longitude from x, y using self.zoom.
+        Count latitude and longitude from x, y using self.zoom.
 
         Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
         """
