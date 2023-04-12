@@ -14,7 +14,9 @@ from srai.embedders import Embedder
 class CountEmbedder(Embedder):
     """Simple Embedder that counts occurences of feature values."""
 
-    def __init__(self, expected_output_features: Optional[List[str]] = None) -> None:
+    def __init__(
+        self, expected_output_features: Optional[List[str]] = None, count_subcategories: bool = True
+    ) -> None:
         """
         Init CountEmbedder.
 
@@ -23,11 +25,16 @@ class CountEmbedder(Embedder):
                 to be found in the resulting embedding. If not None, the missing features are added
                 and filled with 0. The unexpected features are removed.
                 The resulting columns are sorted accordingly. Defaults to None.
+            count_subcategories (bool, optional): Whether to count all subcategories individually
+                or count features only on the highest level based on features column name.
+                Defaults to True.
         """
         if expected_output_features is not None:
             self.expected_output_features = pd.Series(expected_output_features)
         else:
             self.expected_output_features = None
+
+        self.count_subcategories = count_subcategories
 
     def transform(
         self,
@@ -75,7 +82,10 @@ class CountEmbedder(Embedder):
         features_df = self._remove_geometry_if_present(features_gdf)
         joint_df = self._remove_geometry_if_present(joint_gdf)
 
-        feature_encodings = pd.get_dummies(features_df)
+        if self.count_subcategories:
+            feature_encodings = pd.get_dummies(features_df)
+        else:
+            feature_encodings = features_df.notna().astype(int)
         joint_with_encodings = joint_df.join(feature_encodings)
         region_embeddings = joint_with_encodings.groupby(level=0).sum()
 
