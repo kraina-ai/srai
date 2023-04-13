@@ -49,7 +49,7 @@ class CountEmbedder(Embedder):
         Expects features_gdf to be in wide format with each column
         being a separate type of feature (e.g. amenity, leisure)
         and rows to hold values of these features for each object.
-        The resulting GeoDataFrame will have columns made by combining
+        The resulting DataFrame will have columns made by combining
         the feature name (column) and value (row) e.g. amenity_fuel or type_0.
         The rows will hold numbers of this type of feature in each region.
 
@@ -59,7 +59,7 @@ class CountEmbedder(Embedder):
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
+            pd.DataFrame: Embedding for each region in regions_gdf.
 
         Raises:
             ValueError: If features_gdf is empty and self.expected_output_features is not set.
