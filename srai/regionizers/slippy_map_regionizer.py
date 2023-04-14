@@ -6,14 +6,15 @@ This module implements Slippy map tilenames [1] as regionizer.
 References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
-from typing import Any, List, Tuple
+from itertools import product
+from typing import Any, Dict, List, Tuple
 
 import geopandas as gpd
 import numpy as np
 import shapely.geometry as shpg
 from functional import seq
 
-from srai.constants import REGIONS_INDEX, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.regionizers import Regionizer
 
 
@@ -45,7 +46,6 @@ class SlippyMapRegionizer(Regionizer):
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
 
-
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.
         """
@@ -53,58 +53,51 @@ class SlippyMapRegionizer(Regionizer):
         gdf_exploded = self._explode_multipolygons(gdf_wgs84)
 
         values = (
-            seq(gdf_exploded["geometry"])
+            seq(gdf_exploded[GEOMETRY_COLUMN])
             .map(self._to_cells)
             .flat_map(lambda x: x)
             .map(
                 lambda item: {
-                    "geometry": item[2],
-                    REGIONS_INDEX: f"{item[0]}_{item[1]}_{self.zoom}",
-                    "x": item[0],
-                    "y": item[1],
+                    **item,
+                    REGIONS_INDEX: f"{item['x']}_{item['y']}_{self.zoom}",
                     "z": self.zoom,
                 }
             )
             .to_list()
         )
 
-        gdf = gpd.GeoDataFrame(values, geometry="geometry", crs=WGS84_CRS)
-        gdf = gdf.set_index(REGIONS_INDEX)
+        gdf = gpd.GeoDataFrame(values, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS).set_index(
+            REGIONS_INDEX
+        )
         return gdf.drop_duplicates()
 
-    def _to_cells(self, polygon: shpg.Polygon) -> List[Any]:
+    def _to_cells(self, polygon: shpg.Polygon) -> List[Dict[str, Any]]:
         gdf_bounds = polygon.bounds
         x_start, y_start = self._coordinates_to_x_y(gdf_bounds[1], gdf_bounds[0])
         x_end, y_end = self._coordinates_to_x_y(gdf_bounds[3], gdf_bounds[2])
         tiles = []
-        for y in range(y_end, y_start + 1):
-            for x in range(x_start, x_end + 1):
-                tile_polygon = self._polygon_from_x_y(x, y)
-                if not self._should_skip_tile(polygon, tile_polygon):
-                    tiles.append((x, y, tile_polygon))
+        for x, y in product(range(x_start, x_end + 1), range(y_end, y_start + 1)):
+            tile_polygon = self._polygon_from_x_y(x, y)
+            if not self._should_skip_tile(polygon, tile_polygon):
+                tiles.append(dict(x=x, y=y, geometry=tile_polygon))
         return tiles
 
     def _polygon_from_x_y(self, x: int, y: int) -> shpg.Polygon:
         latitude_start, longitude_start = self._x_y_to_coordinates(x, y)
         latitude_end, longitude_end = self._x_y_to_coordinates(x + 1, y + 1)
-        tile_polygon = shpg.Polygon(
-            [
-                (longitude_start, latitude_start),
-                (longitude_end, latitude_start),
-                (longitude_end, latitude_end),
-                (longitude_start, latitude_end),
-            ]
+        tile_polygon = shpg.box(
+            minx=longitude_start, miny=latitude_start, maxx=longitude_end, maxy=latitude_end
         )
         return tile_polygon
 
     def _should_skip_tile(self, area: shpg.Polygon, tile: shpg.Polygon) -> bool:
-        """Checks if tile is inside area boundaries."""
+        """Check if tile is inside area boundaries."""
         intersects: bool = tile.intersects(area)
         return not intersects
 
     def _coordinates_to_x_y(self, latitude: float, longitude: float) -> Tuple[int, int]:
         """
-        Count x and y from latitude and longitude using self.zoom.
+        Convert latitude and longitude into x and y values using `self.zoom`.
 
         Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
         """
@@ -116,7 +109,7 @@ class SlippyMapRegionizer(Regionizer):
 
     def _x_y_to_coordinates(self, x: int, y: int) -> Tuple[float, float]:
         """
-        Count latitude and longitude from x, y using self.zoom.
+        Convert x and y values into latitude and longitude using `self.zoom`.
 
         Based on https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations.
         """

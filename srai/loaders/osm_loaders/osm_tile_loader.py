@@ -27,7 +27,7 @@ class OSMTileLoader:
     """
     OSM Tile Loader.
 
-    Download raster tiles from user specified tile server, like listed in [1]. Loader founds x, y
+    Download raster tiles from user specified tile server, like listed in [1]. Loader finds x, y
     coordinates [2] for specified area and downloads tiles. Address is built with schema
     {tile_server_url}/{zoom}/{x}/{y}.{resource_type}
 
@@ -55,13 +55,13 @@ class OSMTileLoader:
             verbose (bool, optional): should print logs. Defaults to False.
             resource_type (str, optional): file extension. Added to the end of url.
                 Defaults to "png".
-            auth_token (Optional[str], optional): auth token. Added as access_token parameter
+            auth_token (str, optional): auth token. Added as access_token parameter
                 to request. Defaults to None.
-            data_collector (Optional[Union[str, DataCollector]], optional): DataCollector object or
+            data_collector (Union[str, DataCollector], optional): DataCollector object or
             enum defining default collector. If None uses InMemoryDataCollector. Defaults to None.
             If `return` uses  InMemoryDataCollector
             If `save` uses  SavingDataCollector
-            storage_path (Optional[Union[str, Path]], optional): path to save data,
+            storage_path (Union[str, Path], optional): path to save data,
                 used with SavingDataCollector. Defaults to None.
 
         References:
@@ -124,6 +124,6 @@ class OSMTileLoader:
         url = self.base_url.format(self.zoom, x, y)
         if self.verbose:
             print(f"Getting tile from url: {url}")
-        content = requests.get(url, params={"access_token": f"{self.auth_token}"}).content
+        content = requests.get(url, params={"access_token": self.auth_token}).content
         tile = Image.open(BytesIO(content))
         return self.data_collector.store(idx, tile)
