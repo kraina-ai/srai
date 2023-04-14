@@ -73,7 +73,7 @@ class ContextualCountEmbedder(CountEmbedder):
         feature (e.g. amenity, leisure) and rows to hold values of these features for each object.
         The rows will hold numbers of this type of feature in each region. Numbers can be
         fractional because neighbourhoods are averaged to represent a single value from
-        all neighbours on a given leven.
+        all neighbours on a given level.
 
         Args:
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
