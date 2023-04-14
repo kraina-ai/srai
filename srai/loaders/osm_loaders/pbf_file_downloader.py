@@ -20,12 +20,7 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.utils import (
-    buffer_geometry,
-    download_file,
-    flatten_geometry,
-    remove_interiors,
-)
+from srai.utils import buffer_geometry, download_file, flatten_geometry, remove_interiors
 
 
 class PbfFileDownloader:
@@ -46,7 +41,7 @@ class PbfFileDownloader:
     PROTOMAPS_API_START_URL = "https://app.protomaps.com/downloads/osm"
     PROTOMAPS_API_DOWNLOAD_URL = "https://app.protomaps.com/downloads/{}/download"
 
-    _PBAR_FORMAT = "Downloading pbf file ({})"
+    _PBAR_FORMAT = "[{}] Downloading pbf file #{} ({})"
 
     SIMPLIFICATION_TOLERANCE_VALUES = [
         1e-07,
@@ -100,12 +95,15 @@ class PbfFileDownloader:
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
             regions_mapping[region_id] = [
-                self.download_pbf_file_for_polygon(polygon) for polygon in polygons
+                self.download_pbf_file_for_polygon(polygon, region_id, polygon_id + 1)
+                for polygon_id, polygon in enumerate(polygons)
             ]
 
         return regions_mapping
 
-    def download_pbf_file_for_polygon(self, polygon: Polygon) -> Path:
+    def download_pbf_file_for_polygon(
+        self, polygon: Polygon, region_id: str = "OSM", polygon_id: int = 1
+    ) -> Path:
         """
         Download PBF file for a single Polygon.
 
@@ -118,6 +116,10 @@ class PbfFileDownloader:
 
         Args:
             polygon (Polygon): Polygon boundary of an area to be extracted.
+            region_id (str, optional): Region name to be set in progress bar.
+                Defaults to "OSM".
+            polygon_id (int, optional): Polygon number to be set in progress bar.
+                Defaults to 1.
 
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
@@ -179,15 +181,21 @@ class PbfFileDownloader:
                     elems_prog = status_response.get("ElemsProg", None)
 
                     if cells_total > 0 and cells_prog is not None and cells_prog < cells_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Cells"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Cells")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_prog
                     elif nodes_total > 0 and nodes_prog is not None and nodes_prog < nodes_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Nodes"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Nodes")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_total + nodes_prog
                     elif elems_total > 0 and elems_prog is not None and elems_prog < elems_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Elements"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Elements")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_total + nodes_total + elems_prog
                     else:
