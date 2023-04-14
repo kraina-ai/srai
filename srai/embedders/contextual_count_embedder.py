@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from srai.embedders import CountEmbedder
+from srai.embedders.count_embedder import CountEmbedder
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 

@@ -1,10 +1,8 @@
 """Embedders."""
 
-# Force import of required base classes
-from srai.embedders._base import Embedder
-from srai.embedders.count_embedder import CountEmbedder
-
+from ._base import Embedder
 from .contextual_count_embedder import ContextualCountEmbedder
+from .count_embedder import CountEmbedder
 from .gtfs2vec_embedder import GTFS2VecEmbedder
 from .highway2vec import Highway2VecEmbedder
 
