@@ -40,7 +40,7 @@ class ContextualCountEmbedder(CountEmbedder):
             neighbourhood_distance (int): How many neighbours levels should be included in
                 the embedding.
             concatenate_vectors (bool, optional): Whether to sum all neighbours into a single vector
-                with the same width as 1CountEmbedder1, or to concatenate them to the wide format
+                with the same width as `CountEmbedder`, or to concatenate them to the wide format
                 and keep all neighbour levels separate. Defaults to False.
             expected_output_features (List[str], optional): The features that are expected
                 to be found in the resulting embedding. If not None, the missing features are
