@@ -1717,7 +1717,7 @@ summary = "Python for Window Extensions"
 name = "pywinpty"
 version = "2.0.10"
 requires_python = ">=3.7"
-summary = "Pseudo terminal support for Windows from Python."
+summary = ""
 
 [[package]]
 name = "pyyaml"
@@ -2103,6 +2103,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "typeguard"
+version = "3.0.2"
+requires_python = ">=3.7.4"
+summary = "Run-time type checker for Python"
+dependencies = [
+    "importlib-metadata>=3.6; python_version < \"3.10\"",
+    "typing-extensions>=4.4.0; python_version < \"3.11\"",
+]
+
+[[package]]
 name = "types-setuptools"
 version = "67.6.0.5"
 summary = "Typing stubs for setuptools"
@@ -2219,8 +2229,9 @@ requires_python = ">=3.7"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
-lock_version = "4.1"
-content_hash = "sha256:962e57d64c978b93586dde39aafde37e2c322e5d5764b2af1be7b5d5fa101ef4"
+lock_version = "4.2"
+groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "visualization", "voronoi"]
+content_hash = "sha256:0a1cc165f764516cab6a99b789b18c110e0f797523d1bd4d79794dcde4156fd8"
 
 [metadata.files]
 "aiohttp 3.8.4" = [
@@ -4517,6 +4528,10 @@ content_hash = "sha256:962e57d64c978b93586dde39aafde37e2c322e5d5764b2af1be7b5d5f
     {url = "https://files.pythonhosted.org/packages/d5/61/f6c3260de70c2b980702f2fde0526690de40432ebfe2f4b9e81a9007cf09/triton-2.0.0-1-pp39-pypy39_pp73-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:e3e13aa8b527c9b642e3a9defcc0fbd8ffbe1c80d8ac8c15a01692478dc64d8a"},
     {url = "https://files.pythonhosted.org/packages/e1/1d/fd57199cf8be37f7e846408cacb0a466ae21cd1612e268ab168bc815b007/triton-2.0.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42a0d2c3fc2eab4ba71384f2e785fbfd47aa41ae05fa58bf12cb31dcbd0aeceb"},
     {url = "https://files.pythonhosted.org/packages/ff/dd/606cb34d8060ab1768cefe0e1f4658c21121f9cae13e8c4444a8dc1665eb/triton-2.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb4b99ca3c6844066e516658541d876c28a5f6e3a852286bbc97ad57134827fd"},
+]
+"typeguard 3.0.2" = [
+    {url = "https://files.pythonhosted.org/packages/af/40/3398497c6e6951c92abaf933492d6633e7ac4df0bfc9d81f304b3f977f15/typeguard-3.0.2.tar.gz", hash = "sha256:fee5297fdb28f8e9efcb8142b5ee219e02375509cd77ea9d270b5af826358d5a"},
+    {url = "https://files.pythonhosted.org/packages/e2/62/7d206b0ac6fcbb163215ecc622a54eb747f85ad86d14bc513a834442d0f6/typeguard-3.0.2-py3-none-any.whl", hash = "sha256:bbe993854385284ab42fd5bd3bee6f6556577ce8b50696d6cb956d704f286c8e"},
 ]
 "types-setuptools 67.6.0.5" = [
     {url = "https://files.pythonhosted.org/packages/52/d9/d655de64223bc1ab4efcf39236ce6945121129bd716bfbc3ba64cda688ff/types-setuptools-67.6.0.5.tar.gz", hash = "sha256:3a708e66c7bdc620e4d0439f344c750c57a4340c895a4c3ed2d0fc4ae8eb9962"},
