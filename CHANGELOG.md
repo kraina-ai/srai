@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- SlippyMapRegionizer
+- OSMTileLoader
 - GTFS Loader from gtfs2vec paper
 - GTFS2Vec Model from gtfs2vec paper
 - GTFS2Vec Embedder using gtfs2vec model
