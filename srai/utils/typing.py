@@ -1,5 +1,6 @@
 """Utility function for typing purposes."""
 
+from contextlib import suppress
 from typing import Any
 
 from typeguard import TypeCheckError, check_type
@@ -20,10 +21,8 @@ def is_expected_type(value: object, expected_type: Any) -> bool:
     """
     result = False
 
-    try:
+    with suppress(TypeCheckError):
         check_type(value, expected_type)
         result = True
-    except TypeCheckError:
-        pass
 
     return result
