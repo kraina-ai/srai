@@ -124,6 +124,6 @@ class OSMTileLoader:
         url = self.base_url.format(self.zoom, x, y)
         if self.verbose:
             print(f"Getting tile from url: {url}")
-        content = requests.get(url, params={"access_token": self.auth_token}).content
+        content = requests.get(url, params=dict(access_token=self.auth_token)).content
         tile = Image.open(BytesIO(content))
         return self.data_collector.store(idx, tile)
