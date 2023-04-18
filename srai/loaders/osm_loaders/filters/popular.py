@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 import requests
 from functional import seq
 
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 _TAGINFO_API_ADDRESS = "https://taginfo.openstreetmap.org"
 _TAGINFO_API_TAGS = _TAGINFO_API_ADDRESS + "/api/4/tags/popular"

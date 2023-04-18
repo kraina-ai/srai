@@ -9,7 +9,7 @@ Note: not all definitions from the document are implemented, such as boundaries 
 References:
     1. https://www.geofabrik.de/data/geofabrik-osm-gis-standard-0.7.pdf
 """
-from srai.loaders.osm_loaders.filters.osm_tags_type import grouped_osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type
 
 GEOFABRIK_LAYERS: grouped_osm_tags_type = {
     "public": {

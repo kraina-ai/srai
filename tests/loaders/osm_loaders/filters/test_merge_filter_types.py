@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pytest
 
-from srai.loaders.osm_loaders.filters.osm_tags_type import (
+from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
     merge_grouped_osm_tags_type,
     osm_tags_type,
