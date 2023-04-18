@@ -159,13 +159,15 @@ class OSMLoader(abc.ABC):
             if osm_tag_key not in row or pd.isna(row[osm_tag_key]):
                 continue
 
-            if isinstance(osm_tag_value, bool) and osm_tag_value:
-                return f"{osm_tag_key}={row[osm_tag_key]}"
+            is_matching_bool_filter = isinstance(osm_tag_value, bool) and osm_tag_value
+            is_matching_string_filter = (
+                isinstance(osm_tag_value, str) and row[osm_tag_key] == osm_tag_value
+            )
+            is_matching_list_filter = (
+                isinstance(osm_tag_value, list) and row[osm_tag_key] in osm_tag_value
+            )
 
-            if isinstance(osm_tag_value, str) and row[osm_tag_key] == osm_tag_value:
-                return f"{osm_tag_key}={row[osm_tag_key]}"
-
-            if isinstance(osm_tag_value, list) and row[osm_tag_key] in osm_tag_value:
+            if is_matching_bool_filter or is_matching_string_filter or is_matching_list_filter:
                 return f"{osm_tag_key}={row[osm_tag_key]}"
 
         return None
