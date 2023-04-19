@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Gramacki"
+  given-names: "Piotr"
+  orcid: "https://orcid.org/0000-0002-4587-5586"
+- family-names: "Leśniara"
+  given-names: "Kacper"
+  orcid: "https://orcid.org/0000-0003-0875-4301"
+- family-names: "Raczycki"
+  given-names: "Kamil"
+  orcid: "https://orcid.org/0000-0002-3715-4869"
+- family-names: "Woźniak"
+  given-names: "Szymon"
+  orcid: "https://orcid.org/0000-0002-2047-1649"
+title: "SRAI: Spatial Representations for Artificial Intelligence"
+version: 0.0.1
+date-released: 2022-11-23
+url: "https://github.com/srai-lab/srai"
