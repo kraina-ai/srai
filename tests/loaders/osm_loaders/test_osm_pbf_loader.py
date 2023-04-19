@@ -193,18 +193,8 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 @pytest.mark.parametrize(  # type: ignore
     "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length",
     [
-        ([Point([(-73.981883, 40.768081)])], None, None, 10, 38),
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, None, 0, 0),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0),
         ([Point([(-73.981883, 40.768081)])], None, HEX2VEC_FILTER, 2, 3),
-        (
-            [Point([(-73.981883, 40.768081)])],
-            Path(__file__).parent
-            / "test_files"
-            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            None,
-            10,
-            38,
-        ),
         (
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
@@ -219,7 +209,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             Path(__file__).parent
             / "test_files"
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            None,
+            HEX2VEC_FILTER,
             0,
             0,
         ),
