@@ -19,9 +19,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from srai.embedders import Embedder
+from srai.embedders.gtfs2vec.model import GTFS2VecModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
-from srai.models import GTFS2VecModel
 
 
 class GTFS2VecEmbedder(Embedder):
