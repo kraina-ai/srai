@@ -4,6 +4,7 @@ import abc
 from typing import Dict, Optional, Union, cast
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -112,7 +113,9 @@ class OSMLoader(abc.ABC):
             column for column in group_filter.keys() if column in features_gdf.columns
         ]
 
-        return features_gdf[["geometry", *matching_columns]]
+        return features_gdf[["geometry", *matching_columns]].replace(
+            to_replace=[None], value=np.nan
+        )
 
     def _get_osm_filter_groups(
         self, row: pd.Series, group_filter: grouped_osm_tags_type
