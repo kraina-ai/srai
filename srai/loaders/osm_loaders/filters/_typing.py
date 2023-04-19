@@ -1,6 +1,8 @@
 """Module contains a dedicated type alias for OSM tags filter."""
 from typing import Dict, List, Union, cast
 
+from srai.utils.typing import is_expected_type
+
 osm_tags_type = Dict[str, Union[List[str], str, bool]]
 
 grouped_osm_tags_type = Dict[str, Dict[str, Union[List[str], str, bool]]]
@@ -18,6 +20,11 @@ def merge_grouped_osm_tags_type(grouped_filter: grouped_osm_tags_type) -> osm_ta
     Returns:
         osm_tags_type: Merged filter.
     """
+    if not is_expected_type(grouped_filter, grouped_osm_tags_type):
+        raise AttributeError(
+            "Provided filter doesn't match required `grouped_osm_tags_type` definition."
+        )
+
     result: osm_tags_type = {}
     for sub_filter in grouped_filter.values():
         for osm_tag_key, osm_tag_value in sub_filter.items():
