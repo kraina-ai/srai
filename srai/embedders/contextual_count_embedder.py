@@ -1,11 +1,11 @@
 """
 Contextual Count Embedder.
 
-This module contains contextual count embedder implementation from ARIC@SIGSPATIAL 2021 paper[1].
+This module contains contextual count embedder implementation from ARIC@SIGSPATIAL 2021 paper [1].
 
 References:
-    [1] https://doi.org/10.1145/3486626.3493434
-    [1] https://arxiv.org/abs/2111.00990
+    1. https://doi.org/10.1145/3486626.3493434
+    1. https://arxiv.org/abs/2111.00990
 """
 
 from typing import List, Optional

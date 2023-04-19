@@ -4,7 +4,7 @@ Embedding model for Highway2Vec.
 This module contains the embedding model from the `highway2vec` paper [1].
 
 References:
-    [1] https://doi.org/10.1145/3557918.3565865
+    1. https://doi.org/10.1145/3557918.3565865
 """
 import pytorch_lightning as pl
 import torch

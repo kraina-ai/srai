@@ -4,7 +4,7 @@ gtfs2vec embedder.
 This module contains embedder from gtfs2vec paper [1].
 
 References:
-    [1] https://doi.org/10.1145/3486640.3491392
+    1. https://doi.org/10.1145/3486640.3491392
 """
 
 
