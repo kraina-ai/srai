@@ -46,14 +46,14 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     def __init__(
         self,
-        tags: osm_tags_type,
+        tags: Optional[osm_tags_type] = None,
         region_geometry: Optional[BaseGeometry] = None,
     ) -> None:
         """
         Initialize PbfFileHandler.
 
         Args:
-            tags (osm_tags_type): A dictionary
+            tags (osm_tags_type, optional): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -62,7 +62,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
-                If `None`, handler will allow all of the tags to be parsed.
+                If `None`, handler will allow all of the tags to be parsed. Defaults to `None`.
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """
