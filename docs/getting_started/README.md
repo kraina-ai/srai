@@ -18,7 +18,7 @@ The following optional dependencies can be installed to enable additional functi
 * `srai[osm]` - dependencies required to download OpenStreetMap data
 * `srai[voronoi]` - dependencies to use Voronoi-based regionization method
 * `srai[gtfs]` - dependencies to process GTFS data
-* `srai[plotitng]` - dependencies to plot graphs and maps
+* `srai[plotting]` - dependencies to plot graphs and maps
 
 ## Usage
 
