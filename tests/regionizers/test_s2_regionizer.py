@@ -38,7 +38,7 @@ def expected_s2_indexes() -> List[str]:
     [
         ("gdf_polygons", "expected_s2_indexes", S2_RESOLUTION, does_not_raise()),
         ("gdf_multipolygon", "expected_s2_indexes", S2_RESOLUTION, does_not_raise()),
-        ("gdf_empty", "expected_s2_indexes", S2_RESOLUTION, pytest.raises(ValueError)),
+        ("gdf_empty", "expected_s2_indexes", S2_RESOLUTION, pytest.raises(AttributeError)),
         ("gdf_polygons", "expected_s2_indexes", -1, pytest.raises(ValueError)),
         ("gdf_polygons", "expected_s2_indexes", 31, pytest.raises(ValueError)),
         ("gdf_no_crs", "expected_s2_indexes", S2_RESOLUTION, pytest.raises(ValueError)),

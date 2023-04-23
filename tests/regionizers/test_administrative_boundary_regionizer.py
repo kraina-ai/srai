@@ -46,7 +46,7 @@ def test_admin_level(
 
 def test_empty_gdf_attribute_error(gdf_empty) -> None:  # type: ignore
     """Test checks if empty GeoDataFrames are disallowed."""
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         abr = AdministrativeBoundaryRegionizer(admin_level=4)
         abr.transform(gdf_empty)
 
