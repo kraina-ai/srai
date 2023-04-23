@@ -30,7 +30,7 @@ def expected_embedding_df() -> pd.DataFrame:
 
 @pytest.fixture  # type: ignore
 def expected_subcategories_embedding_df() -> pd.DataFrame:
-    """Get expected CountEmbedder output for the default case."""
+    """Get expected CountEmbedder output with subcategories for the default case."""
     expected_df = pd.DataFrame(
         {
             REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
@@ -69,7 +69,7 @@ def specified_features_expected_embedding_df() -> pd.DataFrame:
 
 @pytest.fixture  # type: ignore
 def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
-    """Get expected CountEmbedder output for the case with specified features."""
+    """Get expected CountEmbedder output with subcategories for the case with specified features."""
     expected_df = pd.DataFrame(
         {
             REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
