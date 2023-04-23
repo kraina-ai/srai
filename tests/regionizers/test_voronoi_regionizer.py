@@ -14,7 +14,7 @@ from srai.utils import merge_disjointed_gdf_geometries
 
 def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:
     """Test checks if empty GeoDataFrames are disallowed."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         VoronoiRegionizer(seeds=gdf_empty)
 
 

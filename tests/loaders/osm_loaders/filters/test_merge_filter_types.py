@@ -16,9 +16,9 @@ ut = TestCase()
 @pytest.mark.parametrize(  # type: ignore
     "grouped_filter,expected_result_filter,expectation",
     [
-        ({"tag_a": True}, {"tag_a": True}, pytest.raises(AttributeError)),
-        ({"tag_a": "A"}, {"tag_a": "A"}, pytest.raises(AttributeError)),
-        ({"tag_a": ["A"]}, {"tag_a": ["A"]}, pytest.raises(AttributeError)),
+        ({"tag_a": True}, {"tag_a": True}, pytest.raises(ValueError)),
+        ({"tag_a": "A"}, {"tag_a": "A"}, pytest.raises(ValueError)),
+        ({"tag_a": ["A"]}, {"tag_a": ["A"]}, pytest.raises(ValueError)),
         ({}, {}, does_not_raise()),
         ({"group_a": {}}, {}, does_not_raise()),
         ({"group_a": {"tag_a": True}}, {"tag_a": True}, does_not_raise()),

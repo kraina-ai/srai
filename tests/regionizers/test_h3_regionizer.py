@@ -44,7 +44,7 @@ def expected_unbuffered_h3_indexes() -> List[str]:
         ("gdf_polygons", "expected_h3_indexes", H3_RESOLUTION, True, does_not_raise()),
         ("gdf_polygons", "expected_unbuffered_h3_indexes", H3_RESOLUTION, False, does_not_raise()),
         ("gdf_multipolygon", "expected_h3_indexes", H3_RESOLUTION, True, does_not_raise()),
-        ("gdf_empty", "expected_h3_indexes", H3_RESOLUTION, True, pytest.raises(AttributeError)),
+        ("gdf_empty", "expected_h3_indexes", H3_RESOLUTION, True, pytest.raises(ValueError)),
         ("gdf_polygons", "expected_h3_indexes", -1, True, pytest.raises(ValueError)),
         ("gdf_polygons", "expected_h3_indexes", 16, True, pytest.raises(ValueError)),
         ("gdf_no_crs", "expected_h3_indexes", H3_RESOLUTION, True, pytest.raises(ValueError)),
