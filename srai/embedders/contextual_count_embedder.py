@@ -49,12 +49,18 @@ class ContextualCountEmbedder(CountEmbedder):
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.
+
+        Raises:
+            ValueError: If `neighbourhood_distance` is negative.
         """
         super().__init__(expected_output_features, count_subcategories)
 
         self.neighbourhood = neighbourhood
         self.neighbourhood_distance = neighbourhood_distance
         self.concatenate_vectors = concatenate_vectors
+
+        if self.neighbourhood_distance < 0:
+            raise ValueError("Neighbourhood distance must be positive.")
 
     def transform(
         self,
@@ -120,6 +126,9 @@ class ContextualCountEmbedder(CountEmbedder):
         for idx, region_id in tqdm(
             enumerate(counts_df.index), desc="Generating embeddings", total=len(counts_df.index)
         ):
+            if self.neighbourhood_distance == 0:
+                continue
+
             for distance in range(1, self.neighbourhood_distance + 1):
                 neighbours = self.neighbourhood.get_neighbours_at_distance(region_id, distance)
                 matching_neighbours = counts_df.index.intersection(neighbours)
@@ -162,6 +171,9 @@ class ContextualCountEmbedder(CountEmbedder):
         for idx, region_id in tqdm(
             enumerate(counts_df.index), desc="Generating embeddings", total=len(counts_df.index)
         ):
+            if self.neighbourhood_distance == 0:
+                continue
+
             for distance in range(1, self.neighbourhood_distance + 1):
                 neighbours = self.neighbourhood.get_neighbours_at_distance(region_id, distance)
                 matching_neighbours = counts_df.index.intersection(neighbours)

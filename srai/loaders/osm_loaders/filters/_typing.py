@@ -21,7 +21,7 @@ def merge_grouped_osm_tags_type(grouped_filter: grouped_osm_tags_type) -> osm_ta
         osm_tags_type: Merged filter.
     """
     if not is_expected_type(grouped_filter, grouped_osm_tags_type):
-        raise AttributeError(
+        raise ValueError(
             "Provided filter doesn't match required `grouped_osm_tags_type` definition."
         )
 

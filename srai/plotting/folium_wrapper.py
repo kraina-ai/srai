@@ -157,7 +157,7 @@ def plot_neighbours(
         folium.Map: Generated map.
     """
     if region_id not in regions_gdf.index:
-        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+        raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
@@ -220,7 +220,7 @@ def plot_all_neighbourhood(
         folium.Map: Generated map.
     """
     if region_id not in regions_gdf.index:
-        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+        raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
