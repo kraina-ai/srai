@@ -176,6 +176,7 @@ push = false
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+log_cli = true
 
 [tool.licensecheck]
 using = "requirements"
