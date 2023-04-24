@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ContextualCountEmbedder
 - (CI) Changelog Enforcer
 - Utility plotting module based on Folium and Plotly
+- Citation information
 
 ### Changed
 
