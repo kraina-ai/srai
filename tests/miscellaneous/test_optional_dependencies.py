@@ -85,19 +85,14 @@ def _test_voronoi() -> None:
     VoronoiRegionizer(seeds=seeds_gdf)
 
 
-def _test_plotting_folium_module() -> None:
-    from srai.plotting import folium_wrapper
+def _test_plotting() -> None:
+    from srai.plotting import folium_wrapper, plotly_wrapper  # noqa: F401
 
     folium_wrapper.plot_regions(_get_regions_gdf())
-
-
-def _test_plotting_plotly_module() -> None:
-    from srai.plotting import plotly_wrapper
-
     plotly_wrapper.plot_regions(_get_regions_gdf(), return_plot=True)
 
 
-def _test_torch_lightning_embedders() -> None:
+def _test_torch() -> None:
     from srai.embedders import GTFS2VecEmbedder, Highway2VecEmbedder
 
     Highway2VecEmbedder()
@@ -139,9 +134,8 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
     "test_fn",
     [
         (_test_voronoi),
-        (_test_plotting_folium_module),
-        (_test_plotting_plotly_module),
-        (_test_torch_lightning_embedders),
+        (_test_plotting),
+        (_test_torch),
         (_test_osm),
         (_test_gtfs),
     ],
@@ -156,9 +150,8 @@ def test_optional_available(test_fn):
     "test_fn",
     [
         (_test_voronoi),
-        (_test_plotting_folium_module),
-        (_test_plotting_plotly_module),
-        (_test_torch_lightning_embedders),
+        (_test_plotting),
+        (_test_torch),
         (_test_osm),
         (_test_gtfs),
     ],
