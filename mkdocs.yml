@@ -13,11 +13,12 @@ theme:
   name: material
   features:
     - navigation.tabs
-    - navigation.tabs.stick
+    - navigation.tabs.sticky
     - navigation.instant
     - navigation.tracking
     - navigation.top
     - navigation.indexes
+    - navigation.path
     - toc.follow
     - content.code.annotate
   favicon: assets/logos/favicon.ico
@@ -100,8 +101,17 @@ plugins:
       scripts:
         - docs/copy_examples.py
         - docs/generate_api.py
+        - docs/gen_ref_pages.py
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [srai]
+          options:
+            show_source: true
+            show_root_heading: false
+            show_root_toc_entry: false
+            docstring_section_style: "spacy"
   - mkdocs-jupyter:
       include: ["*.ipynb"]
       ignore_h1_titles: true
