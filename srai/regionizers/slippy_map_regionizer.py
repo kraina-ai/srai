@@ -91,7 +91,11 @@ class SlippyMapRegionizer(Regionizer):
         return tile_polygon
 
     def _should_skip_tile(self, area: shpg.Polygon, tile: shpg.Polygon) -> bool:
-        """Check if tile is inside area boundaries."""
+        """
+        Check if tile is outside area boundaries.
+
+        If so, skip it.
+        """
         intersects: bool = tile.intersects(area)
         return not intersects
 
