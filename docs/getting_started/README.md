@@ -24,6 +24,12 @@ The following optional dependencies can be installed to enable additional functi
 
 Please see the [examples](../examples) directory for examples of how to use `srai`.
 
+## Use cases
+
+Please see the [Use Cases](use_cases) for detailed description of `srai` use-cases.
+It also covers features planned for future releases as a roadmap of what this project's
+goals are.
+
 ## Full pipeline example
 
 We also provide a full pipeline implemented in `kedro` to showcase real-world `srai` usage. Pipeline is available [here](https://github.com/Calychas/highway2vec_remaster/).
