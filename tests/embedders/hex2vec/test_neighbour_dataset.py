@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
+from srai.neighbourhoods import H3Neighbourhood
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -30,3 +31,39 @@ def test_raises_with_incorrect_sample_k_distance(
     neighbourhood = mocker.Mock()
     with expectation:
         NeighbourDataset(data, neighbourhood, negative_sample_k_distance=negative_sample_k_distance)
+
+
+@pytest.mark.parametrize("negative_sample_k_distance", [2, 3, 4])  # type: ignore
+def test_lookup_tables_construction(negative_sample_k_distance: int):
+    """Test if NeighbourDataset constructs lookup tables correctly."""
+    root_region = "891e205194bffff"
+    neighbourhood = H3Neighbourhood()
+    regions_indices = list(neighbourhood.get_neighbours_up_to_distance(root_region, 25))
+    regions_indices.append(root_region)
+
+    data_df = pd.DataFrame(0, index=regions_indices, columns=["data"])
+
+    neighbourhood = H3Neighbourhood(data_df)
+    dataset = NeighbourDataset(
+        data_df, neighbourhood, negative_sample_k_distance=negative_sample_k_distance
+    )
+
+    positives_correct = [
+        data_df.index[positive_df_loc] in neighbourhood.get_neighbours(data_df.index[anchor_df_loc])
+        for anchor_df_loc, positive_df_loc in zip(
+            dataset._anchor_df_locs_lookup, dataset._positive_df_locs_lookup
+        )
+    ]
+
+    assert all(positives_correct)
+
+    excluded_correct = []
+    for i, index in enumerate(data_df.index):
+        excluded_df_locs = dataset._excluded_from_negatives[i]
+        excluded_df_indices = set(data_df.index[list(excluded_df_locs)])
+        excluded_correct.append(
+            neighbourhood.get_neighbours_up_to_distance(index, negative_sample_k_distance)
+            == excluded_df_indices
+        )
+
+    assert all(excluded_correct)
