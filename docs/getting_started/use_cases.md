@@ -10,7 +10,7 @@ We present use-cases in a form of user stories obtained using design thinking ap
 >
 > Embeddings store is not yet available, as it introduces infrastructure costs to host them. We intend to release pre-trained embeddings from our methods in
 
-As a city planner, I would like to anticipate the amount of traffic on the estate. I work for one of the major cities, for which I found that there are pre-trained embeddings by the `srai` team. I want it to run fast and that I don't have to do anything other than download the embeds and a library that can read them.
+As a city planner, I would like to anticipate the amount of traffic on the estate. I work for one of the major cities, for which I found that there are pre-trained embeddings by the `srai` team (or by a member of the community). I want it to run fast and that I don't have to do anything other than download the embeds and a library that can read them.
 
 ## Transfer learning
 
