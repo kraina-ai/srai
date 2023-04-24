@@ -112,7 +112,7 @@ def _test_plotting_folium_module() -> None:
 def _test_plotting_plotly_module() -> None:
     from srai.plotting import plotly_wrapper
 
-    plotly_wrapper.plot_regions(_get_regions_gdf())
+    plotly_wrapper.plot_regions(_get_regions_gdf(), return_plot=True)
 
 
 def _get_regions_gdf() -> gpd.GeoDataFrame:
