@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - (CI) Changelog Enforcer
 - Utility plotting module based on Folium and Plotly
 - Documentation for srai library
+- Citation information
 
 ### Changed
 
