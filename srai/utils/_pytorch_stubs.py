@@ -1,7 +1,4 @@
-# pragma: no cover
-
-
-class LightningModule:
+class LightningModule:  # pragma: no cover
     """LightningModule class stub."""
 
     ...

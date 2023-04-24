@@ -86,7 +86,7 @@ def _test_voronoi() -> None:
 
 
 def _test_plotting() -> None:
-    from srai.plotting import folium_wrapper, plotly_wrapper  # noqa: F401
+    from srai.plotting import folium_wrapper, plotly_wrapper
 
     folium_wrapper.plot_regions(_get_regions_gdf())
     plotly_wrapper.plot_regions(_get_regions_gdf(), return_plot=True)
