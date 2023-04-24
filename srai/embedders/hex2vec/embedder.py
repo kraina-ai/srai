@@ -9,6 +9,7 @@ References:
 from typing import Any, Dict, List, Optional, TypeVar
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import torch
@@ -73,7 +74,7 @@ class Hex2VecEmbedder(CountEmbedder):
             ValueError: If index levels in gdfs don't overlap correctly.
         """
         self._check_is_fitted()
-        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         counts_tensor = torch.from_numpy(counts_df.values)
         embeddings = self._model(counts_tensor).detach().numpy()  # type: ignore
         return pd.DataFrame(embeddings, index=counts_df.index)
@@ -111,7 +112,7 @@ class Hex2VecEmbedder(CountEmbedder):
         """
         if trainer_kwargs is None:
             trainer_kwargs = {}
-        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
         self._model = Hex2VecModel(layer_sizes=[num_features, *self._encoder_sizes])
         dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
@@ -168,6 +169,11 @@ class Hex2VecEmbedder(CountEmbedder):
             trainer_kwargs,
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
+
+    def _get_raw_counts(
+        self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
+    ) -> pd.DataFrame:
+        return super().transform(regions_gdf, features_gdf, joint_gdf).astype(np.float32)
 
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:
