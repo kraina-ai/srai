@@ -45,6 +45,10 @@ Documentation = "https://srai-lab.github.io/srai"
 Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+# Make sure to edit test_optional_dependencies.py:
+# add entries to optional packages
+# add tests
+
 # pdm add -G osm <library>
 osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "overpass>=0.7"]
 # pdm add -G voronoi <library>
