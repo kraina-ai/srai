@@ -13,16 +13,14 @@ class Neighbourhood(ABC, Generic[IndexType]):
     """
     Neighbourhood interface.
 
-    This class abstracts away getting the neighbours of a region.
-    It allows to get the neighbours at a certain distance or up to a certain distance.
-    It is worth noting, that the distance here is not a metric distance, but a number of hops.
-    This definition makes most sense semantically for grid systems such as H3 or S2 but should work
-    for arbitrary neighbourhoods as well.
+    This class abstracts away getting the neighbours of a region. It allows to get the neighbours at
+    a certain distance or up to a certain distance. It is worth noting, that the distance here is
+    not a metric distance, but a number of hops. This definition makes most sense semantically for
+    grid systems such as H3 or S2 but should work for arbitrary neighbourhoods as well.
 
     The subclasses only need to implement the `get_neighbours` method, but can also override the
     `get_neighbours_up_to_distance` and `get_neighbours_at_distance` methods for performance
-    reasons.
-    See the `H3Neighbourhood` class for an example.
+    reasons. See the `H3Neighbourhood` class for an example.
     """
 
     @abstractmethod
