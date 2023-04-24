@@ -77,11 +77,11 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         self._positive_df_locs_lookup: np.ndarray
         self._excluded_from_negatives: Dict[int, Set[int]] = {}
 
-        self.region_index_to_df_loc: Dict[T, int] = {
+        self._region_index_to_df_loc: Dict[T, int] = {
             region_index: i for i, region_index in enumerate(data.index)
         }
-        self.df_loc_to_region_index: Dict[int, T] = {
-            i: region_index for region_index, i in self.region_index_to_df_loc.items()
+        self._df_loc_to_region_index: Dict[int, T] = {
+            i: region_index for region_index, i in self._region_index_to_df_loc.items()
         }
 
         self._build_lookup_tables(data, neighbourhood)
@@ -93,7 +93,7 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         for region_df_loc, region_index in tqdm(enumerate(data.index), total=len(data)):
             region_direct_neighbours = neighbourhood.get_neighbours(region_index)
             neighbours_df_locs: Set[int] = {
-                self.region_index_to_df_loc[neighbour_index]
+                self._region_index_to_df_loc[neighbour_index]
                 for neighbour_index in region_direct_neighbours
             }
             anchor_df_locs_lookup.extend([region_df_loc] * len(neighbours_df_locs))
@@ -103,7 +103,7 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
                 region_index, self._negative_sample_k_distance
             )
             self._excluded_from_negatives[region_df_loc] = {
-                self.region_index_to_df_loc[excluded_index]
+                self._region_index_to_df_loc[excluded_index]
                 for excluded_index in indices_excluded_from_negatives
             }
 
