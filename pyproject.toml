@@ -83,6 +83,7 @@ test = [
     "requests-mock>=1.10.0",
     "pytest-check>=2.1.4",
     "pytest-parametrization>=2022.2.1",
+    "pytest-xdist>=3.2.1",
 ]
 # pdm add -dG visualization <library>
 visualization = [
