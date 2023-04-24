@@ -12,11 +12,12 @@ from functional import seq
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
 
 
-class OSMOnlineLoader:
+class OSMOnlineLoader(Loader):
     """
     OSMOnlineLoader.
 

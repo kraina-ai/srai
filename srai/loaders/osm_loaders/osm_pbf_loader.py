@@ -10,11 +10,12 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
+from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
 from srai.utils._optional import import_optional_dependencies
 
 
-class OSMPbfLoader:
+class OSMPbfLoader(Loader):
     """
     OSMPbfLoader.
 
