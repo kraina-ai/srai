@@ -1,5 +1,5 @@
 """Utility function for automatic api documentation generation."""
-import parser
+import ast
 from pathlib import Path
 from typing import List, Tuple
 
@@ -19,8 +19,8 @@ def write_file(file_path: Path) -> None:
         file_path (Path): Current file path.
     """
     root_path = file_path.relative_to(MODULE_DIRECTORY_PATH)
-    classes, functions = _read_imports_from_file(file_path)
     print(f"Loading imports from {root_path}")
+    classes, functions = _read_imports_from_file(file_path)
 
     if classes:
         module_nav = mkdocs_gen_files.Nav()
@@ -61,12 +61,11 @@ def write_file(file_path: Path) -> None:
 
 
 def _read_imports_from_file(file_path: Path) -> Tuple[List[str], List[str]]:
-    st = parser.suite(file_path.read_text())
-    consts = st.compile().co_consts
-    modules_imports = [const for const in consts if isinstance(const, tuple)]
-    imports = [
-        module for modules_import in modules_imports for module in modules_import if module != "*"
-    ]
+    st = ast.parse(file_path.read_text())
+
+    modules_imports = [stmt for stmt in st.body if isinstance(stmt, ast.ImportFrom)]
+    imports = [alias.name for stmt in modules_imports for alias in stmt.names]
+
     classes = [i for i in imports if _is_camel_case(i)]
     functions = [i for i in imports if not _is_camel_case(i)]
     return classes, functions
