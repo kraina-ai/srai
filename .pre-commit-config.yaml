@@ -26,6 +26,7 @@ repos:
     rev: v1.2.0
     hooks:
       - id: mypy
+        additional_dependencies: ['types-requests']
   - repo: https://github.com/pdm-project/pdm
     rev: 2.5.3
     hooks:

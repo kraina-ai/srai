@@ -5,7 +5,7 @@ description = "A set of python modules for geospatial machine learning and data 
 authors = [{ name = "srai", email = "spatialrepresentationsforai@gmail.com" }]
 # pdm add <library>
 dependencies = [
-    "pandas>=1.3, <2",
+    "pandas>=1.3",
     "geopandas>=0.11.1",
     "shapely>=1.8.5.post1",
     "h3>=4.0.0b1",
