@@ -9,12 +9,6 @@ edit_uri: ""
 watch:
   - examples
 
-nav:
-  - Home: README.md
-  - Getting Started: getting_started
-  - Examples: examples
-  - ... | api/**
-  - ... | full_api/**
 
 theme:
   name: material

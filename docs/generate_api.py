@@ -79,5 +79,5 @@ for i in MODULE_DIRECTORY_PATH.glob("*/__init__.py"):
     if i.is_file() and len(i.relative_to(".").parents) <= 3:
         write_file(i)
 
-with mkdocs_gen_files.open("api/README.md", "a") as nav_file:
+with mkdocs_gen_files.open(f"{API_DIRECTORY_PATH}/README.md", "a") as nav_file:
     nav_file.writelines(nav.build_literate_nav())
