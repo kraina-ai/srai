@@ -20,14 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neighbourhood
 - H3Neighbourhood
 - AdjacencyNeighbourhood
+- CountEmbedder
+- ContextualCountEmbedder
 - (CI) Changelog Enforcer
 - Utility plotting module based on Folium and Plotly
+- Documentation for srai library
 - Citation information
 
 ### Changed
 
 - Change embedders and joiners interface to have `.transform` method
 - Change linter to Ruff and removed flake8, isort, pydocstyle
+- Change default value inside `transform` function of IntersectionJoiner to not return geometry.
 
 ### Deprecated
 

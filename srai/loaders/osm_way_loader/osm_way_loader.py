@@ -31,7 +31,7 @@ class NetworkType(str, Enum):
     See [1] for more details.
 
     References:
-        [1] https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
+        1. https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
     """
 
     ALL_PRIVATE = "all_private"

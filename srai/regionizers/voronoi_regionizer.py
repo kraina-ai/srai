@@ -75,12 +75,12 @@ class VoronoiRegionizer(Regionizer):
                 self.region_ids.append(index)
                 self.seeds.append(candidate_point)
 
+        if len(self.seeds) < 4:
+            raise ValueError("Minimum 4 seeds are required.")
+
         duplicated_seeds_ids = self._get_duplicated_seeds_ids()
         if duplicated_seeds_ids:
             raise ValueError(f"Duplicate seeds present: {duplicated_seeds_ids}.")
-
-        if len(self.seeds) < 4:
-            raise ValueError("Minimum 4 seeds are required.")
 
     def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
         """
