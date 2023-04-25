@@ -16,8 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
     import os
@@ -47,14 +46,14 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     def __init__(
         self,
-        tags: Optional[osm_tags_type] = HEX2VEC_FILTER,
+        tags: Optional[osm_tags_type] = None,
         region_geometry: Optional[BaseGeometry] = None,
     ) -> None:
         """
         Initialize PbfFileHandler.
 
         Args:
-            tags (osm_tags_type): A dictionary
+            tags (osm_tags_type, optional): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -63,8 +62,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
-                If `None`, handler will allow all of the tags to be parsed.
-                Defaults to the predefined HEX2VEC_FILTER.
+                If `None`, handler will allow all of the tags to be parsed. Defaults to `None`.
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """

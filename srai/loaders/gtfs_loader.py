@@ -6,8 +6,8 @@ It utilizes the `gtfs_kit` library [1]. It was originally created for the purpos
 the gtfs2vec project [2].
 
 References:
-    [1] https://gitlab.com/mrcagney/gtfs_kit
-    [2] https://doi.org/10.1145/3486640.3491392
+    1. https://gitlab.com/mrcagney/gtfs_kit
+    2. https://doi.org/10.1145/3486640.3491392
 """
 
 from pathlib import Path

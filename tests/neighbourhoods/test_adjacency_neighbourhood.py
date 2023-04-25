@@ -91,7 +91,7 @@ def rounded_regions_fixture() -> gpd.GeoDataFrame:
 
 def test_no_geometry_gdf_attribute_error(no_geometry_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if GeoDataFrames without geometry are disallowed."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         AdjacencyNeighbourhood(no_geometry_gdf)
 
 

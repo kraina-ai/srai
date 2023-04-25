@@ -31,10 +31,10 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
 
         Raises:
-            AttributeError: If regions_gdf doesn't have geometry column.
+            ValueError: If regions_gdf doesn't have geometry column.
         """
         if GEOMETRY_COLUMN not in regions_gdf.columns:
-            raise AttributeError("Regions must have a geometry column.")
+            raise ValueError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
         self.lookup: Dict[Hashable, Set[Hashable]] = {}
 
