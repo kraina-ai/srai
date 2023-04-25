@@ -12,6 +12,17 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 
+@pytest.fixture  # type: ignore
+def regions_data_df() -> pd.DataFrame:
+    """Get example regions for testing."""
+    root_region = "891e205194bffff"
+    neighbourhood = H3Neighbourhood()
+    regions_indices = list(neighbourhood.get_neighbours_up_to_distance(root_region, 25))
+    regions_indices.append(root_region)
+    data_df = pd.DataFrame(0, index=regions_indices, columns=["data"])
+    return data_df
+
+
 @pytest.mark.parametrize(  # type: ignore
     "negative_sample_k_distance,expectation",
     [
@@ -34,14 +45,9 @@ def test_raises_with_incorrect_sample_k_distance(
 
 
 @pytest.mark.parametrize("negative_sample_k_distance", [2, 3, 4])  # type: ignore
-def test_lookup_tables_construction(negative_sample_k_distance: int):
+def test_lookup_tables_construction(negative_sample_k_distance: int, request: Any):
     """Test if NeighbourDataset constructs lookup tables correctly."""
-    root_region = "891e205194bffff"
-    neighbourhood = H3Neighbourhood()
-    regions_indices = list(neighbourhood.get_neighbours_up_to_distance(root_region, 25))
-    regions_indices.append(root_region)
-
-    data_df = pd.DataFrame(0, index=regions_indices, columns=["data"])
+    data_df = request.getfixturevalue("regions_data_df")
 
     neighbourhood = H3Neighbourhood(data_df)
     dataset = NeighbourDataset(
@@ -67,3 +73,13 @@ def test_lookup_tables_construction(negative_sample_k_distance: int):
         )
 
     assert all(excluded_correct)
+
+
+def test_dataset_length(regions_data_df: pd.DataFrame) -> None:
+    """Test if NeighbourDataset has correct length."""
+    neighbourhood = H3Neighbourhood(regions_data_df)
+    expected_length = sum(
+        len(neighbourhood.get_neighbours(region)) for region in regions_data_df.index
+    )
+    dataset = NeighbourDataset(regions_data_df, neighbourhood)
+    assert len(dataset) == expected_length
