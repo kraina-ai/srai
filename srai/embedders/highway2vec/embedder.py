@@ -10,12 +10,10 @@ from typing import Any, Dict, Optional
 
 import geopandas as gpd
 import pandas as pd
-import pytorch_lightning as pl
-import torch
-from torch.utils.data import DataLoader
 
 from srai.embedders import Embedder
 from srai.exceptions import ModelNotFitException
+from srai.utils._optional import import_optional_dependencies
 
 from .model import Highway2VecModel
 
@@ -31,6 +29,10 @@ class Highway2VecEmbedder(Embedder):
             hidden_size (int, optional): Hidden size in encoder and decoder. Defaults to 64.
             embedding_size (int, optional): Embedding size. Defaults to 30.
         """
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
+
         self._model: Optional[Highway2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
@@ -58,6 +60,8 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        import torch
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         self._check_is_fitted()
         features_df = self._remove_geometry_if_present(features_gdf)
@@ -94,6 +98,10 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        import pytorch_lightning as pl
+        import torch
+        from torch.utils.data import DataLoader
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
 
