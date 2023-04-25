@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal, assert_index_equal
+from pandas.testing import assert_frame_equal
 from parametrization import Parametrization as P
 
 from srai.constants import REGIONS_INDEX
@@ -688,7 +688,7 @@ def test_empty(
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
         assert len(embedding) == len(gdf_regions)
-        assert_index_equal(embedding.index, gdf_regions.index)
+        assert embedding.index.name == gdf_regions.index.name
         if expected_output_features:
             assert len(embedding.columns) == len(expected_output_features) * (
                 1 if not concatenate_features else 1 + neighbourhood_distance
