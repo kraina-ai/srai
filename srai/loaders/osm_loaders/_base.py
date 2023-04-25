@@ -17,7 +17,7 @@ from srai.loaders.osm_loaders.filters._typing import (
 from srai.utils.typing import is_expected_type
 
 
-class OSMLoader(Loader):
+class OSMLoader(Loader, abc.ABC):
     """Abstract class for loaders."""
 
     @abc.abstractmethod
