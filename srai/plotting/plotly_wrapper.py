@@ -117,7 +117,7 @@ def plot_neighbours(
     regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
     regions_gdf_copy["region"] = "other"
     regions_gdf_copy.loc[region_id, "region"] = "selected"
-    regions_gdf_copy.loc[neighbours_ids, "region"] = "neighbour"
+    regions_gdf_copy.loc[list(neighbours_ids), "region"] = "neighbour"
     return _plot_regions(
         regions_gdf=regions_gdf_copy,
         hover_column_name=REGIONS_INDEX,
