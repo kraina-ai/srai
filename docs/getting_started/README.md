@@ -19,6 +19,7 @@ The following optional dependencies can be installed to enable additional functi
 * `srai[voronoi]` - dependencies to use Voronoi-based regionization method
 * `srai[gtfs]` - dependencies to process GTFS data
 * `srai[plotting]` - dependencies to plot graphs and maps
+* `srai[torch]` - dependencies to use torch-based embedders
 
 ## Usage
 
