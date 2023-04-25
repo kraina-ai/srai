@@ -1,7 +1,7 @@
 """Utility function for automatic api documentation generation."""
 import ast
 from pathlib import Path
-from typing import List, Tuple
+from typing import Any, List, Tuple, cast
 
 import mkdocs_gen_files
 
@@ -20,7 +20,7 @@ def write_file(file_path: Path) -> None:
     """
     root_path = file_path.relative_to(MODULE_DIRECTORY_PATH)
     print(f"Loading imports from {root_path}")
-    classes, functions = _read_imports_from_file(file_path)
+    classes, functions, module_docstring = _read_imports_from_file(file_path)
 
     if classes:
         module_nav = mkdocs_gen_files.Nav()
@@ -37,8 +37,8 @@ def write_file(file_path: Path) -> None:
             module_nav[imported_class] = Path(*dst_path.parts[2:]).as_posix()
 
         dst_path = API_DIRECTORY_PATH / file_path.parts[-2]
-        with mkdocs_gen_files.open((dst_path / "index").with_suffix(".md"), "a") as dst:
-            print(dst_path.parts[-1])
+        with mkdocs_gen_files.open((dst_path / "README").with_suffix(".md"), "a") as dst:
+            dst.write(f"# {dst_path.parts[-1].capitalize()}\n")
             dst.write(f"::: {dst_path.parts[-1]}\n")
             dst.write("    options:\n")
             dst.write("      members: false\n")
@@ -47,6 +47,7 @@ def write_file(file_path: Path) -> None:
     if functions:
         dst_path = API_DIRECTORY_PATH / file_path.parts[-2]
         with mkdocs_gen_files.open(dst_path.with_suffix(".md"), "a") as dst:
+            dst.write(module_docstring)
             for imported_function in functions:
                 parts = [*list(file_path.parts)[:-1], imported_function]
                 identifier = ".".join(parts)
@@ -60,15 +61,20 @@ def write_file(file_path: Path) -> None:
         nav[list(file_path.parts)[1:-1]] = Path(file_path.parts[-2]).as_posix()
 
 
-def _read_imports_from_file(file_path: Path) -> Tuple[List[str], List[str]]:
+def _read_imports_from_file(file_path: Path) -> Tuple[List[str], List[str], str]:
     st = ast.parse(file_path.read_text())
+
+    module_docstring = ""
+    st_expression = [stmt for stmt in st.body if isinstance(stmt, ast.Expr)]
+    if st_expression:
+        module_docstring = cast(Any, st_expression[0]).value.value
 
     modules_imports = [stmt for stmt in st.body if isinstance(stmt, ast.ImportFrom)]
     imports = [alias.name for stmt in modules_imports for alias in stmt.names]
 
     classes = [i for i in imports if _is_camel_case(i)]
     functions = [i for i in imports if not _is_camel_case(i)]
-    return classes, functions
+    return classes, functions, module_docstring
 
 
 def _is_camel_case(s: str) -> bool:
