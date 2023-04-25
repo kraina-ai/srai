@@ -2132,9 +2132,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "types-requests"
+version = "2.28.11.17"
+summary = "Typing stubs for requests"
+dependencies = [
+    "types-urllib3<1.27",
+]
+
+[[package]]
 name = "types-setuptools"
 version = "67.7.0.0"
 summary = "Typing stubs for setuptools"
+
+[[package]]
+name = "types-urllib3"
+version = "1.26.25.10"
+summary = "Typing stubs for urllib3"
 
 [[package]]
 name = "typing-extensions"
@@ -2250,7 +2263,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-content_hash = "sha256:0f4f4d31ba0de3874e68469e8ca1f71667f41341934f077056276ba50759b641"
+content_hash = "sha256:a2667ba5115344dcf44f245540d950eb545cd97fdb353aa6bfbc351d5706ba41"
 
 [metadata.files]
 "aiohttp 3.8.4" = [
@@ -4599,9 +4612,17 @@ content_hash = "sha256:0f4f4d31ba0de3874e68469e8ca1f71667f41341934f077056276ba50
     {url = "https://files.pythonhosted.org/packages/af/40/3398497c6e6951c92abaf933492d6633e7ac4df0bfc9d81f304b3f977f15/typeguard-3.0.2.tar.gz", hash = "sha256:fee5297fdb28f8e9efcb8142b5ee219e02375509cd77ea9d270b5af826358d5a"},
     {url = "https://files.pythonhosted.org/packages/e2/62/7d206b0ac6fcbb163215ecc622a54eb747f85ad86d14bc513a834442d0f6/typeguard-3.0.2-py3-none-any.whl", hash = "sha256:bbe993854385284ab42fd5bd3bee6f6556577ce8b50696d6cb956d704f286c8e"},
 ]
+"types-requests 2.28.11.17" = [
+    {url = "https://files.pythonhosted.org/packages/4a/a9/e3d407a7410ea08ef45f54086a56a5719e7cd2d94b6f8f51a5c41dcaba54/types-requests-2.28.11.17.tar.gz", hash = "sha256:0d580652ce903f643f8c3b494dd01d29367ea57cea0c7ad7f65cf3169092edb0"},
+    {url = "https://files.pythonhosted.org/packages/98/e3/bc20bde5e6ae3e8f2ad84c52fad3adb2c31640feda53d4304bdbf10888b1/types_requests-2.28.11.17-py3-none-any.whl", hash = "sha256:cc1aba862575019306b2ed134eb1ea994cab1c887a22e18d3383e6dd42e9789b"},
+]
 "types-setuptools 67.7.0.0" = [
     {url = "https://files.pythonhosted.org/packages/7e/17/0655b6cae64af0b5f3961cd9617eb5c4ba8feb29e983d7793e3063875a65/types_setuptools-67.7.0.0-py3-none-any.whl", hash = "sha256:02ee794d41c282ecfc99e09d8115ca4c3c4395a9747d1a35fa4a6f243d7585e6"},
     {url = "https://files.pythonhosted.org/packages/b8/7f/8d4b6a2ac7f7792cab397a4a7441c1913a4f065a78595214a37075c15c3f/types-setuptools-67.7.0.0.tar.gz", hash = "sha256:f59b03c786510176c7601578d84d5e6c58e985de331f08036b2fe008408a63c1"},
+]
+"types-urllib3 1.26.25.10" = [
+    {url = "https://files.pythonhosted.org/packages/24/fe/3d379bc854adb3e89309939273dc29471bf790c574cc7cf8bcc3eb8aa840/types-urllib3-1.26.25.10.tar.gz", hash = "sha256:c44881cde9fc8256d05ad6b21f50c4681eb20092552351570ab0a8a0653286d6"},
+    {url = "https://files.pythonhosted.org/packages/a4/ac/52e7adc38af8bfdcfa6c7117f4d499ec672ccd71a32e2e400ace9d1195b3/types_urllib3-1.26.25.10-py3-none-any.whl", hash = "sha256:12c744609d588340a07e45d333bf870069fc8793bcf96bae7a96d4712a42591d"},
 ]
 "typing-extensions 4.5.0" = [
     {url = "https://files.pythonhosted.org/packages/31/25/5abcd82372d3d4a3932e1fa8c3dbf9efac10cc7c0d16e78467460571b404/typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},

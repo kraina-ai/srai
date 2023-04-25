@@ -70,7 +70,10 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = ["bumpver>=2022.1118"]
+dev = [
+    "bumpver>=2022.1118",
+    "types-requests>=2.28.11.17",
+]
 # pdm add -dG lint <library>
 lint = [
     "pre-commit~=2.20",
