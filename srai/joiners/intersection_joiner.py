@@ -8,9 +8,10 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.joiners import Joiner
 
 
-class IntersectionJoiner:
+class IntersectionJoiner(Joiner):
     """
     Intersection Joiner.
 

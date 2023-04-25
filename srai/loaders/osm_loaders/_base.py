@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
     merge_grouped_osm_tags_type,
@@ -16,7 +17,7 @@ from srai.loaders.osm_loaders.filters._typing import (
 from srai.utils.typing import is_expected_type
 
 
-class OSMLoader(abc.ABC):
+class OSMLoader(Loader, abc.ABC):
     """Abstract class for loaders."""
 
     @abc.abstractmethod
