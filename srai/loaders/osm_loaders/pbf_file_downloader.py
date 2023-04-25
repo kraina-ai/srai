@@ -218,8 +218,8 @@ class PbfFileDownloader:
         Function buffers the polygon, closes internal holes and simplifies its boundary to 1000
         points.
 
-        Makes sure that the generated polygon will fully cover the original one by increasing
-        the buffer size incrementally.
+        Makes sure that the generated polygon will fully cover the original one by increasing the
+        buffer size incrementally.
         """
         is_fully_covered = False
         buffer_size_meters = 50
