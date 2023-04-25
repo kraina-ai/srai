@@ -19,7 +19,7 @@ class IntersectionJoiner:
     """
 
     def transform(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = True
+        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = False
     ) -> gpd.GeoDataFrame:
         """
         Join features to regions based on an 'intersects' predicate.
@@ -29,7 +29,8 @@ class IntersectionJoiner:
         Args:
             regions (gpd.GeoDataFrame): regions with which features are joined
             features (gpd.GeoDataFrame): features to be joined
-            return_geom (bool): whether to return geometry of the joined features
+            return_geom (bool): whether to return geometry of the joined features.
+                Defaults to False.
 
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains

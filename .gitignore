@@ -131,6 +131,7 @@ dmypy.json
 
 # pdm
 .pdm.toml
+.pdm-python
 requirements.txt
 
 # VSCode

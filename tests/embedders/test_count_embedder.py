@@ -1,8 +1,7 @@
 """CountEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
-import geopandas as gpd
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal
@@ -10,10 +9,28 @@ from pandas.testing import assert_frame_equal, assert_index_equal
 from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
 
+if TYPE_CHECKING:  # pragma: no cover
+    import geopandas as gpd
+
 
 @pytest.fixture  # type: ignore
 def expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output for the default case."""
+    expected_df = pd.DataFrame(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure": [0, 1, 1],
+            "amenity": [1, 0, 1],
+        },
+    )
+    expected_df.set_index(REGIONS_INDEX, inplace=True)
+
+    return expected_df
+
+
+@pytest.fixture  # type: ignore
+def expected_subcategories_embedding_df() -> pd.DataFrame:
+    """Get expected CountEmbedder output with subcategories for the default case."""
     expected_df = pd.DataFrame(
         {
             REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
@@ -42,6 +59,22 @@ def specified_features_expected_embedding_df() -> pd.DataFrame:
             REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
+            "amenity_pub": [0, 0, 0],
+        },
+    )
+    expected_df.set_index(REGIONS_INDEX, inplace=True)
+
+    return expected_df
+
+
+@pytest.fixture  # type: ignore
+def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
+    """Get expected CountEmbedder output with subcategories for the case with specified features."""
+    expected_df = pd.DataFrame(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking": [0, 0, 0],
+            "leisure_park": [0, 0, 0],
             "amenity_pub": [1, 0, 1],
         },
     )
@@ -50,31 +83,69 @@ def specified_features_expected_embedding_df() -> pd.DataFrame:
     return expected_df
 
 
+@pytest.mark.parametrize(  # type: ignore
+    "regions_fixture,features_fixture,joint_fixture,expected_embedding_fixture,count_subcategories,expected_features_fixture",
+    [
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "expected_embedding_df",
+            False,
+            None,
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "expected_subcategories_embedding_df",
+            True,
+            None,
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "specified_features_expected_embedding_df",
+            False,
+            "expected_feature_names",
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "specified_subcategories_features_expected_embedding_df",
+            True,
+            "expected_feature_names",
+        ),
+    ],
+)
 def test_correct_embedding(
-    gdf_regions: gpd.GeoDataFrame,
-    gdf_features: gpd.GeoDataFrame,
-    gdf_joint: gpd.GeoDataFrame,
-    expected_embedding_df: pd.DataFrame,
+    regions_fixture: str,
+    features_fixture: str,
+    joint_fixture: str,
+    expected_embedding_fixture: str,
+    count_subcategories: bool,
+    expected_features_fixture: Union[str, None],
+    request: Any,
 ) -> None:
-    """Test if CountEmbedder returns correct result in the default case."""
-    embedding_df = CountEmbedder().transform(
+    """Test if CountEmbedder returns correct result with different parameters."""
+    expected_output_features = (
+        None
+        if expected_features_fixture is None
+        else request.getfixturevalue(expected_features_fixture)
+    )
+    embedder = CountEmbedder(
+        expected_output_features=expected_output_features, count_subcategories=count_subcategories
+    )
+    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
+    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
+    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
+    embedding_df = embedder.transform(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
     )
-    assert_frame_equal(embedding_df, expected_embedding_df, check_dtype=False)
-
-
-def test_correct_embedding_expected_features(
-    gdf_regions: gpd.GeoDataFrame,
-    gdf_features: gpd.GeoDataFrame,
-    gdf_joint: gpd.GeoDataFrame,
-    expected_feature_names: List[str],
-    specified_features_expected_embedding_df: pd.DataFrame,
-) -> None:
-    """Test if CountEmbedder returns correct result in the specified features case."""
-    embedding_df = CountEmbedder(expected_output_features=expected_feature_names).transform(
-        regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
-    )
-    assert_frame_equal(embedding_df, specified_features_expected_embedding_df, check_dtype=False)
+    expected_result_df = request.getfixturevalue(expected_embedding_fixture)
+    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -125,9 +196,9 @@ def test_empty(
         else request.getfixturevalue(expected_features_fixture)
     )
     embedder = CountEmbedder(expected_output_features)
-    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
-    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
-    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
+    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
+    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
+    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
