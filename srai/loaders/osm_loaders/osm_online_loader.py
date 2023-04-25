@@ -13,7 +13,10 @@ from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import (
+    grouped_osm_tags_type,
+    osm_tags_type,
+)
 from srai.utils._optional import import_optional_dependencies
 
 

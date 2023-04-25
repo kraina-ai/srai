@@ -10,7 +10,9 @@ class Joiner(abc.ABC):
 
     @abc.abstractmethod
     def transform(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
+        self,
+        regions: gpd.GeoDataFrame,
+        features: gpd.GeoDataFrame,
     ) -> gpd.GeoDataFrame:  # pragma: no cover
         """
         Join features to regions.
