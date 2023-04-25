@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
+      MKDOCS_DEV: false
     steps:
       - uses: actions/checkout@v3
       - name: Fetch gh-pages branch
