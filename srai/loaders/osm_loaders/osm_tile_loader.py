@@ -66,7 +66,7 @@ class OSMTileLoader:
         References:
             1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
         """
-        import_optional_dependencies(dependency_group="tiles", modules=["requests", "PIL"])
+        import_optional_dependencies(dependency_group="osm", modules=["requests", "PIL"])
         self.zoom = zoom
         self.verbose = verbose
         self.resource_type = resource_type

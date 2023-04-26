@@ -52,7 +52,7 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = ["osmium", "osmnx", "overpass"]
+osm = ["osmium", "osmnx", "overpass", "pillow", "requests"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "spherical-geometry"]
 # pdm add -G gtfs <library>
@@ -62,7 +62,6 @@ plotting = ["folium", "mapclassify", "plotly", "kaleido"]
 # pdm add -G torch <library>
 torch = ["pytorch-lightning", "torch"]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
-tiles = ["pillow", "requests"]
 
 
 [build-system]
