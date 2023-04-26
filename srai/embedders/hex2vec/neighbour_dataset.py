@@ -7,15 +7,24 @@ As defined in Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import Any, Dict, Generic, List, NamedTuple, Set, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, NamedTuple, Set, TypeVar
 
 import numpy as np
 import pandas as pd
-import torch
-from torch.utils.data import Dataset
 from tqdm import tqdm
 
 from srai.neighbourhoods import Neighbourhood
+from srai.utils._optional import import_optional_dependencies
+
+if TYPE_CHECKING:  # pragma: no cover
+    import torch
+
+try:  # pragma: no cover
+    from torch.utils.data import Dataset
+
+except ImportError:
+    from srai.utils._pytorch_stubs import Dataset
+
 
 T = TypeVar("T")
 
@@ -32,9 +41,9 @@ class NeighbourDatasetItem(NamedTuple):
             Data for the regions that are NOT neighbours of the regions in X_anchor.
     """
 
-    X_anchor: torch.Tensor
-    X_positive: torch.Tensor
-    X_negative: torch.Tensor
+    X_anchor: "torch.Tensor"
+    X_positive: "torch.Tensor"
+    X_negative: "torch.Tensor"
 
 
 class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: ignore
@@ -66,6 +75,9 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         Raises:
             ValueError: If negative_sample_k_distance < 2.
         """
+        import_optional_dependencies(dependency_group="torch", modules=["torch"])
+        import torch
+
         self._data = torch.Tensor(data.to_numpy())
         self._assert_negative_sample_k_distance_correct(negative_sample_k_distance)
         self._negative_sample_k_distance = negative_sample_k_distance

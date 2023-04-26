@@ -6,16 +6,22 @@ This module contains the embedding model from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
-import pytorch_lightning as pl
-import torch
-import torch.nn.functional as F
-from torch import nn, sigmoid
-from torchmetrics.functional import f1_score as f1
+from srai.utils._optional import import_optional_dependencies
+
+if TYPE_CHECKING:  # pragma: no cover
+    import torch
 
 
-class Hex2VecModel(pl.LightningModule):  # type: ignore
+try:  # pragma: no cover
+    from pytorch_lightning import LightningModule
+
+except ImportError:
+    from srai.utils._pytorch_stubs import LightningModule
+
+
+class Hex2VecModel(LightningModule):  # type: ignore
     """
     Hex2Vec embedding model.
 
@@ -38,6 +44,11 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         Raises:
             ValueError: If layer_sizes contains less than 2 elements.
         """
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
+        from torch import nn
+
         super().__init__()
         self.learning_rate = learning_rate
 
@@ -57,7 +68,7 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         sizes = list(zip(layer_sizes[:-1], layer_sizes[1:]))
         self.encoder = create_layers(sizes)
 
-    def forward(self, X_anchor: torch.Tensor) -> torch.Tensor:
+    def forward(self, X_anchor: "torch.Tensor") -> "torch.Tensor":
         """
         Calculate embedding for a region.
 
@@ -66,7 +77,7 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         """
         return self.encoder(X_anchor)
 
-    def predict_proba(self, X_anchor: torch.Tensor, X_context: torch.Tensor) -> torch.Tensor:
+    def predict_proba(self, X_anchor: "torch.Tensor", X_context: "torch.Tensor") -> "torch.Tensor":
         """
         Predict the probability of X_anchor being neighbours with X_context.
 
@@ -78,10 +89,12 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             X_anchor (torch.Tensor): Anchor regions.
             X_context (torch.Tensor): Context regions.
         """
+        from torch.nn.functional import sigmoid
+
         score = self.predict_scores(X_anchor, X_context)
         return sigmoid(score)
 
-    def predict_scores(self, X_anchor: torch.Tensor, X_context: torch.Tensor) -> torch.Tensor:
+    def predict_scores(self, X_anchor: "torch.Tensor", X_context: "torch.Tensor") -> "torch.Tensor":
         """
         Predict raw unnormalized scores of X_anchor being neighbours with X_context.
 
@@ -94,12 +107,14 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             X_anchor (torch.Tensor): Anchor regions.
             X_context (torch.Tensor): Context regions.
         """
+        import torch
+
         X_anchor_em = self(X_anchor)
         X_context_em = self(X_context)
         score = torch.mul(X_anchor_em, X_context_em).sum(dim=1)
         return score
 
-    def training_step(self, batch: List[torch.Tensor], batch_idx: int) -> torch.Tensor:
+    def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
         Perform one training step.
 
@@ -117,6 +132,10 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             batch (List[torch.Tensor]): Batch of data.
             batch_idx (int): Batch index.
         """
+        import torch
+        import torch.nn.functional as F
+        from torchmetrics.functional import f1_score as f1
+
         X_anchor, X_positive, X_negative = batch
         scores_pos = self.predict_scores(X_anchor, X_positive)
         scores_neg = self.predict_scores(X_anchor, X_negative)
@@ -127,12 +146,12 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         y = torch.cat([y_pos, y_neg]).to(X_anchor)
 
         loss = F.binary_cross_entropy_with_logits(scores, y)
-        f_score = f1(sigmoid(scores), y.int(), task="binary")
+        f_score = f1(F.sigmoid(scores), y.int(), task="binary")
         self.log("train_loss", loss, on_step=True, on_epoch=True)
         self.log("train_f1", f_score, on_step=True, on_epoch=True)
         return loss
 
-    def validation_step(self, batch: List[torch.Tensor], batch_idx: int) -> torch.Tensor:
+    def validation_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
         Perform one validation step.
 
@@ -140,6 +159,10 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
             batch (List[torch.Tensor]): Batch of data.
             batch_idx (int): Batch index.
         """
+        import torch
+        import torch.nn.functional as F
+        from torchmetrics.functional import f1_score as f1
+
         X_anchor, X_positive, X_negative = batch
         scores_pos = self.predict_scores(X_anchor, X_positive)
         scores_neg = self.predict_scores(X_anchor, X_negative)
@@ -150,11 +173,13 @@ class Hex2VecModel(pl.LightningModule):  # type: ignore
         y = torch.cat([y_pos, y_neg]).to(X_anchor)
 
         loss = F.binary_cross_entropy_with_logits(scores, y)
-        f_score = f1(sigmoid(scores), y.int(), task="binary")
+        f_score = f1(F.sigmoid(scores), y.int(), task="binary")
         self.log("val_loss", loss, on_step=True, on_epoch=True)
         self.log("val_f1", f_score, on_step=True, on_epoch=True)
         return loss
 
-    def configure_optimizers(self) -> torch.optim.Optimizer:
+    def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Configure optimizer."""
+        import torch
+
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)

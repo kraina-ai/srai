@@ -11,21 +11,21 @@ from typing import Any, Dict, List, Optional, TypeVar
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
-import torch
-from torch.utils.data import DataLoader
 
 from srai.embedders import CountEmbedder
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
 from srai.exceptions import ModelNotFitException
 from srai.neighbourhoods import Neighbourhood
+from srai.utils._optional import import_optional_dependencies
 
 T = TypeVar("T")
 
 
 class Hex2VecEmbedder(CountEmbedder):
     """Hex2Vec Embedder."""
+
+    DEFAULT_ENCODER_SIZES = [150, 75, 50]
 
     def __init__(
         self,
@@ -43,8 +43,11 @@ class Hex2VecEmbedder(CountEmbedder):
                 features. Defaults to None.
         """
         super().__init__(expected_output_features)
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
         if encoder_sizes is None:
-            encoder_sizes = [150, 75, 50]
+            encoder_sizes = Hex2VecEmbedder.DEFAULT_ENCODER_SIZES
         self._assert_encoder_sizes_correct(encoder_sizes)
         self._encoder_sizes = encoder_sizes
         self._model: Optional[Hex2VecModel] = None
@@ -73,6 +76,8 @@ class Hex2VecEmbedder(CountEmbedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        import torch
+
         self._check_is_fitted()
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         counts_tensor = torch.from_numpy(counts_df.values)
@@ -110,6 +115,9 @@ class Hex2VecEmbedder(CountEmbedder):
             ValueError: If index levels in gdfs don't overlap correctly.
             ValueError: If negative_sample_k_distance < 2.
         """
+        import pytorch_lightning as pl
+        from torch.utils.data import DataLoader
+
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
         self._model = Hex2VecModel(layer_sizes=[num_features, *self._encoder_sizes])
