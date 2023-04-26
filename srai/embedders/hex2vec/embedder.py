@@ -92,6 +92,7 @@ class Hex2VecEmbedder(CountEmbedder):
         neighbourhood: Neighbourhood[T],
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
+        learning_rate: float = 0.001,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
@@ -106,6 +107,7 @@ class Hex2VecEmbedder(CountEmbedder):
             negative_sample_k_distance (int, optional): When sampling negative samples,
                 sample from a distance > k. Defaults to 2.
             batch_size (int, optional): Batch size. Defaults to 32.
+            learning_rate (float, optional): Learning rate. Defaults to 0.001.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Raises:
@@ -120,7 +122,9 @@ class Hex2VecEmbedder(CountEmbedder):
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
-        self._model = Hex2VecModel(layer_sizes=[num_features, *self._encoder_sizes])
+        self._model = Hex2VecModel(
+            layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
+        )
         dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -136,6 +140,7 @@ class Hex2VecEmbedder(CountEmbedder):
         neighbourhood: Neighbourhood[T],
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
+        learning_rate: float = 0.001,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
@@ -150,6 +155,7 @@ class Hex2VecEmbedder(CountEmbedder):
             negative_sample_k_distance (int, optional): When sampling negative samples,
                 sample from a distance > k. Defaults to 2.
             batch_size (int, optional): Batch size. Defaults to 32.
+            learning_rate (float, optional): Learning rate. Defaults to 0.001.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Returns:
@@ -169,6 +175,7 @@ class Hex2VecEmbedder(CountEmbedder):
             neighbourhood,
             negative_sample_k_distance,
             batch_size,
+            learning_rate,
             trainer_kwargs,
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
