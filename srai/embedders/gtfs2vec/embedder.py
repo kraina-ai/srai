@@ -4,7 +4,7 @@ gtfs2vec embedder.
 This module contains embedder from gtfs2vec paper [1].
 
 References:
-    [1] https://doi.org/10.1145/3486640.3491392
+    1. https://doi.org/10.1145/3486640.3491392
 """
 
 
@@ -14,14 +14,12 @@ from typing import Any, Dict, List, Optional
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
-import torch
-from torch.utils.data import DataLoader
 
 from srai.embedders import Embedder
 from srai.embedders.gtfs2vec.model import GTFS2VecModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
+from srai.utils._optional import import_optional_dependencies
 
 
 class GTFS2VecEmbedder(Embedder):
@@ -39,6 +37,9 @@ class GTFS2VecEmbedder(Embedder):
             skip_autoencoder (bool, optional): Skip using autoencoder as part of embedding.
             Defaults to False.
         """
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
         self._model: Optional[GTFS2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
@@ -230,6 +231,9 @@ class GTFS2VecEmbedder(Embedder):
         Args:
             features (pd.DataFrame): Features.
         """
+        import pytorch_lightning as pl
+        from torch.utils.data import DataLoader
+
         model = GTFS2VecModel(
             n_features=len(features.columns),
             n_hidden=self._hidden_size,
@@ -253,6 +257,8 @@ class GTFS2VecEmbedder(Embedder):
         Returns:
             pd.DataFrame: Embeddings.
         """
+        import torch
+
         model = self._maybe_get_model()
         if len(features.columns) != model.n_features:
             raise ValueError(

@@ -18,8 +18,7 @@ dependencies = [
     "topojson>=1.5",
     "tqdm>=4.64.1",
     "s2>=0.1.9",
-    "pytorch-lightning>=1.0.0",
-    "torch",
+    "typeguard>=3.0.2",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -46,6 +45,10 @@ Documentation = "https://srai-lab.github.io/srai"
 Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+# Make sure to edit test_optional_dependencies.py:
+# add entries to optional packages
+# add tests
+
 # pdm add -G osm <library>
 osm = ["osmium>=3.4.1", "osmnx>=1.2.2", "overpass>=0.7"]
 # pdm add -G voronoi <library>
@@ -54,7 +57,10 @@ voronoi = ["pymap3d>=2.9.1", "haversine>=2.7.0", "spherical-geometry>=1.2.23"]
 gtfs = ["gtfs-kit>=5.0.0"]
 # pdm add -G plotting <library>
 plotting = ["folium>=0.14.0", "mapclassify>=2.5.0", "plotly>=5.10.0", "kaleido==0.2.1"]
-all = ["srai[osm,voronoi,gtfs,plotting]"]
+# pdm add -G torch <library>
+torch = ["pytorch-lightning>=1.0.0", "torch"]
+all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
+
 
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]
@@ -64,7 +70,10 @@ build-backend = "pdm.pep517.api"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = ["bumpver>=2022.1118"]
+dev = [
+    "bumpver>=2022.1118",
+    "types-requests>=2.28.11.17",
+]
 # pdm add -dG lint <library>
 lint = [
     "pre-commit~=2.20",
@@ -81,6 +90,7 @@ test = [
     "requests-mock>=1.10.0",
     "pytest-check>=2.1.4",
     "pytest-parametrization>=2022.2.1",
+    "pytest-xdist>=3.2.1",
 ]
 # pdm add -dG visualization <library>
 visualization = [
@@ -174,6 +184,7 @@ push = false
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+log_cli = true
 
 [tool.licensecheck]
 using = "requirements"
