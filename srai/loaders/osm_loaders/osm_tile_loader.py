@@ -10,10 +10,9 @@ from urllib.parse import urljoin
 
 import geopandas as gpd
 import pandas as pd
-import requests
-from PIL import Image
 
 from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
+from srai.utils._optional import import_optional_dependencies
 
 from .osm_tile_data_collector import (
     DataCollector,
@@ -67,6 +66,7 @@ class OSMTileLoader:
         References:
             1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
         """
+        import_optional_dependencies(dependency_group="tiles", modules=["requests", "PIL"])
         self.zoom = zoom
         self.verbose = verbose
         self.resource_type = resource_type
@@ -119,6 +119,9 @@ class OSMTileLoader:
             y(int): y tile coordinate
             idx (Any): id of tile, if non created as x_y_self.zoom
         """
+        import requests
+        from PIL import Image
+
         if idx is None:
             idx = f"{x}_{y}_{self.zoom}"
         url = self.base_url.format(self.zoom, x, y)

@@ -2,16 +2,17 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-from PIL import Image
+if TYPE_CHECKING:  # pragma: no cover
+    from PIL import Image
 
 
 class DataCollector(ABC):
     """Store collected images."""
 
     @abstractmethod
-    def store(self, idx: str, data: Image.Image) -> Any:
+    def store(self, idx: str, data: "Image.Image") -> Any:
         """
         Apply action for object storage and returns data of it.
 
@@ -42,7 +43,7 @@ class SavingDataCollector(DataCollector):
         self.save_path = Path(save_path)
         self.format = file_extension
 
-    def store(self, idx: str, data: Image.Image) -> Path:
+    def store(self, idx: str, data: "Image.Image") -> Path:
         """
         Save image on disk. Returns path.
 
@@ -62,7 +63,7 @@ class InMemoryDataCollector(DataCollector):
         """Initialize InMemoryDataCollector."""
         super().__init__()
 
-    def store(self, idx: str, data: Image.Image) -> Image.Image:
+    def store(self, idx: str, data: "Image.Image") -> "Image.Image":
         """
         Simply return object for usage.
 
