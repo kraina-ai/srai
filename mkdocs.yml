@@ -4,7 +4,7 @@ site_url: null
 repo_url: https://github.com/srai-lab/srai
 repo_name: srai-lab/srai
 
-edit_uri: ""
+edit_uri: "edit/main/docs/"
 
 watch:
   - examples
@@ -22,6 +22,9 @@ theme:
     - navigation.path
     - toc.follow
     - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.code.copy
   favicon: assets/logos/favicon.ico
   logo: assets/logos/srai-logo-symbol.svg
   icon:
