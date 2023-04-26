@@ -22,14 +22,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neighbourhood
 - H3Neighbourhood
 - AdjacencyNeighbourhood
+- CountEmbedder
+- ContextualCountEmbedder
 - (CI) Changelog Enforcer
 - Utility plotting module based on Folium and Plotly
+- Documentation for srai library
 - Citation information
 
 ### Changed
 
 - Change embedders and joiners interface to have `.transform` method
 - Change linter to Ruff and removed flake8, isort, pydocstyle
+- Change default value inside `transform` function of IntersectionJoiner to not return geometry.
+- Make torch and pytorch-lightning as optional dependencies ([#210](https://github.com/srai-lab/srai/issues/210))
 
 ### Deprecated
 
@@ -38,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - IntersectionJoiner incorrectly returned feature columns when `return_geom=False` ([#208](https://github.com/srai-lab/srai/issues/208))
+- Tests for pandas >=2
 
 ### Security
 

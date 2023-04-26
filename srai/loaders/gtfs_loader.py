@@ -6,8 +6,8 @@ It utilizes the `gtfs_kit` library [1]. It was originally created for the purpos
 the gtfs2vec project [2].
 
 References:
-    [1] https://gitlab.com/mrcagney/gtfs_kit
-    [2] https://doi.org/10.1145/3486640.3491392
+    1. https://gitlab.com/mrcagney/gtfs_kit
+    2. https://doi.org/10.1145/3486640.3491392
 """
 
 from pathlib import Path
@@ -18,6 +18,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.loaders import Loader
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -27,7 +28,7 @@ GTFS2VEC_DIRECTIONS_PREFIX = "directions_at_"
 GTFS2VEC_TRIPS_PREFIX = "trips_at_"
 
 
-class GTFSLoader:
+class GTFSLoader(Loader):
     """
     GTFSLoader.
 

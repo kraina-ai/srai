@@ -32,6 +32,7 @@ def plot_regions(
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.qualitative.Bold,
     map: Optional[folium.Map] = None,
+    show_borders: bool = True,
 ) -> folium.Map:
     """
     Plot regions shapes using Folium library.
@@ -47,6 +48,8 @@ def plot_regions(
             Defaults to `px.colors.qualitative.Bold` from plotly library.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
+        show_borders (bool, optional): Whether to show borders between regions or not.
+            Defaults to True.
 
     Returns:
         folium.Map: Generated map.
@@ -60,7 +63,7 @@ def plot_regions(
         legend=False,
         cmap=colormap,
         categorical=True,
-        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.5),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.5),
         m=map,
     )
 
@@ -74,6 +77,7 @@ def plot_numeric_data(
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
     map: Optional[folium.Map] = None,
+    show_borders: bool = False,
 ) -> folium.Map:
     """
     Plot numerical data within regions shapes using Folium library.
@@ -92,6 +96,8 @@ def plot_numeric_data(
             Defaults to px.colors.sequential.Sunsetdark.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
+        show_borders (bool, optional): Whether to show borders between regions or not.
+            Defaults to False.
 
     Returns:
         folium.Map: Generated map.
@@ -115,7 +121,7 @@ def plot_numeric_data(
         legend=True,
         cmap=colormap,
         categorical=False,
-        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.8),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
         m=map,
     )
 
@@ -128,6 +134,7 @@ def plot_neighbours(
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     map: Optional[folium.Map] = None,
+    show_borders: bool = True,
 ) -> folium.Map:
     """
     Plot neighbours on a map using Folium library.
@@ -143,17 +150,19 @@ def plot_neighbours(
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
+        show_borders (bool, optional): Whether to show borders between regions or not.
+            Defaults to True.
 
     Returns:
         folium.Map: Generated map.
     """
     if region_id not in regions_gdf.index:
-        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+        raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
     regions_gdf_copy.loc[region_id, "region"] = "selected"
-    regions_gdf_copy.loc[neighbours_ids, "region"] = "neighbour"
+    regions_gdf_copy.loc[list(neighbours_ids), "region"] = "neighbour"
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=REGIONS_INDEX,
@@ -167,7 +176,7 @@ def plot_neighbours(
         ],
         categorical=True,
         categories=["selected", "neighbour", "other"],
-        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.8),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
         m=map,
     )
 
@@ -182,6 +191,7 @@ def plot_all_neighbourhood(
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.sequential.Agsunset_r,
     map: Optional[folium.Map] = None,
+    show_borders: bool = True,
 ) -> folium.Map:
     """
     Plot full neighbourhood on a map using Folium library.
@@ -203,12 +213,14 @@ def plot_all_neighbourhood(
             Defaults to `px.colors.sequential.Agsunset_r` from plotly library.
         map (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
+        show_borders (bool, optional): Whether to show borders between regions or not.
+            Defaults to True.
 
     Returns:
         folium.Map: Generated map.
     """
     if region_id not in regions_gdf.index:
-        raise AttributeError(f"{region_id!r} doesn't exist in provided regions_gdf.")
+        raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy["region"] = "other"
@@ -239,7 +251,7 @@ def plot_all_neighbourhood(
         cmap=colormap,
         categorical=True,
         categories=["selected", *list(range(distance))[1:], "other"],
-        style_kwds=dict(color="#444", opacity=0.5, fillOpacity=0.8),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
         legend=distance <= 11,
         m=map,
     )

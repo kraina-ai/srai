@@ -11,6 +11,26 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.utils._optional import ImportErrorHandle, import_optional_dependency
 
 
+@pytest.fixture  # type: ignore
+def optional_packages() -> List[str]:
+    """Get a list with optional packages."""
+    return [
+        "osmium",
+        "osmnx",
+        "overpass",
+        "pymap3d",
+        "haversine",
+        "spherical_geometry",
+        "gtfs_kit",
+        "folium",
+        "mapclassify",
+        "plotly",
+        "kaleido",
+        "pytorch-lightning",
+        "torch",
+    ]
+
+
 @pytest.fixture(autouse=True)  # type: ignore
 def cleanup_imports():
     """Clean imports."""
@@ -32,23 +52,10 @@ class PackageDiscarder:
 
 
 @pytest.fixture  # type: ignore
-def no_optional_dependencies(monkeypatch):
+def no_optional_dependencies(monkeypatch, optional_packages):
     """Mock environment without optional dependencies."""
     d = PackageDiscarder()
 
-    optional_packages = [
-        "osmium",
-        "osmnx",
-        "overpass",
-        "pymap3d",
-        "haversine",
-        "spherical_geometry",
-        "gtfs_kit",
-        "folium",
-        "mapclassify",
-        "plotly",
-        "kaleido",
-    ]
     for package in optional_packages:
         sys.modules.pop(package, None)
         d.pkgnames.append(package)
@@ -57,9 +64,9 @@ def no_optional_dependencies(monkeypatch):
     sys.meta_path.remove(d)
 
 
-def _test_voronoi_regionizer() -> None:
+def _test_voronoi() -> None:
     import geopandas as gpd
-    from shapely.geometry import Point, box
+    from shapely.geometry import Point
 
     from srai.regionizers import VoronoiRegionizer
 
@@ -75,42 +82,35 @@ def _test_voronoi_regionizer() -> None:
         index=[1, 2, 3, 4],
         crs=WGS84_CRS,
     )
-    vr = VoronoiRegionizer(seeds=seeds_gdf)
-    vr.transform(
-        gdf=gpd.GeoDataFrame(
-            {GEOMETRY_COLUMN: [box(minx=-180, maxx=180, miny=-90, maxy=90)]}, crs=WGS84_CRS
-        )
-    )
+    VoronoiRegionizer(seeds=seeds_gdf)
 
 
-def _test_administrative_boundary_regionizer() -> None:
-    from srai.regionizers.administrative_boundary_regionizer import (
-        AdministrativeBoundaryRegionizer,
-    )
-
-    asia_bbox = box(
-        minx=69.73278412113555,
-        miny=24.988848422533074,
-        maxx=88.50230949587835,
-        maxy=34.846427760404225,
-    )
-    asia_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [asia_bbox]}, crs=WGS84_CRS)
-    abr = AdministrativeBoundaryRegionizer(
-        admin_level=2, return_empty_region=True, toposimplify=0.001
-    )
-    abr.transform(gdf=asia_bbox_gdf)
-
-
-def _test_plotting_folium_module() -> None:
-    from srai.plotting import folium_wrapper
+def _test_plotting() -> None:
+    from srai.plotting import folium_wrapper, plotly_wrapper
 
     folium_wrapper.plot_regions(_get_regions_gdf())
+    plotly_wrapper.plot_regions(_get_regions_gdf(), return_plot=True)
 
 
-def _test_plotting_plotly_module() -> None:
-    from srai.plotting import plotly_wrapper
+def _test_torch() -> None:
+    from srai.embedders import GTFS2VecEmbedder, Highway2VecEmbedder
 
-    plotly_wrapper.plot_regions(_get_regions_gdf())
+    Highway2VecEmbedder()
+    GTFS2VecEmbedder()
+
+
+def _test_osm() -> None:
+    from srai.loaders.osm_loaders import OSMPbfLoader
+    from srai.regionizers import AdministrativeBoundaryRegionizer
+
+    AdministrativeBoundaryRegionizer(2)
+    OSMPbfLoader()
+
+
+def _test_gtfs() -> None:
+    from srai.loaders import GTFSLoader
+
+    GTFSLoader()
 
 
 def _get_regions_gdf() -> gpd.GeoDataFrame:
@@ -133,10 +133,11 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
 @pytest.mark.parametrize(  # type: ignore
     "test_fn",
     [
-        (_test_voronoi_regionizer),
-        (_test_administrative_boundary_regionizer),
-        (_test_plotting_folium_module),
-        (_test_plotting_plotly_module),
+        (_test_voronoi),
+        (_test_plotting),
+        (_test_torch),
+        (_test_osm),
+        (_test_gtfs),
     ],
 )
 def test_optional_available(test_fn):
@@ -148,10 +149,11 @@ def test_optional_available(test_fn):
 @pytest.mark.parametrize(  # type: ignore
     "test_fn",
     [
-        (_test_voronoi_regionizer),
-        (_test_administrative_boundary_regionizer),
-        (_test_plotting_folium_module),
-        (_test_plotting_plotly_module),
+        (_test_voronoi),
+        (_test_plotting),
+        (_test_torch),
+        (_test_osm),
+        (_test_gtfs),
     ],
 )
 def test_optional_missing(test_fn):

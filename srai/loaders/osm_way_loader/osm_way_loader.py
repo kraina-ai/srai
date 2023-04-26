@@ -16,6 +16,7 @@ from tqdm.auto import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
+from srai.loaders import Loader
 from srai.utils._optional import import_optional_dependencies
 
 from . import constants
@@ -30,7 +31,7 @@ class NetworkType(str, Enum):
     See [1] for more details.
 
     References:
-        [1] https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
+        1. https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
     """
 
     ALL_PRIVATE = "all_private"
@@ -41,7 +42,7 @@ class NetworkType(str, Enum):
     WALK = "walk"
 
 
-class OSMWayLoader:
+class OSMWayLoader(Loader):
     """
     OSMWayLoader downloads road infrastructure from OSM.
 
