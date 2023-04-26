@@ -110,16 +110,11 @@ class Hex2VecEmbedder(CountEmbedder):
             ValueError: If index levels in gdfs don't overlap correctly.
             ValueError: If negative_sample_k_distance < 2.
         """
-        if trainer_kwargs is None:
-            trainer_kwargs = {}
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
         self._model = Hex2VecModel(layer_sizes=[num_features, *self._encoder_sizes])
         dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
-        if "max_epochs" not in trainer_kwargs:
-            trainer_kwargs["max_epochs"] = 10
 
         trainer = pl.Trainer(**trainer_kwargs)
         trainer.fit(self._model, dataloader)

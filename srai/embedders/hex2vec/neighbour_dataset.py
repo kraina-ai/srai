@@ -7,7 +7,7 @@ As defined in Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, Set, TypeVar
+from typing import Any, Dict, Generic, List, NamedTuple, Set, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -51,7 +51,6 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         data: pd.DataFrame,
         neighbourhood: Neighbourhood[T],
         negative_sample_k_distance: int = 2,
-        seed: Optional[int] = None,
     ):
         """
         Initialize NeighbourDataset.
@@ -63,12 +62,10 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
             negative_sample_k_distance (int): How many neighbours away to sample negative regions.
                 For example, if k=2, then the negative regions will be sampled from regions that are
                 at least 3 hops away from the anchor region. Has to be >= 2.
-            seed (Optional[int], optional): Seed for the random number generator.
 
         Raises:
             ValueError: If negative_sample_k_distance < 2.
         """
-        self._rng = np.random.default_rng(seed=seed)
         self._data = torch.Tensor(data.to_numpy())
         self._assert_negative_sample_k_distance_correct(negative_sample_k_distance)
         self._negative_sample_k_distance = negative_sample_k_distance
@@ -143,9 +140,9 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
 
     def _get_random_negative_df_loc(self, input_df_loc: int) -> int:
         excluded_df_locs = self._excluded_from_negatives[input_df_loc]
-        negative_candidate: int = self._rng.integers(0, len(self._data))
+        negative_candidate: int = np.random.randint(0, len(self._data))  # noqa: NPY002
         while negative_candidate in excluded_df_locs:
-            negative_candidate = self._rng.integers(0, len(self._data))
+            negative_candidate = np.random.randint(0, len(self._data))  # noqa: NPY002
         return negative_candidate
 
     def _assert_negative_sample_k_distance_correct(self, negative_sample_k_distance: int) -> None:
