@@ -30,8 +30,7 @@
 
 <p style="text-align: center;">⚠️🚧 This library is under HEAVY development. Expect breaking changes between `minor` versions 🚧⚠️</p>
 
-<p style="text-align: center;">💬 Feel free to open an issue if you find anything confusing or not working! 🗨️</p>
-
+<p style="text-align: center;">💬 Feel free to open an issue if you find anything confusing or not working 🗨️</p>
 
 Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting starded for installation and quick srart instructions.
 
@@ -82,18 +81,25 @@ To download OSM data for a given area, using a set of tags use one of `OSMLoader
 * `OSMOnlineLoader` - downloads data from OpenStreetMap API using [osmnx](https://github.com/gboeing/osmnx) - this is faster for smaller areas or tags counts
 * `OSMPbfLoader` - loads data from automatically downloaded PBF file from [protomaps](https://protomaps.com/) - this is faster for larger areas or tags counts
 
-Example with `OSMPbfLoader`:
+Example with `OSMOnlineLoader`:
 
 ```python
 from srai.loaders import OSMOnlineLoader
 from srai.utils import geocode_to_region_gdf
+from srai.plotting import plot_regions
 
 query = {"leisure": "park"}
 area = geocode_to_region_gdf("Wrocław, Poland")
 loader = OSMOnlineLoader()
 
 parks_gdf = loader.load(area, query)
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0)"], tiles_style="CartoDB positron")
+parks_gdf.explore(m=folium_map, color="forestgreen")
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
+</p>
 
 ### Downloading road network
 
@@ -103,12 +109,20 @@ Road network downloading is a special case of OSM data downloading. To download 
 from srai.loaders import OSMWayLoader
 from srai.loaders.osm_way_loader import NetworkType
 from srai.utils import geocode_to_region_gdf
+from srai.plotting import plot_regions
 
-area = geocode_to_region_gdf("Wrocław, Poland")
+area = geocode_to_region_gdf("Utrecht, Netherlands")
 loader = OSMWayLoader(NetworkType.BIKE)
 
 nodes, edges = loader.load(area)
+
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+edges[["geometry"]].explore(m=folium_map, color="seagreen")
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
+</p>
 
 ### Downloading GTFS data
 
@@ -118,12 +132,23 @@ To extract features from GTFS use `GTFSLoader`. It will extract trip count and a
 from pathlib import Path
 
 from srai.loaders import GTFSLoader
+from srai.utils import geocode_to_region_gdf, download_file
+from srai.plotting import plot_regions
 
-gtfs_path = Path("path/to/gtfs.zip")
+area = geocode_to_region_gdf("Vienna, Austria")
+gtfs_file = Path("vienna_gtfs.zip")
+download_file("https://transitfeeds.com/p/stadt-wien/888/latest/download", gtfs_file.as_posix())
 loader = GTFSLoader()
 
-features = loader.load(gtfs_path)
+features = loader.load(gtfs_file)
+
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
+</p>
 
 ### Regionization
 
@@ -140,11 +165,18 @@ Example:
 from srai.regionizers import H3Regionizer
 from srai.utils import geocode_to_region_gdf
 
-area = geocode_to_region_gdf("Wrocław, Poland")
-regionizer = H3Regionizer(resolution=8)
+area = geocode_to_region_gdf("Berlin, Germany")
+regionizer = H3Regionizer(resolution=7)
 
 regions = regionizer.transform(area)
+
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+plot_regions(regions_gdf=regions, map=folium_map)
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/regionization.jpg" style="max-width:600px;width:100%"/>
+</p>
 
 ### Embedding
 
@@ -153,9 +185,7 @@ Embedding is a process of mapping regions into a vector space. This can be done 
 * `Hex2VecEmbedder` - embedding using hex2vec[1] algorithm
 * `GTFS2VecEmbedder` - embedding using GTFS2Vec[2] algorithm
 * `CountEmbedder` - embedding based on features counts
-
 * `ContextualCountEmbedder` - embedding based on features counts with neighbourhood context (proposed in [3])
-
 * `Highway2VecEmbedder` - embedding using Highway2Vec[4] algorithm
 
 All of those methods share the same API. All of them require results from `Loader` (load features), `Regionizer` (split area into regions) and `Joiner` (join features to regions) to work. An example using `CountEmbedder`:
@@ -163,23 +193,31 @@ All of those methods share the same API. All of them require results from `Loade
 ```python
 from srai.embedders import CountEmbedder
 from srai.joiners import IntersectionJoiner
-from srai.loaders import OSMPbfLoader
+from srai.loaders import OSMOnlineLoader
+from srai.plotting import plot_regions, plot_numeric_data
 from srai.regionizers import H3Regionizer
 from srai.utils import geocode_to_region_gdf
 
-loader = OSMPbfLoader()
+loader = OSMOnlineLoader()
 regionizer = H3Regionizer(resolution=9)
 joiner = IntersectionJoiner()
 
-query = {"leisure": "park"}
-area = geocode_to_region_gdf("Wrocław, Poland")
+query = {"amenity": "bicycle_parking"}
+area = geocode_to_region_gdf("Malmö, Sweden")
 features = loader.load(area, query)
 regions = regionizer.transform(area)
 joint = joiner.transform(regions, features)
 
 embedder = CountEmbedder()
 embeddings = embedder.transform(regions, features, joint)
+
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+plot_numeric_data(regions, embeddings, "amenity_bicycle_parking", map=folium_map)
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
+</p>
 
 `CountEmbedder` is a simple method, which does not require fitting. Other methods, such as `Hex2VecEmbedder` or `GTFS2VecEmbedder` require fitting and can be used in a similar way to `scikit-learn` estimators:
 
