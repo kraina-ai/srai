@@ -34,10 +34,9 @@ def regions_data_df() -> pd.DataFrame:
     ],
 )
 def test_raises_with_incorrect_sample_k_distance(
-    negative_sample_k_distance: int, expectation: Any, request: Any
+    negative_sample_k_distance: int, expectation: Any, mocker: "MockerFixture"
 ) -> None:
     """Test if NeighbourDataset checks negative_sample_k_distance correctness."""
-    mocker: MockerFixture = request.getfixturevalue("mocker")
     data = pd.DataFrame()
     neighbourhood = mocker.Mock()
     with expectation:
@@ -45,17 +44,16 @@ def test_raises_with_incorrect_sample_k_distance(
 
 
 @pytest.mark.parametrize("negative_sample_k_distance", [2, 3, 4])  # type: ignore
-def test_lookup_tables_construction(negative_sample_k_distance: int, request: Any):
+def test_lookup_tables_construction(negative_sample_k_distance: int, regions_data_df: pd.DataFrame):
     """Test if NeighbourDataset constructs lookup tables correctly."""
-    data_df = request.getfixturevalue("regions_data_df")
-
-    neighbourhood = H3Neighbourhood(data_df)
+    neighbourhood = H3Neighbourhood(regions_data_df)
     dataset = NeighbourDataset(
-        data_df, neighbourhood, negative_sample_k_distance=negative_sample_k_distance
+        regions_data_df, neighbourhood, negative_sample_k_distance=negative_sample_k_distance
     )
 
     positives_correct = [
-        data_df.index[positive_df_loc] in neighbourhood.get_neighbours(data_df.index[anchor_df_loc])
+        regions_data_df.index[positive_df_loc]
+        in neighbourhood.get_neighbours(regions_data_df.index[anchor_df_loc])
         for anchor_df_loc, positive_df_loc in zip(
             dataset._anchor_df_locs_lookup, dataset._positive_df_locs_lookup
         )
@@ -64,9 +62,9 @@ def test_lookup_tables_construction(negative_sample_k_distance: int, request: An
     assert all(positives_correct)
 
     excluded_correct = []
-    for i, index in enumerate(data_df.index):
+    for i, index in enumerate(regions_data_df.index):
         excluded_df_locs = dataset._excluded_from_negatives[i]
-        excluded_df_indices = set(data_df.index[list(excluded_df_locs)])
+        excluded_df_indices = set(regions_data_df.index[list(excluded_df_locs)])
         excluded_correct.append(
             neighbourhood.get_neighbours_up_to_distance(index, negative_sample_k_distance)
             == excluded_df_indices
