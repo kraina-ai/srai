@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - 2023-04-27
+
+### Added
+
 - SlippyMapRegionizer
 - OSMTileLoader
 - GTFS Loader from gtfs2vec paper
@@ -67,5 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.0.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/srai-lab/srai/compare/0.0.1...0.1.0
 [0.0.1]: https://github.com/srai-lab/srai/compare/687500b...0.0.1
