@@ -225,27 +225,40 @@ plot_numeric_data(regions, embeddings, "amenity_bicycle_parking", map=folium_map
 from srai.embedders import Hex2VecEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMPbfLoader
+from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
+from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
 from srai.regionizers import H3Regionizer
+from srai.utils import geocode_to_region_gdf
+from srai.plotting import plot_regions, plot_numeric_data
 
 loader = OSMPbfLoader()
-regionizer = H3Regionizer(resolution=9)
+regionizer = H3Regionizer(resolution=11)
 joiner = IntersectionJoiner()
 
-query = {"leisure": "park"}
-area = geocode_to_region_gdf("Wrocław, Poland")
-features = loader.load(area, query)
+area = geocode_to_region_gdf("City of London")
+features = loader.load(area, HEX2VEC_FILTER)
 regions = regionizer.transform(area)
 joint = joiner.transform(regions, features)
 
 embedder = Hex2VecEmbedder()
+neighbourhood = H3Neighbourhood(regions_gdf=regions)
+
+embedder = Hex2VecEmbedder([15, 10, 3])
 
 # Option 1: fit and transform
-embedder.fit(regions, features, joint)
-embeddings = embedder.transform(regions, features, joint)
+# embedder.fit(regions, features, joint, neighbourhood, batch_size=128)
+# embeddings = embedder.transform(regions, features, joint)
 
 # Option 2: fit_transform
-embeddings = embedder.fit_transform(regions, features, joint)
+embeddings = embedder.fit_transform(regions, features, joint, neighbourhood, batch_size=128)
+
+folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+plot_numeric_data(regions, embeddings, 0, map=folium_map)
 ```
+
+<p align="center">
+  <img src="./docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
+</p>
 
 ### Plotting, utilities and more
 
