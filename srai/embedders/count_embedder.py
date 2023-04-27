@@ -108,6 +108,9 @@ class CountEmbedder(Embedder):
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(region_embeddings.columns)
         ]
-        region_embeddings[missing_features] = 0
+        missing_features_df = pd.DataFrame(
+            0, index=region_embeddings.index, columns=missing_features
+        )
+        region_embeddings = pd.concat([region_embeddings, missing_features_df], axis=1)
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings

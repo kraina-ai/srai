@@ -111,6 +111,8 @@ docs = [
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
     "mike",
+    "scikit-learn",
+    "umap-learn",
 ]
 performance = ["scalene"]
 license = ["licensecheck"]
