@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import geopandas as gpd
 import pandas as pd
+import requests
 
 from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
 from srai.utils._optional import import_optional_dependencies
@@ -119,7 +120,6 @@ class OSMTileLoader:
             y(int): y tile coordinate
             idx (Any): id of tile, if non created as x_y_self.zoom
         """
-        import requests
         from PIL import Image
 
         if idx is None:
