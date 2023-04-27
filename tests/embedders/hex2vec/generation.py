@@ -9,7 +9,7 @@ from srai.constants import WGS84_CRS
 from srai.embedders.hex2vec.embedder import Hex2VecEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters import osm_tags_type
 from srai.neighbourhoods import H3Neighbourhood
 from srai.regionizers import H3Regionizer
 from srai.utils import geocode_to_region_gdf
