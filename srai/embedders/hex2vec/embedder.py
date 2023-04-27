@@ -120,6 +120,9 @@ class Hex2VecEmbedder(CountEmbedder):
         import pytorch_lightning as pl
         from torch.utils.data import DataLoader
 
+        if trainer_kwargs is None:
+            trainer_kwargs = {}
+
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
         self._model = Hex2VecModel(
