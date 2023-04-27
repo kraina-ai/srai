@@ -73,18 +73,9 @@ build-backend = "pdm.backend"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = [
-    "bumpver",
-    "types-requests",
-]
+dev = ["bumpver", "types-requests"]
 # pdm add -dG lint <library>
-lint = [
-    "pre-commit",
-    "black[jupyter]",
-    "mypy",
-    "docformatter[tomli]",
-    "ruff",
-]
+lint = ["pre-commit", "black[jupyter]", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
 test = [
     "pytest",
@@ -96,10 +87,7 @@ test = [
     "pytest-xdist",
 ]
 # pdm add -dG visualization <library>
-visualization = [
-    "keplergl",
-    "matplotlib",
-]
+visualization = ["keplergl", "matplotlib"]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs",
@@ -126,27 +114,27 @@ preview = true
 line-length = 100
 target-version = "py38"
 select = [
-    "E", "W",       # pycodestyle
-    "F",            # pyflakes
-    "UP",           # pyupgrade
-    "D",            # pydocstyle
-    "I",            # isort
-    "B",            # flake8-bugbear
-    "NPY",          # NumPy
-    "YTT",          # flake8-2020
-    "Q",            # flake8-quotes
-    "PLE", "PLW",   # pylint (add "PLR" in the future)
-    "PIE",          # misc lints
-    "TID",          # tidy imports
-    "ISC",          # implicit string concatenation
-    "TCH",          # type-checking imports
+    "E",
+    "W",   # pycodestyle
+    "F",   # pyflakes
+    "UP",  # pyupgrade
+    "D",   # pydocstyle
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "NPY", # NumPy
+    "YTT", # flake8-2020
+    "Q",   # flake8-quotes
+    "PLE",
+    "PLW", # pylint (add "PLR" in the future)
+    "PIE", # misc lints
+    "TID", # tidy imports
+    "ISC", # implicit string concatenation
+    "TCH", # type-checking imports
     # "N",            # pep8-naming
     # "ANN",          # flake8-annotations
 ]
 ignore = ["D212"]
-extend-exclude = [
-    "old",
-]
+extend-exclude = ["old"]
 
 [tool.ruff.pydocstyle]
 convention = "google"
@@ -180,7 +168,7 @@ current_version = "0.1.0"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 commit = true
-tag = true
+tag = false
 push = false
 
 [tool.bumpver.file_patterns]
