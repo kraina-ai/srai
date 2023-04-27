@@ -120,8 +120,7 @@ class Hex2VecEmbedder(CountEmbedder):
         import pytorch_lightning as pl
         from torch.utils.data import DataLoader
 
-        if trainer_kwargs is None:
-            trainer_kwargs = {}
+        trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         num_features = len(counts_df.columns)
@@ -182,6 +181,13 @@ class Hex2VecEmbedder(CountEmbedder):
             trainer_kwargs,
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
+
+    def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        if trainer_kwargs is None:
+            trainer_kwargs = {}
+        if "max_epochs" not in trainer_kwargs:
+            trainer_kwargs["max_epochs"] = 3
+        return trainer_kwargs
 
     def _get_raw_counts(
         self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
