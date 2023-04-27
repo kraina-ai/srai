@@ -28,9 +28,9 @@
 
 # Spatial Representations for Artificial Intelligence
 
-<p style="text-align: center;">⚠️🚧 This library is under HEAVY development. Expect breaking changes between `minor` versions 🚧⚠️</p>
+<p align="center">⚠️🚧 This library is under HEAVY development. Expect breaking changes between <i>minor</i> versions 🚧⚠️</p>
 
-<p style="text-align: center;">💬 Feel free to open an issue if you find anything confusing or not working 🗨️</p>
+<p align="center">💬 Feel free to open an issue if you find anything confusing or not working 🗨️</p>
 
 Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting starded for installation and quick srart instructions.
 
