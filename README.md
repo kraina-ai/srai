@@ -149,8 +149,10 @@ Embedding is a process of mapping regions into a vector space. This can be done 
 
 * `Hex2VecEmbedder` - embedding using hex2vec[1] algorithm
 * `GTFS2VecEmbedder` - embedding using GTFS2Vec[2] algorithm
-* `CountEmbedder` - embedding using count of features
-* `ContextualCountEmbedder` - embedding using count of features in a given context (proposed in [3])
+* `CountEmbedder` - embedding based on features counts
+
+* `ContextualCountEmbedder` - embedding based on features counts with neighbourhood context (proposed in [3])
+
 * `Highway2VecEmbedder` - embedding using Highway2Vec[4] algorithm
 
 All of those methods share the same API. All of them require results from `Loader` (load features), `Regionizer` (split area into regions) and `Joiner` (join features to regions) to work. An example using `CountEmbedder`:
