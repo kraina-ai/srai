@@ -10,6 +10,7 @@ from ._base import Embedder
 from .contextual_count_embedder import ContextualCountEmbedder
 from .count_embedder import CountEmbedder
 from .gtfs2vec import GTFS2VecEmbedder
+from .hex2vec import Hex2VecEmbedder
 from .highway2vec import Highway2VecEmbedder
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "CountEmbedder",
     "ContextualCountEmbedder",
     "GTFS2VecEmbedder",
+    "Hex2VecEmbedder",
     "Highway2VecEmbedder",
 ]

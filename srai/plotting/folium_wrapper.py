@@ -103,7 +103,7 @@ def plot_numeric_data(
         folium.Map: Generated map.
     """
     regions_gdf_copy = regions_gdf.copy()
-    regions_gdf_copy = regions_gdf_copy.merge(embedding_df, on=REGIONS_INDEX)
+    regions_gdf_copy = regions_gdf_copy.merge(embedding_df[[data_column]], on=REGIONS_INDEX)
 
     if not isinstance(colormap, str):
         colormap = _generate_linear_colormap(
@@ -112,9 +112,13 @@ def plot_numeric_data(
             max_value=regions_gdf_copy[data_column].max(),
         )
 
+    # Jinja2 rendering issue whne column is number-like. Workaround by using str column name.
+    # TypeError: '<' not supported between instances of 'float' and 'str'
+    regions_gdf_copy.rename(columns={data_column: "value"}, inplace=True)
+
     return regions_gdf_copy.reset_index().explore(
-        column=data_column,
-        tooltip=[REGIONS_INDEX, data_column],
+        column="value",
+        tooltip=[REGIONS_INDEX, "value"],
         tiles=tiles_style,
         height=height,
         width=width,

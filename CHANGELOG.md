@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GTFS Loader from gtfs2vec paper
 - GTFS2Vec Model from gtfs2vec paper
 - GTFS2Vec Embedder using gtfs2vec model
+- Hex2Vec Model from hex2vec paper
+- Hex2Vec Embedder using hex2vec model
 - Highway2Vec Model from highway2vec paper
 - Highway2Vec Embedder using highway2vec model
 - OSMOnlineLoader
