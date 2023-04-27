@@ -100,11 +100,14 @@ def _test_torch() -> None:
 
 
 def _test_osm() -> None:
-    from srai.loaders.osm_loaders import OSMPbfLoader
+    from srai.loaders import OSMOnlineLoader, OSMPbfLoader, OSMTileLoader, OSMWayLoader
     from srai.regionizers import AdministrativeBoundaryRegionizer
 
     AdministrativeBoundaryRegionizer(2)
     OSMPbfLoader()
+    OSMOnlineLoader()
+    OSMWayLoader("drive")
+    OSMTileLoader("https://tile.openstreetmap.de", 9)
 
 
 def _test_gtfs() -> None:
