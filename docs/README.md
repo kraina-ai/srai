@@ -62,3 +62,9 @@ Some of the methods implemented in `srai` have been published in scientific jour
 
 1. https://h3geo.org/
 2. https://doi.org/10.1145/3486635.3491076
+
+## Licence
+
+This library is licensed under the [Apache Licence 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
+
+The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).

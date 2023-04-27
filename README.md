@@ -76,8 +76,8 @@ The following optional dependencies can be installed to enable additional functi
 
 To download OSM data for a given area, using a set of tags use one of `OSMLoader` classes:
 
-* `OSMOnlineLoader` - downloads data from OpenStreetMap API - this is faster for smaller areas or tags counts
-* `OSMPbfLoader` - loads data from automatically downloaded PBF file - this is faster for larger areas or tags counts
+* `OSMOnlineLoader` - downloads data from OpenStreetMap API using [osmnx](https://github.com/gboeing/osmnx) - this is faster for smaller areas or tags counts
+* `OSMPbfLoader` - loads data from automatically downloaded PBF file from [protomaps](https://protomaps.com/) - this is faster for larger areas or tags counts
 
 Example with `OSMPbfLoader`:
 
@@ -85,11 +85,11 @@ Example with `OSMPbfLoader`:
 from srai.loaders import OSMOnlineLoader
 from srai.utils import geocode_to_region_gdf
 
-filter = {"leisure": "park"}
+query = {"leisure": "park"}
 area = geocode_to_region_gdf("Wrocław, Poland")
 loader = OSMOnlineLoader()
 
-parks_gdf = loader.load(area, filter)
+parks_gdf = loader.load(area, query)
 ```
 
 ### Downloading road network
@@ -168,8 +168,9 @@ loader = OSMPbfLoader()
 regionizer = H3Regionizer(resolution=9)
 joiner = IntersectionJoiner()
 
+query = {"leisure": "park"}
 area = geocode_to_region_gdf("Wrocław, Poland")
-features = loader.load(area)
+features = loader.load(area, query)
 regions = regionizer.transform(area)
 joint = joiner.transform(regions, features)
 
@@ -189,8 +190,9 @@ loader = OSMPbfLoader()
 regionizer = H3Regionizer(resolution=9)
 joiner = IntersectionJoiner()
 
+query = {"leisure": "park"}
 area = geocode_to_region_gdf("Wrocław, Poland")
-features = loader.load(area)
+features = loader.load(area, query)
 regions = regionizer.transform(area)
 joint = joiner.transform(regions, features)
 
@@ -220,3 +222,9 @@ Some of the methods implemented in `srai` have been published in scientific jour
 
 ## Citation
 TBD
+
+## Licence
+
+This library is licensed under the [Apache Licence 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
+
+The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).
