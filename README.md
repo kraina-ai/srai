@@ -98,7 +98,7 @@ parks_gdf.explore(m=folium_map, color="forestgreen")
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading road network
@@ -121,7 +121,7 @@ edges[["geometry"]].explore(m=folium_map, color="seagreen")
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading GTFS data
@@ -147,7 +147,7 @@ features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Regionization
@@ -175,7 +175,7 @@ plot_regions(regions_gdf=regions, map=folium_map)
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/regionization.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/regionization.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Embedding
@@ -216,7 +216,7 @@ plot_numeric_data(regions, embeddings, "amenity_bicycle_parking", map=folium_map
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 `CountEmbedder` is a simple method, which does not require fitting. Other methods, such as `Hex2VecEmbedder` or `GTFS2VecEmbedder` require fitting and can be used in a similar way to `scikit-learn` estimators:
@@ -257,7 +257,7 @@ plot_numeric_data(regions, embeddings, 0, map=folium_map)
 ```
 
 <p align="center">
-  <img src="./docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Plotting, utilities and more
