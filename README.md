@@ -28,8 +28,12 @@
 
 # Spatial Representations for Artificial Intelligence
 
-Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting starded for installation and quick srart instructions.
+<p style="text-align: center;">⚠️🚧 This library is under HEAVY development. Expect breaking changes between `minor` versions 🚧⚠️</p>
 
+<p style="text-align: center;">💬 Feel free to open an issue if you find anything confusing or not working! 🗨️</p>
+
+
+Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting starded for installation and quick srart instructions.
 
 ## Use cases
 
@@ -47,7 +51,6 @@ For future releases, we plan to add more functionalities, such as:
 * **Pre-computed embeddings** - pre-computed embeddings for different regions and different embedding algorithms
 * **Full pipelines** - full pipelines for different embedding approaches, pre-configured from `srai` components
 * **Image data download and processing** - downloading and processing image data (eg. OSM tiles, etc.)
-
 
 ## Installation
 
@@ -210,6 +213,10 @@ embeddings = embedder.fit_transform(regions, features, joint)
 
 We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://srai-lab.github.io/srai).
 
+## Contributing
+
+If you are willing to contribute to `srai`, feel free to do so! Visit [our contributing guide](./CONTRIBUTING.md) for more details.
+
 ## Publications
 
 Some of the methods implemented in `srai` have been published in scientific journals and conferences.
@@ -219,11 +226,11 @@ Some of the methods implemented in `srai` have been published in scientific jour
 3. Kamil Raczycki and Piotr Szymański. 2021. Transfer learning approach to bicycle-sharing systems' station location planning using OpenStreetMap data. In Proceedings of the 4th ACM SIGSPATIAL International Workshop on Advances in Resilient and Intelligent Cities (ARIC '21). Association for Computing Machinery, New York, NY, USA, 1–12. [paper](https://doi.org/10.1145/3486626.3493434), [arXiv](https://arxiv.org/abs/2111.00990)
 4. Kacper Leśniara and Piotr Szymański. 2022. Highway2vec: representing OpenStreetMap microregions with respect to their road network characteristics. In Proceedings of the 5th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '22). Association for Computing Machinery, New York, NY, USA, 18–29. [paper](https://doi.org/10.1145/3557918.3565865)
 
-
 ## Citation
+
 TBD
 
-## Licence
+## License
 
 This library is licensed under the [Apache Licence 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
 
