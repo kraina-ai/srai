@@ -57,9 +57,9 @@ For future releases, we plan to add more functionalities, such as:
 
 ### End-to-end examples
 
-Right now, `srai` provides a toolset for data download and processing sufficient to solve downstream tasks. Please see [this project](https://pwr-inf.github.io/Transfer-learning-approach-to-bicycle-sharing-systems-station-location-planning-using-OpenStreetMap/) by @RaczeQ, which predicts Bike Sharing System (BSS) stations' localtions for a wide range of cities worldwide.
+Right now, `srai` provides a toolset for data download and processing sufficient to solve downstream tasks. Please see [this project](https://pwr-inf.github.io/Transfer-learning-approach-to-bicycle-sharing-systems-station-location-planning-using-OpenStreetMap/) by @RaczeQ, which predicts Bike Sharing System (BSS) stations' locations for a wide range of cities worldwide.
 
-For `srai` integration into full [kedro](https://kedro.org/) pipeline, see [this project](https://github.com/Calychas/highway2vec_remaster/) by @Calychas
+For `srai` integration into full [kedro](https://kedro.org/) pipeline, see [this project](https://github.com/Calychas/highway2vec_remaster/) by @Calychas.
 
 ## Installation
 
