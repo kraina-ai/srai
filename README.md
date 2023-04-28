@@ -32,7 +32,11 @@
 
 <p align="center">💬 Feel free to open an issue if you find anything confusing or not working 🗨️</p>
 
-Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting starded for installation and quick srart instructions.
+Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting started for installation and quick start instructions.
+
+<p align="center">
+  <img src="https://drive.google.com/uc?export=view&id=1iyajkX81PLrel-Xmz1lQpYQvePnLoO1U"  style="max-width:600px;width:100%"/>
+</p>
 
 ## Use cases
 
