@@ -55,6 +55,12 @@ For future releases, we plan to add more functionalities, such as:
 * **Full pipelines** - full pipelines for different embedding approaches, pre-configured from `srai` components
 * **Image data download and processing** - downloading and processing image data (eg. OSM tiles, etc.)
 
+### End-to-end examples
+
+Right now, `srai` provides a toolset for data download and processing sufficient to solve downstream tasks. Please see [this project](https://pwr-inf.github.io/Transfer-learning-approach-to-bicycle-sharing-systems-station-location-planning-using-OpenStreetMap/) by [@RaczeQ](https://github.com/RaczeQ), which predicts Bike Sharing System (BSS) stations' locations for a wide range of cities worldwide.
+
+For `srai` integration into full [kedro](https://kedro.org/) pipeline, see [this project](https://github.com/Calychas/highway2vec_remaster/) by [@Calychas](https://github.com/Calychas).
+
 ## Installation
 
 To install `srai` simply run:
@@ -77,6 +83,8 @@ The following optional dependencies can be installed to enable additional functi
 * `srai[torch]` - dependencies to use torch-based embedders
 
 ## Usage
+
+If you prefer an interactive notebook, examples of `srai` usage are available in this [Colab Notebook](https://colab.research.google.com/drive/17z2OYZG82FZNRK86Kt-eSgbJn9m7meSH?usp=sharing)
 
 ### Downloading OSM data
 
