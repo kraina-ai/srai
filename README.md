@@ -84,7 +84,7 @@ The following optional dependencies can be installed to enable additional functi
 
 ## Usage
 
-If you prefer an interactive notebook, all of those example are available in this [Colab Notebook](https://colab.research.google.com/drive/17z2OYZG82FZNRK86Kt-eSgbJn9m7meSH?usp=sharing)
+If you prefer an interactive notebook, examples of `srai` usage are available in this [Colab Notebook](https://colab.research.google.com/drive/17z2OYZG82FZNRK86Kt-eSgbJn9m7meSH?usp=sharing)
 
 ### Downloading OSM data
 
