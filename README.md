@@ -45,6 +45,10 @@ In the current state, `srai` provides the following functionalities:
 * **Embedding** - embedding regions into a vector space based on different spatial features, and using different algorithms (eg. hex2vec[2], etc.)
 * Utilities for spatial data visualization and processing
 
+<p align="center">
+  <img src="https://drive.google.com/uc?export=view&id=1eQ-Y_dnXBgriLnYN4ZkhjwI1ZSfrDSrz"  style="max-width:600px;width:100%"/>
+</p>
+
 For future releases, we plan to add more functionalities, such as:
 
 * **Pre-computed embeddings** - pre-computed embeddings for different regions and different embedding algorithms
