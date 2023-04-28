@@ -46,7 +46,7 @@ In the current state, `srai` provides the following functionalities:
 * Utilities for spatial data visualization and processing
 
 <p align="center">
-  <img src="https://drive.google.com/uc?export=view&id=1T2FQDiDpuNUR4wUsThvviMPe62iwZius"  style="max-width:600px;width:100%"/>
+  <img src="https://drive.google.com/uc?export=view&id=1iyajkX81PLrel-Xmz1lQpYQvePnLoO1U"  style="max-width:600px;width:100%"/>
 </p>
 
 For future releases, we plan to add more functionalities, such as:
