@@ -2,7 +2,13 @@
 name = "srai"
 version = "0.1.1"
 description = "A set of python modules for geospatial machine learning and data mining"
-authors = [{ name = "srai", email = "spatialrepresentationsforai@gmail.com" }]
+authors = [
+    { name = "SRAI Lab", email = "spatialrepresentationsforai@gmail.com" },
+    { name = "Piotr Gramacki" },
+    { name = "Kacper Leśniara" },
+    { name = "Kamil Raczycki" },
+    { name = "Szymon Woźniak" }
+]
 # pdm add <library>
 dependencies = [
     "pandas",
