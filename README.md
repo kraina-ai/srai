@@ -30,7 +30,7 @@
 
 <p align="center">⚠️🚧 This library is under HEAVY development. Expect breaking changes between <i>minor</i> versions 🚧⚠️</p>
 
-<p align="center">💬 Feel free to open an issue if you find anything confusing or not working 🗨️</p>
+<p align="center">💬 Feel free to open an issue if you find anything confusing or not working 💬</p>
 
 Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting started for installation and quick start instructions.
 
@@ -287,7 +287,11 @@ Some of the methods implemented in `srai` have been published in scientific jour
 1. Szymon Woźniak and Piotr Szymański. 2021. Hex2vec: Context-Aware Embedding H3 Hexagons with OpenStreetMap Tags. In Proceedings of the 4th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GEOAI '21). Association for Computing Machinery, New York, NY, USA, 61–71. [paper](https://doi.org/10.1145/3486635.3491076), [arXiv](https://arxiv.org/abs/2111.00970)
 2. Piotr Gramacki, Szymon Woźniak, and Piotr Szymański. 2021. Gtfs2vec: Learning GTFS Embeddings for comparing Public Transport Offer in Microregions. In Proceedings of the 1st ACM SIGSPATIAL International Workshop on Searching and Mining Large Collections of Geospatial Data (GeoSearch'21). Association for Computing Machinery, New York, NY, USA, 5–12. [paper](https://doi.org/10.1145/3486640.3491392), [arXiv](https://arxiv.org/abs/2111.00960)
 3. Kamil Raczycki and Piotr Szymański. 2021. Transfer learning approach to bicycle-sharing systems' station location planning using OpenStreetMap data. In Proceedings of the 4th ACM SIGSPATIAL International Workshop on Advances in Resilient and Intelligent Cities (ARIC '21). Association for Computing Machinery, New York, NY, USA, 1–12. [paper](https://doi.org/10.1145/3486626.3493434), [arXiv](https://arxiv.org/abs/2111.00990)
-4. Kacper Leśniara and Piotr Szymański. 2022. Highway2vec: representing OpenStreetMap microregions with respect to their road network characteristics. In Proceedings of the 5th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '22). Association for Computing Machinery, New York, NY, USA, 18–29. [paper](https://doi.org/10.1145/3557918.3565865)
+4. Kacper Leśniara and Piotr Szymański. 2022. Highway2vec: representing OpenStreetMap microregions with respect to their road network characteristics. In Proceedings of the 5th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '22). Association for Computing Machinery, New York, NY, USA, 18–29. [paper](https://doi.org/10.1145/3557918.3565865), [arXiv](https://arxiv.org/abs/2304.13865)
+
+## Acknowledgements
+
+We would like to thank Piotr Szymański PhD \([@niedakh](https://twitter.com/niedakh)\) for his invaluable guidance and support in the development of this library. His expertise and mentorship have been instrumental in shaping the library's design and functionality, and we are very grateful for his input.
 
 ## Citation
 
@@ -295,6 +299,6 @@ TBD
 
 ## License
 
-This library is licensed under the [Apache Licence 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
+This library is licensed under the [Apache License 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
 
 The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).
