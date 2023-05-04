@@ -14,6 +14,7 @@ dependencies = [
     "pandas",
     "geopandas",
     "shapely",
+    "duckdb>=0.7.1",
     "h3>=4.0.0b1",
     "numpy",
     "geoparquet",
