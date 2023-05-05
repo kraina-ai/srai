@@ -1,10 +1,15 @@
+# flake8: noqa
+# type: ignore
 """
 PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
+import multiprocessing
+import queue
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union, cast
+from multiprocessing.pool import AsyncResult
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union
 
 import geopandas as gpd
 import osmium
@@ -15,14 +20,14 @@ from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from srai.constants import FEATURES_INDEX, WGS84_CRS
+from srai.constants import FEATURES_INDEX
 from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
     import os
 
 
-class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
+class PbfFileHandler:
     """
     PbfFileHandler.
 
@@ -67,11 +72,12 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 intersecting OSM objects. Defaults to None.
         """
         super().__init__()
-        self.filter_tags = tags
-        if self.filter_tags:
-            self.filter_tags_keys = set(self.filter_tags.keys())
-        else:
-            self.filter_tags_keys = set()
+        self.tags = tags
+        # self.filter_tags = tags
+        # if self.filter_tags:
+        #     self.filter_tags_keys = set(self.filter_tags.keys())
+        # else:
+        #     self.filter_tags_keys = set()
         self.region_geometry = region_geometry
         self.wkbfab = osmium.geom.WKBFactory()
         self.features_cache: Dict[str, Dict[str, Any]] = {}
@@ -86,8 +92,6 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         Function parses multiple PBF files and returns a single GeoDataFrame with parsed
         OSM objects.
 
-        This function is a dedicated wrapper around the inherited function `apply_file`.
-
         Args:
             file_paths (Sequence[Union[str, os.PathLike[str]]]): List of paths to `*.osm.pbf`
                 files to be parsed.
@@ -97,29 +101,152 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with OSM features.
         """
-        self._clear_cache()
         if self.features_count is None:
-            self._count_features(file_paths, region_id)
+            self.features_count = self.CountingPbfFileHandler().count_features(
+                file_paths, region_id
+            )
 
-        with tqdm(desc="Parsing pbf file", total=self.features_count) as self.pbar:
-            for path_no, path in enumerate(file_paths):
-                self.path_no = path_no + 1
-                description = self._PBAR_FORMAT.format(region_id, str(self.path_no))
-                self.pbar.set_description(description)
-                self.apply_file(path)
-            if self.features_cache:
-                features_gdf = (
-                    gpd.GeoDataFrame(data=self.features_cache.values())
-                    .set_crs(WGS84_CRS)
-                    .set_index(FEATURES_INDEX)
-                )
-            else:
-                features_gdf = gpd.GeoDataFrame(
-                    index=gpd.pd.Index(name=FEATURES_INDEX, data=[]), crs=WGS84_CRS, geometry=[]
-                )
+        # generated_regions.extend(
+        #     process_map(
+        #         create_regions_func,
+        #         region_ids,
+        #         desc="Generating regions",
+        #         max_workers=num_of_multiprocessing_workers,
+        #         chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+        #     )
+        # )
+        bar_queue = multiprocessing.Manager().Queue()
+        bar_process = multiprocessing.Process(
+            target=_update_bar, args=(bar_queue, self.features_count), daemon=True
+        )
+        bar_process.start()
 
-        self._clear_cache()
-        return features_gdf
+        # pool_size = multiprocessing.cpu_count()
+        pool_size = 2
+        pool = multiprocessing.Pool(pool_size)
+        pool_results: List[AsyncResult[Any]] = []
+        for pool_index in range(pool_size):
+            # print(pool_index)
+
+            # features_count: int,
+            # tags: Optional[osm_tags_type],
+            # region_geometry: Optional[BaseGeometry],
+            # pool_size: int,
+            # pool_index: int,
+            # file_paths: Sequence[Union[str, "os.PathLike[str]"]],
+            # region_id: str,
+            # bar_queue: Any,
+
+            async_result = pool.apply_async(
+                _process_pbf,
+                [
+                    self.features_count,
+                    self.tags,
+                    self.region_geometry,
+                    pool_size,
+                    pool_index,
+                    file_paths,
+                    region_id,
+                    bar_queue,
+                ],
+            )
+            pool_results.append(async_result)
+        pool.close()
+        pool.join()
+        bar_process.terminate()
+        print(pool_results)
+        print([result.get() for result in pool_results])
+
+        # features_gdf = (
+        #     gpd.GeoDataFrame(data=[result.get() for result in pool_results])
+        #     .set_crs(WGS84_CRS)
+        #     .set_index(FEATURES_INDEX)
+        # )
+
+        # return features_gdf
+
+    class CountingPbfFileHandler(osmium.SimpleHandler):
+        def count_features(
+            self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
+        ) -> int:
+            with tqdm(desc=f"[{region_id}] Counting pbf features") as self.pbar:
+                self.counting_features = True
+                self.features_count = 0
+                for path in file_paths:
+                    self.apply_file(path)
+                self.pbar.update(n=self.features_count % 100_000)
+                self.counting_features = False
+            return self.features_count
+
+        def node(self, node: osmium.osm.Node) -> None:
+            self._count_feature()
+
+        def way(self, way: osmium.osm.Way) -> None:
+            self._count_feature()
+
+        def area(self, area: osmium.osm.Area) -> None:
+            self._count_feature()
+
+        def _count_feature(self) -> None:
+            self.features_count += 1
+            if self.features_count % 100_000 == 0:
+                self.pbar.update(n=100_000)
+
+
+class _MultithreadingPbfFileHandler(osmium.SimpleHandler):
+    def __init__(
+        self,
+        pool_size: int,
+        pool_index: int,
+        features_count: Optional[int],
+        tags: Optional[osm_tags_type],
+        region_geometry: Optional[BaseGeometry],
+        bar_queue,
+    ) -> None:
+        super().__init__()
+        self.processing_counter = 0
+        self.pool_size = pool_size
+        self.pool_index = pool_index
+        self.filter_tags = tags
+        if self.filter_tags:
+            self.filter_tags_keys = set(self.filter_tags.keys())
+        else:
+            self.filter_tags_keys = set()
+        self.region_geometry = region_geometry
+        self.wkbfab = osmium.geom.WKBFactory()
+        self.features_cache: Dict[str, Dict[str, Any]] = {}
+        self.features_count = features_count
+        self.bar_queue = bar_queue
+
+        # print(self.processing_counter, self.pool_size, self.pool_index)
+
+    # def get_raw_features(
+    #     self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
+    # ) -> List[Dict[str, Any]]:
+    #     """TODO."""
+    #     self._clear_cache()
+    #     print(file_paths, self.pool_index)
+    #     with self.lock:
+    #         # self.pbar = tqdm(desc="Parsing pbf file", total=self.features_count, position=self.pool_index)
+    #         self.pbar = tqdm(desc="Parsing pbf file", total=self.features_count)
+
+    #     for path_no, path in enumerate(file_paths):
+    #         print(path_no, path)
+    #         self.path_no = path_no + 1
+    #         description = PbfFileHandler._PBAR_FORMAT.format(region_id, str(self.path_no))
+    #         self.pbar.set_description(description)
+    #         self.apply_file(path)
+
+    #     with self.lock:
+    #         self.pbar.close()
+
+    #     print("cache", len(self.features_cache))
+
+    # return self.features_cache.values()
+
+    def _clear_cache(self) -> None:
+        """Clear memory from accumulated features."""
+        self.features_cache.clear()
 
     def node(self, node: osmium.osm.Node) -> None:
         """
@@ -133,12 +260,10 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Node
         """
-        if self.counting_features:
-            self._count_feature()
-        else:
-            self._parse_osm_object(
-                osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
-            )
+        print("node")
+        # self._parse_osm_object(
+        #     osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
+        # )
 
     def way(self, way: osmium.osm.Way) -> None:
         """
@@ -152,12 +277,10 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Way
         """
-        if self.counting_features:
-            self._count_feature()
-        else:
-            self._parse_osm_object(
-                osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
-            )
+        print("way")
+        # self._parse_osm_object(
+        #     osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
+        # )
 
     def area(self, area: osmium.osm.Area) -> None:
         """
@@ -171,35 +294,13 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Area
         """
-        if self.counting_features:
-            self._count_feature()
-        else:
-            self._parse_osm_object(
-                osm_object=area,
-                osm_type="way" if area.from_way() else "relation",
-                parse_to_wkb_function=self.wkbfab.create_multipolygon,
-                osm_id=area.orig_id(),
-            )
-
-    def _clear_cache(self) -> None:
-        """Clear memory from accumulated features."""
-        self.features_cache.clear()
-
-    def _count_features(
-        self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
-    ) -> None:
-        with tqdm(desc=f"[{region_id}] Counting pbf features") as self.pbar:
-            self.counting_features = True
-            self.features_count = 0
-            for path in file_paths:
-                self.apply_file(path)
-            self.pbar.update(n=self.features_count % 100_000)
-            self.counting_features = False
-
-    def _count_feature(self) -> None:
-        self.features_count = cast(int, self.features_count) + 1
-        if self.features_count % 100_000 == 0:
-            self.pbar.update(n=100_000)
+        print("area")
+        # self._parse_osm_object(
+        #     osm_object=area,
+        #     osm_type="way" if area.from_way() else "relation",
+        #     parse_to_wkb_function=self.wkbfab.create_multipolygon,
+        #     osm_id=area.orig_id(),
+        # )
 
     def _parse_osm_object(
         self,
@@ -209,19 +310,24 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         osm_id: Optional[int] = None,
     ) -> None:
         """Parse OSM object into a feature with geometry and tags if it matches given criteria."""
-        self.pbar.update(n=1)
+        self.processing_counter += 1
+        print(self.processing_counter, self.pool_size, self.processing_counter % self.pool_size)
 
-        if osm_id is None:
-            osm_id = osm_object.id
+        self.bar_queue.put_nowait(1)
 
-        full_osm_id = f"{osm_type}/{osm_id}"
+        # if self.processing_counter % self.pool_size == self.pool_index:
+        #     # self.pbar.n = self.processing_counter
+        #     if osm_id is None:
+        #         osm_id = osm_object.id
 
-        matching_tags = self._get_matching_tags(osm_object)
-        if matching_tags:
-            geometry = self._get_osm_geometry(osm_object, parse_to_wkb_function)
-            self._add_feature_to_cache(
-                full_osm_id=full_osm_id, matching_tags=matching_tags, geometry=geometry
-            )
+        #     full_osm_id = f"{osm_type}/{osm_id}"
+
+        #     matching_tags = self._get_matching_tags(osm_object)
+        #     if matching_tags:
+        #         geometry = self._get_osm_geometry(osm_object, parse_to_wkb_function)
+        #         self._add_feature_to_cache(
+        #             full_osm_id=full_osm_id, matching_tags=matching_tags, geometry=geometry
+        #         )
 
     def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
         """
@@ -293,3 +399,41 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
     def _geometry_is_in_region(self, geometry: BaseGeometry) -> bool:
         """Check if OSM geometry intersects with provided region."""
         return self.region_geometry is None or geometry.intersects(self.region_geometry)
+
+
+def _update_bar(q: queue.Queue, total: int):
+    pbar = tqdm(total=total)
+
+    while True:
+        if not q.empty():
+            x = q.get()
+            pbar.update(x)
+
+
+def _process_pbf(
+    features_count: int,
+    tags: Optional[osm_tags_type],
+    region_geometry: Optional[BaseGeometry],
+    pool_size: int,
+    pool_index: int,
+    file_paths: Sequence[Union[str, "os.PathLike[str]"]],
+    region_id: str,
+    bar_queue: queue.Queue,
+):
+    # features = simple_handler.get_raw_features(file_paths, region_id)
+
+    # print(bar_queue, file_paths, pool_index, pool_size)
+
+    simple_handler = _MultithreadingPbfFileHandler(
+        pool_size, pool_index, features_count, tags, region_geometry, bar_queue
+    )
+
+    for path_no, path in enumerate(file_paths):
+        print(path_no, path)
+        # simple_handler.apply_file(path)
+        bar_queue.put_nowait(10)
+
+    features = simple_handler.features_cache.values()
+
+    print("cache", len(features))
+    return features

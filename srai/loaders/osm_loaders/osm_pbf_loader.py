@@ -92,7 +92,7 @@ class OSMPbfLoader(OSMLoader):
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
         from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler  # type: ignore
 
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
