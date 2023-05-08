@@ -3,19 +3,21 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
+import secrets
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union, cast
 
+import duckdb
 import geopandas as gpd
 import osmium
 import osmium.osm
-import shapely.wkb as wkblib
+import pandas as pd
 from osmium.osm.types import T_obj
-from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from srai.constants import FEATURES_INDEX, WGS84_CRS
+from srai.constants import FEATURES_INDEX
+from srai.db import df_to_duckdb
 from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
@@ -73,13 +75,13 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         else:
             self.filter_tags_keys = set()
         self.region_geometry = region_geometry
-        self.wkbfab = osmium.geom.WKBFactory()
+        self.wktfab = osmium.geom.WKTFactory()
         self.features_cache: Dict[str, Dict[str, Any]] = {}
         self.features_count: Optional[int] = None
 
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
-    ) -> gpd.GeoDataFrame:
+    ) -> duckdb.DuckDBPyRelation:
         """
         Get features GeoDataFrame from a list of PBF files.
 
@@ -108,18 +110,19 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 self.pbar.set_description(description)
                 self.apply_file(path)
             if self.features_cache:
-                features_gdf = (
-                    gpd.GeoDataFrame(data=self.features_cache.values())
-                    .set_crs(WGS84_CRS)
-                    .set_index(FEATURES_INDEX)
+                features_df = pd.DataFrame(data=self.features_cache.values()).set_index(
+                    FEATURES_INDEX
                 )
             else:
-                features_gdf = gpd.GeoDataFrame(
-                    index=gpd.pd.Index(name=FEATURES_INDEX, data=[]), crs=WGS84_CRS, geometry=[]
-                )
+                features_df = pd.DataFrame(
+                    index=gpd.pd.Index(name=FEATURES_INDEX, data=[]), data={"wkt": []}
+                ).set_index(FEATURES_INDEX)
 
         self._clear_cache()
-        return features_gdf
+
+        features_relation = self._parse_raw_df_to_duckdb(features_df)
+
+        return features_relation
 
     def node(self, node: osmium.osm.Node) -> None:
         """
@@ -137,7 +140,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             self._count_feature()
         else:
             self._parse_osm_object(
-                osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
+                osm_object=node, osm_type="node", parse_to_wkt_function=self.wktfab.create_point
             )
 
     def way(self, way: osmium.osm.Way) -> None:
@@ -156,7 +159,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             self._count_feature()
         else:
             self._parse_osm_object(
-                osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
+                osm_object=way, osm_type="way", parse_to_wkt_function=self.wktfab.create_linestring
             )
 
     def area(self, area: osmium.osm.Area) -> None:
@@ -177,7 +180,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             self._parse_osm_object(
                 osm_object=area,
                 osm_type="way" if area.from_way() else "relation",
-                parse_to_wkb_function=self.wkbfab.create_multipolygon,
+                parse_to_wkt_function=self.wktfab.create_multipolygon,
                 osm_id=area.orig_id(),
             )
 
@@ -205,7 +208,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         self,
         osm_object: osmium.osm.OSMObject[T_obj],
         osm_type: str,
-        parse_to_wkb_function: Callable[..., str],
+        parse_to_wkt_function: Callable[..., str],
         osm_id: Optional[int] = None,
     ) -> None:
         """Parse OSM object into a feature with geometry and tags if it matches given criteria."""
@@ -218,9 +221,9 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
         matching_tags = self._get_matching_tags(osm_object)
         if matching_tags:
-            geometry = self._get_osm_geometry(osm_object, parse_to_wkb_function)
+            wkt = self._get_osm_geometry(osm_object, parse_to_wkt_function)
             self._add_feature_to_cache(
-                full_osm_id=full_osm_id, matching_tags=matching_tags, geometry=geometry
+                full_osm_id=full_osm_id, matching_tags=matching_tags, wkt=wkt
             )
 
     def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
@@ -255,21 +258,20 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         return matching_tags
 
     def _get_osm_geometry(
-        self, osm_object: osmium.osm.OSMObject[T_obj], parse_to_wkb_function: Callable[..., str]
-    ) -> BaseGeometry:
+        self, osm_object: osmium.osm.OSMObject[T_obj], parse_to_wkt_function: Callable[..., str]
+    ) -> Optional[str]:
         """Get geometry from currently parsed OSM object."""
-        geometry = None
+        wkt = None
         try:
-            wkb = parse_to_wkb_function(osm_object)
-            geometry = wkblib.loads(wkb, hex=True)
+            wkt = parse_to_wkt_function(osm_object)
         except RuntimeError as ex:
             message = str(ex)
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        return geometry
+        return wkt
 
     def _add_feature_to_cache(
-        self, full_osm_id: str, matching_tags: Dict[str, str], geometry: Optional[BaseGeometry]
+        self, full_osm_id: str, matching_tags: Dict[str, str], wkt: Optional[str]
     ) -> None:
         """
         Add OSM feature to cache or update existing one based on ID.
@@ -278,18 +280,44 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         `MultiPolygons`. Additional check ensures that a closed geometry will be always preffered
         over a `LineString`.
         """
-        if geometry is not None and self._geometry_is_in_region(geometry):
+        if wkt is not None:
             if full_osm_id not in self.features_cache:
                 self.features_cache[full_osm_id] = {
                     FEATURES_INDEX: full_osm_id,
-                    "geometry": geometry,
+                    "wkt": wkt,
                 }
 
-            if isinstance(geometry, (Polygon, MultiPolygon)):
-                self.features_cache[full_osm_id]["geometry"] = geometry
+            if wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+                self.features_cache[full_osm_id]["wkt"] = wkt
 
             self.features_cache[full_osm_id].update(matching_tags)
 
-    def _geometry_is_in_region(self, geometry: BaseGeometry) -> bool:
-        """Check if OSM geometry intersects with provided region."""
-        return self.region_geometry is None or geometry.intersects(self.region_geometry)
+    def _parse_raw_df_to_duckdb(self, features_df: pd.DataFrame) -> duckdb.DuckDBPyRelation:
+        """Upload accumulated raw data into a relation and parse geometries."""
+        relation_id = secrets.token_hex(nbytes=16)
+        relation_name = f"features_{relation_id}"
+        virtual_relation_name = f"virtual_features_{relation_id}"
+        query = """
+        SELECT * FROM (
+            SELECT
+                * EXCLUDE (wkt),
+                ST_GeomFromText(wkt, ignore_invalid := true) geometry
+            FROM {virtual_relation_name}
+        ) WHERE geometry IS NOT NULL
+        """
+        features_relation = (
+            df_to_duckdb(features_df)
+            .query(
+                virtual_table_name=virtual_relation_name,
+                sql_query=query.format(virtual_relation_name=virtual_relation_name),
+            )
+            .set_alias(relation_name)
+        )
+
+        if self.region_geometry is not None:
+            region_geometry_wkt = self.region_geometry.wkt
+            features_relation = features_relation.filter(
+                f"ST_Intersects(geometry, ST_GeomFromText({region_geometry_wkt}))"
+            )
+
+        return features_relation
