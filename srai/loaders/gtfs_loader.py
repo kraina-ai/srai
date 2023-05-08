@@ -138,7 +138,7 @@ class GTFSLoader(Loader):
         pivoted = df.pivot_table(
             values="trip_headsign", index="stop_id", columns="hour", aggfunc=set
         )
-        pivoted = pivoted.add_prefix(GTFS2VEC_DIRECTIONS_PREFIX)
+        pivoted = pivoted.add_prefix(GTFS2VEC_DIRECTIONS_PREFIX).applymap(list, na_action="ignore")
 
         return pivoted
 
