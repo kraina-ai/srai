@@ -27,6 +27,7 @@ dependencies = [
     "s2",
     "typeguard",
     "requests",
+    "psutil",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
