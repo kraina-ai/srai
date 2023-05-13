@@ -1604,6 +1604,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pygeos"
+version = "0.14"
+requires_python = ">=3.7"
+summary = "GEOS wrapped in numpy ufuncs"
+dependencies = [
+    "numpy>=1.13",
+]
+
+[[package]]
 name = "pygments"
 version = "2.15.1"
 requires_python = ">=3.7"
@@ -2319,7 +2328,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-content_hash = "sha256:48874b487ca7476cb962da16bd4190c4ece7195d9ca700abadb05bb09d7dea2a"
+content_hash = "sha256:949cf6fcc7f89fc3713c1b7932b8674440277bfe32a672f5deb3bbd1ea90ed59"
 
 [metadata.files]
 "aiohttp 3.8.4" = [
@@ -4053,6 +4062,41 @@ content_hash = "sha256:48874b487ca7476cb962da16bd4190c4ece7195d9ca700abadb05bb09
 "pyfunctional 1.4.3" = [
     {url = "https://files.pythonhosted.org/packages/65/b8/134bf0187d5db42641e93a23c90e0ea20dcda2a8c148147ccc07ecde56e4/PyFunctional-1.4.3.tar.gz", hash = "sha256:11c313fe251b269c6506689135456a05bc5a6fa129c9d02b445f383d4f411e10"},
     {url = "https://files.pythonhosted.org/packages/bf/04/5356e1e3f738d519991af1829b4868436c0c9fd6511107b4ad19aecb9bd6/PyFunctional-1.4.3-py3-none-any.whl", hash = "sha256:50f11ea3c386c4330c7a8be92c0736b4b6a5924bdbd00b8b93f93b0c7fe6f2b3"},
+]
+"pygeos 0.14" = [
+    {url = "https://files.pythonhosted.org/packages/00/db/130fdda366f3e3f08984a3638d624ce10565fe306ac93429d04537a22f5b/pygeos-0.14-cp311-cp311-win_amd64.whl", hash = "sha256:6d41973d0361712e53d54489d0c1cc6d37b941e5c808bfd51c461e36c0b4758b"},
+    {url = "https://files.pythonhosted.org/packages/05/5c/d72d59163655d29e6fd4c6ebf7f9b1e286b47c6adfb20ecfce7c6836e83c/pygeos-0.14-cp311-cp311-win32.whl", hash = "sha256:a5bae1772f0d333e38689bf691c23e3416d797711bfed8086d78c91d63cd373a"},
+    {url = "https://files.pythonhosted.org/packages/08/b8/05dbe6d1383fc68ac41a297dc844a511d1322b85b23084983bc4280665e4/pygeos-0.14-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3e90515f20025fbbf5d4080e6a0192c93957f7b7d60279834e2afab5129b6163"},
+    {url = "https://files.pythonhosted.org/packages/0b/b6/2a5d66f1742b5ae7ab29c442cd629ce75d5e66310ad3641a8f11076f9dcc/pygeos-0.14-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:de8261998e7a767cfa4ecf4eea3cc5648cc8afcf57d0286ceaf2e63db3c85adf"},
+    {url = "https://files.pythonhosted.org/packages/15/00/bd5f59c8488740c807f00bc6011e3f7e2185f86339a7fe5097c46aab4a5b/pygeos-0.14-cp310-cp310-win32.whl", hash = "sha256:7cae0518ee249984a5b57ec3501e135b3f455a3c173846cc3d314b4f63f7ead9"},
+    {url = "https://files.pythonhosted.org/packages/1a/ab/8d133be2f10e9c56c45669d190cbd1275a5b1a3f9be4f612d782702d6b59/pygeos-0.14-cp39-cp39-win_amd64.whl", hash = "sha256:c7b3eee65b07c0adb0ca5668ac55b3c51699bbae67e541fc00c6a9b53bb6ddfb"},
+    {url = "https://files.pythonhosted.org/packages/26/3a/b1b1348ed4954946efa6d300a68776d1617454fcc240cacbb8cbf369d281/pygeos-0.14-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cfad06eae27e7236a9dc1a6d1c278525d4cf79422cd05ac6513d55032ff0b6b6"},
+    {url = "https://files.pythonhosted.org/packages/31/ec/009216b50fd1b481a3b23ba2cb9b3b4d9bcb0a4152a6c5a8f7ee26589766/pygeos-0.14-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:e415467b6f73bcd0762dbb49d7d27188ccf1883dd94620d081a46b177b1d8696"},
+    {url = "https://files.pythonhosted.org/packages/32/42/fd5de1266b7c5e356fedb637676a075e9ff5de63b9a9511c3c9be1750b72/pygeos-0.14-cp38-cp38-win_amd64.whl", hash = "sha256:7de3388b97880f16b98a4ad67bd81e1fb7e34b856cecef050db095e26d3fd1f0"},
+    {url = "https://files.pythonhosted.org/packages/3b/2e/f281acdae482ea43bb7b446f1098fe11bf9e0393f47bcfa153be181a2b5b/pygeos-0.14-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:726893ddf186fe396dea22b4ef76b71db73132d034efc4d22bd8bb3d5a6ab649"},
+    {url = "https://files.pythonhosted.org/packages/47/78/e2c196200c7b6c702b9372064b43a5d0fca3e29a4e248382e5602b32daa1/pygeos-0.14-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:4194c8068dc856a6fbd8cb3e26bc450fc6f7058315780df082cd389f7f5064ec"},
+    {url = "https://files.pythonhosted.org/packages/4a/e5/8fc6f9586674c06080327a4fe0774d871416b6bd60974c468559ec650570/pygeos-0.14-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:987facbd0283ab1990ff490681898a93690e8181f8c92e37c5e23d630750ef4c"},
+    {url = "https://files.pythonhosted.org/packages/4b/8c/0ac92b1fa6a5f7d77861e6974c85335b703cfe2f4197610d52035b052d99/pygeos-0.14-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:169a9fafa047dee10ef98479eb0f60bfbf5c688d8228a1c785c1c8ca154345b1"},
+    {url = "https://files.pythonhosted.org/packages/50/4d/7ddf8f3167494246297dc117b44e4698854f04f276b7bc2f89c10d00b4e1/pygeos-0.14-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:f27079a4211ad7c6b05b85915c74e6a549030a3281a2bc992218a46b1d34d82b"},
+    {url = "https://files.pythonhosted.org/packages/59/d9/57a66b7ed7ac4b9f3b20217c7c7d49f3cb156ab6a76319b1d42cb84f73b5/pygeos-0.14-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:61f9151ace84c69b9f51fce07d1ec784335a06eb8f83efbf36d9812e15ee1501"},
+    {url = "https://files.pythonhosted.org/packages/5c/64/4149637a46740f6f5ed977c8fe1f1acfcea8c8e125919e1bd3eda7732567/pygeos-0.14-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:b951deb677c9209bbedbeac59be0e19681ba26385232bd657329560db7ca8b42"},
+    {url = "https://files.pythonhosted.org/packages/64/11/a19b3277b3008362da2ed4c579de2fcdde73939732000d370a2ea97552dc/pygeos-0.14-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:aa0d90565d64c4e359219dd88b55c9fede39c0c80c12537b84228a28e8a0a723"},
+    {url = "https://files.pythonhosted.org/packages/74/eb/fc13b19ca115428e7eabf27b8d925931d3a9984d231405b76f31c8adaf5e/pygeos-0.14-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f6dc30f459f9474fb1eb161291ff7b6258d73c27f8020a0d5683d9d98ffec3d0"},
+    {url = "https://files.pythonhosted.org/packages/7c/33/2ebba0702728e46492d4ad8332985500d17ec2b9fccac095354203c79fcf/pygeos-0.14-cp37-cp37m-win_amd64.whl", hash = "sha256:9a45f20437ee4bcae3b73983fdb141f1d2fddb1ea9019018c175ea9b520c44cb"},
+    {url = "https://files.pythonhosted.org/packages/80/55/6c857205f7884b58d5669290e480957faf07ea414a4c0d87658caf780582/pygeos-0.14-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:85935aaf69c5fa6a7e3e4363e8fa429ecacad23535999233923ed3ad33d203eb"},
+    {url = "https://files.pythonhosted.org/packages/80/9d/26ea498855ad49d0b4b07bd7bba72df3e6bfd8ee098db7f5e69cb71a08fd/pygeos-0.14-cp38-cp38-win32.whl", hash = "sha256:d371cf676adece6ff956230226867afcd0fd468de2b6ead39b445f2f25f59e6f"},
+    {url = "https://files.pythonhosted.org/packages/86/69/1b53d2963b94182907985688a6b35838b63f5d74a996b55f93982a1f4c47/pygeos-0.14-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fc8939d6f4478918e65149f7eaea44b4a8a42d5ac210ab98a03fd49413f17375"},
+    {url = "https://files.pythonhosted.org/packages/8a/0f/25cd3e9ab75b498a3316af0f047a181a60466bc5f44d7423c2bb2d2a899f/pygeos-0.14-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9ad6c749665badc4c66fcfea5a18b440f24b4c6e1df755391663598a709fa8f8"},
+    {url = "https://files.pythonhosted.org/packages/b9/9e/022933e46efc78ba2dbfad6e74e187c61ac9dc77b377999f41ba6e360abe/pygeos-0.14-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bf00c2be6ea9816875636cfe139ff5ac53e9b99e0e7ce38c92cf67b69cf2d6be"},
+    {url = "https://files.pythonhosted.org/packages/b9/dd/676f492f150f7444349f67a4b99be2cdeac82097a8cf6765cf326cb8abcf/pygeos-0.14-cp310-cp310-win_amd64.whl", hash = "sha256:138f4da97f91f475ba41ee3a2249f59ec39ce2058144a4f97bb19e57d7a6bc1b"},
+    {url = "https://files.pythonhosted.org/packages/bb/22/ca1ac7880d52a1e8d0aa6a83e3689e8f7ac1ad53ca425d72ceca9f4b753d/pygeos-0.14-cp39-cp39-win32.whl", hash = "sha256:a545ba2fd37a350a3373f274bc6d5ff61a94249f154ded9c5a1b7badb89c9bf4"},
+    {url = "https://files.pythonhosted.org/packages/c7/1d/dff60d4a7b427b27d7e77ff974b7456e996a9ed3cbda5f8b10d9e7f4f2b6/pygeos-0.14-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:251a663ac32312641111d00976878758637ebab40354f97f544abbd4cea3e677"},
+    {url = "https://files.pythonhosted.org/packages/ca/1f/07cda42b8a478ddfeb8b0bb328a10b2759ae75f8a60026238c0e33c9ef80/pygeos-0.14.tar.gz", hash = "sha256:30fbc17f64844200b85133b885fcfb65541b8779531f6ef4f8fe467d3fba7623"},
+    {url = "https://files.pythonhosted.org/packages/e0/10/15a1d48100b726c403c38df3c9991c1d4fad727bda06026dd817fc4ad50a/pygeos-0.14-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:785bb70f2d3bcf331e1fa14f17d95e7aa045e0a56114e25cf1976cae29f0419a"},
+    {url = "https://files.pythonhosted.org/packages/e3/95/71548a22b33fe8a005659ec3bc6aee44ec78b786f73d960ebf0ebfd09b64/pygeos-0.14-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:357188219364398dcadd2e03b3524411d578b1be98a9e0f0fa1fc877bf5f881c"},
+    {url = "https://files.pythonhosted.org/packages/e7/c8/d094bb33177d9ade063dc20720fc747c08c978ebd5e497520fcfed3e656b/pygeos-0.14-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:67fb8f47978fff46f6f209d3aae094c3530ad70cce6b7baafc01f077549770c2"},
+    {url = "https://files.pythonhosted.org/packages/f0/f3/a6ead54453537541b5e41acfa5064c36c8154860e675a20242d94bb2d6dd/pygeos-0.14-cp37-cp37m-win32.whl", hash = "sha256:b99dda430d097de75b0ae2a3015ab2f744168b867d404c2271369b5ca39778bc"},
+    {url = "https://files.pythonhosted.org/packages/f2/3b/5acfe74655fe578171e339d4bdfcacb81db2121291fa585988c435f7561c/pygeos-0.14-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:f51a46e0c3f305c6d08296bb70cf0e94e8fe4ce827acf32499e4d11164d005aa"},
 ]
 "pygments 2.15.1" = [
     {url = "https://files.pythonhosted.org/packages/34/a7/37c8d68532ba71549db4212cb036dbd6161b40e463aba336770e80c72f84/Pygments-2.15.1-py3-none-any.whl", hash = "sha256:db2db3deb4b4179f399a09054b023b6a586b76499d36965813c71aa8ed7b5fd1"},
