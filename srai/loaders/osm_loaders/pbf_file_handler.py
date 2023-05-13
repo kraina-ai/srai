@@ -410,7 +410,7 @@ def _parse_raw_df_to_duckdb(
     if filter_region_geometry is not None:
         region_geometry_wkt = filter_region_geometry.wkt
         features_relation = features_relation.filter(
-            f"ST_Intersects(geometry, ST_GeomFromText({region_geometry_wkt}))"
+            f"ST_Intersects(geometry, ST_GeomFromText('{region_geometry_wkt}'))"
         )
 
     features_relation.to_table(relation_name)
