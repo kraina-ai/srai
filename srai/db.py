@@ -23,19 +23,12 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
     global CONNECTION  # noqa: PLW0603
 
     if CONNECTION is None:
-        # CONNECTION = duckdb.connect(
-        #     config=dict(allow_unsigned_extensions="true", enable_progress_bar="true")
-        # )
         CONNECTION = duckdb.connect(
             database=":memory:",
             # database="srai_workspace.db",
             config=dict(
                 allow_unsigned_extensions="true",
-                threads=2,
-                # threads=min(2, psutil.cpu_count(logical=False)),
-                # max_memory=f"{int(psutil.virtual_memory().available * 0.1)}b",
                 memory_limit=f"{int(psutil.virtual_memory().available * 0.25)}b",
-                # memory_limit="4GB",
                 temp_directory="duckdb_temp/",
             ),
         )
@@ -69,8 +62,6 @@ def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.G
 
     if has_geometry:
         query = "SELECT * EXCLUDE (geometry), ST_AsText(geometry) wkt FROM {virtual_relation_name}"
-
-    # df = get_duckdb_connection().sql(query=query).to_df()
 
     random_id = f"virtual_{secrets.token_hex(nbytes=16)}"
     df = relation.query(
