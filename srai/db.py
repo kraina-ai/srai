@@ -11,6 +11,7 @@ import psutil
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
+DUCKDB_EXTENSIONS = ["json", "spatial"]
 
 
 def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
@@ -25,17 +26,15 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
     if CONNECTION is None:
         CONNECTION = duckdb.connect(
             database=":memory:",
-            # database="srai_workspace.db",
             config=dict(
                 allow_unsigned_extensions="true",
                 memory_limit=f"{int(psutil.virtual_memory().available * 0.25)}b",
                 temp_directory="duckdb_temp/",
             ),
         )
-        CONNECTION.install_extension("json")
-        CONNECTION.load_extension("json")
-        CONNECTION.install_extension("spatial")
-        CONNECTION.load_extension("spatial")
+        for extension in DUCKDB_EXTENSIONS:
+            CONNECTION.install_extension(extension)
+            CONNECTION.load_extension(extension)
 
     return CONNECTION
 
