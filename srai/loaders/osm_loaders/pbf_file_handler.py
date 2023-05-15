@@ -6,9 +6,21 @@ This module contains a handler capable of parsing a PBF file into a GeoDataFrame
 import json
 import multiprocessing
 import secrets
+import shelve
 import tempfile
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import osmium
 import osmium.osm
@@ -29,7 +41,7 @@ if TYPE_CHECKING:
     import duckdb
 
 IGNORED_TAGS = ["created_by", "converted_by", "source", "time", "ele", "attribution"]
-PROGRESS_BAR_UPDATE_RESOLUTION = 5_000
+PROGRESS_BAR_UPDATE_RESOLUTION = 10_000
 
 
 def read_features_from_pbf_files(
@@ -41,10 +53,8 @@ def read_features_from_pbf_files(
     """
     Get features from a list of PBF files.
 
-    Function parses multiple PBF files and returns a single duckdb relation with parsed
+    Function parses provided PBF files and returns a single duckdb relation with loaded
     OSM objects.
-
-    This function is a dedicated wrapper around the inherited function `apply_file`.
 
     Args:
         file_paths (Sequence[Union[str, os.PathLike[str]]]): List of paths to `*.osm.pbf`
@@ -66,21 +76,29 @@ def read_features_from_pbf_files(
     Returns:
         duckdb.DuckDBPyRelation: Relation with OSM features.
     """
-    features, columns = _run_pbf_processing_in_parallel(
-        file_paths=file_paths, region_id=region_id, tags=tags
+    shelve_temp_file = tempfile.NamedTemporaryFile(mode="w+")
+    columns = _run_pbf_processing_in_parallel(
+        file_paths=file_paths,
+        region_id=region_id,
+        tags=tags,
+        shelve_temp_file_name=shelve_temp_file.name,
     )
 
     if tags:
         columns.update(tags.keys())
 
-    if not features:
-        features = [{FEATURES_INDEX: None, "wkt": None}]
+    with shelve.open(shelve_temp_file.name, flag="r") as features_dict:
+        feature_values: "Iterable[Dict[str, Any]]"
+        if features_dict:
+            feature_values = features_dict.values()
+        else:
+            feature_values = [{FEATURES_INDEX: None, "wkt": None}]
 
-    temp_file = tempfile.NamedTemporaryFile(mode="w+")
-    for feature in tqdm(features, desc=f"[{region_id}] Saving features to temp file"):
-        jout = json.dumps(feature) + "\n"
-        temp_file.write(jout)
-    temp_file.flush()
+        temp_file = tempfile.NamedTemporaryFile(mode="w+")
+        for feature in tqdm(feature_values, desc=f"[{region_id}] Saving features to temp file"):
+            jout = json.dumps(feature) + "\n"
+            temp_file.write(jout)
+        temp_file.flush()
 
     features_relation = _parse_raw_df_to_duckdb(temp_file.name, columns, filter_region_geometry)
 
@@ -96,7 +114,7 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
         pool_size: int,
         pool_index: int,
         features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
-        bar_queue: "multiprocessing.Queue[Optional[int]]",
+        bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
     ) -> None:
         """TODO."""
         super().__init__()
@@ -180,7 +198,7 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
             self.parsed_counter += 1
 
             if self.parsed_counter % PROGRESS_BAR_UPDATE_RESOLUTION == 0:
-                self.bar_queue.put_nowait(PROGRESS_BAR_UPDATE_RESOLUTION)
+                self.bar_queue.put_nowait(("total", PROGRESS_BAR_UPDATE_RESOLUTION))
 
             if osm_id is None:
                 osm_id = osm_object.id
@@ -222,7 +240,7 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
                 matching_tags[tag.k] = tag.v
 
         matching_tags = {
-            tag_key: tag_value
+            tag_key.lower(): tag_value
             for tag_key, tag_value in matching_tags.items()
             if tag_key not in IGNORED_TAGS
         }
@@ -268,11 +286,12 @@ def _run_pbf_processing_in_parallel(
     file_paths: Sequence[Union[str, "os.PathLike[str]"]],
     region_id: str,
     tags: Optional[osm_tags_type],
-) -> Tuple[List[Dict[str, Any]], Set[str]]:
+    shelve_temp_file_name: str,
+) -> Set[str]:
     number_of_cpus = psutil.cpu_count()
     pool_size = max(1, number_of_cpus - 2)  # removing 2 workers for Manager and progress bar
 
-    bar_queue: "multiprocessing.Queue[Optional[int]]" = multiprocessing.Queue()
+    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]" = multiprocessing.Queue()
     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]" = multiprocessing.Queue()
     receive_connection, send_connection = multiprocessing.Pipe()
 
@@ -280,7 +299,9 @@ def _run_pbf_processing_in_parallel(
         target=_update_progress_bar, args=(bar_queue, region_id), daemon=True
     )
     features_process = multiprocessing.Process(
-        target=_process_features_queue, args=(features_queue, send_connection), daemon=True
+        target=_process_features_queue,
+        args=(features_queue, bar_queue, send_connection, shelve_temp_file_name),
+        daemon=True,
     )
     processes = [
         multiprocessing.Process(
@@ -304,11 +325,14 @@ def _run_pbf_processing_in_parallel(
             p.close()
 
         features_queue.put_nowait(None)
-        bar_queue.put_nowait(None)
 
-        received_result: Tuple[List[Dict[str, Any]], Set[str]] = receive_connection.recv()
+        unique_columns: Set[str] = receive_connection.recv()
         features_process.join()
         features_process.close()
+
+        bar_queue.put_nowait(None)
+        bar_process.join()
+        bar_process.close()
     except:
         for p in processes:
             p.terminate()
@@ -316,21 +340,35 @@ def _run_pbf_processing_in_parallel(
         bar_process.terminate()
         raise
 
-    return received_result
+    return unique_columns
 
 
-def _update_progress_bar(bar_queue: "multiprocessing.Queue[Optional[int]]", region_id: str) -> None:
+def _update_progress_bar(
+    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]", region_id: str
+) -> None:
     """Update shared progress bar for all processes."""
-    with tqdm(desc=f"[{region_id}] Parsing pbf file") as pbar:
-        while True:
-            x = bar_queue.get()
-            if x is None:
-                break
-            pbar.update(x)
+    main_bar = tqdm(desc=f"[{region_id}] Processing pbf file", position=0, leave=True)
+    parsed_bar = tqdm(desc=f"[{region_id}] Parsing features", position=1, leave=True)
+    while True:
+        x = bar_queue.get()
+        if x is None:
+            break
+        bar_type, update_value = x
+
+        if bar_type == "total":
+            main_bar.update(update_value)
+        elif bar_type == "parsed":
+            parsed_bar.update(update_value)
+
+    main_bar.close()
+    parsed_bar.close()
 
 
 def _process_features_queue(
-    features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]", send_connection: "Connection"
+    features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
+    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
+    send_connection: "Connection",
+    shelve_temp_file_name: str,
 ) -> None:
     """
     Add OSM features to cache or update existing ones based on the ID.
@@ -341,28 +379,42 @@ def _process_features_queue(
 
     Sends back a list of parsed features and a set of columns names.
     """
-    features_dict = {}
     columns: Set[str] = set()
-    while True:
-        feature: Optional[Dict[str, Any]] = features_queue.get()
-        if feature is None:
-            break
+    parsed_counter = 0
+    progress_bar_resolution = 1000
+    with shelve.open(shelve_temp_file_name, flag="n") as features_dict:
+        while True:
+            feature: Optional[Dict[str, Any]] = features_queue.get()
+            if feature is None:
+                break
 
-        full_osm_id = feature.pop(FEATURES_INDEX)
-        wkt = feature.pop("wkt")
-        if full_osm_id not in features_dict:
-            features_dict[full_osm_id] = {
-                FEATURES_INDEX: full_osm_id,
-                "wkt": wkt,
-            }
+            full_osm_id = feature.pop(FEATURES_INDEX)
+            wkt = feature.pop("wkt")
 
-        if wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
-            features_dict[full_osm_id]["wkt"] = wkt
+            existing_feature: Dict[str, Any] = features_dict.get(full_osm_id, {})
+            feature_exists = len(existing_feature) > 0
 
-        features_dict[full_osm_id].update(feature)
-        columns.update(feature.keys())
+            if not feature_exists:
+                existing_feature = {
+                    FEATURES_INDEX: full_osm_id,
+                    "wkt": wkt,
+                }
+                parsed_counter += 1
 
-    send_connection.send((list(features_dict.values()), columns))
+            if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+                existing_feature["wkt"] = wkt
+
+            existing_feature.update(feature)
+            features_dict[full_osm_id] = existing_feature
+
+            columns.update(feature.keys())
+
+            if parsed_counter % progress_bar_resolution == 0:
+                bar_queue.put_nowait(("parsed", progress_bar_resolution))
+
+        send_connection.send(columns)
+
+    bar_queue.put_nowait(("parsed", parsed_counter % progress_bar_resolution))
 
 
 def _process_pbf(
@@ -371,14 +423,14 @@ def _process_pbf(
     pool_index: int,
     pool_size: int,
     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
-    bar_queue: "multiprocessing.Queue[Optional[int]]",
+    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
 ) -> None:
     """Process PBF file using MultiProcessingHandler."""
     simple_handler = MultiProcessingHandler(tags, pool_size, pool_index, features_queue, bar_queue)
     for file_path in file_paths:
         simple_handler.apply_file(file_path)
 
-    bar_queue.put_nowait(simple_handler.parsed_counter % PROGRESS_BAR_UPDATE_RESOLUTION)
+    bar_queue.put_nowait(("total", simple_handler.parsed_counter % PROGRESS_BAR_UPDATE_RESOLUTION))
 
 
 def _parse_raw_df_to_duckdb(
