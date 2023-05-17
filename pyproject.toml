@@ -28,6 +28,8 @@ dependencies = [
     "typeguard",
     "requests",
     "psutil",
+    "redislite",
+    "orjson",
 ]
 requires-python = ">=3.8"
 readme = "README.md"

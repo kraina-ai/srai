@@ -6,7 +6,6 @@ from typing import Optional, Union
 import duckdb
 import geopandas as gpd
 import pandas as pd
-import psutil
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
@@ -28,7 +27,7 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             database=":memory:",
             config=dict(
                 allow_unsigned_extensions="true",
-                memory_limit=f"{int(psutil.virtual_memory().available * 0.25)}b",
+                # memory_limit=f"{int(psutil.virtual_memory().available * 0.25)}b",
                 temp_directory="duckdb_temp/",
             ),
         )
@@ -37,6 +36,32 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             CONNECTION.load_extension(extension)
 
     return CONNECTION
+
+
+def get_new_duckdb_connection(
+    db_file: str = ":memory:", read_only: bool = False
+) -> duckdb.DuckDBPyConnection:
+    """
+    Get new DuckDB connection.
+
+    Allows for configuration of the connection.
+
+    Returns:
+        duckdb.DuckDBPyConnection: Prepared connection object.
+    """
+    conn = duckdb.connect(
+        database=db_file,
+        read_only=read_only,
+        config=dict(
+            allow_unsigned_extensions="true",
+            temp_directory="duckdb_temp/",
+        ),
+    )
+    for extension in DUCKDB_EXTENSIONS:
+        conn.install_extension(extension)
+        conn.load_extension(extension)
+
+    return conn
 
 
 def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.GeoDataFrame]:

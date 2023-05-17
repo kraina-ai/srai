@@ -3,18 +3,16 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
-import json
 import multiprocessing
 import secrets
-import shelve
 import tempfile
 import warnings
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Iterable,
     Optional,
     Sequence,
     Set,
@@ -22,9 +20,11 @@ from typing import (
     Union,
 )
 
+import orjson
 import osmium
 import osmium.osm
 import psutil
+import redislite
 from osmium.osm.types import T_obj
 from pygeos import from_wkt
 from shapely.geometry.base import BaseGeometry
@@ -36,12 +36,13 @@ from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
     import os
-    from multiprocessing.connection import Connection
 
     import duckdb
 
 IGNORED_TAGS = ["created_by", "converted_by", "source", "time", "ele", "attribution"]
-PROGRESS_BAR_UPDATE_RESOLUTION = 10_000
+PARSED_PROGRESS_BAR_UPDATE_RESOLUTION = 10_000
+LOADED_PROGRESS_BAR_UPDATE_RESOLUTION = 1_000
+PROGRESS_BAR_FORMAT = "[{}] Processing PBF file (loaded: {})"
 
 
 def read_features_from_pbf_files(
@@ -76,31 +77,39 @@ def read_features_from_pbf_files(
     Returns:
         duckdb.DuckDBPyRelation: Relation with OSM features.
     """
-    shelve_temp_file = tempfile.NamedTemporaryFile(mode="w+")
-    columns = _run_pbf_processing_in_parallel(
+    tmpdir = tempfile.TemporaryDirectory()
+    temp_dir_name = tmpdir.name
+
+    redis_db_file_name = (Path(temp_dir_name) / "redis.db").as_posix()
+    json_file_name = (Path(temp_dir_name) / "features.json").as_posix()
+
+    rdb = redislite.Redis(redis_db_file_name, charset="utf-8", decode_responses=True)
+    rdb.flushdb()
+
+    _run_pbf_processing_in_parallel(
         file_paths=file_paths,
         region_id=region_id,
         tags=tags,
-        shelve_temp_file_name=shelve_temp_file.name,
+        redis_db_file_name=redis_db_file_name,
     )
+
+    columns: Set[str] = set()
+
+    with open(json_file_name, "w+") as temp_file:
+        for feature_id in tqdm(rdb.keys(), desc=f"[{region_id}] Saving features to temp file"):
+            values = rdb.hgetall(feature_id)
+            jout = orjson.dumps(values).decode("utf-8") + "\n"
+            temp_file.write(jout)
+            columns.update(values.keys())
+
+    columns = columns.difference([FEATURES_INDEX, "wkt"])
 
     if tags:
         columns.update(tags.keys())
 
-    with shelve.open(shelve_temp_file.name, flag="r") as features_dict:
-        feature_values: "Iterable[Dict[str, Any]]"
-        if features_dict:
-            feature_values = features_dict.values()
-        else:
-            feature_values = [{FEATURES_INDEX: None, "wkt": None}]
+    features_relation = _parse_raw_df_to_duckdb(json_file_name, columns, filter_region_geometry)
 
-        temp_file = tempfile.NamedTemporaryFile(mode="w+")
-        for feature in tqdm(feature_values, desc=f"[{region_id}] Saving features to temp file"):
-            jout = json.dumps(feature) + "\n"
-            temp_file.write(jout)
-        temp_file.flush()
-
-    features_relation = _parse_raw_df_to_duckdb(temp_file.name, columns, filter_region_geometry)
+    tmpdir.cleanup()
 
     return features_relation
 
@@ -115,11 +124,13 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
         pool_index: int,
         features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
         bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
+        redis_db_file_name: str,
     ) -> None:
         """TODO."""
         super().__init__()
         self.processing_counter = 0
         self.parsed_counter = 0
+        self.loaded_counter = 0
         self.pool_size = pool_size
         self.pool_index = pool_index
         self.features_queue = features_queue
@@ -132,6 +143,8 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
             self.filter_tags_keys = set()
 
         self.wktfab = osmium.geom.WKTFactory()
+
+        self.rdb = redislite.Redis(redis_db_file_name)
 
     def node(self, node: osmium.osm.Node) -> None:
         """
@@ -197,8 +210,8 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
         if self.processing_counter % self.pool_size == self.pool_index:
             self.parsed_counter += 1
 
-            if self.parsed_counter % PROGRESS_BAR_UPDATE_RESOLUTION == 0:
-                self.bar_queue.put_nowait(("total", PROGRESS_BAR_UPDATE_RESOLUTION))
+            if self.parsed_counter % PARSED_PROGRESS_BAR_UPDATE_RESOLUTION == 0:
+                self.bar_queue.put_nowait(("parsed", PARSED_PROGRESS_BAR_UPDATE_RESOLUTION))
 
             if osm_id is None:
                 osm_id = osm_object.id
@@ -273,47 +286,61 @@ class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
         over a `LineString`.
         """
         if wkt is not None:
-            self.features_queue.put_nowait(
-                {
-                    FEATURES_INDEX: full_osm_id,
-                    "wkt": wkt,
-                    **matching_tags,
-                }
-            )
+            with self.rdb.lock(name=f"_lock_{full_osm_id}"):
+                feature_exists = bool(self.rdb.exists(full_osm_id))
+
+                if not feature_exists:
+                    self.rdb.hmset(
+                        full_osm_id,
+                        {
+                            FEATURES_INDEX: full_osm_id,
+                            "wkt": wkt,
+                        },
+                    )
+                    self.loaded_counter += 1
+
+                    if self.loaded_counter % LOADED_PROGRESS_BAR_UPDATE_RESOLUTION == 0:
+                        self.bar_queue.put_nowait(("loaded", LOADED_PROGRESS_BAR_UPDATE_RESOLUTION))
+
+                if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+                    self.rdb.hset(full_osm_id, "wkt", wkt)
+
+                self.rdb.hmset(full_osm_id, matching_tags)
 
 
 def _run_pbf_processing_in_parallel(
     file_paths: Sequence[Union[str, "os.PathLike[str]"]],
     region_id: str,
     tags: Optional[osm_tags_type],
-    shelve_temp_file_name: str,
-) -> Set[str]:
+    redis_db_file_name: str,
+) -> None:
     number_of_cpus = psutil.cpu_count()
-    pool_size = max(1, number_of_cpus - 2)  # removing 2 workers for Manager and progress bar
+    pool_size = max(1, number_of_cpus - 2)  # removing 2 workers for progress bar and redis instance
 
     bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]" = multiprocessing.Queue()
     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]" = multiprocessing.Queue()
-    receive_connection, send_connection = multiprocessing.Pipe()
 
     bar_process = multiprocessing.Process(
         target=_update_progress_bar, args=(bar_queue, region_id), daemon=True
     )
-    features_process = multiprocessing.Process(
-        target=_process_features_queue,
-        args=(features_queue, bar_queue, send_connection, shelve_temp_file_name),
-        daemon=True,
-    )
     processes = [
         multiprocessing.Process(
             target=_process_pbf,
-            args=(file_paths, tags, pool_index, pool_size, features_queue, bar_queue),
+            args=(
+                file_paths,
+                tags,
+                pool_index,
+                pool_size,
+                features_queue,
+                bar_queue,
+                redis_db_file_name,
+            ),
         )
         for pool_index in range(pool_size)
     ]
 
     try:
         bar_process.start()
-        features_process.start()
 
         for p in processes:
             p.start()
@@ -324,97 +351,272 @@ def _run_pbf_processing_in_parallel(
         for p in processes:
             p.close()
 
-        features_queue.put_nowait(None)
-
-        unique_columns: Set[str] = receive_connection.recv()
-        features_process.join()
-        features_process.close()
-
         bar_queue.put_nowait(None)
         bar_process.join()
         bar_process.close()
     except:
         for p in processes:
             p.terminate()
-        features_process.terminate()
         bar_process.terminate()
         raise
-
-    return unique_columns
 
 
 def _update_progress_bar(
     bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]", region_id: str
 ) -> None:
     """Update shared progress bar for all processes."""
-    main_bar = tqdm(desc=f"[{region_id}] Processing pbf file", position=0, leave=True)
-    parsed_bar = tqdm(desc=f"[{region_id}] Parsing features", position=1, leave=True)
+    loaded_features = 0
+
+    main_bar = tqdm(desc=PROGRESS_BAR_FORMAT.format(region_id, loaded_features))
     while True:
         x = bar_queue.get()
         if x is None:
             break
         bar_type, update_value = x
 
-        if bar_type == "total":
+        if bar_type == "parsed":
             main_bar.update(update_value)
-        elif bar_type == "parsed":
-            parsed_bar.update(update_value)
+        elif bar_type == "loaded":
+            loaded_features += update_value
+
+        main_bar.set_description_str(desc=PROGRESS_BAR_FORMAT.format(region_id, loaded_features))
 
     main_bar.close()
-    parsed_bar.close()
 
 
-def _process_features_queue(
-    features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
-    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
-    send_connection: "Connection",
-    shelve_temp_file_name: str,
-) -> None:
-    """
-    Add OSM features to cache or update existing ones based on the ID.
+# def _process_features_queue(
+#     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
+#     bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
+#     send_connection: "Connection",
+#     temp_dir_name: str,
+# ) -> None:
+#     """
+#     Add OSM features to cache or update existing ones based on the ID.
 
-    Some of the `way` features are parsed twice, in form of `LineStrings` and `Polygons` /
-    `MultiPolygons`. Additional check ensures that a closed geometry will be always preffered over a
-    `LineString`.
+#     Some of the `way` features are parsed twice, in form of `LineStrings` and `Polygons` /
+#     `MultiPolygons`. Additional check ensures that a closed geometry will be always preffered over
+# a
+#     `LineString`.
 
-    Sends back a list of parsed features and a set of columns names.
-    """
-    columns: Set[str] = set()
-    parsed_counter = 0
-    progress_bar_resolution = 1000
-    with shelve.open(shelve_temp_file_name, flag="n") as features_dict:
-        while True:
-            feature: Optional[Dict[str, Any]] = features_queue.get()
-            if feature is None:
-                break
+#     Sends back a list of parsed features and a set of columns names.
+#     """
+#     # redis_db_file_name = (Path(temp_dir_name) / "redis.db").as_posix()
+#     redis_db_file_name = "redis.db"
+#     rdb = redislite.Redis(redis_db_file_name, charset="utf-8", decode_responses=True)
+#     # db_file_name = (Path(temp_dir_name) / "features.duckdb").as_posix()
+#     # json_file_name = (Path(temp_dir_name) / "features.json").as_posix()
+#     json_file_name = "features.json"
 
-            full_osm_id = feature.pop(FEATURES_INDEX)
-            wkt = feature.pop("wkt")
+#     # db_connection = get_new_duckdb_connection(db_file=db_file_name)
 
-            existing_feature: Dict[str, Any] = features_dict.get(full_osm_id, {})
-            feature_exists = len(existing_feature) > 0
+#     # create_query = """
+#     # CREATE OR REPLACE TEMP TABLE temp_features
+#     # (feature_id VARCHAR PRIMARY KEY, wkt VARCHAR, tags JSON)
+#     # """
 
-            if not feature_exists:
-                existing_feature = {
-                    FEATURES_INDEX: full_osm_id,
-                    "wkt": wkt,
-                }
-                parsed_counter += 1
+#     # upsert_query = """
+#     # INSERT INTO temp_features (feature_id, wkt, tags)
+#     # VALUES ($feature_id, $wkt, $tags)
+#     # ON CONFLICT DO UPDATE
+#     # SET tags = json_merge_patch(tags, excluded.tags)
+#     # """
 
-            if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
-                existing_feature["wkt"] = wkt
+#     # update_wkt_query = """
+#     # UPDATE temp_features
+#     # SET wkt = $wkt
+#     # WHERE feature_id = $feature_id
+#     # """
 
-            existing_feature.update(feature)
-            features_dict[full_osm_id] = existing_feature
+#     # # Forcing nested JSON column to be saved in `.jsonl` format without quotes
+#     # select_data_query = """
+#     # COPY (
+#     #     SELECT
+#     #     json_merge_patch(
+#     #         to_json({{feature_id: feature_id, wkt: wkt}}),
+#     #         tags
+#     #     ) as json
+#     #     FROM temp_features
+#     # ) TO '{json_file}'
+#     # WITH (
+#     #     FORMAT 'CSV',
+#     #     HEADER false,
+#     #     DELIMITER ',',
+#     #     ESCAPE '',
+#     #     QUOTE ''
+#     # );
+#     # """
 
-            columns.update(feature.keys())
+#     # db_connection.execute(create_query)
 
-            if parsed_counter % progress_bar_resolution == 0:
-                bar_queue.put_nowait(("parsed", progress_bar_resolution))
+#     # feature_ids: Set[str] = set()
+#     columns: Set[str] = set()
 
-        send_connection.send(columns)
+#     open(json_file_name, mode="w").close()
 
-    bar_queue.put_nowait(("parsed", parsed_counter % progress_bar_resolution))
+#     while True:
+#         feature: Optional[Dict[str, Any]] = features_queue.get()
+#         if feature is None:
+#             break
+
+#         feature.pop(FEATURES_INDEX)
+#         feature.pop("wkt")
+
+#         # # feature_exists = bool(rdb.exists(full_osm_id))
+
+#         # feature_exists = full_osm_id in feature_ids
+
+#         # feature_to_append: Dict[str, Any] = {}
+#         # if feature_exists:
+#         #     line_number_to_replace = feature_ids[full_osm_id]
+#         #     with open(json_file_name, encoding="utf-8") as json_file:
+#         #         for line_number, input_line in enumerate(json_file):
+#         #             if line_number < line_number_to_replace:
+#         #                 continue
+#         #             feature_to_append = json.loads(input_line)
+#         #             break
+
+#         #     if wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#         #         feature_to_append["wkt"] = wkt
+#         #     feature_to_append.update(feature)
+#         # else:
+#         #     parsed_counter += 1
+#         #     feature_to_append = {FEATURES_INDEX: full_osm_id, "wkt": wkt, **feature}
+
+#         # feature_ids[full_osm_id] = lines_counter
+#         # lines_counter += 1
+
+#         # with open(json_file_name, "a", encoding="utf-8") as json_file:
+#         #     json_file.write(json.dumps(feature_to_append))
+#         #     json_file.write("\n")
+
+#         # if not feature_exists:
+#         #     feature_ids[full_osm_id] = parsed_counter
+#         #     parsed_counter += 1
+#         #     with open(json_file_name, "a") as json_file:
+#         #         line = f'{json.dumps({FEATURES_INDEX: full_osm_id, "wkt": wkt, **feature})}\n'
+#         #         json_file.write(line)
+#         #         # json_file.write("\n")
+#         # else:
+#         #     try:
+#         #         line_number_to_replace = feature_ids[full_osm_id]
+#         #         with open(json_file_name) as json_file, tempfile.NamedTemporaryFile(mode="wt",
+# dir=dirname(json_file_name), delete=False) as output:
+#         #             tname = output.name
+#         #             for line_number, input_line in enumerate(json_file):
+#         #                 output_line = input_line
+#         #                 if line_number != line_number_to_replace:
+#         #                     input_json: Dict[str, Any] = json.loads(input_line)
+#         #                     if wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#         #                         input_json["wkt"] = wkt
+#         #                     input_json.update(feature)
+#         #                     output_line = json.dumps(input_json)
+#         #                 output.write(output_line)
+#         #     except Exception:
+#         #         remove(tname)
+#         #     else:
+#         #         rename(tname, json_file_name)
+#             # wkt.startswith(("POLYGON(", "MULTIPOLYGON("))
+#             # with fileinput.input(files=json_file_name, inplace=True) as f:
+#             # with fileinput.input(files=json_file_name, inplace=True) as f:
+#             #     line_number_to_replace = feature_ids[full_osm_id]
+#             #     for line_number, input_line in enumerate(f):
+#             #         if line_number != line_number_to_replace:
+#             #             print(input_line, end="")
+#             #             continue
+#             #         # if len(input_line) == 0:
+#             #         #     continue
+#             #         # if line_number < line_number_to_replace:
+#             #         #     continue
+
+#             #         try:
+#             #             # print(input_line, file=sys.stderr)
+#             #             input_json: Dict[str, Any] = json.loads(input_line)
+#             #         except:
+#             #             print(input_line, file=sys.stderr)
+#             #             print("XD", file=sys.stderr)
+#             #             raise
+
+#             #         if wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#             #             input_json["wkt"] = wkt
+
+#             #         input_json.update(feature)
+#             #         output_line = json.dumps(input_json)
+
+#             #         # print(line_number_to_replace, input_line, output_line, "\n", file=sys.std
+# err)
+
+#             #         print(output_line, end="\n")
+#             #         # break
+#             #         # print(line_number, line_number_to_replace, full_osm_id, file=sys.stderr)
+
+#         #     rdb.hmset(full_osm_id, {
+#         #         FEATURES_INDEX: full_osm_id,
+#         #         "wkt": wkt,
+#         #     })
+
+#         # if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#         #     rdb.hset(full_osm_id, "wkt", wkt)
+
+#         # rdb.hmset(full_osm_id, feature)
+
+#         # db_connection.execute(
+#         #     query=upsert_query,
+#         #     parameters=dict(feature_id=full_osm_id, wkt=wkt, tags=json.dumps(feature))
+#         # )
+
+#         # if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#         #     db_connection.execute(
+#         #         query=update_wkt_query,
+#         #         parameters=dict(feature_id=full_osm_id, wkt=wkt)
+#         #     )
+
+#         # feature_exists = full_osm_id in features_dict
+#         # existing_feature: Dict[str, Any] = features_dict.get(full_osm_id, {})
+
+#         # if not feature_exists:
+#         #     existing_feature = {
+#         #         FEATURES_INDEX: full_osm_id,
+#         #         "wkt": wkt,
+#         #     }
+#         #     parsed_counter += 1
+
+#         # if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
+#         #     existing_feature["wkt"] = wkt
+
+#         # existing_feature.update(feature)
+#         # features_dict[full_osm_id] = existing_feature
+
+#         columns.update(feature.keys())
+
+#         # if parsed_counter % progress_bar_resolution == 0:
+#         #     bar_queue.put_nowait(("parsed", progress_bar_resolution))
+
+#     # matching_line_numbers = set(feature_ids.values())
+
+#     # with fileinput.input(files=json_file_name, inplace=True) as f:
+#     #     for line_number, input_line in enumerate(f):
+#     #         if line_number in matching_line_numbers:
+#     #             print(input_line, end="")
+
+#     send_connection.send(columns)
+
+#     # bar_queue.put_nowait(("parsed", parsed_counter % progress_bar_resolution))
+
+#     # # temp_file = tempfile.NamedTemporaryFile(mode="w+")
+#     with open(json_file_name, "w+") as temp_file:
+#     #     # for feature in tqdm(rdb.keys(), desc=f"[{region_id}] Saving features to temp file"):
+#         for feature_id in tqdm(rdb.keys(), desc="Saving features to temp file"):
+#     #     # for feature in tqdm(feature_values, desc=f"[{region_id}] Saving features to temp file"
+# ):
+#     #         # values = rdb.hgetall(str(feature_id))
+#             values = rdb.hgetall(feature_id)
+#             jout = orjson.dumps(values) + "\n"
+#             temp_file.write(jout)
+#     # # temp_file.flush()
+
+#     # db_connection.execute(select_data_query.format(json_file=json_file_name))
+
+#     # db_connection.close()
 
 
 def _process_pbf(
@@ -424,13 +626,23 @@ def _process_pbf(
     pool_size: int,
     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
     bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
+    redis_db_file_name: str,
 ) -> None:
     """Process PBF file using MultiProcessingHandler."""
-    simple_handler = MultiProcessingHandler(tags, pool_size, pool_index, features_queue, bar_queue)
+    simple_handler = MultiProcessingHandler(
+        tags, pool_size, pool_index, features_queue, bar_queue, redis_db_file_name
+    )
     for file_path in file_paths:
         simple_handler.apply_file(file_path)
 
-    bar_queue.put_nowait(("total", simple_handler.parsed_counter % PROGRESS_BAR_UPDATE_RESOLUTION))
+    if simple_handler.parsed_counter > 0:
+        bar_queue.put_nowait(
+            ("parsed", simple_handler.parsed_counter % PARSED_PROGRESS_BAR_UPDATE_RESOLUTION)
+        )
+    if simple_handler.loaded_counter > 0:
+        bar_queue.put_nowait(
+            ("loaded", simple_handler.loaded_counter % LOADED_PROGRESS_BAR_UPDATE_RESOLUTION)
+        )
 
 
 def _parse_raw_df_to_duckdb(
@@ -453,6 +665,9 @@ def _parse_raw_df_to_duckdb(
         WHERE feature_id IS NOT NULL AND wkt IS NOT NULL
     )
     """
+
+    #  read_json(self: duckdb.DuckDBPyConnection, name: str, *, columns: object = None,
+    # sample_size: object = None, maximum_depth: object = None) → duckdb.DuckDBPyRelation
     columns_definition = ", ".join(f"\"{column}\": 'VARCHAR'" for column in sorted(columns))
     filled_query = query.format(
         json_file_name=json_file_path, columns_definition=columns_definition
