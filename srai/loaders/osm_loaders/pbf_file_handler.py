@@ -45,6 +45,8 @@ LOADED_PROGRESS_BAR_UPDATE_RESOLUTION = 1_000
 PROGRESS_BAR_FORMAT = "[{}] Processing PBF file (loaded: {})"
 
 
+# TODO: add option to add own Osmium indexes
+# https://osmcode.org/osmium-concepts/#indexes
 def read_features_from_pbf_files(
     file_paths: Sequence[Union[str, "os.PathLike[str]"]],
     tags: Optional[osm_tags_type] = None,
@@ -323,6 +325,7 @@ def _run_pbf_processing_in_parallel(
     bar_process = multiprocessing.Process(
         target=_update_progress_bar, args=(bar_queue, region_id), daemon=True
     )
+    nodecache_temp_file = tempfile.NamedTemporaryFile(suffix=".nodecache")
     processes = [
         multiprocessing.Process(
             target=_process_pbf,
@@ -334,6 +337,7 @@ def _run_pbf_processing_in_parallel(
                 features_queue,
                 bar_queue,
                 redis_db_file_name,
+                nodecache_temp_file.name,
             ),
         )
         for pool_index in range(pool_size)
@@ -359,6 +363,8 @@ def _run_pbf_processing_in_parallel(
             p.terminate()
         bar_process.terminate()
         raise
+    finally:
+        nodecache_temp_file.close()
 
 
 def _update_progress_bar(
@@ -627,13 +633,17 @@ def _process_pbf(
     features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
     bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
     redis_db_file_name: str,
+    nodecache_temp_file_name: str,
 ) -> None:
     """Process PBF file using MultiProcessingHandler."""
     simple_handler = MultiProcessingHandler(
         tags, pool_size, pool_index, features_queue, bar_queue, redis_db_file_name
     )
+
     for file_path in file_paths:
-        simple_handler.apply_file(file_path)
+        simple_handler.apply_file(
+            filename=file_path, locations=True, idx=f"sparse_file_array,{nodecache_temp_file_name}"
+        )
 
     if simple_handler.parsed_counter > 0:
         bar_queue.put_nowait(
