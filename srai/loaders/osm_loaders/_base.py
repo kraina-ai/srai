@@ -103,6 +103,8 @@ class OSMLoader(Loader, abc.ABC):
         Returns:
             gpd.GeoDataFrame: Parsed grouped features_gdf.
         """
+        grouped_filter_columns = list(group_filter.keys())
+
         for index, row in tqdm(
             features_gdf.iterrows(), desc="Grouping features", total=len(features_gdf.index)
         ):
@@ -110,17 +112,20 @@ class OSMLoader(Loader, abc.ABC):
             for group_name, feature_value in grouped_features.items():
                 features_gdf.loc[index, group_name] = feature_value
 
-        matching_columns = [
-            column for column in group_filter.keys() if column in features_gdf.columns
+        missing_columns = [
+            column for column in grouped_filter_columns if column not in features_gdf.columns
         ]
 
-        return features_gdf[["geometry", *matching_columns]].replace(
+        for missing_column in missing_columns:
+            features_gdf[missing_column] = pd.Series()
+
+        return features_gdf[["geometry", *grouped_filter_columns]].replace(
             to_replace=[None], value=np.nan
         )
 
     def _get_osm_filter_groups(
         self, row: pd.Series, group_filter: grouped_osm_tags_type
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Optional[str]]:
         """
         Get new group features for a single row.
 
@@ -129,7 +134,7 @@ class OSMLoader(Loader, abc.ABC):
             group_filter (grouped_osm_tags_type): Grouped OSM tags filter definition.
 
         Returns:
-            Dict[str, str]: Dictionary with matching group names and values.
+            Dict[str, Optional[str]]: Dictionary with matching group names and values.
         """
         result = {}
 
@@ -137,8 +142,7 @@ class OSMLoader(Loader, abc.ABC):
             matching_osm_tag = self._get_first_matching_osm_tag_value(
                 row=row, osm_filter=osm_filter
             )
-            if matching_osm_tag:
-                result[group_name] = matching_osm_tag
+            result[group_name] = matching_osm_tag
 
         return result
 
