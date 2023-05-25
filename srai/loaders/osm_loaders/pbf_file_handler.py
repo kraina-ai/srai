@@ -133,6 +133,9 @@ def read_features_from_pbf_files(
         )
         columns = columns.difference([FEATURES_INDEX, "wkt"])
 
+        if tags:
+            columns.update(tags.keys())
+
         connection.execute(SAVE_TABLE_TO_JSON_QUERY.format(json_file=json_file_name))
         features_relation = _parse_raw_df_to_duckdb(json_file_name, columns)
 
@@ -176,7 +179,10 @@ def _prepare_queries(
 
         if filter_region_geometry is not None:
             region_geometry_wkt = filter_region_geometry.wkt
-            geometry_filter = f"ST_Intersects(geometry, ST_GeomFromText('{region_geometry_wkt}'))"
+            geometry_filter = (
+                "ST_Intersects(ST_GeomFromWKB(wkb_geometry),"
+                f" ST_GeomFromText('{region_geometry_wkt}'))"
+            )
 
         for layer_name in GDAL_LAYERS:
             filled_query = LOAD_QUERY.format(

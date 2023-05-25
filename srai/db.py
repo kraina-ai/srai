@@ -10,7 +10,11 @@ import pandas as pd
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
-DUCKDB_EXTENSIONS = ["json", "spatial", "h3"]
+DUCKDB_EXTENSIONS = [
+    "json",
+    "spatial",
+    # "h3"
+]
 
 
 def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
