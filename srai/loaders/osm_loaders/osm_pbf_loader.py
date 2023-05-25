@@ -110,10 +110,9 @@ class OSMPbfLoader(OSMLoader):
         merged_tags = self._merge_osm_tags_filter(tags)
 
         results = []
-        for region_id, pbf_files in downloaded_pbf_files.items():
+        for pbf_files in downloaded_pbf_files.values():
             features_relation = read_features_from_pbf_files(
                 file_paths=pbf_files,
-                region_id=str(region_id),
                 tags=merged_tags,
                 filter_region_geometry=clipping_polygon,
             )

@@ -3,35 +3,23 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
-import multiprocessing
 import secrets
 import tempfile
-import warnings
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
+    List,
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
 )
 
-import orjson
-import osmium
-import osmium.osm
 import psutil
-import redislite
-from osmium.osm.types import T_obj
-from pygeos import from_wkt
 from shapely.geometry.base import BaseGeometry
-from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX
-from srai.db import get_duckdb_connection
+from srai.db import get_duckdb_connection, get_new_duckdb_connection
 from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
@@ -39,18 +27,64 @@ if TYPE_CHECKING:
 
     import duckdb
 
-IGNORED_TAGS = ["created_by", "converted_by", "source", "time", "ele", "attribution"]
-PARSED_PROGRESS_BAR_UPDATE_RESOLUTION = 10_000
-LOADED_PROGRESS_BAR_UPDATE_RESOLUTION = 1_000
-PROGRESS_BAR_FORMAT = "[{}] Processing PBF file (loaded: {})"
+LOAD_QUERY = """
+INSERT INTO osm_features
+SELECT
+    feature_type || '/' || COALESCE(osm_id, osm_way_id) feature_id,
+    {all_tags_query},
+    wkb_geometry
+FROM (
+    SELECT
+        * EXCLUDE (all_tags),
+        hstore_to_json(all_tags) all_tags,
+        CASE
+            WHEN '{layer}' = 'points' THEN 'node'
+            WHEN '{layer}' = 'lines' THEN 'way'
+            WHEN '{layer}' = 'multilinestrings' THEN 'relation'
+            WHEN '{layer}' = 'other_relations' THEN 'relation'
+            WHEN '{layer}' = 'multipolygons' AND osm_way_id IS NULL THEN 'relation'
+            WHEN '{layer}' = 'multipolygons' AND osm_way_id IS NOT NULL THEN 'way'
+        END AS feature_type
+    FROM ST_READ(
+        '{pbf_file}',
+        allowed_drivers = ['OSM'],
+        open_options = [
+            'INTERLEAVED_READING=YES',
+            'CONFIG_FILE={gdal_config_file}',
+            'MAX_TMPFILE_SIZE={max_memory_size}',
+            'USE_CUSTOM_INDEXING=NO'
+        ],
+        sequential_layer_scan = true,
+        layer = '{layer}'
+    )
+)
+WHERE ({filter_clauses}) {geometry_filter}
+"""
+
+GDAL_LAYERS = ["points", "lines", "multilinestrings", "multipolygons", "other_relations"]
+
+SAVE_TABLE_TO_JSON_QUERY = """
+COPY (
+    SELECT
+    json_merge_patch(
+        to_json({{feature_id: feature_id, wkt: ST_AsText(ST_GeomFromWKB(wkb_geometry))}}),
+        all_tags
+    ) as json
+    FROM osm_features
+) TO '{json_file}'
+WITH (
+    FORMAT 'CSV',
+    HEADER false,
+    DELIMITER ',',
+    ESCAPE '',
+    QUOTE ''
+);
+"""
 
 
-# TODO: add option to add own Osmium indexes
-# https://osmcode.org/osmium-concepts/#indexes
 def read_features_from_pbf_files(
     file_paths: Sequence[Union[str, "os.PathLike[str]"]],
     tags: Optional[osm_tags_type] = None,
-    region_id: str = "OSM",
     filter_region_geometry: Optional[BaseGeometry] = None,
 ) -> "duckdb.DuckDBPyRelation":
     """
@@ -79,353 +113,140 @@ def read_features_from_pbf_files(
     Returns:
         duckdb.DuckDBPyRelation: Relation with OSM features.
     """
-    tmpdir = tempfile.TemporaryDirectory()
-    temp_dir_name = tmpdir.name
+    with tempfile.TemporaryDirectory() as temp_dir_name:
+        duckdb_file_name = (Path(temp_dir_name) / "features.duckdb").as_posix()
+        json_file_name = (Path(temp_dir_name) / "features.jsonl").as_posix()
 
-    redis_db_file_name = (Path(temp_dir_name) / "redis.db").as_posix()
-    json_file_name = (Path(temp_dir_name) / "features.json").as_posix()
+        connection = get_new_duckdb_connection(db_file=duckdb_file_name)
+        _prepare_temp_db(connection)
 
-    rdb = redislite.Redis(redis_db_file_name, charset="utf-8", decode_responses=True)
-    rdb.flushdb()
+        queries = _prepare_queries(file_paths, tags, filter_region_geometry)
 
-    _run_pbf_processing_in_parallel(
-        file_paths=file_paths,
-        region_id=region_id,
-        tags=tags,
-        redis_db_file_name=redis_db_file_name,
-    )
+        for query in queries:
+            connection.execute(query)
 
-    columns: Set[str] = set()
+        columns = set(
+            row[0]
+            for row in connection.sql(
+                "SELECT DISTINCT UNNEST(json_keys(all_tags)) tag_key FROM osm_features"
+            ).fetchall()
+        )
+        columns = columns.difference([FEATURES_INDEX, "wkt"])
 
-    with open(json_file_name, "w+") as temp_file:
-        for feature_id in tqdm(rdb.keys(), desc=f"[{region_id}] Saving features to temp file"):
-            values = rdb.hgetall(feature_id)
-            jout = orjson.dumps(values).decode("utf-8") + "\n"
-            temp_file.write(jout)
-            columns.update(values.keys())
-
-    columns = columns.difference([FEATURES_INDEX, "wkt"])
-
-    if tags:
-        columns.update(tags.keys())
-
-    features_relation = _parse_raw_df_to_duckdb(json_file_name, columns, filter_region_geometry)
-
-    tmpdir.cleanup()
+        connection.execute(SAVE_TABLE_TO_JSON_QUERY.format(json_file=json_file_name))
+        features_relation = _parse_raw_df_to_duckdb(json_file_name, columns)
 
     return features_relation
 
 
-class MultiProcessingHandler(osmium.SimpleHandler):  # type: ignore
-    """TODO."""
+def _prepare_temp_db(connection: "duckdb.DuckDBPyConnection") -> None:
+    """Create required macro and table for OSM features."""
+    macro_query = """
+    CREATE OR REPLACE MACRO hstore_to_json(hstore_string) AS
+    json('{' || replace(regexp_replace(hstore_string,'\\s',' ', 'g'),'=>',':') || '}');
+    """
+    connection.execute(macro_query)
 
-    def __init__(
-        self,
-        tags: Optional[osm_tags_type],
-        pool_size: int,
-        pool_index: int,
-        features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
-        bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
-        redis_db_file_name: str,
-    ) -> None:
-        """TODO."""
-        super().__init__()
-        self.processing_counter = 0
-        self.parsed_counter = 0
-        self.loaded_counter = 0
-        self.pool_size = pool_size
-        self.pool_index = pool_index
-        self.features_queue = features_queue
-        self.bar_queue = bar_queue
-
-        self.filter_tags = tags
-        if self.filter_tags:
-            self.filter_tags_keys = set(self.filter_tags.keys())
-        else:
-            self.filter_tags_keys = set()
-
-        self.wktfab = osmium.geom.WKTFactory()
-
-        self.rdb = redislite.Redis(redis_db_file_name)
-
-    def node(self, node: osmium.osm.Node) -> None:
-        """
-        Implementation of the required `node` function.
-
-        See [1] for more information.
-
-        Args:
-            node (osmium.osm.Node): Node to be parsed.
-
-        References:
-            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Node
-        """
-        self._parse_osm_object(
-            osm_object=node, osm_type="node", parse_to_wkt_function=self.wktfab.create_point
-        )
-
-    def way(self, way: osmium.osm.Way) -> None:
-        """
-        Implementation of the required `way` function.
-
-        See [1] for more information.
-
-        Args:
-            way (osmium.osm.Way): Way to be parsed.
-
-        References:
-            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Way
-        """
-        self._parse_osm_object(
-            osm_object=way, osm_type="way", parse_to_wkt_function=self.wktfab.create_linestring
-        )
-
-    def area(self, area: osmium.osm.Area) -> None:
-        """
-        Implementation of the required `area` function.
-
-        See [1] for more information.
-
-        Args:
-            area (osmium.osm.Area): Area to be parsed.
-
-        References:
-            1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Area
-        """
-        self._parse_osm_object(
-            osm_object=area,
-            osm_type="way" if area.from_way() else "relation",
-            parse_to_wkt_function=self.wktfab.create_multipolygon,
-            osm_id=area.orig_id(),
-        )
-
-    def _parse_osm_object(
-        self,
-        osm_object: osmium.osm.OSMObject[T_obj],
-        osm_type: str,
-        parse_to_wkt_function: Callable[..., str],
-        osm_id: Optional[int] = None,
-    ) -> None:
-        """Parse OSM object into a feature with geometry and tags if it matches given criteria."""
-        self.processing_counter += 1
-
-        if self.processing_counter % self.pool_size == self.pool_index:
-            self.parsed_counter += 1
-
-            if self.parsed_counter % PARSED_PROGRESS_BAR_UPDATE_RESOLUTION == 0:
-                self.bar_queue.put_nowait(("parsed", PARSED_PROGRESS_BAR_UPDATE_RESOLUTION))
-
-            if osm_id is None:
-                osm_id = osm_object.id
-
-            full_osm_id = f"{osm_type}/{osm_id}"
-
-            matching_tags = self._get_matching_tags(osm_object)
-            if matching_tags:
-                wkt = self._get_osm_geometry(osm_object, parse_to_wkt_function)
-                self._send_feature(full_osm_id=full_osm_id, matching_tags=matching_tags, wkt=wkt)
-
-    def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
-        """
-        Find matching tags between provided filter and currently parsed OSM object.
-
-        If tags filter is `None`, it will copy all tags from the OSM object.
-        """
-        matching_tags: Dict[str, str] = {}
-
-        if self.filter_tags:
-            for tag_key in self.filter_tags_keys:
-                if tag_key in osm_object.tags:
-                    object_tag_value = osm_object.tags[tag_key]
-                    filter_tag_value = self.filter_tags[tag_key]
-                    if (
-                        (isinstance(filter_tag_value, bool) and filter_tag_value)
-                        or (
-                            isinstance(filter_tag_value, str)
-                            and object_tag_value == filter_tag_value
-                        )
-                        or (
-                            isinstance(filter_tag_value, list)
-                            and object_tag_value in filter_tag_value
-                        )
-                    ):
-                        matching_tags[tag_key] = object_tag_value
-        else:
-            for tag in osm_object.tags:
-                matching_tags[tag.k] = tag.v
-
-        matching_tags = {
-            tag_key.lower(): tag_value
-            for tag_key, tag_value in matching_tags.items()
-            if tag_key not in IGNORED_TAGS
-        }
-
-        return matching_tags
-
-    def _get_osm_geometry(
-        self, osm_object: osmium.osm.OSMObject[T_obj], parse_to_wkt_function: Callable[..., str]
-    ) -> Optional[str]:
-        """Get geometry from currently parsed OSM object."""
-        wkt = None
-        try:
-            wkt = parse_to_wkt_function(osm_object)
-            from_wkt(wkt)
-        except Exception as ex:
-            wkt = None
-            message = str(ex)
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-        return wkt
-
-    def _send_feature(
-        self, full_osm_id: str, matching_tags: Dict[str, str], wkt: Optional[str]
-    ) -> None:
-        """
-        Add OSM feature to cache or update existing one based on ID.
-
-        Some of the `way` features are parsed twice, in form of `LineStrings` and `Polygons` /
-        `MultiPolygons`. Additional check ensures that a closed geometry will be always preffered
-        over a `LineString`.
-        """
-        if wkt is not None:
-            with self.rdb.lock(name=f"_lock_{full_osm_id}"):
-                feature_exists = bool(self.rdb.exists(full_osm_id))
-
-                if not feature_exists:
-                    self.rdb.hmset(
-                        full_osm_id,
-                        {
-                            FEATURES_INDEX: full_osm_id,
-                            "wkt": wkt,
-                        },
-                    )
-                    self.loaded_counter += 1
-
-                    if self.loaded_counter % LOADED_PROGRESS_BAR_UPDATE_RESOLUTION == 0:
-                        self.bar_queue.put_nowait(("loaded", LOADED_PROGRESS_BAR_UPDATE_RESOLUTION))
-
-                if feature_exists and wkt.startswith(("POLYGON(", "MULTIPOLYGON(")):
-                    self.rdb.hset(full_osm_id, "wkt", wkt)
-
-                self.rdb.hmset(full_osm_id, matching_tags)
-
-
-def _run_pbf_processing_in_parallel(
-    file_paths: Sequence[Union[str, "os.PathLike[str]"]],
-    region_id: str,
-    tags: Optional[osm_tags_type],
-    redis_db_file_name: str,
-) -> None:
-    number_of_cpus = psutil.cpu_count()
-    pool_size = max(1, number_of_cpus - 2)  # removing 2 workers for progress bar and redis instance
-
-    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]" = multiprocessing.Queue()
-    features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]" = multiprocessing.Queue()
-
-    bar_process = multiprocessing.Process(
-        target=_update_progress_bar, args=(bar_queue, region_id), daemon=True
+    create_table_query = (
+        "CREATE OR REPLACE TEMP TABLE osm_features(feature_id VARCHAR, all_tags JSON, wkb_geometry"
+        " WKB_BLOB)"
     )
-    nodecache_temp_file = tempfile.NamedTemporaryFile(suffix=".nodecache")
-    processes = [
-        multiprocessing.Process(
-            target=_process_pbf,
-            args=(
-                file_paths,
-                tags,
-                pool_index,
-                pool_size,
-                features_queue,
-                bar_queue,
-                redis_db_file_name,
-                nodecache_temp_file.name,
-            ),
-        )
-        for pool_index in range(pool_size)
-    ]
-
-    try:
-        bar_process.start()
-
-        for p in processes:
-            p.start()
-
-        for p in processes:
-            p.join()
-
-        for p in processes:
-            p.close()
-
-        bar_queue.put_nowait(None)
-        bar_process.join()
-        bar_process.close()
-    except:
-        for p in processes:
-            p.terminate()
-        bar_process.terminate()
-        raise
-    finally:
-        nodecache_temp_file.close()
+    connection.execute(create_table_query)
 
 
-def _update_progress_bar(
-    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]", region_id: str
-) -> None:
-    """Update shared progress bar for all processes."""
-    loaded_features = 0
-
-    main_bar = tqdm(desc=PROGRESS_BAR_FORMAT.format(region_id, loaded_features))
-    while True:
-        x = bar_queue.get()
-        if x is None:
-            break
-        bar_type, update_value = x
-
-        if bar_type == "parsed":
-            main_bar.update(update_value)
-        elif bar_type == "loaded":
-            loaded_features += update_value
-
-        main_bar.set_description_str(desc=PROGRESS_BAR_FORMAT.format(region_id, loaded_features))
-
-    main_bar.close()
-
-
-def _process_pbf(
+def _prepare_queries(
     file_paths: Sequence[Union[str, "os.PathLike[str]"]],
     tags: Optional[osm_tags_type],
-    pool_index: int,
-    pool_size: int,
-    features_queue: "multiprocessing.Queue[Optional[Dict[str, Any]]]",
-    bar_queue: "multiprocessing.Queue[Optional[Tuple[str, int]]]",
-    redis_db_file_name: str,
-    nodecache_temp_file_name: str,
-) -> None:
-    """Process PBF file using MultiProcessingHandler."""
-    simple_handler = MultiProcessingHandler(
-        tags, pool_size, pool_index, features_queue, bar_queue, redis_db_file_name
-    )
+    filter_region_geometry: Optional[BaseGeometry],
+) -> List[str]:
+    """Prepare SQL queries for loading OSM files."""
+    queries = []
+
+    json_schema = _generate_tags_json_transform_schema(tags)
+    filter_clauses = _generate_tags_json_filter(tags)
+    gdal_config_file_path = Path(__file__).parent / "gdal_config" / "osmconf.ini"
 
     for file_path in file_paths:
-        simple_handler.apply_file(
-            filename=file_path, locations=True, idx=f"sparse_file_array,{nodecache_temp_file_name}"
-        )
+        file_path_object = Path(file_path)
+        available_memory = psutil.virtual_memory().available / 1024**2
+        file_size = file_path_object.stat().st_size / 1024**2
+        mb_memory_size = int(min(available_memory * 0.75, file_size * 5))
 
-    if simple_handler.parsed_counter > 0:
-        bar_queue.put_nowait(
-            ("parsed", simple_handler.parsed_counter % PARSED_PROGRESS_BAR_UPDATE_RESOLUTION)
-        )
-    if simple_handler.loaded_counter > 0:
-        bar_queue.put_nowait(
-            ("loaded", simple_handler.loaded_counter % LOADED_PROGRESS_BAR_UPDATE_RESOLUTION)
-        )
+        geometry_filter = None
+
+        if filter_region_geometry is not None:
+            region_geometry_wkt = filter_region_geometry.wkt
+            geometry_filter = f"ST_Intersects(geometry, ST_GeomFromText('{region_geometry_wkt}'))"
+
+        for layer_name in GDAL_LAYERS:
+            filled_query = LOAD_QUERY.format(
+                pbf_file=file_path_object.as_posix(),
+                gdal_config_file=gdal_config_file_path.as_posix(),
+                layer=layer_name,
+                max_memory_size=mb_memory_size,
+                all_tags_query=(
+                    "all_tags"
+                    if json_schema is None
+                    else f"json_transform(all_tags, '{json_schema}') all_tags"
+                ),
+                filter_clauses=filter_clauses,
+                geometry_filter="" if geometry_filter is None else f"AND {geometry_filter}",
+            )
+            queries.append(filled_query)
+
+    return queries
 
 
-def _parse_raw_df_to_duckdb(
-    json_file_path: str, columns: Set[str], filter_region_geometry: Optional[BaseGeometry] = None
-) -> "duckdb.DuckDBPyRelation":
+def _generate_tags_json_transform_schema(
+    tags_filter: Optional[osm_tags_type] = None,
+) -> Optional[str]:
+    """Prepare JSON schema based on tags filter."""
+    schema = None
+
+    if tags_filter:
+        tags_definitions = [
+            f'"{filter_tag_key}": "VARCHAR"' for filter_tag_key in tags_filter.keys()
+        ]
+        schema = f"{{ {', '.join(tags_definitions)} }}"
+
+    return schema
+
+
+def _generate_tags_json_filter(tags_filter: Optional[osm_tags_type] = None) -> str:
+    """Prepare features filter clauses based on tags filter."""
+    filter_clauses = ["(1=1)"]
+
+    if tags_filter:
+        filter_clauses.clear()
+
+        def escape(value: str) -> str:
+            return value.replace("'", "''")
+
+        for filter_tag_key, filter_tag_value in tags_filter.items():
+            if isinstance(filter_tag_value, bool) and filter_tag_value:
+                filter_clauses.append(
+                    f"(json_extract_string(all_tags, '{filter_tag_key}') IS NOT NULL)"
+                )
+            elif isinstance(filter_tag_value, str):
+                escaped_value = escape(filter_tag_value)
+                filter_clauses.append(
+                    f"(json_extract_string(all_tags, '{filter_tag_key}') = '{escaped_value}')"
+                )
+            elif isinstance(filter_tag_value, list) and filter_tag_value:
+                values_list = [f"'{escape(value)}'" for value in filter_tag_value]
+                filter_clauses.append(
+                    f"(json_extract_string(all_tags, '{filter_tag_key}') IN"
+                    f" ({', '.join(values_list)}))"
+                )
+
+    return " OR ".join(filter_clauses)
+
+
+def _parse_raw_df_to_duckdb(json_file_path: str, columns: Set[str]) -> "duckdb.DuckDBPyRelation":
     """Upload accumulated raw data into a relation and parse geometries."""
     relation_id = secrets.token_hex(nbytes=16)
     relation_name = f"features_{relation_id}"
+
     query = """
     SELECT * FROM (
         SELECT
@@ -433,27 +254,19 @@ def _parse_raw_df_to_duckdb(
             ST_GeomFromText(wkt) geometry
         FROM read_json(
             '{json_file_name}',
-            lines=true,
-            json_format='records',
+            records=true,
+            format='newline_delimited',
             columns={{ "feature_id": 'VARCHAR', "wkt": 'VARCHAR', {columns_definition} }}
         )
         WHERE feature_id IS NOT NULL AND wkt IS NOT NULL
     )
     """
 
-    #  read_json(self: duckdb.DuckDBPyConnection, name: str, *, columns: object = None,
-    # sample_size: object = None, maximum_depth: object = None) → duckdb.DuckDBPyRelation
     columns_definition = ", ".join(f"\"{column}\": 'VARCHAR'" for column in sorted(columns))
     filled_query = query.format(
         json_file_name=json_file_path, columns_definition=columns_definition
     )
     features_relation = get_duckdb_connection().sql(filled_query).set_alias(relation_name)
-
-    if filter_region_geometry is not None:
-        region_geometry_wkt = filter_region_geometry.wkt
-        features_relation = features_relation.filter(
-            f"ST_Intersects(geometry, ST_GeomFromText('{region_geometry_wkt}'))"
-        )
 
     features_relation.to_table(relation_name)
 
