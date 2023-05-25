@@ -1,4 +1,4 @@
-"""TODO."""
+"""Module with functions required to interact with DuckDB Python objects."""
 
 import secrets
 from typing import Optional, Union
@@ -10,7 +10,7 @@ import pandas as pd
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
-DUCKDB_EXTENSIONS = ["json", "spatial"]
+DUCKDB_EXTENSIONS = ["json", "spatial", "h3"]
 
 
 def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
@@ -26,8 +26,6 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
         CONNECTION = duckdb.connect(
             database=":memory:",
             config=dict(
-                allow_unsigned_extensions="true",
-                # memory_limit=f"{int(psutil.virtual_memory().available * 0.25)}b",
                 temp_directory="duckdb_temp/",
             ),
         )
@@ -53,7 +51,6 @@ def get_new_duckdb_connection(
         database=db_file,
         read_only=read_only,
         config=dict(
-            allow_unsigned_extensions="true",
             temp_directory="duckdb_temp/",
         ),
     )
