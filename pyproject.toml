@@ -14,12 +14,12 @@ dependencies = [
     "pandas",
     "geopandas",
     "shapely",
-    "duckdb>=0.7.1",
+    "pygeos",
+    "duckdb>=0.8.0",
     "h3>=4.0.0b1",
     "numpy",
     "geoparquet",
     "pyfunctional",
-    "rtree",
     "scipy",
     "pyarrow",
     "topojson",
@@ -27,6 +27,7 @@ dependencies = [
     "s2",
     "typeguard",
     "requests",
+    "psutil",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -109,7 +110,10 @@ docs = [
     "scikit-learn",
     "umap-learn",
 ]
-performance = ["scalene"]
+performance = [
+    "scalene",
+    "memray",
+]
 license = ["licensecheck"]
 
 [tool.black]

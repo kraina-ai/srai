@@ -1,7 +1,7 @@
-"""TODO."""
+"""Module with functions required to interact with DuckDB Python objects."""
 
 import secrets
-from typing import Union
+from typing import Optional, Union
 
 import duckdb
 import geopandas as gpd
@@ -9,7 +9,12 @@ import pandas as pd
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
-CONNECTION: duckdb.DuckDBPyConnection = None
+CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
+DUCKDB_EXTENSIONS = [
+    "json",
+    "spatial",
+    # "h3"
+]
 
 
 def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
@@ -22,12 +27,42 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
     global CONNECTION  # noqa: PLW0603
 
     if CONNECTION is None:
-        CONNECTION = duckdb.connect(config={"allow_unsigned_extensions": "true"})
-        CONNECTION.execute("SET temp_directory='duckdb_temp/'")
-        CONNECTION.install_extension("spatial")
-        CONNECTION.load_extension("spatial")
+        CONNECTION = duckdb.connect(
+            database=":memory:",
+            config=dict(
+                temp_directory="duckdb_temp/",
+            ),
+        )
+        for extension in DUCKDB_EXTENSIONS:
+            CONNECTION.install_extension(extension)
+            CONNECTION.load_extension(extension)
 
     return CONNECTION
+
+
+def get_new_duckdb_connection(
+    db_file: str = ":memory:", read_only: bool = False
+) -> duckdb.DuckDBPyConnection:
+    """
+    Get new DuckDB connection.
+
+    Allows for configuration of the connection.
+
+    Returns:
+        duckdb.DuckDBPyConnection: Prepared connection object.
+    """
+    conn = duckdb.connect(
+        database=db_file,
+        read_only=read_only,
+        config=dict(
+            temp_directory="duckdb_temp/",
+        ),
+    )
+    for extension in DUCKDB_EXTENSIONS:
+        conn.install_extension(extension)
+        conn.load_extension(extension)
+
+    return conn
 
 
 def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.GeoDataFrame]:
@@ -43,7 +78,7 @@ def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.G
     Returns:
         Union[pd.DataFrame, gpd.GeoDataFrame]: Resulting DataFrame.
     """
-    query = "SELECT * FROM relation"
+    query = "SELECT * FROM {virtual_relation_name}"
 
     has_geometry = (
         GEOMETRY_COLUMN in relation.columns
@@ -51,9 +86,13 @@ def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.G
     )
 
     if has_geometry:
-        query = "SELECT * EXCLUDE (geometry), ST_AsText(geometry) wkt FROM relation"
+        query = "SELECT * EXCLUDE (geometry), ST_AsText(geometry) wkt FROM {virtual_relation_name}"
 
-    df = get_duckdb_connection().sql(query=query).to_df()
+    random_id = f"virtual_{secrets.token_hex(nbytes=16)}"
+    df = relation.query(
+        virtual_table_name=random_id,
+        sql_query=query.format(virtual_relation_name=random_id),
+    ).to_df()
 
     if has_geometry:
         df = gpd.GeoDataFrame(

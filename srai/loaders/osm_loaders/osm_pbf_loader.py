@@ -10,6 +10,7 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.db import duckdb_to_df
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
@@ -92,7 +93,7 @@ class OSMPbfLoader(OSMLoader):
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
         from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+        from srai.loaders.osm_loaders.pbf_file_handler import read_features_from_pbf_files
 
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
@@ -108,13 +109,14 @@ class OSMPbfLoader(OSMLoader):
 
         merged_tags = self._merge_osm_tags_filter(tags)
 
-        pbf_handler = PbfFileHandler(tags=merged_tags, region_geometry=clipping_polygon)
-
         results = []
-        for region_id, pbf_files in downloaded_pbf_files.items():
-            features_gdf = pbf_handler.get_features_gdf(
-                file_paths=pbf_files, region_id=str(region_id)
+        for pbf_files in downloaded_pbf_files.values():
+            features_relation = read_features_from_pbf_files(
+                file_paths=pbf_files,
+                tags=merged_tags,
+                filter_region_geometry=clipping_polygon,
             )
+            features_gdf = duckdb_to_df(features_relation)
             results.append(features_gdf)
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)

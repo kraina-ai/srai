@@ -8,11 +8,12 @@ from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
+from srai.db import duckdb_to_df
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import BASE_OSM_GROUPS_FILTER, HEX2VEC_FILTER
 from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+from srai.loaders.osm_loaders.pbf_file_handler import read_features_from_pbf_files
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -139,27 +140,27 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
         (
             "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
-            678,
-            274,
+            736,
+            284,
         ),
         (
             "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
             None,
             1,
-            23,
+            22,
         ),
         ("529cdcbb7a3cc103658ef31b39bed24984e421127d319c867edf2f86ff3bb098.osm.pbf", None, 0, 0),
         (
             "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
             97,
-            10,
+            15,
         ),
         (
             "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
             HEX2VEC_FILTER,
             0,
-            0,
+            15,
         ),
     ],
 )
@@ -169,34 +170,34 @@ def test_pbf_handler(
     expected_result_length: int,
     expected_features_columns_length: int,
 ):
-    """Test proper files loading in `PbfFileHandler`."""
-    handler = PbfFileHandler(tags=query)
-    features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / test_file_name]
+    """Test proper *.pbf files loading."""
+    features_relation = read_features_from_pbf_files(
+        file_paths=[Path(__file__).parent / "test_files" / test_file_name], tags=query
     )
+    features_gdf = duckdb_to_df(features_relation)
     assert len(features_gdf) == expected_result_length
     assert len(features_gdf.columns) == expected_features_columns_length + 1
 
 
 def test_pbf_handler_geometry_filtering():  # type: ignore
-    """Test proper spatial data filtering in `PbfFileHandler`."""
+    """Test proper spatial data filtering."""
     file_name = "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"
-    handler = PbfFileHandler(
-        tags=HEX2VEC_FILTER, region_geometry=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+    features_relation = read_features_from_pbf_files(
+        file_paths=[Path(__file__).parent / "test_files" / file_name],
+        tags=HEX2VEC_FILTER,
+        filter_region_geometry=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
     )
-    features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / file_name]
-    )
+    features_gdf = duckdb_to_df(features_relation)
     assert len(features_gdf) == 0
 
 
 @pytest.mark.parametrize(  # type: ignore
     "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length",
     [
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0),
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 0),
-        ([Point([(-73.981883, 40.768081)])], None, HEX2VEC_FILTER, 2, 3),
-        ([Point([(-73.981883, 40.768081)])], None, BASE_OSM_GROUPS_FILTER, 3, 3),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 15),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 18),
+        ([Point([(-73.981883, 40.768081)])], None, HEX2VEC_FILTER, 2, 15),
+        ([Point([(-73.981883, 40.768081)])], None, BASE_OSM_GROUPS_FILTER, 2, 18),
         (
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
@@ -204,7 +205,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
             2,
-            3,
+            15,
         ),
         (
             [Point([(-73.981883, 40.768081)])],
@@ -212,8 +213,8 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "test_files"
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             BASE_OSM_GROUPS_FILTER,
-            3,
-            3,
+            2,
+            18,
         ),
         (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
@@ -222,7 +223,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
             0,
-            0,
+            15,
         ),
         (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
@@ -231,7 +232,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             BASE_OSM_GROUPS_FILTER,
             0,
-            0,
+            18,
         ),
     ],
 )
