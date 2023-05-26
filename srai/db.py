@@ -89,9 +89,10 @@ def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.G
         query = "SELECT * EXCLUDE (geometry), ST_AsText(geometry) wkt FROM {virtual_relation_name}"
 
     random_id = f"virtual_{secrets.token_hex(nbytes=16)}"
+    filled_query = query.format(virtual_relation_name=random_id)
     df = relation.query(
         virtual_table_name=random_id,
-        sql_query=query.format(virtual_relation_name=random_id),
+        sql_query=filled_query,
     ).to_df()
 
     if has_geometry:
