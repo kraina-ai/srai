@@ -63,14 +63,29 @@ WHERE ({filter_clauses}) {geometry_filter}
 
 GDAL_LAYERS = ["points", "lines", "multilinestrings", "multipolygons", "other_relations"]
 
+# TODO: replace ST_Centroid with ST_MakeValid to fix geometries
+# https://github.com/duckdblabs/duckdb_spatial/issues/12
 SAVE_TABLE_TO_JSON_QUERY = """
 COPY (
     SELECT
     json_merge_patch(
-        to_json({{feature_id: feature_id, wkt: ST_AsText(ST_GeomFromWKB(wkb_geometry))}}),
+        to_json(
+            {{
+                feature_id: feature_id,
+                wkt: CASE WHEN ST_IsValid(geometry)
+                     THEN ST_AsText(geometry)
+                     ELSE ST_AsText(ST_Centroid(geometry)) END
+            }}
+        ),
         all_tags
     ) as json
-    FROM osm_features
+    FROM (
+        SELECT
+            feature_id,
+            ST_GeomFromWKB(wkb_geometry) geometry,
+            all_tags
+        FROM osm_features
+    )
 ) TO '{json_file}'
 WITH (
     FORMAT 'CSV',
