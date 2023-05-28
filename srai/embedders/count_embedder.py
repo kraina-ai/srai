@@ -3,11 +3,13 @@ Count Embedder.
 
 This module contains count embedder implementation.
 """
-from typing import List, Optional
+from typing import List, Optional, Union
 
+import duckdb
 import geopandas as gpd
 import pandas as pd
 
+from srai.db import duckdb_to_df
 from srai.embedders import Embedder
 
 
@@ -38,9 +40,9 @@ class CountEmbedder(Embedder):
 
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
+        regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
+        features_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
+        joint_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
     ) -> pd.DataFrame:
         """
         Embed a given GeoDataFrame.
@@ -54,9 +56,12 @@ class CountEmbedder(Embedder):
         The rows will hold numbers of this type of feature in each region.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and
+                geometries.
+            features_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Feature indexes,
+                geometries and feature values.
+            joint_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Joiner result with
+                region-feature multi-index.
 
         Returns:
             pd.DataFrame: Embedding for each region in regions_gdf.
@@ -77,6 +82,13 @@ class CountEmbedder(Embedder):
                 raise ValueError(
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
+
+        if isinstance(duckdb.DuckDBPyRelation, regions_gdf):
+            regions_gdf = duckdb_to_df(regions_gdf)
+        if isinstance(duckdb.DuckDBPyRelation, features_gdf):
+            features_gdf = duckdb_to_df(features_gdf)
+        if isinstance(duckdb.DuckDBPyRelation, joint_gdf):
+            joint_gdf = duckdb_to_df(joint_gdf)
 
         regions_df = self._remove_geometry_if_present(regions_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)

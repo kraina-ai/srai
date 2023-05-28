@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from srai.constants import GEOMETRY_COLUMN
+from srai.db import duckdb_to_df
 from srai.joiners import IntersectionJoiner
 
 ut = TestCase()
@@ -50,6 +51,7 @@ def test_correct_multiindex_intersection_joiner(
     joint = IntersectionJoiner().transform(
         regions=regions_gdf, features=features_gdf, return_geom=True
     )
+    joint = duckdb_to_df(joint)
 
     ut.assertEqual(joint.index.names, joint_multiindex.names)
     ut.assertCountEqual(joint.index, joint_multiindex)
@@ -63,6 +65,7 @@ def test_correct_multiindex_intersection_joiner_without_geom(
     joint = IntersectionJoiner().transform(
         regions=regions_gdf, features=features_gdf, return_geom=False
     )
+    joint = duckdb_to_df(joint)
 
     ut.assertEqual(joint.index.names, joint_multiindex.names)
     ut.assertCountEqual(joint.index, joint_multiindex)

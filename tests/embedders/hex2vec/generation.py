@@ -6,6 +6,7 @@ import geopandas as gpd
 from pytorch_lightning import seed_everything
 
 from srai.constants import WGS84_CRS
+from srai.db import duckdb_to_df
 from srai.embedders.hex2vec.embedder import Hex2VecEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
@@ -43,7 +44,7 @@ def generate_test_case(
     features_all = loader.load(area_gdf, tags=tags)
 
     joiner = IntersectionJoiner()
-    joint_gdf = joiner.transform(regions_gdf, features_all)
+    joint_gdf = duckdb_to_df(joiner.transform(regions_gdf, features_all))
     features_gdf = features_all[
         features_all.index.isin(joint_gdf.index.get_level_values("feature_id"))
     ]

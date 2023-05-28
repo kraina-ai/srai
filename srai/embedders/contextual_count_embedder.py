@@ -8,7 +8,7 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -18,6 +18,9 @@ from tqdm import tqdm
 from srai.embedders.count_embedder import CountEmbedder
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class ContextualCountEmbedder(CountEmbedder):
@@ -64,9 +67,9 @@ class ContextualCountEmbedder(CountEmbedder):
 
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
+        regions_gdf: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        features_gdf: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        joint_gdf: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
     ) -> pd.DataFrame:
         """
         Embed a given GeoDataFrame.
@@ -82,9 +85,12 @@ class ContextualCountEmbedder(CountEmbedder):
         all neighbours on a given level.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and
+                geometries.
+            features_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Feature indexes,
+                geometries and feature values.
+            joint_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Joiner result with
+                region-feature multi-index.
 
         Returns:
             pd.DataFrame: Embedding for each region in regions_gdf.

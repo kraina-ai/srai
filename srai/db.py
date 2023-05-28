@@ -10,7 +10,7 @@ import pandas as pd
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
-DUCKDB_EXTENSIONS = [
+OFFICIAL_DUCKDB_EXTENSIONS = [
     "json",
     "spatial",
     # "h3"
@@ -31,9 +31,10 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             database=":memory:",
             config=dict(
                 temp_directory="duckdb_temp/",
+                allow_unsigned_extensions="true",
             ),
         )
-        for extension in DUCKDB_EXTENSIONS:
+        for extension in OFFICIAL_DUCKDB_EXTENSIONS:
             CONNECTION.install_extension(extension)
             CONNECTION.load_extension(extension)
 
@@ -56,9 +57,10 @@ def get_new_duckdb_connection(
         read_only=read_only,
         config=dict(
             temp_directory="duckdb_temp/",
+            allow_unsigned_extensions="true",
         ),
     )
-    for extension in DUCKDB_EXTENSIONS:
+    for extension in OFFICIAL_DUCKDB_EXTENSIONS:
         conn.install_extension(extension)
         conn.load_extension(extension)
 
@@ -129,6 +131,10 @@ def df_to_duckdb(dataframe: Union[pd.DataFrame, gpd.GeoDataFrame]) -> duckdb.Duc
     temp_dataframe_id = f"temp_df_{relation_id}"
 
     dataframe = dataframe.reset_index()
+    if REGIONS_INDEX not in dataframe.columns and FEATURES_INDEX not in dataframe.columns:
+        raise ValueError(
+            f"Dataframe must have `{REGIONS_INDEX}` and / or `{FEATURES_INDEX}` index."
+        )
 
     query = f"SELECT * FROM {temp_dataframe_id}"
 

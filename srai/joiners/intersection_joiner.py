@@ -4,11 +4,16 @@ Intersection Joiner.
 This module contains intersection joiner implementation.
 """
 
-import geopandas as gpd
-import pandas as pd
+from typing import TYPE_CHECKING, Union
 
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+import geopandas as gpd
+
+from srai.constants import GEOMETRY_COLUMN
+from srai.db import df_to_duckdb, get_duckdb_connection
 from srai.joiners import Joiner
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class IntersectionJoiner(Joiner):
@@ -20,91 +25,107 @@ class IntersectionJoiner(Joiner):
     """
 
     def transform(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = False
-    ) -> gpd.GeoDataFrame:
+        self,
+        regions: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        features: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        return_geom: bool = False,
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Join features to regions based on an 'intersects' predicate.
 
         Does not apply any grouping to regions.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): regions with which features
+                are joined
+            features (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): features to be joined
             return_geom (bool): whether to return geometry of the joined features.
                 Defaults to False.
 
         Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
+            DuckDB relation with an intersection of regions and features, which contains
             a MultiIndex and optionaly a geometry with the intersection
         """
+        if isinstance(regions, gpd.GeoDataFrame):
+            regions = df_to_duckdb(regions)
+
+        if isinstance(features, gpd.GeoDataFrame):
+            features = df_to_duckdb(features)
+
         if GEOMETRY_COLUMN not in regions.columns:
             raise ValueError("Regions must have a geometry column.")
         if GEOMETRY_COLUMN not in features.columns:
             raise ValueError("Features must have a geometry column.")
 
-        if len(regions) == 0:
+        if regions.query(virtual_table_name="x", sql_query="SELECT COUNT(*) FROM x") == 0:
             raise ValueError("Regions must not be empty.")
-        if len(features) == 0:
+        if features.query(virtual_table_name="x", sql_query="SELECT COUNT(*) FROM x") == 0:
             raise ValueError("Features must not be empty.")
 
-        result_gdf: gpd.GeoDataFrame
+        result_relation: "duckdb.DuckDBPyRelation"
 
         if return_geom:
-            result_gdf = self._join_with_geom(regions, features)
+            result_relation = self._join_with_geom(regions, features)
         else:
-            result_gdf = self._join_without_geom(regions, features)
+            result_relation = self._join_without_geom(regions, features)
 
-        return result_gdf
+        return result_relation
 
     def _join_with_geom(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
-    ) -> gpd.GeoDataFrame:
+        self, regions: "duckdb.DuckDBPyRelation", features: "duckdb.DuckDBPyRelation"
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Join features to regions with returning an intersecting geometry.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (duckdb.DuckDBPyRelation): regions with which features are joined
+            features (duckdb.DuckDBPyRelation): features to be joined
 
         Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
+            Relation with an intersection of regions and features, which contains
             a MultiIndex and a geometry with the intersection
         """
-        joined_parts = [
-            gpd.overlay(
-                single[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
-                regions[[GEOMETRY_COLUMN]].reset_index(names=REGIONS_INDEX),
-                how="intersection",
-                keep_geom_type=False,
-            ).set_index([REGIONS_INDEX, FEATURES_INDEX])
-            for _, single in features.groupby(features[GEOMETRY_COLUMN].geom_type)
-        ]
-
-        joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
+        intersection_query = """
+        SELECT
+            regions.region_id,
+            features.feature_id,
+            ST_Intersection(regions.geometry, features.geometry) geometry
+        FROM ({regions_relation}) regions
+        JOIN ({features_relation}) features
+        ON ST_Intersects(regions.geometry, features.geometry)
+        """
+        joint = get_duckdb_connection().sql(
+            intersection_query.format(
+                regions_relation=regions.sql_query(), features_relation=features.sql_query()
+            )
+        )
         return joint
 
     def _join_without_geom(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
-    ) -> gpd.GeoDataFrame:
+        self, regions: "duckdb.DuckDBPyRelation", features: "duckdb.DuckDBPyRelation"
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Join features to regions without intersection caclulation.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (duckdb.DuckDBPyRelation): regions with which features are joined
+            features (duckdb.DuckDBPyRelation): features to be joined
 
         Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
+            Relation with an intersection of regions and features, which contains
             a MultiIndex
         """
-        joint = (
-            gpd.sjoin(
-                regions.reset_index(names=REGIONS_INDEX),
-                features[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
-                how="inner",
-                predicate="intersects",
+        intersection_query = """
+        SELECT
+            regions.region_id,
+            features.feature_id
+        FROM ({regions_relation}) regions
+        JOIN ({features_relation}) features
+        ON ST_Intersects(regions.geometry, features.geometry)
+        """
+        joint = get_duckdb_connection().sql(
+            intersection_query.format(
+                regions_relation=regions.sql_query(), features_relation=features.sql_query()
             )
-            .set_index([REGIONS_INDEX, FEATURES_INDEX])
-            .drop(columns=["index_right", GEOMETRY_COLUMN])
         )
         return joint
