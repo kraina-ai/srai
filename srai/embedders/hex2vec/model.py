@@ -6,8 +6,8 @@ This module contains the embedding model from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import TYPE_CHECKING, List, Tuple
 from pathlib import Path
+from typing import TYPE_CHECKING, List, Tuple
 
 from srai.embedders import Model
 from srai.utils._optional import import_optional_dependencies

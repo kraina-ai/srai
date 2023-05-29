@@ -8,13 +8,15 @@ References:
 """
 import json
 from pathlib import Path
+<<<<<<< HEAD
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+=======
+from typing import Any, Dict, List, Optional, TypeVar
+>>>>>>> a8929cb (fix(pre-commit.ci): auto fixes from pre-commit.com hooks)
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import json
 
 from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.hex2vec.model import Hex2VecModel
@@ -143,11 +145,16 @@ class Hex2VecEmbedder(CountEmbedder):
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
         trainer = pl.Trainer(**trainer_kwargs)
-        if val_regions_gdf is not None and val_features_gdf is not None and val_joint_gdf is not None and val_neighbourhood is not None:
-            val_counts_df = self._get_raw_counts(
-                val_regions_gdf, val_features_gdf, val_joint_gdf
+        if (
+            val_regions_gdf is not None
+            and val_features_gdf is not None
+            and val_joint_gdf is not None
+            and val_neighbourhood is not None
+        ):
+            val_counts_df = self._get_raw_counts(val_regions_gdf, val_features_gdf, val_joint_gdf)
+            val_dataset = NeighbourDataset(
+                val_counts_df, val_neighbourhood, negative_sample_k_distance
             )
-            val_dataset = NeighbourDataset(val_counts_df, val_neighbourhood, negative_sample_k_distance)
             val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
             trainer_kwargs["val_dataloaders"] = [val_dataloader]
             trainer.fit(self._model, dataloader, val_dataloader)

@@ -6,9 +6,8 @@ This module contains a Hex2Vec[1] model with a regression head.
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import TYPE_CHECKING, List, Optional
 from pathlib import Path
-import geopandas as gpd
+from typing import TYPE_CHECKING, List
 
 from srai.utils._optional import import_optional_dependencies
 
@@ -24,9 +23,7 @@ except ImportError:
 
 
 class Hex2VecModelForRegression(LightningModule):  # type: ignore
-    """
-    TODO: Add docstring.
-    """
+    """TODO: Add docstring."""
 
     def __init__(self, layer_sizes: List[int], learning_rate: float = 0.001):
         """
@@ -45,25 +42,22 @@ class Hex2VecModelForRegression(LightningModule):  # type: ignore
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )
-        from srai.embedders.hex2vec.model import Hex2VecModel
         from torch import nn
+
+        from srai.embedders.hex2vec.model import Hex2VecModel
 
         super().__init__()
         self.model = Hex2VecModel(layer_sizes, learning_rate)
         self.regression_head = nn.Linear(layer_sizes[-1], 1)
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":
-        """
-        TODO: Add docstring.
-        """
+        """TODO: Add docstring."""
         embedding = self.model(x)
         y_pred = self.regression_head(embedding)
         return y_pred
 
     def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
-        """
-        TODO: Add docstring.
-        """
+        """TODO: Add docstring."""
         import torch
         import torch.nn.functional as F
         from torchmetrics.functional import mean_absolute_error
@@ -80,7 +74,6 @@ class Hex2VecModelForRegression(LightningModule):  # type: ignore
         self.log("train_mae", mae, on_step=True, on_epoch=True, prog_bar=True)
 
         return loss
-        
 
     def validation_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
@@ -131,7 +124,6 @@ class Hex2VecModelForRegression(LightningModule):  # type: ignore
         model = cls(**kwargs)
         model.model.load_state_dict(hex2vec.state_dict())
         return model
-
 
 
 # class Hex2VecRegressor:

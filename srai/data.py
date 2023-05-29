@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import List, Optional
-import geopandas as gpd
 from pathlib import Path
+from typing import Optional
+
+import geopandas as gpd
+
 
 @dataclass
 class RegionizedData:
@@ -20,7 +22,7 @@ class RegionizedData:
         ]:
             if gdf is not None:
                 gdf.to_parquet(dir_path / f"{name}.parquet", index=True)
-    
+
     @classmethod
     def load(cls, dir_path: Path):
         def _load_gdf(name: str) -> Optional[gpd.GeoDataFrame]:
@@ -28,6 +30,7 @@ class RegionizedData:
                 return gpd.read_parquet(dir_path / f"{name}.parquet")
             except:
                 return None
+
         area_gdf = _load_gdf("area")
         regions_gdf = _load_gdf("regions")
         features_gdf = _load_gdf("features")
