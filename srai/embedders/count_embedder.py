@@ -83,11 +83,11 @@ class CountEmbedder(Embedder):
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
 
-        if isinstance(duckdb.DuckDBPyRelation, regions_gdf):
+        if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
             regions_gdf = duckdb_to_df(regions_gdf)
-        if isinstance(duckdb.DuckDBPyRelation, features_gdf):
+        if isinstance(features_gdf, duckdb.DuckDBPyRelation):
             features_gdf = duckdb_to_df(features_gdf)
-        if isinstance(duckdb.DuckDBPyRelation, joint_gdf):
+        if isinstance(joint_gdf, duckdb.DuckDBPyRelation):
             joint_gdf = duckdb_to_df(joint_gdf)
 
         regions_df = self._remove_geometry_if_present(regions_gdf)

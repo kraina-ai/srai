@@ -6,6 +6,7 @@ function.
 """
 from itertools import cycle, islice
 from typing import List, Optional, Set, Union
+from srai.db import duckdb_to_df
 
 from srai.utils._optional import import_optional_dependencies
 
@@ -24,9 +25,11 @@ from srai.constants import REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 
+import duckdb
+
 
 def plot_regions(
-    regions_gdf: gpd.GeoDataFrame,
+    regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
@@ -38,7 +41,7 @@ def plot_regions(
     Plot regions shapes using Folium library.
 
     Args:
-        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and geometries to plot.
         tiles_style (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
@@ -54,6 +57,11 @@ def plot_regions(
     Returns:
         folium.Map: Generated map.
     """
+    if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        regions_gdf = duckdb_to_df(
+            regions_gdf.query(virtual_table_name="x", sql_query="SELECT region_id, geometry FROM x")
+        )
+
     return regions_gdf.reset_index().explore(
         column=REGIONS_INDEX,
         tooltip=REGIONS_INDEX,
@@ -69,8 +77,8 @@ def plot_regions(
 
 
 def plot_numeric_data(
-    regions_gdf: gpd.GeoDataFrame,
-    embedding_df: Union[pd.DataFrame, gpd.GeoDataFrame],
+    regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
+    embedding_df: Union[duckdb.DuckDBPyRelation, pd.DataFrame, gpd.GeoDataFrame],
     data_column: str,
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
@@ -83,8 +91,8 @@ def plot_numeric_data(
     Plot numerical data within regions shapes using Folium library.
 
     Args:
-        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
-        embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame]): Region indexes and numerical data
+        regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and geometries to plot.
+        embedding_df (Union[duckdb.DuckDBPyRelation, pd.DataFrame, gpd.GeoDataFrame]): Region indexes and numerical data
             to plot.
         data_column (str): Name of the column used to colour the regions.
         tiles_style (str, optional): Map style background. For more styles, look at tiles param at
@@ -102,6 +110,20 @@ def plot_numeric_data(
     Returns:
         folium.Map: Generated map.
     """
+    if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        regions_gdf = duckdb_to_df(
+            regions_gdf.query(
+                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+            )
+        )
+
+    if isinstance(embedding_df, duckdb.DuckDBPyRelation):
+        embedding_df = duckdb_to_df(
+            embedding_df.query(
+                virtual_table_name="x", sql_query=f'SELECT region_id, "{data_column}" FROM x'
+            )
+        )
+
     regions_gdf_copy = regions_gdf.copy()
     regions_gdf_copy = regions_gdf_copy.merge(embedding_df[[data_column]], on=REGIONS_INDEX)
 
@@ -131,7 +153,7 @@ def plot_numeric_data(
 
 
 def plot_neighbours(
-    regions_gdf: gpd.GeoDataFrame,
+    regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
     region_id: IndexType,
     neighbours_ids: Set[IndexType],
     tiles_style: str = "OpenStreetMap",
@@ -144,7 +166,7 @@ def plot_neighbours(
     Plot neighbours on a map using Folium library.
 
     Args:
-        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and geometries to plot.
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbours_ids (Set[IndexType]): List of neighbours to highlight.
         tiles_style (str, optional): Map style background. For more styles, look at tiles param at
@@ -160,6 +182,13 @@ def plot_neighbours(
     Returns:
         folium.Map: Generated map.
     """
+    if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        regions_gdf = duckdb_to_df(
+            regions_gdf.query(
+                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+            )
+        )
+
     if region_id not in regions_gdf.index:
         raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 
@@ -186,7 +215,7 @@ def plot_neighbours(
 
 
 def plot_all_neighbourhood(
-    regions_gdf: gpd.GeoDataFrame,
+    regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
     neighbourhood_max_distance: int = 100,
@@ -201,7 +230,7 @@ def plot_all_neighbourhood(
     Plot full neighbourhood on a map using Folium library.
 
     Args:
-        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and geometries to plot.
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbourhood (Neighbourhood[IndexType]): `Neighbourhood` class required for finding
             neighbours.
@@ -223,6 +252,13 @@ def plot_all_neighbourhood(
     Returns:
         folium.Map: Generated map.
     """
+    if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        regions_gdf = duckdb_to_df(
+            regions_gdf.query(
+                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+            )
+        )
+
     if region_id not in regions_gdf.index:
         raise ValueError(f"{region_id!r} doesn't exist in provided regions_gdf.")
 

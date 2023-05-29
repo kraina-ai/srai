@@ -1,8 +1,12 @@
 """Base class for joiners."""
 
 import abc
+from typing import TYPE_CHECKING, Union
 
 import geopandas as gpd
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class Joiner(abc.ABC):
@@ -11,15 +15,16 @@ class Joiner(abc.ABC):
     @abc.abstractmethod
     def transform(
         self,
-        regions: gpd.GeoDataFrame,
-        features: gpd.GeoDataFrame,
-    ) -> gpd.GeoDataFrame:  # pragma: no cover
+        regions: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        features: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+    ) -> "duckdb.DuckDBPyRelation":  # pragma: no cover
         """
         Join features to regions.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): regions with which features
+                are joined
+            features (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): features to be joined
         Returns:
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex and optionally a geometry with the intersection
