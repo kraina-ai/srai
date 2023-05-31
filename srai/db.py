@@ -75,14 +75,12 @@ def get_new_duckdb_connection(
 
 def _create_python_functions(connection: duckdb.DuckDBPyConnection) -> None:
     def _make_valid_shapely(wkt_string: str) -> str:
-        print("DEBUG: make valid geom")
         parsed_geom = shp_wkt.loads(wkt_string)
         valid_geom = shp_make_valid(parsed_geom)
         valid_geom_wkt = cast(str, valid_geom.wkt)
         return valid_geom_wkt
 
     def _split_geometry_collection(wkt_string: str) -> List[str]:
-        print("DEBUG: split geometry collection")
         parsed_geom = shp_wkt.loads(wkt_string)
         valid_geom_wkts = []
         for member in parsed_geom.geoms:
