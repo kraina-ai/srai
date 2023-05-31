@@ -2,12 +2,11 @@
 from typing import List, Optional
 
 import geopandas as gpd
-import pandas as pd
 import h3
+import pandas as pd
 from shapely import geometry
 
 from srai.constants import WGS84_CRS
-
 
 
 def shapely_polygon_to_h3(polygon: geometry.Polygon) -> h3.Polygon:
@@ -21,10 +20,9 @@ def shapely_polygon_to_h3(polygon: geometry.Polygon) -> h3.Polygon:
         h3.Polygon: Converted polygon.
     """
     exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
-    interiors = [
-        [coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors
-    ]
+    interiors = [[coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors]
     return h3.Polygon(exterior, *interiors)
+
 
 def gdf_from_h3_indexes(h3_indexes: List[str]) -> gpd.GeoDataFrame:
     """
@@ -42,6 +40,7 @@ def gdf_from_h3_indexes(h3_indexes: List[str]) -> gpd.GeoDataFrame:
         geometry=[h3_index_to_shapely_polygon(h3_index) for h3_index in h3_indexes],
         crs=WGS84_CRS,
     )
+
 
 def gdf_from_df_with_h3(df: pd.DataFrame, h3_column: Optional[str] = None) -> gpd.GeoDataFrame:
     """
@@ -78,6 +77,7 @@ def h3_index_to_shapely_polygon(h3_index: str) -> geometry.Polygon:
         geometry.Polygon: Converted polygon.
     """
     return h3_polygon_to_shapely(h3.cells_to_polygons([h3_index])[0])
+
 
 def h3_polygon_to_shapely(polygon: h3.Polygon) -> geometry.Polygon:
     """

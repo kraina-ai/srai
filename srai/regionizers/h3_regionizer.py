@@ -94,7 +94,6 @@ class H3Regionizer(Regionizer):
 
         return gdf_h3_clipped.to_crs(gdf.crs)
 
-
     def _buffer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Buffer geometries to generate H3 cells that cover them entirely.
