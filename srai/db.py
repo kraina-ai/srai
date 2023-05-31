@@ -1,11 +1,13 @@
 """Module with functions required to interact with DuckDB Python objects."""
 
 import secrets
-from typing import Optional, Union
+from typing import List, Optional, Union, cast
 
 import duckdb
 import geopandas as gpd
 import pandas as pd
+from shapely import wkt as shp_wkt
+from shapely.validation import make_valid as shp_make_valid
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
@@ -38,6 +40,8 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             CONNECTION.install_extension(extension)
             CONNECTION.load_extension(extension)
 
+        _create_python_functions(CONNECTION)
+
     return CONNECTION
 
 
@@ -64,7 +68,78 @@ def get_new_duckdb_connection(
         conn.install_extension(extension)
         conn.load_extension(extension)
 
+    _create_python_functions(conn)
+
     return conn
+
+
+def _create_python_functions(connection: duckdb.DuckDBPyConnection) -> None:
+    def _make_valid_shapely(wkt_string: str) -> str:
+        print("DEBUG: make valid geom")
+        parsed_geom = shp_wkt.loads(wkt_string)
+        valid_geom = shp_make_valid(parsed_geom)
+        valid_geom_wkt = cast(str, valid_geom.wkt)
+        return valid_geom_wkt
+
+    def _split_geometry_collection(wkt_string: str) -> List[str]:
+        print("DEBUG: split geometry collection")
+        parsed_geom = shp_wkt.loads(wkt_string)
+        valid_geom_wkts = []
+        for member in parsed_geom.geoms:
+            valid_geom = shp_make_valid(member)
+            valid_geom_wkts.append(valid_geom.wkt)
+        return valid_geom_wkts
+
+    connection.create_function("py_make_valid", _make_valid_shapely)
+    connection.create_function(
+        "py_split_geometry_collection",
+        _split_geometry_collection,
+        [duckdb.typing.VARCHAR],
+        duckdb.list_type(type=duckdb.typing.VARCHAR),
+    )
+
+    duckdb_make_valid_macro_query = """
+    CREATE OR REPLACE MACRO make_valid_geom(geometry) AS
+    CASE WHEN ST_IsValid(geometry)
+        THEN geometry
+        ELSE ST_GeomFromText(py_make_valid(ST_AsText(geometry)))
+    END;
+    """
+    connection.execute(duckdb_make_valid_macro_query)
+
+    duckdb_split_geometry_collection_macro_query = """
+    CREATE OR REPLACE MACRO split_geometry_collection(geometry) AS
+    CASE WHEN ST_GeometryType(geometry) = 'GEOMETRYCOLLECTION'
+        THEN [
+            ST_GeomFromText(geom_member)
+            for geom_member in py_split_geometry_collection(ST_AsText(geometry))
+        ]
+        ELSE [geometry]
+    END;
+    """
+    connection.execute(duckdb_split_geometry_collection_macro_query)
+
+
+def count_relation_rows(relation: duckdb.DuckDBPyRelation) -> int:
+    """Get count of rows in the relation."""
+    relation_id = secrets.token_hex(nbytes=16)
+    relation_name = f"count_{relation_id}"
+    count_query = f"SELECT COUNT(*) FROM {relation_name}"
+    count_result = relation.query(
+        virtual_table_name=relation_name, sql_query=count_query
+    ).fetchone()
+    if not count_result:
+        return 0
+
+    return int(count_result[0])
+
+
+def relation_to_table(relation: duckdb.DuckDBPyRelation, prefix: str) -> duckdb.DuckDBPyRelation:
+    """Save relation query to table."""
+    relation_id = secrets.token_hex(nbytes=16)
+    relation_name = f"{prefix}_{relation_id}"
+    relation.to_table(relation_name)
+    return get_duckdb_connection().table(relation_name)
 
 
 def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.GeoDataFrame]:
@@ -127,7 +202,6 @@ def df_to_duckdb(dataframe: Union[pd.DataFrame, gpd.GeoDataFrame]) -> duckdb.Duc
         duckdb.DuckDBPyRelation: Relation object with data from DataFrame.
     """
     relation_id = secrets.token_hex(nbytes=16)
-    relation_name = f"parsed_{relation_id}"
     temp_dataframe_id = f"temp_df_{relation_id}"
 
     dataframe = dataframe.reset_index()
@@ -142,7 +216,10 @@ def df_to_duckdb(dataframe: Union[pd.DataFrame, gpd.GeoDataFrame]) -> duckdb.Duc
     if has_geometry:
         dataframe["wkt"] = dataframe[GEOMETRY_COLUMN].apply(lambda x: x.wkt)
         dataframe.drop(columns=GEOMETRY_COLUMN, inplace=True)
-        query = f"SELECT * EXCLUDE (wkt), ST_GeomFromText(wkt) geometry FROM {temp_dataframe_id}"
+        query = (
+            "SELECT * EXCLUDE (wkt), make_valid_geom(ST_GeomFromText(wkt)) geometry FROM"
+            f" {temp_dataframe_id}"
+        )
 
     dataframe_sample = _get_nonempty_sample(dataframe)
     dataframe["_is_sample"] = False
@@ -153,9 +230,12 @@ def df_to_duckdb(dataframe: Union[pd.DataFrame, gpd.GeoDataFrame]) -> duckdb.Duc
     get_duckdb_connection().register(temp_dataframe_id, dataframe)
     final_query = f"SELECT * EXCLUDE (_is_sample) FROM ({query}) WHERE _is_sample = false"
 
-    relation = get_duckdb_connection().from_query(final_query, alias=relation_name).execute()
+    table_relation = relation_to_table(
+        relation=get_duckdb_connection().from_query(final_query), prefix="parsed"
+    )
+    get_duckdb_connection().unregister(temp_dataframe_id)
 
-    return relation
+    return table_relation
 
 
 def _get_nonempty_sample(df: pd.DataFrame) -> pd.DataFrame:

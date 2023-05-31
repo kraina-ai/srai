@@ -72,6 +72,13 @@ class CountEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+            regions_gdf = duckdb_to_df(regions_gdf)
+        if isinstance(features_gdf, duckdb.DuckDBPyRelation):
+            features_gdf = duckdb_to_df(features_gdf)
+        if isinstance(joint_gdf, duckdb.DuckDBPyRelation):
+            joint_gdf = duckdb_to_df(joint_gdf)
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         if features_gdf.empty:
             if self.expected_output_features is not None:
@@ -82,13 +89,6 @@ class CountEmbedder(Embedder):
                 raise ValueError(
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
-
-        if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
-            regions_gdf = duckdb_to_df(regions_gdf)
-        if isinstance(features_gdf, duckdb.DuckDBPyRelation):
-            features_gdf = duckdb_to_df(features_gdf)
-        if isinstance(joint_gdf, duckdb.DuckDBPyRelation):
-            joint_gdf = duckdb_to_df(joint_gdf)
 
         regions_df = self._remove_geometry_if_present(regions_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)

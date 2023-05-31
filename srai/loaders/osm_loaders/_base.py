@@ -1,13 +1,15 @@
 """Base class for OSM loaders."""
 
 import abc
-from typing import Dict, Optional, Union, cast
+import secrets
+from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai.constants import GEOMETRY_COLUMN
 from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
@@ -15,6 +17,9 @@ from srai.loaders.osm_loaders.filters._typing import (
     osm_tags_type,
 )
 from srai.utils.typing import is_expected_type
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class OSMLoader(Loader, abc.ABC):
@@ -66,6 +71,86 @@ class OSMLoader(Loader, abc.ABC):
             "Provided tags don't match required type definitions"
             " (osm_tags_type or grouped_osm_tags_type)."
         )
+
+    def _parse_features_relation_to_groups(
+        self,
+        features_relation: "duckdb.DuckDBPyRelation",
+        tags: Union[osm_tags_type, grouped_osm_tags_type],
+    ) -> "duckdb.DuckDBPyRelation":
+        """
+        Optionally group raw OSM features into groups defined in `grouped_osm_tags_type`.
+
+        Args:
+            features_relation (duckdb.DuckDBPyRelation): Generated features from the loader.
+            tags (Union[osm_tags_type, grouped_osm_tags_type]): OSM tags filter definition.
+
+        Returns:
+            duckdb.DuckDBPyRelation: Parsed features_relation.
+        """
+        if is_expected_type(tags, grouped_osm_tags_type):
+            features_relation = self._group_features_relation(
+                features_relation, cast(grouped_osm_tags_type, tags)
+            )
+        return features_relation
+
+    def _group_features_relation(
+        self, features_relation: "duckdb.DuckDBPyRelation", group_filter: grouped_osm_tags_type
+    ) -> "duckdb.DuckDBPyRelation":
+        """
+        Group raw OSM features into groups defined in `grouped_osm_tags_type`.
+
+        Creates new features based on definition from `grouped_osm_tags_type`.
+        Returns transformed DuckDB relation with columns based on group names from the filter.
+        Values are built by concatenation of matching tag key and value with
+        an equal sign (eg. amenity=parking). Since many tags can match a definition
+        of a single group, a first match is used as a feature value.
+
+        Args:
+            features_relation (duckdb.DuckDBPyRelation): Generated features from the loader.
+            group_filter (grouped_osm_tags_type): Grouped OSM tags filter definition.
+
+        Returns:
+            duckdb.DuckDBPyRelation: Parsed grouped features_relation.
+        """
+
+        def escape(value: str) -> str:
+            return value.replace("'", "''")
+
+        relation_id = secrets.token_hex(nbytes=16)
+        relation_name = f"grouped_{relation_id}"
+
+        query = "SELECT feature_id, geometry, {case_clauses} FROM {relation_name}"
+        case_clauses = []
+        for group_name, osm_filter in group_filter.items():
+            case_when_clauses = []
+            for osm_tag_key, osm_tag_value in osm_filter.items():
+                if isinstance(osm_tag_value, bool) and osm_tag_value:
+                    case_when_clauses.append(
+                        f"WHEN \"{osm_tag_key}\" IS NOT NULL THEN '{osm_tag_key}=' ||"
+                        f' "{osm_tag_key}"'
+                    )
+                elif isinstance(osm_tag_value, str):
+                    escaped_value = escape(osm_tag_value)
+                    case_when_clauses.append(
+                        f"WHEN \"{osm_tag_key}\" = '{escaped_value}' THEN '{osm_tag_key}=' ||"
+                        f' "{osm_tag_key}"'
+                    )
+                elif isinstance(osm_tag_value, list) and osm_tag_value:
+                    values_list = [f"'{escape(value)}'" for value in osm_tag_value]
+                    case_when_clauses.append(
+                        f"WHEN \"{osm_tag_key}\" IN ({', '.join(values_list)}) THEN"
+                        f" '{osm_tag_key}=' || \"{osm_tag_key}\""
+                    )
+            case_clause = f'CASE {" ".join(case_when_clauses)} END AS "{group_name}"'
+            case_clauses.append(case_clause)
+
+        filled_query = query.format(
+            case_clauses=", ".join(case_clauses), relation_name=relation_name
+        )
+
+        return features_relation.query(
+            virtual_table_name=relation_name, sql_query=filled_query
+        ).execute()
 
     def _parse_features_gdf_to_groups(
         self, features_gdf: gpd.GeoDataFrame, tags: Union[osm_tags_type, grouped_osm_tags_type]
@@ -119,7 +204,7 @@ class OSMLoader(Loader, abc.ABC):
         for missing_column in missing_columns:
             features_gdf[missing_column] = pd.Series()
 
-        return features_gdf[["geometry", *grouped_filter_columns]].replace(
+        return features_gdf[[GEOMETRY_COLUMN, *grouped_filter_columns]].replace(
             to_replace=[None], value=np.nan
         )
 

@@ -3,7 +3,6 @@ PBF File Handler.
 
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
-import secrets
 import tempfile
 from pathlib import Path
 from typing import (
@@ -19,7 +18,7 @@ import psutil
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import FEATURES_INDEX
-from srai.db import get_duckdb_connection, get_new_duckdb_connection
+from srai.db import get_duckdb_connection, get_new_duckdb_connection, relation_to_table
 from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
@@ -72,9 +71,7 @@ COPY (
         to_json(
             {{
                 feature_id: feature_id,
-                wkt: CASE WHEN ST_IsValid(geometry)
-                     THEN ST_AsText(geometry)
-                     ELSE ST_AsText(ST_Centroid(geometry)) END
+                wkt: ST_AsText(make_valid_geom(geometry))
             }}
         ),
         all_tags
@@ -265,11 +262,8 @@ def _generate_tags_json_filter(tags_filter: Optional[osm_tags_type] = None) -> s
 
 def _parse_raw_df_to_duckdb(json_file_path: str, columns: Set[str]) -> "duckdb.DuckDBPyRelation":
     """Upload accumulated raw data into a relation and parse geometries."""
-    relation_id = secrets.token_hex(nbytes=16)
-    relation_name = f"features_{relation_id}"
-
     query = """
-    SELECT * FROM (
+    WITH json_rows AS (
         SELECT
             * EXCLUDE (wkt),
             ST_GeomFromText(wkt) geometry
@@ -280,15 +274,38 @@ def _parse_raw_df_to_duckdb(json_file_path: str, columns: Set[str]) -> "duckdb.D
             columns={{ "feature_id": 'VARCHAR', "wkt": 'VARCHAR', {columns_definition} }}
         )
         WHERE feature_id IS NOT NULL AND wkt IS NOT NULL
+    ),
+    splitted_geometries AS (
+        SELECT
+            feature_id AS original_feature_id,
+            UNNEST(geometries) geometry,
+            CASE
+                WHEN ST_GeometryType(original_geometry) = 'GEOMETRYCOLLECTION'
+                THEN feature_id || '/' || list_position(geometries, geometry)
+                ELSE feature_id
+            END AS feature_id
+        FROM (
+            SELECT
+                feature_id,
+                split_geometry_collection(geometry) geometries,
+                geometry AS original_geometry
+            FROM
+                json_rows
+        )
     )
+    SELECT
+        splitted_geometries.feature_id,
+        json_rows.* EXCLUDE (feature_id, geometry),
+        splitted_geometries.geometry
+    FROM json_rows
+    JOIN splitted_geometries
+    ON json_rows.feature_id = splitted_geometries.original_feature_id
     """
 
     columns_definition = ", ".join(f"\"{column}\": 'VARCHAR'" for column in sorted(columns))
     filled_query = query.format(
         json_file_name=json_file_path, columns_definition=columns_definition
     )
-    features_relation = get_duckdb_connection().sql(filled_query).set_alias(relation_name)
+    features_relation = get_duckdb_connection().sql(filled_query)
 
-    features_relation.to_table(relation_name)
-
-    return get_duckdb_connection().table(relation_name)
+    return relation_to_table(relation=features_relation, prefix="features")

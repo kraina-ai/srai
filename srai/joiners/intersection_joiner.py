@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Union
 import geopandas as gpd
 
 from srai.constants import GEOMETRY_COLUMN
-from srai.db import df_to_duckdb, get_duckdb_connection
+from srai.db import count_relation_rows, df_to_duckdb, get_duckdb_connection, relation_to_table
 from srai.joiners import Joiner
 
 if TYPE_CHECKING:
@@ -57,9 +57,9 @@ class IntersectionJoiner(Joiner):
         if GEOMETRY_COLUMN not in features.columns:
             raise ValueError("Features must have a geometry column.")
 
-        if regions.query(virtual_table_name="x", sql_query="SELECT COUNT(*) FROM x") == 0:
+        if count_relation_rows(regions) == 0:
             raise ValueError("Regions must not be empty.")
-        if features.query(virtual_table_name="x", sql_query="SELECT COUNT(*) FROM x") == 0:
+        if count_relation_rows(features) == 0:
             raise ValueError("Features must not be empty.")
 
         result_relation: "duckdb.DuckDBPyRelation"
@@ -69,7 +69,7 @@ class IntersectionJoiner(Joiner):
         else:
             result_relation = self._join_without_geom(regions, features)
 
-        return result_relation
+        return relation_to_table(relation=result_relation, prefix="intersection")
 
     def _join_with_geom(
         self, regions: "duckdb.DuckDBPyRelation", features: "duckdb.DuckDBPyRelation"
@@ -94,11 +94,10 @@ class IntersectionJoiner(Joiner):
         JOIN ({features_relation}) features
         ON ST_Intersects(regions.geometry, features.geometry)
         """
-        joint = get_duckdb_connection().sql(
-            intersection_query.format(
-                regions_relation=regions.sql_query(), features_relation=features.sql_query()
-            )
+        filled_query = intersection_query.format(
+            regions_relation=regions.sql_query(), features_relation=features.sql_query()
         )
+        joint = get_duckdb_connection().sql(filled_query)
         return joint
 
     def _join_without_geom(
@@ -123,9 +122,8 @@ class IntersectionJoiner(Joiner):
         JOIN ({features_relation}) features
         ON ST_Intersects(regions.geometry, features.geometry)
         """
-        joint = get_duckdb_connection().sql(
-            intersection_query.format(
-                regions_relation=regions.sql_query(), features_relation=features.sql_query()
-            )
+        filled_query = intersection_query.format(
+            regions_relation=regions.sql_query(), features_relation=features.sql_query()
         )
+        joint = get_duckdb_connection().sql(filled_query)
         return joint

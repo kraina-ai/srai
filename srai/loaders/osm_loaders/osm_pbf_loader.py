@@ -4,19 +4,21 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 from pathlib import Path
-from typing import Hashable, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Hashable, List, Mapping, Optional, Sequence, Union
 
 import geopandas as gpd
-import pandas as pd
 
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
-from srai.db import duckdb_to_df
+from srai.constants import WGS84_CRS
+from srai.db import relation_to_table
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
     osm_tags_type,
 )
 from srai.utils._optional import import_optional_dependencies
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class OSMPbfLoader(OSMLoader):
@@ -60,7 +62,7 @@ class OSMPbfLoader(OSMLoader):
         self,
         area: gpd.GeoDataFrame,
         tags: Union[osm_tags_type, grouped_osm_tags_type],
-    ) -> gpd.GeoDataFrame:
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
 
@@ -90,7 +92,7 @@ class OSMPbfLoader(OSMLoader):
                 would return parks, all amenity types, bakeries and bicycle shops.
 
         Returns:
-            gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
+            duckdb.DuckDBPyRelation: Downloaded features as a DuckDB relation.
         """
         from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
         from srai.loaders.osm_loaders.pbf_file_handler import read_features_from_pbf_files
@@ -109,32 +111,18 @@ class OSMPbfLoader(OSMLoader):
 
         merged_tags = self._merge_osm_tags_filter(tags)
 
-        results = []
+        results: List["duckdb.DuckDBPyRelation"] = []
         for pbf_files in downloaded_pbf_files.values():
             features_relation = read_features_from_pbf_files(
                 file_paths=pbf_files,
                 tags=merged_tags,
                 filter_region_geometry=clipping_polygon,
             )
-            features_gdf = duckdb_to_df(features_relation)
-            results.append(features_gdf)
+            results.append(features_relation)
 
-        result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
+        result_relation = results[0]
+        for relation in results[1:]:
+            result_relation = result_relation.union(relation)
 
-        features_columns = result_gdf.columns.drop(labels=[GEOMETRY_COLUMN]).sort_values()
-        result_gdf = result_gdf[[GEOMETRY_COLUMN, *features_columns]]
-
-        return self._parse_features_gdf_to_groups(result_gdf, tags)
-
-    def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-        if not gdfs:
-            return self._get_empty_result()
-        elif len(gdfs) == 1:
-            gdf = gdfs[0]
-        else:
-            gdf = pd.concat(gdfs)
-
-        return gdf[~gdf.index.duplicated(keep="first")]
-
-    def _get_empty_result(self) -> gpd.GeoDataFrame:
-        return gpd.GeoDataFrame(index=pd.Index(name=FEATURES_INDEX), crs=WGS84_CRS, geometry=[])
+        result_relation = self._parse_features_relation_to_groups(result_relation, tags)
+        return relation_to_table(relation=result_relation, prefix="osm_data")

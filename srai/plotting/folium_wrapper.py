@@ -5,6 +5,7 @@ This module contains functions for quick plotting of analysed gdfs using Geopand
 function.
 """
 from itertools import cycle, islice
+import secrets
 from typing import List, Optional, Set, Union
 from srai.db import duckdb_to_df
 
@@ -58,8 +59,13 @@ def plot_regions(
         folium.Map: Generated map.
     """
     if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        relation_id = secrets.token_hex(nbytes=16)
+        relation_name = f"regions_{relation_id}"
         regions_gdf = duckdb_to_df(
-            regions_gdf.query(virtual_table_name="x", sql_query="SELECT region_id, geometry FROM x")
+            regions_gdf.query(
+                virtual_table_name=relation_name,
+                sql_query=f"SELECT region_id, geometry FROM {relation_name}",
+            )
         )
 
     return regions_gdf.reset_index().explore(
@@ -110,17 +116,23 @@ def plot_numeric_data(
     Returns:
         folium.Map: Generated map.
     """
+    relation_id = secrets.token_hex(nbytes=16)
+
     if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        relation_name = f"regions_{relation_id}"
         regions_gdf = duckdb_to_df(
             regions_gdf.query(
-                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+                virtual_table_name=relation_name,
+                sql_query=f"SELECT region_id, geometry FROM {relation_name}",
             )
         )
 
     if isinstance(embedding_df, duckdb.DuckDBPyRelation):
+        relation_name = f"embedding_{relation_id}"
         embedding_df = duckdb_to_df(
             embedding_df.query(
-                virtual_table_name="x", sql_query=f'SELECT region_id, "{data_column}" FROM x'
+                virtual_table_name=relation_name,
+                sql_query=f'SELECT region_id, "{data_column}" FROM {relation_name}',
             )
         )
 
@@ -183,9 +195,12 @@ def plot_neighbours(
         folium.Map: Generated map.
     """
     if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        relation_id = secrets.token_hex(nbytes=16)
+        relation_name = f"regions_{relation_id}"
         regions_gdf = duckdb_to_df(
             regions_gdf.query(
-                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+                virtual_table_name=relation_name,
+                sql_query=f"SELECT region_id, geometry FROM {relation_name}",
             )
         )
 
@@ -253,9 +268,12 @@ def plot_all_neighbourhood(
         folium.Map: Generated map.
     """
     if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
+        relation_id = secrets.token_hex(nbytes=16)
+        relation_name = f"regions_{relation_id}"
         regions_gdf = duckdb_to_df(
             regions_gdf.query(
-                virtual_table_name="x", sql_query=f"SELECT region_id, geometry FROM x"
+                virtual_table_name=relation_name,
+                sql_query=f"SELECT region_id, geometry FROM {relation_name}",
             )
         )
 
