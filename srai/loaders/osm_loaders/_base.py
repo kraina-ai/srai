@@ -10,6 +10,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from srai.constants import GEOMETRY_COLUMN
+from srai.db import escape
 from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
@@ -112,16 +113,13 @@ class OSMLoader(Loader, abc.ABC):
         Returns:
             duckdb.DuckDBPyRelation: Parsed grouped features_relation.
         """
-
-        def escape(value: str) -> str:
-            return value.replace("'", "''")
-
         relation_id = secrets.token_hex(nbytes=16)
         relation_name = f"grouped_{relation_id}"
 
         query = "SELECT feature_id, geometry, {case_clauses} FROM {relation_name}"
         case_clauses = []
-        for group_name, osm_filter in group_filter.items():
+        for group_name in sorted(group_filter.keys()):
+            osm_filter = group_filter[group_name]
             case_when_clauses = []
             for osm_tag_key, osm_tag_value in osm_filter.items():
                 if isinstance(osm_tag_value, bool) and osm_tag_value:

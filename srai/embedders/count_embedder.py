@@ -3,14 +3,17 @@ Count Embedder.
 
 This module contains count embedder implementation.
 """
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Set, Union
 
-import duckdb
 import geopandas as gpd
 import pandas as pd
 
-from srai.db import duckdb_to_df
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.db import df_to_duckdb, escape, get_duckdb_connection, relation_to_table
 from srai.embedders import Embedder
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class CountEmbedder(Embedder):
@@ -31,8 +34,9 @@ class CountEmbedder(Embedder):
                 or count features only on the highest level based on features column name.
                 Defaults to True.
         """
+        self.expected_output_features: Optional[Set[str]]
         if expected_output_features is not None:
-            self.expected_output_features = pd.Series(expected_output_features)
+            self.expected_output_features = set(expected_output_features)
         else:
             self.expected_output_features = None
 
@@ -40,15 +44,15 @@ class CountEmbedder(Embedder):
 
     def transform(
         self,
-        regions_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
-        features_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
-        joint_gdf: Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame],
-    ) -> pd.DataFrame:
+        regions: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        features: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+        joint: Union["duckdb.DuckDBPyRelation", gpd.GeoDataFrame],
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Embed a given GeoDataFrame.
 
         Creates region embeddings by counting the frequencies of each feature value.
-        Expects features_gdf to be in wide format with each column
+        Expects features to be in wide format with each column
         being a separate type of feature (e.g. amenity, leisure)
         and rows to hold values of these features for each object.
         The resulting DataFrame will have columns made by combining
@@ -56,73 +60,138 @@ class CountEmbedder(Embedder):
         The rows will hold numbers of this type of feature in each region.
 
         Args:
-            regions_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and
+            regions (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Region indexes and
                 geometries.
-            features_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Feature indexes,
+            features (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Feature indexes,
                 geometries and feature values.
-            joint_gdf (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Joiner result with
+            joint (Union[duckdb.DuckDBPyRelation, gpd.GeoDataFrame]): Joiner result with
                 region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf.
+            pd.DataFrame: Embedding for each region in regions.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
+            ValueError: If features is empty and self.expected_output_features is not set.
             ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If joint.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        if isinstance(regions_gdf, duckdb.DuckDBPyRelation):
-            regions_gdf = duckdb_to_df(regions_gdf)
-        if isinstance(features_gdf, duckdb.DuckDBPyRelation):
-            features_gdf = duckdb_to_df(features_gdf)
-        if isinstance(joint_gdf, duckdb.DuckDBPyRelation):
-            joint_gdf = duckdb_to_df(joint_gdf)
+        if isinstance(regions, gpd.GeoDataFrame):
+            regions = df_to_duckdb(regions)
+        if isinstance(features, gpd.GeoDataFrame):
+            features = df_to_duckdb(features)
+        if isinstance(joint, (pd.DataFrame, gpd.GeoDataFrame)):
+            joint = df_to_duckdb(joint)
 
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        if features_gdf.empty:
-            if self.expected_output_features is not None:
-                return pd.DataFrame(
-                    0, index=regions_gdf.index, columns=self.expected_output_features
-                )
-            else:
-                raise ValueError(
-                    "Cannot embed with empty features_gdf and no expected_output_features."
-                )
+        self._validate_relations_indexes(regions, features, joint)
 
-        regions_df = self._remove_geometry_if_present(regions_gdf)
-        features_df = self._remove_geometry_if_present(features_gdf)
-        joint_df = self._remove_geometry_if_present(joint_gdf)
+        result_relation: "duckdb.DuckDBPyRelation"
 
         if self.count_subcategories:
-            feature_encodings = pd.get_dummies(features_df)
+            result_relation = self._count_subcategories(regions, features, joint)
         else:
-            feature_encodings = features_df.notna().astype(int)
-        joint_with_encodings = joint_df.join(feature_encodings)
-        region_embeddings = joint_with_encodings.groupby(level=0).sum()
+            result_relation = self._count_base_categories(regions, features, joint)
 
         if self.expected_output_features is not None:
-            region_embeddings = self._filter_to_expected_features(region_embeddings)
-        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
+            result_relation = self._filter_to_expected_features(result_relation)
 
-        return region_embedding_df
+        return relation_to_table(relation=result_relation, prefix="counts_embedding")
 
-    def _filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
+    def _count_base_categories(
+        self,
+        regions_relation: "duckdb.DuckDBPyRelation",
+        features_relation: "duckdb.DuckDBPyRelation",
+        joint_relation: "duckdb.DuckDBPyRelation",
+    ) -> "duckdb.DuckDBPyRelation":
+        columns = set(features_relation.columns).difference([FEATURES_INDEX, GEOMETRY_COLUMN])
+        sql_query = """
+        SELECT
+            regions.region_id,
+            {counts_clauses}
+        FROM ({joint_relation}) joint
+        JOIN ({features_relation}) features
+        ON features.feature_id = joint.feature_id
+        JOIN ({regions_relation}) regions
+        ON regions.region_id = joint.region_id
+        GROUP BY regions.region_id
+        """
+
+        filled_query = sql_query.format(
+            joint_relation=joint_relation.sql_query(),
+            features_relation=features_relation.sql_query(),
+            regions_relation=regions_relation.sql_query(),
+            counts_clauses=", ".join(
+                f'COUNT(features."{column}") FILTER (features."{column}" IS NOT NULL) AS "{column}"'
+                for column in sorted(columns)
+                if self.expected_output_features is None or column in self.expected_output_features
+            ),
+        )
+        return get_duckdb_connection().sql(filled_query)
+
+    def _count_subcategories(
+        self,
+        regions_relation: "duckdb.DuckDBPyRelation",
+        features_relation: "duckdb.DuckDBPyRelation",
+        joint_relation: "duckdb.DuckDBPyRelation",
+    ) -> "duckdb.DuckDBPyRelation":
+        columns = sorted(
+            set(features_relation.columns).difference([FEATURES_INDEX, GEOMETRY_COLUMN])
+        )
+        group_clauses = ", ".join(
+            f'LIST(DISTINCT "{column}") FILTER (features."{column}" IS NOT NULL) AS "{column}"'
+            for column in columns
+        )
+        values_query = f"SELECT {group_clauses} FROM ({features_relation.sql_query()}) features"
+        columns_values = get_duckdb_connection().sql(values_query).fetchone()
+
+        sql_query = """
+        SELECT
+            regions.region_id,
+            {counts_clauses}
+        FROM ({joint_relation}) joint
+        JOIN ({features_relation}) features
+        ON features.feature_id = joint.feature_id
+        JOIN ({regions_relation}) regions
+        ON regions.region_id = joint.region_id
+        GROUP BY regions.region_id
+        """
+
+        filled_query = sql_query.format(
+            joint_relation=joint_relation.sql_query(),
+            features_relation=features_relation.sql_query(),
+            regions_relation=regions_relation.sql_query(),
+            counts_clauses=", ".join(
+                f'COUNT(features."{column}") FILTER (features."{column}" = \'{escape(value)}\')'
+                f' AS "{column}_{value}"'
+                for column, column_values in zip(columns, columns_values)
+                for value in column_values
+                if self.expected_output_features is None
+                or f"{column}_{value}" in self.expected_output_features
+            ),
+        )
+        return get_duckdb_connection().sql(filled_query)
+
+    def _filter_to_expected_features(
+        self, region_embeddings: "duckdb.DuckDBPyRelation"
+    ) -> "duckdb.DuckDBPyRelation":
         """
         Add missing and remove excessive columns from embeddings.
 
         Args:
-            region_embeddings (pd.DataFrame): Counted frequencies of each feature value.
+            region_embeddings (duckdb.DuckDBPyRelation): Counted frequencies of each feature value.
 
         Returns:
-            pd.DataFrame: Embeddings with expected columns only.
+            duckdb.DuckDBPyRelation: Embeddings with expected columns only.
         """
-        missing_features = self.expected_output_features[
-            ~self.expected_output_features.isin(region_embeddings.columns)
-        ]
-        missing_features_df = pd.DataFrame(
-            0, index=region_embeddings.index, columns=missing_features
+        if not self.expected_output_features:
+            return region_embeddings
+        existing_columns = set(region_embeddings.columns).difference([REGIONS_INDEX])
+        missing_features = self.expected_output_features.difference(existing_columns)
+        columns_list = ", ".join(
+            f'0 AS "{column}"' if column in missing_features else f'"{column}"'
+            for column in sorted(self.expected_output_features)
         )
-        region_embeddings = pd.concat([region_embeddings, missing_features_df], axis=1)
-        region_embeddings = region_embeddings[self.expected_output_features]
-        return region_embeddings
+        sql_query = (
+            f"SELECT region_id, {columns_list} FROM ({region_embeddings.sql_query()}) embeddings"
+        )
+        return get_duckdb_connection().sql(sql_query)

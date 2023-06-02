@@ -18,7 +18,7 @@ import psutil
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import FEATURES_INDEX
-from srai.db import get_duckdb_connection, get_new_duckdb_connection, relation_to_table
+from srai.db import escape, get_duckdb_connection, get_new_duckdb_connection, relation_to_table
 from srai.loaders.osm_loaders.filters._typing import osm_tags_type
 
 if TYPE_CHECKING:
@@ -236,9 +236,6 @@ def _generate_tags_json_filter(tags_filter: Optional[osm_tags_type] = None) -> s
 
     if tags_filter:
         filter_clauses.clear()
-
-        def escape(value: str) -> str:
-            return value.replace("'", "''")
 
         for filter_tag_key, filter_tag_value in tags_filter.items():
             if isinstance(filter_tag_value, bool) and filter_tag_value:

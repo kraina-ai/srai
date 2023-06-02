@@ -251,3 +251,8 @@ def _get_nonempty_sample(df: pd.DataFrame) -> pd.DataFrame:
         ].reset_index(drop=True)
 
     return pd.DataFrame(data=column_samples)
+
+
+def escape(value: str) -> str:
+    """Escape value for SQL query."""
+    return value.replace("'", "''")

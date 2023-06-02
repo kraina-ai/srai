@@ -253,6 +253,7 @@ def test_osm_pbf_loader(
 
     loader = OSMPbfLoader(pbf_file=pbf_file, download_directory=download_directory)
     result = loader.load(area, tags=query)
+    result = duckdb_to_df(result)
 
     assert len(result) == expected_result_length
     assert len(result.columns) == expected_features_columns_length + 1

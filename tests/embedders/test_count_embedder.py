@@ -7,6 +7,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from srai.constants import REGIONS_INDEX
+from srai.db import duckdb_to_df
 from srai.embedders import CountEmbedder
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -141,11 +142,10 @@ def test_correct_embedding(
     gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
     gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
     gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
-    embedding_df = embedder.transform(
-        regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
-    )
+    embedding = embedder.transform(regions=gdf_regions, features=gdf_features, joint=gdf_joint)
+    embedding = duckdb_to_df(embedding)
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
+    assert_frame_equal(embedding, expected_result_df, check_dtype=False)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -202,6 +202,7 @@ def test_empty(
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
+        embedding = duckdb_to_df(embedding)
         assert len(embedding) == len(gdf_regions)
         assert embedding.index.name == gdf_regions.index.name
         if expected_output_features:
@@ -260,6 +261,4 @@ def test_incorrect_indexes(
     joint_gdf = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        CountEmbedder().transform(
-            regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
-        )
+        CountEmbedder().transform(regions=regions_gdf, features=features_gdf, joint=joint_gdf)

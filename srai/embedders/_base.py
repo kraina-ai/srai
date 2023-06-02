@@ -1,11 +1,15 @@
 """Base class for embedders."""
 
 import abc
+from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
 
-from srai.constants import GEOMETRY_COLUMN
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+
+if TYPE_CHECKING:
+    import duckdb
 
 
 class Embedder(abc.ABC):
@@ -35,6 +39,24 @@ class Embedder(abc.ABC):
             ValueError: If index levels in gdfs don't overlap correctly.
         """
         raise NotImplementedError
+
+    def _validate_relations_indexes(
+        self,
+        regions_relation: "duckdb.DuckDBPyRelation",
+        features_relation: "duckdb.DuckDBPyRelation",
+        joint_relation: "duckdb.DuckDBPyRelation",
+    ) -> None:
+        if REGIONS_INDEX not in regions_relation.columns:
+            raise ValueError(f"regions_relation must have a {REGIONS_INDEX!r} index.")
+
+        if FEATURES_INDEX not in features_relation.columns:
+            raise ValueError(f"features_relation must have a {FEATURES_INDEX!r} index.")
+
+        if REGIONS_INDEX not in joint_relation.columns:
+            raise ValueError(f"joint_relation must have a {REGIONS_INDEX!r} index.")
+
+        if FEATURES_INDEX not in joint_relation.columns:
+            raise ValueError(f"joint_relation must have a {FEATURES_INDEX!r} index.")
 
     def _validate_indexes(
         self,
