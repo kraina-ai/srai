@@ -12,6 +12,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from srai.db import duckdb_to_df
 from srai.embedders import CountEmbedder
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
@@ -192,7 +193,8 @@ class Hex2VecEmbedder(CountEmbedder):
     def _get_raw_counts(
         self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
     ) -> pd.DataFrame:
-        return super().transform(regions_gdf, features_gdf, joint_gdf).astype(np.float32)
+        counts_relation = super().transform(regions_gdf, features_gdf, joint_gdf)
+        return duckdb_to_df(counts_relation).astype(np.float32)
 
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:

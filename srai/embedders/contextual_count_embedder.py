@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai.db import duckdb_to_df
 from srai.embedders.count_embedder import CountEmbedder
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
@@ -101,7 +102,8 @@ class ContextualCountEmbedder(CountEmbedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_relation = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_df = duckdb_to_df(counts_relation)
 
         result_df: pd.DataFrame
         if self.concatenate_vectors:
