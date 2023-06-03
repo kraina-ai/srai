@@ -1,25 +1,25 @@
-"""Base class for regionizers."""
+"""Base class for regionalizers."""
 
 import abc
 
 import geopandas as gpd
 
 
-class Regionizer(abc.ABC):
-    """Abstract class for regionizers."""
+class Regionalizer(abc.ABC):
+    """Abstract class for regionalizers."""
 
     @abc.abstractmethod
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:  # pragma: no cover
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         This one should treat the input as a single region.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionalized.
 
         Returns:
-            GeoDataFrame with the regionized data.
+            GeoDataFrame with the regionalized data.
         """
         raise NotImplementedError
 

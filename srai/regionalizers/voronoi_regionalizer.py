@@ -1,7 +1,7 @@
 """
-Voronoi Regionizer.
+Voronoi Regionalizer.
 
-This module contains voronoi regionizer implementation.
+This module contains voronoi regionalizer implementation.
 """
 
 from typing import Hashable, List, Optional
@@ -10,15 +10,15 @@ import geopandas as gpd
 from shapely.geometry import Point, box
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.regionizers import Regionizer
+from srai.regionalizers import Regionalizer
 from srai.utils._optional import import_optional_dependencies
 
 
-class VoronoiRegionizer(Regionizer):
+class VoronoiRegionalizer(Regionalizer):
     """
-    VoronoiRegionizer.
+    VoronoiRegionalizer.
 
-    Voronoi [1] regionizer allows the given geometries to be divided
+    Voronoi [1] regionalizer allows the given geometries to be divided
     into Thiessen polygons using geometries that are the seeds. To
     minimize distortions tessellation will be performed on a sphere
     using SphericalVoronoi [2] function from scipy library.
@@ -36,7 +36,7 @@ class VoronoiRegionizer(Regionizer):
         multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
         """
-        Init VoronoiRegionizer.
+        Init VoronoiRegionalizer.
 
         All (multi)polygons from seeds GeoDataFrame will be transformed to their centroids,
         because scipy function requires only points as an input.
@@ -84,19 +84,19 @@ class VoronoiRegionizer(Regionizer):
 
     def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         Returns a list of disjointed regions consisting of Thiessen cells generated
         using a Voronoi diagram on the sphere.
 
         Args:
-            gdf (Optional[gpd.GeoDataFrame], optional): GeoDataFrame to be regionized.
+            gdf (Optional[gpd.GeoDataFrame], optional): GeoDataFrame to be regionalized.
                 Will use this list of geometries to crop resulting regions. If None, a boundary box
                 with bounds (-180, -90, 180, 90) is used to return regions covering whole Earth.
                 Defaults to None.
 
         Returns:
-            gpd.GeoDataFrame: GeoDataFrame with the regionized data cropped using input
+            gpd.GeoDataFrame: GeoDataFrame with the regionalized data cropped using input
                 GeoDataFrame.
 
         Raises:

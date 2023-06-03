@@ -67,7 +67,7 @@ voronoi = ["pymap3d", "haversine", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
-plotting = ["folium", "mapclassify", "plotly", "kaleido"]
+plotting = ["folium", "mapclassify", "plotly", "kaleido<=0.2.1"]  # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
 torch = ["pytorch-lightning", "torch"]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]

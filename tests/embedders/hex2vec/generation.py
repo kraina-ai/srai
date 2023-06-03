@@ -12,7 +12,7 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import osm_tags_type
 from srai.neighbourhoods import H3Neighbourhood
-from srai.regionizers import H3Regionizer
+from srai.regionalizers import H3Regionalizer
 from srai.utils import geocode_to_region_gdf
 from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
 
@@ -33,9 +33,9 @@ def generate_test_case(
     regions_indexes = neighbourhood.get_neighbours_up_to_distance(root_region_index, radius)
     regions_indexes.add(root_region_index)
     regions_indexes = list(regions_indexes)  # type: ignore
-    regionizer = H3Regionizer(h3_res)
+    regionalizer = H3Regionalizer(h3_res)
 
-    geoms = [regionizer._h3_index_to_shapely_polygon(r) for r in regions_indexes]
+    geoms = [regionalizer._h3_index_to_shapely_polygon(r) for r in regions_indexes]
     regions_gdf = gpd.GeoDataFrame(index=regions_indexes, geometry=geoms, crs=WGS84_CRS)
     regions_gdf.index.name = "region_id"
 

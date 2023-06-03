@@ -1,7 +1,7 @@
 """
-S2 regionizer.
+S2 Regionalizer.
 
-This module exposes Google's S2 Geospatial Indexing System [1] as a regionizer.
+This module exposes Google's S2 Geospatial Indexing System [1] as a regionalizer.
 It uses the Python API [2].
 
 References:
@@ -19,19 +19,19 @@ from s2 import s2
 from shapely.geometry import Polygon
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.regionizers import Regionizer
+from srai.regionalizers import Regionalizer
 
 
-class S2Regionizer(Regionizer):
+class S2Regionalizer(Regionalizer):
     """
-    S2 Regionizer.
+    S2 Regionalizer.
 
-    S2 Regionizer gives an opportunity to divide the given geometries into square S2 cells.
+    S2 Regionalizer gives an opportunity to divide the given geometries into square S2 cells.
     """
 
     def __init__(self, resolution: int, buffer: bool = True) -> None:
         """
-        Init S2 Regionizer.
+        Init S2 Regionalizer.
 
         Args:
             resolution (int): Resolution of the cells (S2 supports 0-30). See [1] for
@@ -53,13 +53,13 @@ class S2Regionizer(Regionizer):
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionalized.
 
         Returns:
-            gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
+            gpd.GeoDataFrame: GeoDataFrame with regionalized geometries.
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 

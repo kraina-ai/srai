@@ -1,4 +1,4 @@
-"""Conftest for Regionizers."""
+"""Conftest for Regionalizers."""
 
 import geopandas as gpd
 import pytest
