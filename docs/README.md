@@ -45,7 +45,7 @@ In the current state, `srai` provides the following functionalities:
 * **OSM data download** - downloading OpenStreetMap data for a given area using different sources
 * **OSM data processing** - processing OSM data to extract useful information (e.g. road network, buildings, POIs, etc.)
 * **GTFS processing** - extracting features from GTFS data
-* **Regionization** - splitting a given area into smaller regions using different algorithms (e.g. Uber's H3[1], Voronoi, etc.)
+* **Regionalization** - splitting a given area into smaller regions using different algorithms (e.g. Uber's H3[1], Voronoi, etc.)
 * **Embedding** - embedding regions into a vector space based on different spatial features, and using different algorithms (eg. hex2vec[2], etc.)
 * Utilities for spatial data visualization and processing
 
@@ -77,7 +77,7 @@ The following optional dependencies can be installed to enable additional functi
 
 * `srai[all]` - all optional dependencies
 * `srai[osm]` - dependencies required to download OpenStreetMap data
-* `srai[voronoi]` - dependencies to use Voronoi-based regionization method
+* `srai[voronoi]` - dependencies to use Voronoi-based regionalization method
 * `srai[gtfs]` - dependencies to process GTFS data
 * `srai[plotting]` - dependencies to plot graphs and maps
 * `srai[torch]` - dependencies to use torch-based embedders
@@ -162,32 +162,32 @@ features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
   <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
-### Regionization
+### Regionalization
 
-Regionization is a process of dividing a given area into smaller regions. This can be done in a variety of ways:
+Regionalization is a process of dividing a given area into smaller regions. This can be done in a variety of ways:
 
-* `H3Regionizer` - regionization using [Uber's H3 library](https://github.com/uber/h3)
-* `S2Regionizer` - regionization using [Google's S2 library](https://github.com/google/s2geometry)
-* `VoronoiRegionizer` - regionization using Voronoi diagram
-* `AdministativeBoundaryRegionizer` - regionization using administrative boundaries
+* `H3Regionalizer` - regionalization using [Uber's H3 library](https://github.com/uber/h3)
+* `S2Regionalizer` - regionalization using [Google's S2 library](https://github.com/google/s2geometry)
+* `VoronoiRegionalizer` - regionalization using Voronoi diagram
+* `AdministativeBoundaryRegionalizer` - regionalization using administrative boundaries
 
 Example:
 
 ```python
-from srai.regionizers import H3Regionizer
+from srai.regionalizers import H3Regionalizer
 from srai.utils import geocode_to_region_gdf
 
 area = geocode_to_region_gdf("Berlin, Germany")
-regionizer = H3Regionizer(resolution=7)
+regionalizer = H3Regionalizer(resolution=7)
 
-regions = regionizer.transform(area)
+regions = regionalizer.transform(area)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
 plot_regions(regions_gdf=regions, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/regionization.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/regionalization.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Embedding
@@ -200,24 +200,24 @@ Embedding is a process of mapping regions into a vector space. This can be done 
 * `ContextualCountEmbedder` - embedding based on features counts with neighbourhood context (proposed in [3])
 * `Highway2VecEmbedder` - embedding using Highway2Vec[4] algorithm
 
-All of those methods share the same API. All of them require results from `Loader` (load features), `Regionizer` (split area into regions) and `Joiner` (join features to regions) to work. An example using `CountEmbedder`:
+All of those methods share the same API. All of them require results from `Loader` (load features), `Regionalizer` (split area into regions) and `Joiner` (join features to regions) to work. An example using `CountEmbedder`:
 
 ```python
 from srai.embedders import CountEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMOnlineLoader
 from srai.plotting import plot_regions, plot_numeric_data
-from srai.regionizers import H3Regionizer
+from srai.regionalizers import H3Regionalizer
 from srai.utils import geocode_to_region_gdf
 
 loader = OSMOnlineLoader()
-regionizer = H3Regionizer(resolution=9)
+regionalizer = H3Regionalizer(resolution=9)
 joiner = IntersectionJoiner()
 
 query = {"amenity": "bicycle_parking"}
 area = geocode_to_region_gdf("Malmö, Sweden")
 features = loader.load(area, query)
-regions = regionizer.transform(area)
+regions = regionalizer.transform(area)
 joint = joiner.transform(regions, features)
 
 embedder = CountEmbedder()
@@ -239,17 +239,17 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
-from srai.regionizers import H3Regionizer
+from srai.regionalizers import H3Regionalizer
 from srai.utils import geocode_to_region_gdf
 from srai.plotting import plot_regions, plot_numeric_data
 
 loader = OSMPbfLoader()
-regionizer = H3Regionizer(resolution=11)
+regionalizer = H3Regionalizer(resolution=11)
 joiner = IntersectionJoiner()
 
 area = geocode_to_region_gdf("City of London")
 features = loader.load(area, HEX2VEC_FILTER)
-regions = regionizer.transform(area)
+regions = regionalizer.transform(area)
 joint = joiner.transform(regions, features)
 
 embedder = Hex2VecEmbedder()

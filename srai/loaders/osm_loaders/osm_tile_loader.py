@@ -12,7 +12,7 @@ import geopandas as gpd
 import pandas as pd
 import requests
 
-from srai.regionizers.slippy_map_regionizer import SlippyMapRegionizer
+from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
 from srai.utils._optional import import_optional_dependencies
 
 from .osm_tile_data_collector import (
@@ -79,7 +79,7 @@ class OSMTileLoader:
             if data_collector is not None
             else InMemoryDataCollector()
         )
-        self.regionizer = SlippyMapRegionizer(zoom=self.zoom)
+        self.regionalizer = SlippyMapRegionalizer(zoom=self.zoom)
 
     def _get_collector(
         self, storage_strategy: Union[str, DataCollectorType, DataCollector]
@@ -103,7 +103,7 @@ class OSMTileLoader:
         Returns:
             gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
         """
-        regions = self.regionizer.transform(gdf=area)
+        regions = self.regionalizer.transform(gdf=area)
         regions["tile"] = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
         return regions
 
