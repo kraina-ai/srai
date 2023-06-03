@@ -1,4 +1,4 @@
-"""Tests for H3Regionizer."""
+"""Tests for H3Regionalizer."""
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any, List
 from unittest import TestCase
@@ -6,7 +6,7 @@ from unittest import TestCase
 import pytest
 
 from srai.constants import GEOMETRY_COLUMN
-from srai.regionizers import S2Regionizer
+from srai.regionalizers import S2Regionalizer
 
 if TYPE_CHECKING:
     import geopandas as gpd
@@ -51,11 +51,11 @@ def test_transform(
     expectation: Any,
     request: Any,
 ) -> None:
-    """Test transform of H3Regionizer."""
+    """Test transform of H3Regionalizer."""
     gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
     s2_indexes: List[str] = request.getfixturevalue(expected_s2_indexes_fixture)
     with expectation:
-        gdf_s2 = S2Regionizer(resolution).transform(gdf)
+        gdf_s2 = S2Regionalizer(resolution).transform(gdf)
 
         ut.assertCountEqual(first=gdf_s2.index.to_list(), second=s2_indexes)
         assert GEOMETRY_COLUMN in gdf_s2

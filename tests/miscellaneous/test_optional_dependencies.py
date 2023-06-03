@@ -68,7 +68,7 @@ def _test_voronoi() -> None:
     import geopandas as gpd
     from shapely.geometry import Point
 
-    from srai.regionizers import VoronoiRegionizer
+    from srai.regionalizers import VoronoiRegionalizer
 
     seeds_gdf = gpd.GeoDataFrame(
         {
@@ -82,7 +82,7 @@ def _test_voronoi() -> None:
         index=[1, 2, 3, 4],
         crs=WGS84_CRS,
     )
-    VoronoiRegionizer(seeds=seeds_gdf)
+    VoronoiRegionalizer(seeds=seeds_gdf)
 
 
 def _test_plotting() -> None:
@@ -102,9 +102,9 @@ def _test_torch() -> None:
 
 def _test_osm() -> None:
     from srai.loaders import OSMOnlineLoader, OSMPbfLoader, OSMTileLoader, OSMWayLoader
-    from srai.regionizers import AdministrativeBoundaryRegionizer
+    from srai.regionalizers import AdministrativeBoundaryRegionalizer
 
-    AdministrativeBoundaryRegionizer(2)
+    AdministrativeBoundaryRegionalizer(2)
     OSMPbfLoader()
     OSMOnlineLoader()
     OSMWayLoader("drive")

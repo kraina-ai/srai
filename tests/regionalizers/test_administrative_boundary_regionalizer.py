@@ -1,4 +1,4 @@
-"""Voronoi regionizer tests."""
+"""Voronoi regionalizer tests."""
 from contextlib import nullcontext as does_not_raise
 from typing import Any, Union
 
@@ -9,7 +9,7 @@ from pytest_mock import MockerFixture
 from shapely.geometry import Point, box
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
-from srai.regionizers import AdministrativeBoundaryRegionizer
+from srai.regionalizers import AdministrativeBoundaryRegionalizer
 from srai.utils import merge_disjointed_gdf_geometries
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
@@ -41,20 +41,20 @@ def test_admin_level(
 ) -> None:
     """Test checks if illegal admin_level is disallowed."""
     with expectation:
-        AdministrativeBoundaryRegionizer(admin_level=admin_level)
+        AdministrativeBoundaryRegionalizer(admin_level=admin_level)
 
 
 def test_empty_gdf_attribute_error(gdf_empty) -> None:  # type: ignore
     """Test checks if empty GeoDataFrames are disallowed."""
     with pytest.raises(AttributeError):
-        abr = AdministrativeBoundaryRegionizer(admin_level=4)
+        abr = AdministrativeBoundaryRegionalizer(admin_level=4)
         abr.transform(gdf_empty)
 
 
 def test_no_crs_gdf_value_error(gdf_no_crs) -> None:  # type: ignore
     """Test checks if GeoDataFrames without crs are disallowed."""
     with pytest.raises(ValueError):
-        abr = AdministrativeBoundaryRegionizer(admin_level=4)
+        abr = AdministrativeBoundaryRegionalizer(admin_level=4)
         abr.transform(gdf=gdf_no_crs)
 
 
@@ -85,7 +85,7 @@ def test_empty_region_full_bounding_box(toposimplify: Union[bool, float], reques
     request.getfixturevalue("mock_overpass_api")
     request_bbox = box(minx=0, miny=0, maxx=2, maxy=2)
     request_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [request_bbox]}, crs=WGS84_CRS)
-    abr = AdministrativeBoundaryRegionizer(
+    abr = AdministrativeBoundaryRegionalizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
     result_gdf = abr.transform(gdf=request_bbox_gdf)
@@ -109,7 +109,7 @@ def test_no_empty_region_full_bounding_box(toposimplify: Union[bool, float], req
     request.getfixturevalue("mock_overpass_api")
     request_bbox = box(minx=0, miny=0, maxx=1, maxy=1)
     request_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [request_bbox]}, crs=WGS84_CRS)
-    abr = AdministrativeBoundaryRegionizer(
+    abr = AdministrativeBoundaryRegionalizer(
         admin_level=2, return_empty_region=True, toposimplify=toposimplify
     )
     result_gdf = abr.transform(gdf=request_bbox_gdf)
@@ -133,7 +133,7 @@ def test_points_in_result(toposimplify: Union[bool, float], request: Any) -> Non
     request.getfixturevalue("mock_overpass_api")
     request_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [Point(0.5, 0.5)]}, crs=WGS84_CRS)
 
-    abr = AdministrativeBoundaryRegionizer(
+    abr = AdministrativeBoundaryRegionalizer(
         admin_level=2, return_empty_region=False, clip_regions=False, toposimplify=toposimplify
     )
 
@@ -159,7 +159,7 @@ def test_toposimplify_on_real_data(toposimplify: Union[float, bool]) -> None:
     )
     madagascar_bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [madagascar_bbox]}, crs=WGS84_CRS)
 
-    abr = AdministrativeBoundaryRegionizer(
+    abr = AdministrativeBoundaryRegionalizer(
         admin_level=4, return_empty_region=True, toposimplify=toposimplify
     )
     madagascar_result_gdf = abr.transform(gdf=madagascar_bbox_gdf)
@@ -182,7 +182,9 @@ def test_regions_not_found_on_real_data(return_empty_region: bool) -> None:
         {GEOMETRY_COLUMN: [null_island_region]}, crs=WGS84_CRS
     )
 
-    abr = AdministrativeBoundaryRegionizer(admin_level=10, return_empty_region=return_empty_region)
+    abr = AdministrativeBoundaryRegionalizer(
+        admin_level=10, return_empty_region=return_empty_region
+    )
 
     with pytest.warns(RuntimeWarning):
         madagascar_result_gdf = abr.transform(gdf=null_island_region_gdf)

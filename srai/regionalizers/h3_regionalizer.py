@@ -1,7 +1,8 @@
 """
-H3 regionizer.
+H3 regionalizer.
 
-This module exposes Uber's H3 Hexagonal Hierarchical Geospatial Indexing System [1] as a regionizer.
+This module exposes Uber's H3 Hexagonal Hierarchical Geospatial Indexing System [1] as
+a regionalizer.
 
 Note:
     The default API [2] was chosen (basic_str) to ease the implementation.
@@ -20,21 +21,21 @@ from functional import seq
 from shapely import geometry
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.regionizers import Regionizer
+from srai.regionalizers import Regionalizer
 from srai.utils import buffer_geometry
 
 
-class H3Regionizer(Regionizer):
+class H3Regionalizer(Regionalizer):
     """
-    H3 Regionizer.
+    H3 Regionalizer.
 
-    H3 Regionizer allows the given geometries to be divided
+    H3 Regionalizer allows the given geometries to be divided
     into H3 cells - hexagons with pentagons as a very rare exception
     """
 
     def __init__(self, resolution: int, buffer: bool = True) -> None:
         """
-        Init H3Regionizer.
+        Init H3Regionalizer.
 
         Args:
             resolution (int): Resolution of the cells. See [1] for a full comparison.
@@ -55,13 +56,13 @@ class H3Regionizer(Regionizer):
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         Transforms given geometries into H3 cells of given resolution
         and optionally applies buffering.
 
         Args:
-            gdf (gpd.GeoDataFrame): (Multi)Polygons to be regionized.
+            gdf (gpd.GeoDataFrame): (Multi)Polygons to be regionalized.
 
         Returns:
             gpd.GeoDataFrame: H3 cells.

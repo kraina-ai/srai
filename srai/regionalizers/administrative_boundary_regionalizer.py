@@ -1,7 +1,7 @@
 """
-Administrative Boundary Regionizer.
+Administrative Boundary Regionalizer.
 
-This module contains administrative boundary regionizer implementation.
+This module contains administrative boundary regionalizer implementation.
 """
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -15,16 +15,16 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.regionizers import Regionizer
+from srai.regionalizers import Regionalizer
 from srai.utils import flatten_geometry_series
 from srai.utils._optional import import_optional_dependencies
 
 
-class AdministrativeBoundaryRegionizer(Regionizer):
+class AdministrativeBoundaryRegionalizer(Regionalizer):
     """
-    AdministrativeBoundaryRegionizer.
+    AdministrativeBoundaryRegionalizer.
 
-    Administrative boundary regionizer allows the given geometries to be divided
+    Administrative boundary regionalizer allows the given geometries to be divided
     into boundaries from OpenStreetMap on a given `admin_level` [1].
 
     Downloads those boundaries online using `overpass` and `osmnx` libraries.
@@ -48,7 +48,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         remove_artefact_regions: bool = True,
     ) -> None:
         """
-        Init AdministrativeBoundaryRegionizer.
+        Init AdministrativeBoundaryRegionalizer.
 
         Args:
             admin_level (int): OpenStreetMap admin_level value. See [1] for detailed description of
@@ -105,7 +105,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         Will query Overpass [1] server using `overpass` [2] library for closed administrative
         boundaries on a given admin_level and then download geometries for each relation using
@@ -123,11 +123,11 @@ class AdministrativeBoundaryRegionizer(Regionizer):
         not fully cover a clipping mask.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionalized.
                 Will use this list of geometries to crop resulting regions.
 
         Returns:
-            gpd.GeoDataFrame: GeoDataFrame with the regionized data cropped using input
+            gpd.GeoDataFrame: GeoDataFrame with the regionalized data cropped using input
                 GeoDataFrame.
 
         Raises:
@@ -186,7 +186,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
                 regions_gdf.loc[
-                    AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME, GEOMETRY_COLUMN
+                    AdministrativeBoundaryRegionalizer.EMPTY_REGION_NAME, GEOMETRY_COLUMN
                 ] = empty_region
 
         return regions_gdf
@@ -334,7 +334,7 @@ class AdministrativeBoundaryRegionizer(Regionizer):
             regions_gdf = gpd.GeoDataFrame(
                 data={
                     GEOMETRY_COLUMN: [gdf.geometry.unary_union],
-                    REGIONS_INDEX: [AdministrativeBoundaryRegionizer.EMPTY_REGION_NAME],
+                    REGIONS_INDEX: [AdministrativeBoundaryRegionalizer.EMPTY_REGION_NAME],
                 },
                 crs=WGS84_CRS,
             ).set_index(REGIONS_INDEX)

@@ -2,7 +2,7 @@
 This module contains neighbourhood calculation methods.
 
 Some embedding methods require a neighbourhood to be defined. This module contains
-neighbourhood calculation methods - both dedicated to a specific regionization method
+neighbourhood calculation methods - both dedicated to a specific regionalization method
 and general ones.
 """
 from ._base import Neighbourhood

@@ -1,7 +1,7 @@
 """
-Slippy map regionizer.
+Slippy map regionalizer.
 
-This module implements Slippy map tilenames [1] as regionizer.
+This module implements Slippy map tilenames [1] as a regionalizer.
 
 References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
@@ -15,15 +15,15 @@ import shapely.geometry as shpg
 from functional import seq
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.regionizers import Regionizer
+from srai.regionalizers import Regionalizer
 
 
-class SlippyMapRegionizer(Regionizer):
-    """Regionizer class."""
+class SlippyMapRegionalizer(Regionalizer):
+    """SlippyMapRegionalizer class."""
 
     def __init__(self, zoom: int) -> None:
         """
-        Initialize SlippyMapRegionizer.
+        Initialize SlippyMapRegionalizer.
 
         Args:
             zoom (int): zoom level
@@ -38,13 +38,13 @@ class SlippyMapRegionizer(Regionizer):
 
     def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Regionize a given GeoDataFrame.
+        Regionalize a given GeoDataFrame.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionized.
+            gdf (gpd.GeoDataFrame): GeoDataFrame to be regionalized.
 
         Returns:
-            gpd.GeoDataFrame: GeoDataFrame with regionized geometries.
+            gpd.GeoDataFrame: GeoDataFrame with regionalized geometries.
 
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.

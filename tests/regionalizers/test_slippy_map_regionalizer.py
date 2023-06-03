@@ -1,4 +1,4 @@
-"""Tests for SlippyMapRegionizer class."""
+"""Tests for SlippyMapRegionalizer class."""
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -7,7 +7,7 @@ import pytest
 from shapely.geometry import Polygon
 
 from srai.constants import WGS84_CRS
-from srai.regionizers import SlippyMapRegionizer
+from srai.regionalizers import SlippyMapRegionalizer
 
 ZOOM = 11
 
@@ -29,14 +29,14 @@ def gdf() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def regionizer() -> SlippyMapRegionizer:
-    """Regionizer fixture."""
-    return SlippyMapRegionizer(zoom=ZOOM)
+def regionalizer() -> SlippyMapRegionalizer:
+    """Regionalizer fixture."""
+    return SlippyMapRegionalizer(zoom=ZOOM)
 
 
-def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> None:
+def test_transform(regionalizer: SlippyMapRegionalizer, gdf: gpd.GeoDataFrame) -> None:
     """Test returned regions."""
-    regions = regionizer.transform(gdf)
+    regions = regionalizer.transform(gdf)
 
     assert regions.shape[0] == 6, f"Invalid length {regions.shape[0]}"
     for x, y in zip([1120, 1119, 1120, 1121, 1120, 1121], [683, 684, 684, 684, 685, 685]):
@@ -59,17 +59,17 @@ def test_transform(regionizer: SlippyMapRegionizer, gdf: gpd.GeoDataFrame) -> No
 def test_zoom_check(z: int, expectation: Any) -> None:
     """Test value checks."""
     with expectation:
-        SlippyMapRegionizer(zoom=z)
+        SlippyMapRegionalizer(zoom=z)
 
 
-def test_coordinates_cast(regionizer: SlippyMapRegionizer) -> None:
+def test_coordinates_cast(regionalizer: SlippyMapRegionalizer) -> None:
     """Test if coordinates_to_x_y gives proper x and y value."""
     # given
     latitude, longitude = 51, 16.8
-    regionizer.zoom = 10
+    regionalizer.zoom = 10
 
     # when
-    x, y = regionizer._coordinates_to_x_y(latitude=latitude, longitude=longitude)
+    x, y = regionalizer._coordinates_to_x_y(latitude=latitude, longitude=longitude)
 
     # then
     assert x == 559
@@ -77,15 +77,15 @@ def test_coordinates_cast(regionizer: SlippyMapRegionizer) -> None:
 
 
 def test_x_y_to_coordinates_should_be_inverse_to_coordinates_to_x_y(
-    regionizer: SlippyMapRegionizer,
+    regionalizer: SlippyMapRegionalizer,
 ) -> None:
     """Test if `x_y_to_coordinates` is reversible with `coordinates_to_x_y`."""
     # given
     x, y = 50, 100
 
     # when
-    latitude, longitude = regionizer._x_y_to_coordinates(x, y)
-    x_reverse, y_reverse = regionizer._coordinates_to_x_y(latitude, longitude)
+    latitude, longitude = regionalizer._x_y_to_coordinates(x, y)
+    x_reverse, y_reverse = regionalizer._coordinates_to_x_y(latitude, longitude)
 
     # then
     assert x_reverse == x
