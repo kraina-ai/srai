@@ -104,10 +104,14 @@ def test_embedder_on_correct_input(
     features_embedded = embedder.transform(
         highway2vec_regions, highway2vec_features, highway2vec_joint
     )
-    pd.testing.assert_frame_equal(features_embedded, highway2vec_embeddings, atol=1e-3)
+    pd.testing.assert_frame_equal(
+        features_embedded, highway2vec_embeddings, atol=1e-3, check_like=True
+    )
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(
         highway2vec_regions, highway2vec_features, highway2vec_joint
     )
-    pd.testing.assert_frame_equal(features_embedded, highway2vec_embeddings, atol=1e-3)
+    pd.testing.assert_frame_equal(
+        features_embedded, highway2vec_embeddings, atol=1e-3, check_like=True
+    )

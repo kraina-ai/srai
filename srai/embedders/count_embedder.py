@@ -9,7 +9,13 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
-from srai.db import df_to_duckdb, escape, get_duckdb_connection, relation_to_table
+from srai.db import (
+    count_relation_rows,
+    df_to_duckdb,
+    escape,
+    get_duckdb_connection,
+    relation_to_table,
+)
 from srai.embedders import Embedder
 
 if TYPE_CHECKING:
@@ -85,6 +91,9 @@ class CountEmbedder(Embedder):
 
         self._validate_relations_indexes(regions, features, joint)
 
+        if count_relation_rows(features) == 0 and self.expected_output_features is None:
+            raise ValueError("Cannot embed with empty features and no expected_output_features.")
+
         result_relation: "duckdb.DuckDBPyRelation"
 
         if self.count_subcategories:
@@ -108,11 +117,11 @@ class CountEmbedder(Embedder):
         SELECT
             regions.region_id,
             {counts_clauses}
-        FROM ({joint_relation}) joint
-        JOIN ({features_relation}) features
-        ON features.feature_id = joint.feature_id
-        JOIN ({regions_relation}) regions
+        FROM ({regions_relation}) regions
+        LEFT JOIN ({joint_relation}) joint
         ON regions.region_id = joint.region_id
+        LEFT JOIN ({features_relation}) features
+        ON features.feature_id = joint.feature_id
         GROUP BY regions.region_id
         """
 
@@ -137,22 +146,24 @@ class CountEmbedder(Embedder):
         columns = sorted(
             set(features_relation.columns).difference([FEATURES_INDEX, GEOMETRY_COLUMN])
         )
-        group_clauses = ", ".join(
-            f'LIST(DISTINCT "{column}") FILTER (features."{column}" IS NOT NULL) AS "{column}"'
-            for column in columns
-        )
-        values_query = f"SELECT {group_clauses} FROM ({features_relation.sql_query()}) features"
-        columns_values = get_duckdb_connection().sql(values_query).fetchone()
+        columns_values = []
+        if columns:
+            group_clauses = ", ".join(
+                f'LIST(DISTINCT "{column}") FILTER (features."{column}" IS NOT NULL) AS "{column}"'
+                for column in columns
+            )
+            values_query = f"SELECT {group_clauses} FROM ({features_relation.sql_query()}) features"
+            columns_values = get_duckdb_connection().sql(values_query).fetchone()
 
         sql_query = """
         SELECT
             regions.region_id,
             {counts_clauses}
-        FROM ({joint_relation}) joint
-        JOIN ({features_relation}) features
-        ON features.feature_id = joint.feature_id
-        JOIN ({regions_relation}) regions
+        FROM ({regions_relation}) regions
+        LEFT JOIN ({joint_relation}) joint
         ON regions.region_id = joint.region_id
+        LEFT JOIN ({features_relation}) features
+        ON features.feature_id = joint.feature_id
         GROUP BY regions.region_id
         """
 

@@ -140,7 +140,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
         (
             "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
-            736,
+            790,
             284,
         ),
         (

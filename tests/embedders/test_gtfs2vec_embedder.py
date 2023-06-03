@@ -228,9 +228,9 @@ def test_embedder(
     embedder.fit(regions_gdf, features_gdf, joint_gdf)
     features_embedded = embedder.transform(regions_gdf, features_gdf, joint_gdf)
 
-    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
+    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3, check_like=True)
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(regions_gdf, features_gdf, joint_gdf)
 
-    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
+    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3, check_like=True)

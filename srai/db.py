@@ -208,9 +208,18 @@ def df_to_duckdb(dataframe: Union[pd.DataFrame, gpd.GeoDataFrame]) -> duckdb.Duc
             f"Dataframe must have `{REGIONS_INDEX}` and / or `{FEATURES_INDEX}` index."
         )
 
+    if dataframe.empty:
+        table_id = f"parsed_{relation_id}"
+        empty_table_query = (
+            "CREATE TEMP TABLE"
+            f" {table_id} ({', '.join(f'{column} VARCHAR' for column in dataframe.columns)})"
+        )
+        get_duckdb_connection().execute(empty_table_query)
+        return get_duckdb_connection().table(table_id)
+
     query = f"SELECT * FROM {temp_dataframe_id}"
 
-    has_geometry = isinstance(dataframe, gpd.GeoDataFrame)
+    has_geometry = isinstance(dataframe, gpd.GeoDataFrame) and not dataframe.empty
     if has_geometry:
         dataframe["wkt"] = dataframe[GEOMETRY_COLUMN].apply(lambda x: x.wkt)
         dataframe.drop(columns=GEOMETRY_COLUMN, inplace=True)

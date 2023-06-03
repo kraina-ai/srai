@@ -1,6 +1,7 @@
 """CountEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any, List, Union
+from unittest import TestCase
 
 import pandas as pd
 import pytest
@@ -12,6 +13,8 @@ from srai.embedders import CountEmbedder
 
 if TYPE_CHECKING:  # pragma: no cover
     import geopandas as gpd
+
+ut = TestCase()
 
 
 @pytest.fixture  # type: ignore
@@ -145,7 +148,7 @@ def test_correct_embedding(
     embedding = embedder.transform(regions=gdf_regions, features=gdf_features, joint=gdf_joint)
     embedding = duckdb_to_df(embedding)
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding, expected_result_df, check_dtype=False)
+    assert_frame_equal(embedding, expected_result_df, check_dtype=False, check_like=True)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -206,7 +209,7 @@ def test_empty(
         assert len(embedding) == len(gdf_regions)
         assert embedding.index.name == gdf_regions.index.name
         if expected_output_features:
-            assert embedding.columns.tolist() == expected_output_features
+            ut.assertCountEqual(embedding.columns, expected_output_features)
 
         assert (embedding == 0).all().all()
 

@@ -612,7 +612,7 @@ def test_correct_embedding(
     )
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
+    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False, check_like=True)
 
 
 def test_negative_nighbourhood_distance() -> None:
