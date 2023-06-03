@@ -252,7 +252,6 @@ features = loader.load(area, HEX2VEC_FILTER)
 regions = regionalizer.transform(area)
 joint = joiner.transform(regions, features)
 
-embedder = Hex2VecEmbedder()
 neighbourhood = H3Neighbourhood(regions_gdf=regions)
 
 embedder = Hex2VecEmbedder([15, 10, 3])

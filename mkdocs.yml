@@ -103,6 +103,7 @@ plugins:
       version_selector: true
   - gen-files:
       scripts:
+        - docs/copy_readme.py
         - docs/copy_examples.py
         - docs/generate_api.py
         - docs/gen_ref_pages.py
