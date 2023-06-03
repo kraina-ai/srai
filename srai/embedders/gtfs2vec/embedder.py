@@ -1,5 +1,5 @@
 """
-gtfs2vec embedder.
+Gtfs2vec embedder.
 
 This module contains embedder from gtfs2vec paper [1].
 
