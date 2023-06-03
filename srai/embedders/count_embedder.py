@@ -167,18 +167,25 @@ class CountEmbedder(Embedder):
         GROUP BY regions.region_id
         """
 
+        counts_clauses = []
+        for column, column_values in zip(columns, columns_values):
+            if column_values is None:
+                continue
+            for value in column_values:
+                if (
+                    self.expected_output_features is None
+                    or f"{column}_{value}" in self.expected_output_features
+                ):
+                    counts_clauses.append(
+                        f'COUNT(features."{column}") FILTER (features."{column}" ='
+                        f" '{escape(value)}') AS \"{column}_{value}\""
+                    )
+
         filled_query = sql_query.format(
             joint_relation=joint_relation.sql_query(),
             features_relation=features_relation.sql_query(),
             regions_relation=regions_relation.sql_query(),
-            counts_clauses=", ".join(
-                f'COUNT(features."{column}") FILTER (features."{column}" = \'{escape(value)}\')'
-                f' AS "{column}_{value}"'
-                for column, column_values in zip(columns, columns_values)
-                for value in column_values
-                if self.expected_output_features is None
-                or f"{column}_{value}" in self.expected_output_features
-            ),
+            counts_clauses=", ".join(counts_clauses),
         )
         return get_duckdb_connection().sql(filled_query)
 
