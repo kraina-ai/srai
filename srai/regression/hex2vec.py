@@ -1,10 +1,9 @@
-"""
-"""
+""""""
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List
 
-from srai.utils._optional import import_optional_dependencies
 from srai.embedders.hex2vec.model import Hex2VecModel
+from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -18,9 +17,7 @@ except ImportError:
 
 
 class Hex2VecModelForRegionRegression(LightningModule):  # type: ignore
-    """
-    Hex2Vec regression model.
-    """
+    """Hex2Vec regression model."""
 
     def __init__(self, hex2vec_layer_sizes: List[int], learning_rate: float = 0.001):
         """
@@ -39,27 +36,20 @@ class Hex2VecModelForRegionRegression(LightningModule):  # type: ignore
         self.n_classes = n_classes
         self.hex2vec_model = Hex2VecModel(layer_sizes=layer_sizes)
         self.regression_head = nn.Linear(layer_sizes[-1], 1)
-        
 
     def forward(self, X_anchor: "torch.Tensor") -> "torch.Tensor":
-        """
-        """
-        import torch
+        """"""
         import torch.nn.functional as F
-        from torchmetrics.functional import f1_score as f1
+
         x = self.hex2vec_model(X_anchor)
         x = F.relu(x)
         x = self.regression_head(x)
         return x
 
-
-
     def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
-        """
-        """
-        import torch
+        """"""
         import torch.nn.functional as F
-        from torchmetrics.functional import mean_squared_error, mean_absolute_error
+        from torchmetrics.functional import mean_absolute_error, mean_squared_error
 
         x, y = batch
         y_hat = self.forward(x)
@@ -73,9 +63,8 @@ class Hex2VecModelForRegionRegression(LightningModule):  # type: ignore
         return loss
 
     def validation_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
-        import torch
         import torch.nn.functional as F
-        from torchmetrics.functional import mean_squared_error, mean_absolute_error
+        from torchmetrics.functional import mean_absolute_error, mean_squared_error
 
         x, y = batch
         y_hat = self.forward(x)
@@ -96,7 +85,10 @@ class Hex2VecModelForRegionRegression(LightningModule):  # type: ignore
 
     def get_kwargs(self) -> dict:
         """Get model save kwargs."""
-        return {"hex2vec_layer_sizes": self.hex2vec_layer_sizes, "learning_rate": self.learning_rate}
+        return {
+            "hex2vec_layer_sizes": self.hex2vec_layer_sizes,
+            "learning_rate": self.learning_rate,
+        }
 
     @classmethod
     def load(cls, path: Path, **kwargs: dict) -> "Hex2VecModelForRegionRegression":
@@ -112,5 +104,3 @@ class Hex2VecModelForRegionRegression(LightningModule):  # type: ignore
         model = cls(**kwargs)
         model.load_state_dict(torch.load(path))
         return model
-
-

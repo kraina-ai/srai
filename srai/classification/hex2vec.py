@@ -1,10 +1,9 @@
-"""
-"""
+""""""
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List
 
-from srai.utils._optional import import_optional_dependencies
 from srai.embedders.hex2vec.model import Hex2VecModel
+from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -18,11 +17,11 @@ except ImportError:
 
 
 class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
-    """
-    Hex2Vec classification model.
-    """
+    """Hex2Vec classification model."""
 
-    def __init__(self, hex2vec_layer_sizes: List[int], n_classes: int, learning_rate: float = 0.001):
+    def __init__(
+        self, hex2vec_layer_sizes: List[int], n_classes: int, learning_rate: float = 0.001
+    ):
         """
         Initialize Hex2VecModel.
 
@@ -39,9 +38,8 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
         super().__init__()
         self.learning_rate = learning_rate
         self.n_classes = n_classes
-        self.hex2vec_model = Hex2VecModel(layer_sizes=layer_sizes)
-        self.classification_head = nn.Linear(layer_sizes[-1], n_classes)
-        
+        self.hex2vec_model = Hex2VecModel(layer_sizes=hex2vec_layer_sizes)
+        self.classification_head = nn.Linear(hex2vec_layer_sizes[-1], n_classes)
 
     def forward(self, X_anchor: "torch.Tensor") -> "torch.Tensor":
         """
@@ -50,19 +48,15 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
         Args:
             X_anchor (torch.Tensor): Region features.
         """
-        import torch
         import torch.nn.functional as F
-        from torchmetrics.functional import f1_score as f1
+
         x = self.hex2vec_model(X_anchor)
         x = F.relu(x)
         x = F.log_softmax(self.classification_head(x), dim=1)
         return x
 
-
-
     def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
-        """
-        """
+        """"""
         import torch
         import torch.nn.functional as F
         from torchmetrics.functional import f1_score as f1
@@ -70,11 +64,11 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
-        
+
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        train_f1 = f1(preds, y, task="multiclass", num_classes=self.n_classes, average="macro")
-        
+        f_score = f1(preds, y, task="multiclass", num_classes=self.n_classes, average="macro")
+
         self.log("train_loss", loss, on_step=True, on_epoch=True)
         self.log("train_acc", acc, on_step=True, on_epoch=True)
         self.log("train_f1", f_score, on_step=True, on_epoch=True)
@@ -89,11 +83,11 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
-        
+
         preds = torch.argmax(logits, dim=1)
         acc = self.accuracy(preds, y)
-        val_f1 = f1(preds, y, task="multiclass", num_classes=self.n_classes, average="macro")
-        
+        f_score = f1(preds, y, task="multiclass", num_classes=self.n_classes, average="macro")
+
         self.log("val_loss", loss, on_step=True, on_epoch=True)
         self.log("val_acc", acc, on_step=True, on_epoch=True)
         self.log("val_f1", f_score, on_step=True, on_epoch=True)
@@ -108,7 +102,11 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
 
     def get_kwargs(self) -> dict:
         """Get model save kwargs."""
-        return {"hex2vec_layer_sizes": self.hex2vec_layer_sizes, "n_classes": n_classes, "learning_rate": self.learning_rate}
+        return {
+            "hex2vec_layer_sizes": self.hex2vec_layer_sizes,
+            "n_classes": self.n_classes,
+            "learning_rate": self.learning_rate,
+        }
 
     @classmethod
     def load(cls, path: Path, **kwargs: dict) -> "Hex2VecModelForRegionClassification":
@@ -124,5 +122,3 @@ class Hex2VecModelForRegionClassification(LightningModule):  # type: ignore
         model = cls(**kwargs)
         model.load_state_dict(torch.load(path))
         return model
-
-
