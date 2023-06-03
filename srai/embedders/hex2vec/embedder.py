@@ -8,11 +8,7 @@ References:
 """
 import json
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
-=======
-from typing import Any, Dict, List, Optional, TypeVar
->>>>>>> a8929cb (fix(pre-commit.ci): auto fixes from pre-commit.com hooks)
 
 import geopandas as gpd
 import numpy as np
