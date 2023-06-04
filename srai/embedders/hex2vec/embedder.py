@@ -6,7 +6,9 @@ This module contains embedder from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import Any, Dict, List, Optional, TypeVar
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import geopandas as gpd
 import numpy as np
@@ -203,3 +205,59 @@ class Hex2VecEmbedder(CountEmbedder):
             raise ValueError("Encoder sizes must have at least one element - embedding size.")
         if any(size <= 0 for size in encoder_sizes):
             raise ValueError("Encoder sizes must be positive integers.")
+
+    def save(self, path: Union[Path, str]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Path): Path to the directory.
+        """
+        import torch
+
+        if isinstance(path, str):
+            path = Path(path)
+
+        self._check_is_fitted()
+        model_kwargs = self._model.get_kwargs()  # type: ignore
+        embedder_config = {
+            "model_config": model_kwargs,
+            "embedder_config": {
+                "encoder_sizes": self._encoder_sizes,
+                "expected_output_features": (
+                    self.expected_output_features.tolist()
+                    if self.expected_output_features
+                    else None
+                ),
+            },
+        }
+
+        path.mkdir(parents=True, exist_ok=True)
+        model_path = path / "model.pt"
+        torch.save(self._model.state_dict(), model_path)  # type: ignore
+        config_path = path / "config.json"
+        with open(config_path, "w") as f:
+            json.dump(embedder_config, f, ensure_ascii=False, indent=4)
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "Hex2VecEmbedder":
+        """
+        Load the model from a directory.
+
+        Args:
+            path (Path): Path to the directory.
+
+        Returns:
+            Hex2VecEmbedder: The loaded embedder.
+        """
+        if isinstance(path, str):
+            path = Path(path)
+
+        with (path / "config.json").open("r") as f:
+            embedder_config = json.load(f)
+        embedder = cls(**embedder_config["embedder_config"])
+        model_path = path / "model.pt"
+        model = Hex2VecModel.load(model_path, **embedder_config["model_config"])
+        embedder._model = model
+        embedder._is_fitted = True
+        return embedder

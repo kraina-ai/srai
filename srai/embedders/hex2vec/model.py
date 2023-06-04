@@ -6,7 +6,8 @@ This module contains the embedding model from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import TYPE_CHECKING, List, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, List, Tuple, Union
 
 from srai.utils._optional import import_optional_dependencies
 
@@ -50,6 +51,7 @@ class Hex2VecModel(LightningModule):  # type: ignore
         from torch import nn
 
         super().__init__()
+        self.layer_sizes = layer_sizes
         self.learning_rate = learning_rate
 
         if len(layer_sizes) < 2:
@@ -183,3 +185,25 @@ class Hex2VecModel(LightningModule):  # type: ignore
         import torch
 
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+
+    def get_kwargs(self) -> dict[str, Any]:
+        """Get model save kwargs."""
+        return {"layer_sizes": self.layer_sizes, "learning_rate": self.learning_rate}
+
+    @classmethod
+    def load(cls, path: Union[Path, str], **kwargs: Any) -> "Hex2VecModel":
+        """
+        Load model from a file.
+
+        Args:
+            path (Union[Path, str]): Path to the file.
+            **kwargs (dict): Additional kwargs to pass to the model constructor.
+        """
+        import torch
+
+        if isinstance(path, str):
+            path = Path(path)
+
+        model = cls(**kwargs)
+        model.load_state_dict(torch.load(path))
+        return model
