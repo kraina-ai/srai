@@ -26,11 +26,11 @@ class Model(LightningModule):  # type: ignore
             for k, v in vars(self).items()
             if k[0] != "_"
             and k
-            not in [
+            not in (
                 "training",
                 "prepare_data_per_node",
                 "allow_zero_length_dataloader_with_multiple_devices",
-            ]
+            )
         }
 
         return model_config
@@ -93,29 +93,29 @@ class Embedder(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def save(self, path: Union[Path, str]) -> None:
-        """
-        Save the embedder to a directory.
+    # @abc.abstractmethod
+    # def save(self, path: Union[Path, str]) -> None:
+    #     """
+    #     Save the embedder to a directory.
 
-        Args:
-            path (Path): Path to the directory.
-        """
-        raise NotImplementedError
+    #     Args:
+    #         path (Path): Path to the directory.
+    #     """
+    #     raise NotImplementedError
 
-    @classmethod
-    @abc.abstractmethod
-    def load(cls, path: Union[Path, str]) -> "Embedder":
-        """
-        Load the embedder from a directory.
+    # @classmethod
+    # @abc.abstractmethod
+    # def load(cls, path: Union[Path, str]) -> "Embedder":
+    #     """
+    #     Load the embedder from a directory.
 
-        Args:
-            path (Path): Path to the directory.
+    #     Args:
+    #         path (Path): Path to the directory.
 
-        Returns:
-            Embedder: The loaded embedder.
-        """
-        raise NotImplementedError
+    #     Returns:
+    #         Embedder: The loaded embedder.
+    #     """
+    #     raise NotImplementedError
 
     def _validate_indexes(
         self,
