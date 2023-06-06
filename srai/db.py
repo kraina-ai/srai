@@ -1,20 +1,23 @@
 """Module with functions required to interact with DuckDB Python objects."""
 
 import secrets
+from pathlib import Path
 from typing import List, Optional, Union, cast
 
 import duckdb
 import geopandas as gpd
 import pandas as pd
+import psutil
 from shapely import wkt as shp_wkt
 from shapely.validation import make_valid as shp_make_valid
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+from srai.utils.download import download_file
 
 CONNECTION: Optional[duckdb.DuckDBPyConnection] = None
 OFFICIAL_DUCKDB_EXTENSIONS = [
     "json",
-    "spatial",
+    # "spatial",
     # "h3"
 ]
 
@@ -34,11 +37,14 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             config=dict(
                 temp_directory="duckdb_temp/",
                 allow_unsigned_extensions="true",
+                # memory_limit=f"{_get_memory_limit(0.25)}B",
             ),
         )
         for extension in OFFICIAL_DUCKDB_EXTENSIONS:
             CONNECTION.install_extension(extension)
             CONNECTION.load_extension(extension)
+
+        _install_dev_spatial_extension(CONNECTION)
 
         _create_python_functions(CONNECTION)
 
@@ -62,15 +68,36 @@ def get_new_duckdb_connection(
         config=dict(
             temp_directory="duckdb_temp/",
             allow_unsigned_extensions="true",
+            # memory_limit=f"{_get_memory_limit(0.25)}B",
         ),
     )
     for extension in OFFICIAL_DUCKDB_EXTENSIONS:
         conn.install_extension(extension)
         conn.load_extension(extension)
 
+    _install_dev_spatial_extension(conn)
+
     _create_python_functions(conn)
 
     return conn
+
+
+def _install_dev_spatial_extension(conn: duckdb.DuckDBPyConnection) -> None:
+    spatial_extension_path = Path("spatial.duckdb_extension").resolve().as_posix()
+    download_file(
+        url="https://drive.google.com/uc?export=download&id=1WMEWVddQiMjnGUbSfcVq6GLs2Zup19hW",
+        fname=spatial_extension_path,
+        force_download=False,
+    )
+
+    conn.execute(f"INSTALL '{spatial_extension_path}'")
+    conn.execute(f"LOAD '{spatial_extension_path}'")
+
+
+def _get_memory_limit(fraction: float = 0.5) -> int:
+    available_memory = psutil.virtual_memory().available
+    bytes_memory_size = int(available_memory * fraction)
+    return bytes_memory_size
 
 
 def _create_python_functions(connection: duckdb.DuckDBPyConnection) -> None:
