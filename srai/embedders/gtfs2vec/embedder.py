@@ -8,14 +8,16 @@ References:
 """
 
 
+import json
 from functools import reduce
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Type, Union
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from srai.embedders import Embedder
+from srai.embedders import Embedder, ModelT
 from srai.embedders.gtfs2vec.model import GTFS2VecModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
@@ -44,6 +46,7 @@ class GTFS2VecEmbedder(Embedder):
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
         self._skip_autoencoder = skip_autoencoder
+        self._is_fitted = False
 
     def transform(
         self,
@@ -271,3 +274,61 @@ class GTFS2VecEmbedder(Embedder):
             data=embeddings,
             index=features.index,
         )
+
+    def _save(self, path: Union[Path, str], embedder_config: Dict[str, Any]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        model = self._maybe_get_model()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        model.save(path / "model.pt")
+
+        config = {
+            "model_config": model.get_config(),
+            "embedder_config": embedder_config,
+        }
+        with open(path / "config.json", "w") as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+
+    def save(self, path: Union[Path, str]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Path): Path to the directory.
+        """
+        embedder_config = {
+            "hidden_size": self._hidden_size,
+            "embedding_size": self._embedding_size,
+            "skip_autoencoder": self._skip_autoencoder,
+        }
+        self._save(path, embedder_config)
+
+    @classmethod
+    def _load(cls, path: Union[Path, str], model_module: Type[ModelT]) -> "GTFS2VecEmbedder":
+        if isinstance(path, str):
+            path = Path(path)
+
+        with (path / "config.json").open("r") as f:
+            config = json.load(f)
+        embedder = cls(**config["embedder_config"])
+        model_path = path / "model.pt"
+        model = model_module.load(model_path, **config["model_config"])
+        embedder._model = model
+        embedder._is_fitted = True
+        return embedder
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "GTFS2VecEmbedder":
+        """
+        Load the model from a directory.
+
+        Args:
+            path (Path): Path to the directory.
+
+        Returns:
+            Hex2VecEmbedder: The loaded embedder.
+        """
+        return cls._load(path, GTFS2VecModel)

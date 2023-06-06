@@ -1,11 +1,68 @@
-"""Base class for embedders."""
+"""Base class for embedders and models."""
 
 import abc
+from pathlib import Path
+from typing import Any, TypeVar, Union
 
 import geopandas as gpd
 import pandas as pd
 
 from srai.constants import GEOMETRY_COLUMN
+
+try:  # pragma: no cover
+    from pytorch_lightning import LightningModule
+
+except ImportError:
+    from srai.utils._pytorch_stubs import LightningModule
+
+
+class Model(LightningModule):  # type: ignore
+    """Class for model based on LightningModule."""
+
+    def get_config(self) -> dict[str, Any]:
+        """Get model config."""
+        model_config = {
+            k: v
+            for k, v in vars(self).items()
+            if k[0] != "_"
+            and k
+            not in [
+                "training",
+                "prepare_data_per_node",
+                "allow_zero_length_dataloader_with_multiple_devices",
+            ]
+        }
+
+        return model_config
+
+    def save(self, path: Union[Path, str]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Path): Path to the directory.
+        """
+        import torch
+
+        torch.save(self.state_dict(), path)
+
+    @classmethod
+    def load(cls, path: Union[Path, str], **kwargs: Any) -> "Model":
+        """
+        Load model from a file.
+
+        Args:
+            path (Union[Path, str]): Path to the file.
+            **kwargs (dict): Additional kwargs to pass to the model constructor.
+        """
+        import torch
+
+        if isinstance(path, str):
+            path = Path(path)
+
+        model = cls(**kwargs)
+        model.load_state_dict(torch.load(path))
+        return model
 
 
 class Embedder(abc.ABC):
@@ -33,6 +90,30 @@ class Embedder(abc.ABC):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def save(self, path: Union[Path, str]) -> None:
+        """
+        Save the embedder to a directory.
+
+        Args:
+            path (Path): Path to the directory.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def load(cls, path: Union[Path, str]) -> "Embedder":
+        """
+        Load the embedder from a directory.
+
+        Args:
+            path (Path): Path to the directory.
+
+        Returns:
+            Embedder: The loaded embedder.
         """
         raise NotImplementedError
 
@@ -74,3 +155,6 @@ class Embedder(abc.ABC):
         if GEOMETRY_COLUMN in data.columns:
             data = data.drop(columns=GEOMETRY_COLUMN)
         return pd.DataFrame(data)
+
+
+ModelT = TypeVar("ModelT", bound=Model)

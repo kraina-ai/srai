@@ -8,20 +8,14 @@ References:
 """
 from typing import TYPE_CHECKING, Any
 
+from srai.embedders import Model
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
 
 
-try:  # pragma: no cover
-    from pytorch_lightning import LightningModule
-
-except ImportError:
-    from srai.utils._pytorch_stubs import LightningModule
-
-
-class GTFS2VecModel(LightningModule):  # type: ignore
+class GTFS2VecModel(Model):
     """Autoencoder based embedding model for gtfs2vec."""
 
     def __init__(
@@ -45,7 +39,8 @@ class GTFS2VecModel(LightningModule):  # type: ignore
         from torch import nn
 
         self.n_features = n_features
-
+        self.n_hidden = n_hidden
+        self.n_embed = n_embed
         self.encoder = nn.Sequential(
             nn.Linear(n_features, n_hidden), nn.ReLU(), nn.Linear(n_hidden, n_embed)
         )
