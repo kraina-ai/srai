@@ -2,7 +2,7 @@
 
 import abc
 from pathlib import Path
-from typing import Any, TypeVar, Union
+from typing import Any, Dict, TypeVar, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -19,7 +19,7 @@ except ImportError:
 class Model(LightningModule):  # type: ignore
     """Class for model based on LightningModule."""
 
-    def get_config(self) -> dict[str, Any]:
+    def get_config(self) -> Dict[str, Any]:
         """Get model config."""
         model_config = {
             k: v
