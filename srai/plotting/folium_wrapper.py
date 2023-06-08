@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from srai.constants import REGIONS_INDEX
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 
@@ -92,6 +92,7 @@ def plot_numeric_data(
     colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
     map: Optional[folium.Map] = None,
     show_borders: bool = False,
+    opacity: float = 0.8,
 ) -> folium.Map:
     """
     Plot numerical data within regions shapes using Folium library.
@@ -136,7 +137,7 @@ def plot_numeric_data(
             )
         )
 
-    regions_gdf_copy = regions_gdf.copy()
+    regions_gdf_copy = regions_gdf[[GEOMETRY_COLUMN]].copy()
     regions_gdf_copy = regions_gdf_copy.merge(embedding_df[[data_column]], on=REGIONS_INDEX)
 
     if not isinstance(colormap, str):
@@ -159,7 +160,7 @@ def plot_numeric_data(
         legend=True,
         cmap=colormap,
         categorical=False,
-        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=opacity),
         m=map,
     )
 
