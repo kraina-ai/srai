@@ -23,6 +23,16 @@ class Neighbourhood(ABC, Generic[IndexType]):
     reasons. See the `H3Neighbourhood` class for an example.
     """
 
+    def __init__(self, include_self: bool = False) -> None:
+        """
+        Initializes the Neighbourhood.
+
+        Args:
+            include_self (bool): Whether to include the region itself in the neighbours.
+        """
+        super().__init__()
+        self.include_self = include_self
+
     @abstractmethod
     def get_neighbours(self, index: IndexType) -> Set[IndexType]:
         """
@@ -50,7 +60,8 @@ class Neighbourhood(ABC, Generic[IndexType]):
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
         neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
-        neighbours.discard(index)
+        if not self.include_self:
+            neighbours.discard(index)
         return neighbours
 
     def get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
@@ -72,7 +83,8 @@ class Neighbourhood(ABC, Generic[IndexType]):
             .map(lambda x: x[0])
             .to_set()
         )
-        neighbours_at_distance.discard(index)
+        if not self.include_self:
+            neighbours_at_distance.discard(index)
         return neighbours_at_distance
 
     def _get_neighbours_with_distances(

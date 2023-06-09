@@ -18,7 +18,9 @@ class H3Neighbourhood(Neighbourhood[str]):
     This class allows to get the neighbours of an H3 region.
     """
 
-    def __init__(self, regions_gdf: Optional[gpd.GeoDataFrame] = None) -> None:
+    def __init__(
+        self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_self: bool = False
+    ) -> None:
         """
         Initializes the H3Neighbourhood.
 
@@ -33,8 +35,9 @@ class H3Neighbourhood(Neighbourhood[str]):
             regions_gdf (Optional[gpd.GeoDataFrame], optional): The regions that are being analyzed.
                 The H3Neighbourhood will only look for neighbours among these regions.
                 Defaults to None.
+            include_self (bool): Whether to include the region itself in the neighbours.
         """
-        super().__init__()
+        super().__init__(include_self)
         self._available_indices: Optional[Set[str]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
@@ -66,7 +69,8 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_disk(index, distance)
-        neighbours.discard(index)
+        if not self.include_self:
+            neighbours.discard(index)
         return self._select_available(neighbours)
 
     def get_neighbours_at_distance(self, index: str, distance: int) -> Set[str]:
@@ -84,7 +88,8 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_ring(index, distance)
-        neighbours.discard(index)
+        if not self.include_self:
+            neighbours.discard(index)
         return self._select_available(neighbours)
 
     def _select_available(self, indices: Set[str]) -> Set[str]:

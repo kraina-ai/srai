@@ -11,13 +11,15 @@ T = TypeVar("T")
 class LookupNeighbourhood(Neighbourhood[T]):
     """LookupNeighbourhood."""
 
-    def __init__(self, lookup: Dict[T, Set[T]]) -> None:
+    def __init__(self, lookup: Dict[T, Set[T]], include_self: bool = False) -> None:
         """
         LookupNeighbourhood constructor.
 
         Args:
             lookup (Dict[T, Set[T]]): Mapping of region to its neighbours.
+            include_self (bool): Whether to include the region itself in the neighbours.
         """
+        super().__init__(include_self)
         self.lookup = lookup
 
     def get_neighbours(self, index: T) -> Set[T]:

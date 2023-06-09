@@ -23,16 +23,18 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    def __init__(self, regions_gdf: gpd.GeoDataFrame) -> None:
+    def __init__(self, regions_gdf: gpd.GeoDataFrame, include_self: bool = False) -> None:
         """
         Init AdjacencyNeighbourhood.
 
         Args:
             regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
+            include_self (bool): Whether to include the region itself in the neighbours.
 
         Raises:
             ValueError: If regions_gdf doesn't have geometry column.
         """
+        super().__init__(include_self)
         if GEOMETRY_COLUMN not in regions_gdf.columns:
             raise ValueError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
