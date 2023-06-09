@@ -194,6 +194,7 @@ class PbfFileDownloader:
     ) -> Tuple[requests.Session, Any]:
         successful_request = False
         while not successful_request:
+            # TODO: remove print
             print("Next request")
             s = requests.Session()
 
@@ -223,6 +224,7 @@ class PbfFileDownloader:
             start_extract_result = start_extract_request.json()
             errors = start_extract_result.get("errors")
             if errors and "rate limited" in errors:
+                # TODO: remove print
                 print(start_extract_result)
                 warnings.warn("Rate limited. Waiting 60 seconds.", stacklevel=2)
                 sleep(60)
