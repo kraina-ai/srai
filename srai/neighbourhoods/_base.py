@@ -76,6 +76,11 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Returns:
             Set[IndexType]: Indexes of the neighbours.
         """
+        if distance == 0:
+            if self.include_self:
+                return {index}
+            else:
+                return set()
         neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
         neighbours_at_distance: Set[IndexType] = (
             seq(neighbours_up_to_distance)

@@ -120,6 +120,37 @@ def test_get_neighbours_at_distance(
     [
         (5, -2, set()),
         (5, -1, set()),
+        (5, 0, {5}),
+        (5, 1, {2, 4, 6, 8}),
+        (5, 2, {1, 3, 7, 9}),
+        (5, 3, set()),
+        (4, 0, {4}),
+        (4, 1, {1, 5, 7}),
+        (4, 2, {2, 6, 8}),
+        (4, 3, {3, 9}),
+        (4, 4, set()),
+        (1, 0, {1}),
+        (1, 1, {2, 4}),
+        (1, 2, {3, 5, 7}),
+        (1, 3, {6, 8}),
+        (1, 4, {9}),
+        (1, 5, set()),
+    ],
+)
+def test_get_neighbours_at_distance_include_self(
+    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
+) -> None:
+    """Test neighbours at distance."""
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_self=True)
+    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
+    assert neighbours == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "index, distance, expected",
+    [
+        (5, -2, set()),
+        (5, -1, set()),
         (5, 0, set()),
         (5, 1, {2, 4, 6, 8}),
         (5, 2, {1, 2, 3, 4, 6, 7, 8, 9}),
@@ -140,6 +171,37 @@ def test_get_neighbours_up_to_distance(
 ) -> None:
     """Test neighbours up to a distance."""
     neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
+    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
+    assert neighbours == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "index, distance, expected",
+    [
+        (5, -2, set()),
+        (5, -1, set()),
+        (5, 0, {5}),
+        (5, 1, {5, 2, 4, 6, 8}),
+        (5, 2, {5, 1, 2, 3, 4, 6, 7, 8, 9}),
+        (5, 3, {5, 1, 2, 3, 4, 6, 7, 8, 9}),
+        (4, 0, {4}),
+        (4, 1, {4, 1, 5, 7}),
+        (4, 2, {4, 1, 2, 5, 6, 7, 8}),
+        (4, 3, {4, 1, 2, 3, 5, 6, 7, 8, 9}),
+        (4, 4, {4, 1, 2, 3, 5, 6, 7, 8, 9}),
+        (1, 0, {1}),
+        (1, 1, {1, 2, 4}),
+        (1, 2, {1, 2, 3, 4, 5, 7}),
+        (1, 3, {1, 2, 3, 4, 5, 6, 7, 8}),
+        (1, 4, {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+        (1, 5, {1, 2, 3, 4, 5, 6, 7, 8, 9}),
+    ],
+)
+def test_get_neighbours_up_to_distance_include_self(
+    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
+) -> None:
+    """Test neighbours up to a distance."""
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_self=True)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected
 
