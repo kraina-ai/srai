@@ -22,7 +22,7 @@ class LookupNeighbourhood(Neighbourhood[T]):
         super().__init__(include_self)
         self.lookup = lookup
 
-    def get_neighbours(self, index: T) -> Set[T]:
+    def _get_neighbours(self, index: T) -> Set[T]:
         """
         Get neighbours for region at index.
 

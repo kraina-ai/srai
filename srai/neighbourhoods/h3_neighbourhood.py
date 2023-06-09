@@ -42,7 +42,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 
-    def get_neighbours(self, index: str) -> Set[str]:
+    def _get_neighbours(self, index: str) -> Set[str]:
         """
         Get the direct neighbours of an H3 region using its index.
 
@@ -54,7 +54,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         """
         return self.get_neighbours_up_to_distance(index, 1)
 
-    def get_neighbours_up_to_distance(self, index: str, distance: int) -> Set[str]:
+    def _get_neighbours_up_to_distance(self, index: str, distance: int) -> Set[str]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
@@ -69,11 +69,9 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_disk(index, distance)
-        if not self.include_self:
-            neighbours.discard(index)
         return self._select_available(neighbours)
 
-    def get_neighbours_at_distance(self, index: str, distance: int) -> Set[str]:
+    def _get_neighbours_at_distance(self, index: str, distance: int) -> Set[str]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
@@ -88,8 +86,6 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_ring(index, distance)
-        if not self.include_self:
-            neighbours.discard(index)
         return self._select_available(neighbours)
 
     def _select_available(self, indices: Set[str]) -> Set[str]:

@@ -18,9 +18,10 @@ class Neighbourhood(ABC, Generic[IndexType]):
     not a metric distance, but a number of hops. This definition makes most sense semantically for
     grid systems such as H3 or S2 but should work for arbitrary neighbourhoods as well.
 
-    The subclasses only need to implement the `get_neighbours` method, but can also override the
-    `get_neighbours_up_to_distance` and `get_neighbours_at_distance` methods for performance
-    reasons. See the `H3Neighbourhood` class for an example.
+    The subclasses only need to implement the `_get_neighbours` method, but can also override the
+    `_get_neighbours_up_to_distance` and `_get_neighbours_at_distance` methods for performance
+    reasons. Handling of the region itself is done by the base class in the public methods. See the
+    `H3Neighbourhood` class for an example.
     """
 
     def __init__(self, include_self: bool = False) -> None:
@@ -34,7 +35,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
         self.include_self = include_self
 
     @abstractmethod
-    def get_neighbours(self, index: IndexType) -> Set[IndexType]:
+    def _get_neighbours(self, index: IndexType) -> Set[IndexType]:
         """
         Get the direct neighbours of a region using its index.
 
@@ -46,7 +47,22 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
 
-    def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
+    def get_neighbours(self, index: IndexType) -> Set[IndexType]:
+        """
+        Get the direct neighbours of a region using its index.
+
+        Args:
+            index (IndexType): Unique identifier of the region.
+                Dependant on the implementation.
+
+        Returns:
+            Set[IndexType]: Indexes of the neighbours.
+        """
+        neighbours = self._get_neighbours(index)
+        neighbours = self._assert_self_handled(index, 1, neighbours, at_distance=False)
+        return neighbours
+
+    def _get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """
         Get the neighbours of a region up to a certain distance.
 
@@ -60,9 +76,44 @@ class Neighbourhood(ABC, Generic[IndexType]):
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
         neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
-        if not self.include_self:
-            neighbours.discard(index)
         return neighbours
+
+    def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
+        """
+        Get the neighbours of a region up to a certain distance.
+
+        Args:
+            index (IndexType): Unique identifier of the region.
+                Dependant on the implementation.
+            distance (int): Maximum distance to the neighbours.
+
+        Returns:
+            Set[IndexType]: Indexes of the neighbours.
+        """
+        neighbours = self._get_neighbours_up_to_distance(index, distance)
+        neighbours = self._assert_self_handled(index, distance, neighbours, at_distance=False)
+        return neighbours
+
+    def _get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
+        """
+        Get the neighbours of a region at a certain distance.
+
+        Args:
+            index (IndexType): Unique identifier of the region.
+                Dependant on the implementation.
+            distance (int): Distance to the neighbours.
+
+        Returns:
+            Set[IndexType]: Indexes of the neighbours.
+        """
+        neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
+        neighbours_at_distance: Set[IndexType] = (
+            seq(neighbours_up_to_distance)
+            .filter(lambda x: x[1] == distance)
+            .map(lambda x: x[0])
+            .to_set()
+        )
+        return neighbours_at_distance
 
     def get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
         """
@@ -76,21 +127,9 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Returns:
             Set[IndexType]: Indexes of the neighbours.
         """
-        if distance == 0:
-            if self.include_self:
-                return {index}
-            else:
-                return set()
-        neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
-        neighbours_at_distance: Set[IndexType] = (
-            seq(neighbours_up_to_distance)
-            .filter(lambda x: x[1] == distance)
-            .map(lambda x: x[0])
-            .to_set()
-        )
-        if not self.include_self:
-            neighbours_at_distance.discard(index)
-        return neighbours_at_distance
+        neighbours = self._get_neighbours_at_distance(index, distance)
+        neighbours = self._assert_self_handled(index, distance, neighbours, at_distance=True)
+        return neighbours
 
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
@@ -112,3 +151,23 @@ class Neighbourhood(ABC, Generic[IndexType]):
                         to_visit.put((neighbour, current_distance + 1))
 
         return set(visited_indexes.items())
+
+    def _assert_self_handled(
+        self, index: IndexType, distance: int, neighbours: Set[IndexType], at_distance: bool
+    ) -> Set[IndexType]:
+        if distance < 0:
+            return set()
+        elif distance == 0:
+            if self.include_self:
+                neighbours.add(index)
+            else:
+                neighbours.discard(index)
+        else:
+            if at_distance:
+                neighbours.discard(index)
+            else:
+                if self.include_self:
+                    neighbours.add(index)
+                else:
+                    neighbours.discard(index)
+        return neighbours
