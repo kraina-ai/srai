@@ -8,7 +8,7 @@ import json
 import warnings
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Hashable, Sequence, Union
+from typing import Any, Dict, Hashable, Sequence, Tuple, Union
 
 import geopandas as gpd
 import requests
@@ -131,32 +131,10 @@ class PbfFileDownloader:
             boundary_polygon = self._prepare_polygon_for_download(polygon)
             geometry_geojson = mapping(boundary_polygon)
 
-            s = requests.Session()
-
-            req = s.get(url=self.PROTOMAPS_API_START_URL)
-
-            csrf_token = req.cookies["csrftoken"]
-            headers = {
-                "Referer": self.PROTOMAPS_API_START_URL,
-                "Cookie": f"csrftoken={csrf_token}",
-                "X-CSRFToken": csrf_token,
-                "Content-Type": "application/json; charset=utf-8",
-                "User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)",
-            }
-            request_payload = {
-                "region": {"type": "geojson", "data": geometry_geojson},
-                "name": geometry_hash,
-            }
-
-            start_extract_request = s.post(
-                url=self.PROTOMAPS_API_START_URL,
-                json=request_payload,
-                headers=headers,
-                cookies=dict(csrftoken=csrf_token),
+            session, start_extract_result = self._send_first_request(
+                geometry_geojson, geometry_hash
             )
-            start_extract_request.raise_for_status()
 
-            start_extract_result = start_extract_request.json()
             try:
                 extraction_uuid = start_extract_result["uuid"]
                 status_check_url = start_extract_result["url"]
@@ -171,7 +149,7 @@ class PbfFileDownloader:
                 elems_total = 0
                 while not status_response.get("Complete", False):
                     sleep(0.5)
-                    status_response = s.get(url=status_check_url).json()
+                    status_response = session.get(url=status_check_url).json()
                     cells_total = max(cells_total, status_response.get("CellsTotal", 0))
                     nodes_total = max(nodes_total, status_response.get("NodesTotal", 0))
                     elems_total = max(elems_total, status_response.get("ElemsTotal", 0))
@@ -210,6 +188,48 @@ class PbfFileDownloader:
             )
 
         return pbf_file_path
+
+    def _send_first_request(
+        self, geometry_geojson: Any, geometry_hash: str
+    ) -> Tuple[requests.Session, Any]:
+        successful_request = False
+        while not successful_request:
+            print("Next request")
+            s = requests.Session()
+
+            req = s.get(url=self.PROTOMAPS_API_START_URL)
+
+            csrf_token = req.cookies["csrftoken"]
+            headers = {
+                "Referer": self.PROTOMAPS_API_START_URL,
+                "Cookie": f"csrftoken={csrf_token}",
+                "X-CSRFToken": csrf_token,
+                "Content-Type": "application/json; charset=utf-8",
+                "User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)",
+            }
+            request_payload = {
+                "region": {"type": "geojson", "data": geometry_geojson},
+                "name": geometry_hash,
+            }
+
+            start_extract_request = s.post(
+                url=self.PROTOMAPS_API_START_URL,
+                json=request_payload,
+                headers=headers,
+                cookies=dict(csrftoken=csrf_token),
+            )
+            start_extract_request.raise_for_status()
+
+            start_extract_result = start_extract_request.json()
+            errors = start_extract_result.get("errors")
+            if errors and "rate limited" in errors:
+                print(start_extract_result)
+                warnings.warn("Rate limited. Waiting 60 seconds.", stacklevel=2)
+                sleep(60)
+            else:
+                successful_request = True
+
+        return s, start_extract_result
 
     def _prepare_polygon_for_download(self, polygon: Polygon) -> Polygon:
         """
