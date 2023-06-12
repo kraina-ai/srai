@@ -37,7 +37,7 @@ def get_duckdb_connection() -> duckdb.DuckDBPyConnection:
             config=dict(
                 temp_directory="duckdb_temp/",
                 allow_unsigned_extensions="true",
-                # memory_limit=f"{_get_memory_limit(0.25)}B",
+                # memory_limit=f"{_get_memory_limit(0.5)}B",
             ),
         )
         for extension in OFFICIAL_DUCKDB_EXTENSIONS:
@@ -165,6 +165,11 @@ def relation_to_table(relation: duckdb.DuckDBPyRelation, prefix: str) -> duckdb.
     relation_name = f"{prefix}_{relation_id}"
     relation.to_table(relation_name)
     return get_duckdb_connection().table(relation_name)
+
+
+def delete_table(relation: duckdb.DuckDBPyRelation) -> None:
+    """Remove table from the database."""
+    get_duckdb_connection().execute(f"DROP TABLE IF EXISTS {relation.alias}")
 
 
 def duckdb_to_df(relation: duckdb.DuckDBPyRelation) -> Union[pd.DataFrame, gpd.GeoDataFrame]:

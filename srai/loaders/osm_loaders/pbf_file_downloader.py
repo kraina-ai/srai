@@ -8,19 +8,20 @@ import json
 import warnings
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Hashable, Sequence, Tuple, Union
+from typing import Any, Dict, Hashable, Literal, Sequence, Tuple, Union
 
 import geopandas as gpd
 import requests
 import shapely.wkt as wktlib
-import topojson as tp
 from shapely.geometry import Polygon, mapping
 from shapely.geometry.base import BaseGeometry
-from shapely.validation import make_valid
 from tqdm import tqdm
 
-from srai.constants import WGS84_CRS
-from srai.utils import buffer_geometry, download_file, flatten_geometry, remove_interiors
+from srai.utils import download_file, flatten_geometry
+from srai.utils.geofabrik import find_smallest_containing_extracts_urls
+from srai.utils.geometry import simplify_polygon_with_buffer
+
+PbfSourceLiteral = Literal["protomaps", "geofabrik"]
 
 
 class PbfFileDownloader:
@@ -43,35 +44,20 @@ class PbfFileDownloader:
 
     _PBAR_FORMAT = "[{}] Downloading pbf file #{} ({})"
 
-    SIMPLIFICATION_TOLERANCE_VALUES = [
-        1e-07,
-        2e-07,
-        5e-07,
-        1e-06,
-        2e-06,
-        5e-06,
-        1e-05,
-        2e-05,
-        5e-05,
-        0.0001,
-        0.0002,
-        0.0005,
-        0.001,
-        0.002,
-        0.005,
-        0.01,
-        0.02,
-        0.05,
-    ]
-
-    def __init__(self, download_directory: Union[str, Path] = "files") -> None:
+    def __init__(
+        self, source: PbfSourceLiteral = "protomaps", download_directory: Union[str, Path] = "files"
+    ) -> None:
         """
         Initialize PbfFileDownloader.
 
         Args:
+            source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
+                Can be either `protomaps` or `geofabrik`.
+                Defaults to "protomaps".
             download_directory (Union[str, Path], optional): Directory where to save
-                the downloaded `*.osm.pbf` files. Defaults to "files".
+                 the downloaded `*.osm.pbf` files. Defaults to "files".
         """
+        self.source = source
         self.download_directory = download_directory
 
     def download_pbf_files_for_regions_gdf(
@@ -92,16 +78,45 @@ class PbfFileDownloader:
         """
         regions_mapping: Dict[Hashable, Sequence[Path]] = {}
 
+        if self.source == "protomaps":
+            regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
+        elif self.source == "geofabrik":
+            regions_mapping = self._download_pbf_files_for_polygons_from_geofabrik(regions_gdf)
+
+        return regions_mapping
+
+    def _download_pbf_files_for_polygons_from_geofabrik(
+        self, regions_gdf: gpd.GeoDataFrame
+    ) -> Dict[Hashable, Sequence[Path]]:
+        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+
+        extracts = find_smallest_containing_extracts_urls(regions_gdf.geometry.unary_union)
+        for extract in extracts:
+            pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
+
+            download_file(url=extract.url, fname=pbf_file_path.as_posix(), force_download=False)
+
+            regions_mapping[extract.id] = [pbf_file_path]
+
+        return regions_mapping
+
+    def _download_pbf_files_for_polygons_from_protomaps(
+        self, regions_gdf: gpd.GeoDataFrame
+    ) -> Dict[Hashable, Sequence[Path]]:
+        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
             regions_mapping[region_id] = [
-                self.download_pbf_file_for_polygon(polygon, region_id, polygon_id + 1)
+                self._download_pbf_file_for_polygon_from_protomaps(
+                    polygon, region_id, polygon_id + 1
+                )
                 for polygon_id, polygon in enumerate(polygons)
             ]
 
         return regions_mapping
 
-    def download_pbf_file_for_polygon(
+    def _download_pbf_file_for_polygon_from_protomaps(
         self, polygon: Polygon, region_id: str = "OSM", polygon_id: int = 1
     ) -> Path:
         """
@@ -128,7 +143,7 @@ class PbfFileDownloader:
         pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():  # pragma: no cover
-            boundary_polygon = self._prepare_polygon_for_download(polygon)
+            boundary_polygon = simplify_polygon_with_buffer(polygon)
             geometry_geojson = mapping(boundary_polygon)
 
             session, start_extract_result = self._send_first_request(
@@ -227,57 +242,11 @@ class PbfFileDownloader:
                 # TODO: remove print
                 print(start_extract_result)
                 warnings.warn("Rate limited. Waiting 60 seconds.", stacklevel=2)
-                sleep(60)
+                sleep(300)
             else:
                 successful_request = True
 
         return s, start_extract_result
-
-    def _prepare_polygon_for_download(self, polygon: Polygon) -> Polygon:
-        """
-        Prepare polygon for download.
-
-        Function buffers the polygon, closes internal holes and simplifies its boundary to 1000
-        points.
-
-        Makes sure that the generated polygon with fully cover the original one by increasing the
-        buffer size incrementally.
-        """
-        is_fully_covered = False
-        buffer_size_meters = 50
-        while not is_fully_covered:
-            buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
-            simplified_polygon = self._simplify_polygon(buffered_polygon)
-            closed_polygon = remove_interiors(simplified_polygon)
-            is_fully_covered = polygon.covered_by(closed_polygon)
-            buffer_size_meters += 50
-        return closed_polygon
-
-    def _simplify_polygon(self, polygon: Polygon) -> Polygon:
-        """Simplify a polygon boundary to up to 1000 points."""
-        simplified_polygon = polygon
-
-        for simplify_tolerance in self.SIMPLIFICATION_TOLERANCE_VALUES:
-            simplified_polygon = (
-                tp.Topology(
-                    polygon,
-                    toposimplify=simplify_tolerance,
-                    prevent_oversimplify=True,
-                )
-                .to_gdf(winding_order="CW_CCW", crs=WGS84_CRS, validate=True)
-                .geometry[0]
-            )
-            simplified_polygon = make_valid(simplified_polygon)
-            if len(simplified_polygon.exterior.coords) < 1000:
-                break
-
-        if len(simplified_polygon.exterior.coords) > 1000:
-            simplified_polygon = polygon.convex_hull
-
-        if len(simplified_polygon.exterior.coords) > 1000:
-            simplified_polygon = polygon.minimum_rotated_rectangle
-
-        return simplified_polygon
 
     def _get_geometry_hash(self, geometry: BaseGeometry) -> str:
         """Generate SHA256 hash based on WKT representation of the polygon."""
