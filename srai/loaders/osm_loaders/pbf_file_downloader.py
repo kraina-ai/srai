@@ -18,10 +18,13 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.utils import download_file, flatten_geometry
-from srai.utils.geofabrik import find_smallest_containing_extracts_urls
 from srai.utils.geometry import simplify_polygon_with_buffer
+from srai.utils.openstreetmap_extracts import (
+    find_smallest_containing_geofabrik_extracts_urls,
+    find_smallest_containing_openstreetmap_fr_extracts_urls,
+)
 
-PbfSourceLiteral = Literal["protomaps", "geofabrik"]
+PbfSourceLiteral = Literal["protomaps", "geofabrik", "openstreetmap_fr"]
 
 
 class PbfFileDownloader:
@@ -80,17 +83,25 @@ class PbfFileDownloader:
 
         if self.source == "protomaps":
             regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
-        elif self.source == "geofabrik":
-            regions_mapping = self._download_pbf_files_for_polygons_from_geofabrik(regions_gdf)
+        elif self.source in ["geofabrik", "openstreetmap_fr"]:
+            regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                regions_gdf
+            )
 
         return regions_mapping
 
-    def _download_pbf_files_for_polygons_from_geofabrik(
+    def _download_pbf_files_for_polygons_from_existing_extracts(
         self, regions_gdf: gpd.GeoDataFrame
     ) -> Dict[Hashable, Sequence[Path]]:
         regions_mapping: Dict[Hashable, Sequence[Path]] = {}
 
-        extracts = find_smallest_containing_extracts_urls(regions_gdf.geometry.unary_union)
+        unary_union_geometry = regions_gdf.geometry.unary_union
+
+        if self.source == "geofabrik":
+            extracts = find_smallest_containing_geofabrik_extracts_urls(unary_union_geometry)
+        elif self.source == "openstreetmap_fr":
+            extracts = find_smallest_containing_openstreetmap_fr_extracts_urls(unary_union_geometry)
+
         for extract in extracts:
             pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
 

@@ -1,13 +1,15 @@
 """Utility geometry operations functions."""
-from typing import List
+import warnings
+from typing import List, Union
 
 import geopandas as gpd
 import pyproj
 import topojson as tp
 from functional import seq
-from shapely.geometry import Polygon
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
+from shapely.ops import unary_union
 from shapely.validation import make_valid
 
 from srai.constants import WGS84_CRS
@@ -53,22 +55,27 @@ def flatten_geometry(geometry: BaseGeometry) -> List[BaseGeometry]:
 
 
 # https://stackoverflow.com/a/70387141/7766101
-def remove_interiors(polygon: Polygon) -> Polygon:
+def remove_interiors(polygon: Union[Polygon, MultiPolygon]) -> Union[Polygon, MultiPolygon]:
     """
     Close polygon holes by limitation to the exterior ring.
 
     Args:
-        polygon (Polygon): Polygon to close.
+        polygon (Union[Polygon, MultiPolygon]): Polygon to close.
 
     Returns:
-        Polygon: Closed polygon.
+        Union[Polygon, MultiPolygon]: Closed polygon.
     """
+    if isinstance(polygon, MultiPolygon):
+        return unary_union([remove_interiors(sub_polygon) for sub_polygon in polygon.geoms])
+
     if polygon.interiors:
         return Polygon(list(polygon.exterior.coords))
     return polygon
 
 
-def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
+def buffer_geometry(
+    geometry: Union[BaseGeometry, BaseMultipartGeometry], meters: float
+) -> Union[Polygon, MultiPolygon]:
     """
     Buffer geometry by a given radius in meters.
 
@@ -78,12 +85,17 @@ def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
     Doesn't work with polygons covering the whole earth (from -180 to 180 longitude).
 
     Args:
-        geometry (BaseGeometry): Geometry to buffer.
+        geometry (Union[BaseGeometry, BaseMultipartGeometry]): Geometry to buffer.
         meters (float): Radius distance in meters.
 
     Returns:
-        BaseGeometry: Buffered geometry.
+        Union[Polygon, MultiPolygon]: Buffered geometry.
     """
+    if isinstance(geometry, BaseMultipartGeometry):
+        return unary_union(
+            [buffer_geometry(sub_geometry, meters) for sub_geometry in geometry.geoms]
+        )
+
     _lon, _lat = geometry.centroid.coords[0]
 
     aeqd_proj = pyproj.Proj(proj="aeqd", ellps="WGS84", datum="WGS84", lat_0=_lat, lon_0=_lon)
@@ -98,7 +110,9 @@ def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
     return shapely_transform(aeqd_to_wgs84, bufferred_projected_geometry)
 
 
-def simplify_polygon_with_buffer(polygon: Polygon) -> Polygon:
+def simplify_polygon_with_buffer(
+    polygon: Union[Polygon, MultiPolygon]
+) -> Union[Polygon, MultiPolygon]:
     """
     Prepare polygon for download.
 
@@ -107,19 +121,30 @@ def simplify_polygon_with_buffer(polygon: Polygon) -> Polygon:
     Makes sure that the generated polygon with fully cover the original one by increasing the buffer
     size incrementally.
     """
+    if isinstance(polygon, MultiPolygon):
+        return unary_union(
+            [simplify_polygon_with_buffer(sub_polygon) for sub_polygon in polygon.geoms]
+        )
+
     is_fully_covered = False
     buffer_size_meters = 50
     while not is_fully_covered:
-        buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
-        simplified_polygon = simplify_polygon(buffered_polygon)
-        closed_polygon = remove_interiors(simplified_polygon)
-        is_fully_covered = polygon.covered_by(closed_polygon)
+        try:
+            buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
+            simplified_polygon = simplify_polygon(buffered_polygon)
+            closed_polygon = remove_interiors(simplified_polygon)
+            is_fully_covered = polygon.covered_by(closed_polygon)
+        except Exception:
+            warnings.warn("Error while simplifying polygon.", stacklevel=2)
         buffer_size_meters += 50
     return closed_polygon
 
 
-def simplify_polygon(polygon: Polygon) -> Polygon:
+def simplify_polygon(polygon: Union[Polygon, MultiPolygon]) -> Union[Polygon, MultiPolygon]:
     """Simplify a polygon boundary to up to 1000 points."""
+    if isinstance(polygon, MultiPolygon):
+        return unary_union([simplify_polygon(sub_polygon) for sub_polygon in polygon.geoms])
+
     simplified_polygon = polygon
 
     for simplify_tolerance in SIMPLIFICATION_TOLERANCE_VALUES:
