@@ -2,7 +2,7 @@
 import json
 import re
 from dataclasses import asdict, dataclass
-from typing import Any, List, Optional, Sequence
+from typing import Any, Iterable, List, Optional, Set
 
 import geopandas as gpd
 import requests
@@ -78,32 +78,30 @@ def find_smallest_containing_openstreetmap_fr_extracts_urls(
 def _find_smallest_containing_extracts_urls(
     polygon: BaseGeometry, polygons_index_gdf: gpd.GeoDataFrame
 ) -> List[OpenStreetMapExtract]:
-    joined_extracts: List[OpenStreetMapExtract] = []
+    unique_extracts_ids: Set[str] = set()
 
     for geometry in tqdm(flatten_geometry(polygon), desc="Finding matching extracts"):
-        joined_extracts.extend(
+        unique_extracts_ids.update(
             _find_smallest_containing_extracts_urls_for_single_polygon(geometry, polygons_index_gdf)
         )
 
-    unique_extracts = {extract.id: extract for extract in joined_extracts}
-
-    extracts_filtered = _filter_extracts(polygon, list(unique_extracts.keys()), polygons_index_gdf)
+    extracts_filtered = _filter_extracts(polygon, unique_extracts_ids, polygons_index_gdf)
 
     return extracts_filtered
 
 
 def _find_smallest_containing_extracts_urls_for_single_polygon(
     polygon: BaseGeometry, polygons_index_gdf: gpd.GeoDataFrame
-) -> List[OpenStreetMapExtract]:
+) -> Set[str]:
     if polygons_index_gdf is None:
         raise RuntimeError("Extracts index is empty.")
 
-    extracts: List[OpenStreetMapExtract] = []
+    extracts_ids: Set[str] = set()
     polygon_to_cover = polygon.buffer(0)
     iterations = 100
     while not polygon_to_cover.is_empty and iterations > 0:
         matching_rows = polygons_index_gdf[
-            (~polygons_index_gdf["id"].isin(extract.id for extract in extracts))
+            (~polygons_index_gdf["id"].isin(extracts_ids))
             & (polygons_index_gdf.intersects(polygon_to_cover))
         ]
         if len(matching_rows) == 0 or iterations == 0:
@@ -111,19 +109,13 @@ def _find_smallest_containing_extracts_urls_for_single_polygon(
 
         smallest_extract = matching_rows.iloc[0]
         polygon_to_cover = polygon_to_cover.difference(smallest_extract.geometry)
-        extracts.append(
-            OpenStreetMapExtract(
-                id=smallest_extract.id,
-                url=smallest_extract["urls"]["pbf"],
-                geometry=smallest_extract.geometry,
-            )
-        )
+        extracts_ids.add(smallest_extract.id)
         iterations -= 1
-    return extracts
+    return extracts_ids
 
 
 def _filter_extracts(
-    polygon: BaseGeometry, extracts_ids: Sequence[str], polygons_index_gdf: gpd.GeoDataFrame
+    polygon: BaseGeometry, extracts_ids: Iterable[str], polygons_index_gdf: gpd.GeoDataFrame
 ) -> List[OpenStreetMapExtract]:
     if polygons_index_gdf is None:
         raise RuntimeError("Geofabrik index is empty.")
@@ -132,26 +124,41 @@ def _filter_extracts(
         polygons_index_gdf["id"].isin(extracts_ids)
     ].sort_values(by="area", ignore_index=True, ascending=False)
 
-    extracts_filtered: List[OpenStreetMapExtract] = []
+    filtered_extracts: List[OpenStreetMapExtract] = []
+    filtered_extracts_ids: Set[str] = set()
+    filtered_extracts_geometry: Optional[BaseGeometry] = None
 
-    polygon_to_cover = polygon.buffer(0)
-    for _, extract_row in tqdm(sorted_extracts_gdf.iterrows(), desc="Filtering extracts"):
-        if polygon_to_cover.is_empty:
-            break
+    for sub_polygon in tqdm(flatten_geometry(polygon), desc="Filtering extracts"):
+        polygon_to_cover = sub_polygon.buffer(0)
 
-        if extract_row.geometry.disjoint(polygon_to_cover):
-            continue
+        if filtered_extracts_geometry:
+            polygon_to_cover = polygon_to_cover.difference(filtered_extracts_geometry)
 
-        extract = OpenStreetMapExtract(
-            id=extract_row.id,
-            url=extract_row["urls"]["pbf"],
-            geometry=extract_row.geometry,
-        )
+        for _, extract_row in sorted_extracts_gdf.iterrows():
+            if extract_row.id in filtered_extracts_ids:
+                continue
 
-        polygon_to_cover = polygon_to_cover.difference(extract.geometry)
-        extracts_filtered.append(extract)
+            if polygon_to_cover.is_empty:
+                break
 
-    return extracts_filtered
+            if extract_row.geometry.disjoint(polygon_to_cover):
+                continue
+
+            extract = OpenStreetMapExtract(
+                id=extract_row.id,
+                url=extract_row["urls"]["pbf"],
+                geometry=extract_row.geometry,
+            )
+
+            polygon_to_cover = polygon_to_cover.difference(extract.geometry)
+            if filtered_extracts_geometry:
+                filtered_extracts_geometry = filtered_extracts_geometry.union(extract.geometry)
+            else:
+                filtered_extracts_geometry = extract.geometry
+            filtered_extracts.append(extract)
+            filtered_extracts_ids.add(extract_row.id)
+
+    return filtered_extracts
 
 
 def _load_geofabrik_index() -> gpd.GeoDataFrame:
