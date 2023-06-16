@@ -2,6 +2,9 @@
 import json
 import re
 from dataclasses import asdict, dataclass
+from functools import partial
+from math import ceil
+from multiprocessing import cpu_count
 from typing import Any, Iterable, List, Optional, Set
 
 import geopandas as gpd
@@ -10,6 +13,7 @@ from bs4 import BeautifulSoup
 from shapely.geometry import MultiPolygon
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from srai.constants import WGS84_CRS
 from srai.utils.geometry import flatten_geometry
@@ -76,16 +80,58 @@ def find_smallest_containing_openstreetmap_fr_extracts_urls(
 
 
 def _find_smallest_containing_extracts_urls(
-    polygon: BaseGeometry, polygons_index_gdf: gpd.GeoDataFrame
+    polygon: BaseGeometry,
+    polygons_index_gdf: gpd.GeoDataFrame,
+    num_of_multiprocessing_workers: int = -1,
+    multiprocessing_activation_threshold: Optional[int] = None,
 ) -> List[OpenStreetMapExtract]:
+    if num_of_multiprocessing_workers == 0:
+        num_of_multiprocessing_workers = 1
+    elif num_of_multiprocessing_workers < 0:
+        num_of_multiprocessing_workers = cpu_count()
+
+    if not multiprocessing_activation_threshold:
+        multiprocessing_activation_threshold = 100
+
     unique_extracts_ids: Set[str] = set()
 
-    for geometry in tqdm(flatten_geometry(polygon), desc="Finding matching extracts"):
-        unique_extracts_ids.update(
-            _find_smallest_containing_extracts_urls_for_single_polygon(geometry, polygons_index_gdf)
+    polygons = flatten_geometry(polygon)
+
+    total_polygons = len(polygons)
+
+    if (
+        num_of_multiprocessing_workers > 1
+        and total_polygons >= multiprocessing_activation_threshold
+    ):
+        find_extracts_func = partial(
+            _find_smallest_containing_extracts_urls_for_single_polygon,
+            polygon=polygon,
+            polygons_index_gdf=polygons_index_gdf,
         )
 
-    extracts_filtered = _filter_extracts(polygon, unique_extracts_ids, polygons_index_gdf)
+        for extract_ids_list in process_map(
+            find_extracts_func,
+            polygons,
+            desc="Finding matching extracts",
+            max_workers=num_of_multiprocessing_workers,
+            chunksize=ceil(total_polygons / (4 * num_of_multiprocessing_workers)),
+        ):
+            unique_extracts_ids.update(extract_ids_list)
+    else:
+        for geometry in tqdm(flatten_geometry(polygon), desc="Finding matching extracts"):
+            unique_extracts_ids.update(
+                _find_smallest_containing_extracts_urls_for_single_polygon(
+                    geometry, polygons_index_gdf
+                )
+            )
+
+    extracts_filtered = _filter_extracts(
+        polygon,
+        unique_extracts_ids,
+        polygons_index_gdf,
+        num_of_multiprocessing_workers,
+        multiprocessing_activation_threshold,
+    )
 
     return extracts_filtered
 
@@ -115,7 +161,11 @@ def _find_smallest_containing_extracts_urls_for_single_polygon(
 
 
 def _filter_extracts(
-    polygon: BaseGeometry, extracts_ids: Iterable[str], polygons_index_gdf: gpd.GeoDataFrame
+    polygon: BaseGeometry,
+    extracts_ids: Iterable[str],
+    polygons_index_gdf: gpd.GeoDataFrame,
+    num_of_multiprocessing_workers: int,
+    multiprocessing_activation_threshold: int,
 ) -> List[OpenStreetMapExtract]:
     if polygons_index_gdf is None:
         raise RuntimeError("Geofabrik index is empty.")
@@ -126,39 +176,66 @@ def _filter_extracts(
 
     filtered_extracts: List[OpenStreetMapExtract] = []
     filtered_extracts_ids: Set[str] = set()
-    filtered_extracts_geometry: Optional[BaseGeometry] = None
 
-    for sub_polygon in tqdm(flatten_geometry(polygon), desc="Filtering extracts"):
-        polygon_to_cover = sub_polygon.buffer(0)
+    polygons = flatten_geometry(polygon)
 
-        if filtered_extracts_geometry:
-            polygon_to_cover = polygon_to_cover.difference(filtered_extracts_geometry)
+    total_polygons = len(polygons)
 
-        for _, extract_row in sorted_extracts_gdf.iterrows():
-            if extract_row.id in filtered_extracts_ids:
-                continue
+    if (
+        num_of_multiprocessing_workers > 1
+        and total_polygons >= multiprocessing_activation_threshold
+    ):
+        filter_extracts_func = partial(
+            _filter_extracts_for_single_polygon,
+            polygon=polygon,
+            sorted_extracts_gdf=sorted_extracts_gdf,
+        )
 
-            if polygon_to_cover.is_empty:
-                break
-
-            if extract_row.geometry.disjoint(polygon_to_cover):
-                continue
-
-            extract = OpenStreetMapExtract(
-                id=extract_row.id,
-                url=extract_row["urls"]["pbf"],
-                geometry=extract_row.geometry,
+        for extract_ids_list in process_map(
+            filter_extracts_func,
+            polygons,
+            desc="Filtering extracts",
+            max_workers=num_of_multiprocessing_workers,
+            chunksize=ceil(total_polygons / (4 * num_of_multiprocessing_workers)),
+        ):
+            filtered_extracts_ids.update(extract_ids_list)
+    else:
+        for geometry in tqdm(flatten_geometry(polygon), desc="Filtering extracts"):
+            filtered_extracts_ids.update(
+                _filter_extracts_for_single_polygon(geometry, sorted_extracts_gdf)
             )
 
-            polygon_to_cover = polygon_to_cover.difference(extract.geometry)
-            if filtered_extracts_geometry:
-                filtered_extracts_geometry = filtered_extracts_geometry.union(extract.geometry)
-            else:
-                filtered_extracts_geometry = extract.geometry
-            filtered_extracts.append(extract)
-            filtered_extracts_ids.add(extract_row.id)
+    for _, extract_row in sorted_extracts_gdf[
+        sorted_extracts_gdf["id"].isin(filtered_extracts_ids)
+    ].iterrows():
+        extract = OpenStreetMapExtract(
+            id=extract_row.id,
+            url=extract_row["urls"]["pbf"],
+            geometry=extract_row.geometry,
+        )
+        filtered_extracts.append(extract)
 
     return filtered_extracts
+
+
+def _filter_extracts_for_single_polygon(
+    polygon: BaseGeometry, sorted_extracts_gdf: gpd.GeoDataFrame
+) -> Set[str]:
+    polygon_to_cover = polygon.buffer(0)
+    filtered_extracts_ids: Set[str] = set()
+
+    polygon_to_cover = polygon.buffer(0)
+    for _, extract_row in sorted_extracts_gdf.iterrows():
+        if polygon_to_cover.is_empty:
+            break
+
+        if extract_row.geometry.disjoint(polygon_to_cover):
+            continue
+
+        polygon_to_cover = polygon_to_cover.difference(extract_row.geometry)
+        filtered_extracts_ids.add(extract_row.id)
+
+    return filtered_extracts_ids
 
 
 def _load_geofabrik_index() -> gpd.GeoDataFrame:
