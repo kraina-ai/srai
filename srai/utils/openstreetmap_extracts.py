@@ -105,7 +105,6 @@ def _find_smallest_containing_extracts_urls(
     ):
         find_extracts_func = partial(
             _find_smallest_containing_extracts_urls_for_single_polygon,
-            polygon=polygon,
             polygons_index_gdf=polygons_index_gdf,
         )
 
@@ -187,7 +186,6 @@ def _filter_extracts(
     ):
         filter_extracts_func = partial(
             _filter_extracts_for_single_polygon,
-            polygon=polygon,
             sorted_extracts_gdf=sorted_extracts_gdf,
         )
 
