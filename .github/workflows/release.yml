@@ -14,10 +14,17 @@ on:
 
 jobs:
   release:
-    name: Bump ⬆️ and release ✈️ a new library version
+    name: Bump ⬆️ and release ✈️ a new library version (${{ inputs.bumpType }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch_depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+      - name: Configure Git user
+        run: |
+          git config --local user.name "RaczeQ"
+          git config --local user.email "RaczeQ@users.noreply.github.com"
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -30,10 +37,6 @@ jobs:
           enable-pep582: true
       - name: Install dependencies
         run: pdm install -d -G dev
-      - name: Configure Git user
-        run: |
-          git config --local user.name "${GITHUB_ACTOR}"
-          git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
       - name: Run bumpver
         run: |
           pdm run bumpver update --${{ inputs.bumpType }} -vvv
