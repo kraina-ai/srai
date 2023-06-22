@@ -36,7 +36,7 @@ jobs:
           git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
       - name: Run bumpver
         run: |
-          pdm run bumpver update --${{ inputs.bumpType }}
+          pdm run bumpver update --${{ inputs.bumpType }} -vvv
       - name: Push commit and tag to the main branch
         run: |
           git push --follow-tags
