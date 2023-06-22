@@ -262,7 +262,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         try:
             wkb = parse_to_wkb_function(osm_object)
             geometry = wkblib.loads(wkb, hex=True)
-        except RuntimeError as ex:
+        except Exception as ex:
             message = str(ex)
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
