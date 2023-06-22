@@ -39,4 +39,4 @@ jobs:
           pdm run bumpver update --${{ inputs.bumpType }} -vvv
       - name: Push commit and tag to the main branch
         run: |
-          git push --follow-tags
+          git push --follow-tags --force
