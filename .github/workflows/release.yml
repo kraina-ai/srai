@@ -37,6 +37,9 @@ jobs:
       - name: Run bumpver
         run: |
           pdm run bumpver update --${{ inputs.bumpType }} -vvv
-      - name: Push commit and tag to the main branch
-        run: |
-          git push --follow-tags --force
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT_TOKEN }}
+          force: true
+          tags: true
