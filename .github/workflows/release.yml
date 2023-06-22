@@ -1,0 +1,42 @@
+name: "Bump ⬆️ and release ✈️ a new library version"
+on:
+  workflow_dispatch:
+    inputs:
+      bumpType:
+        description: "Bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    name: Bump ⬆️ and release ✈️ a new library version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM (Python 3.11)
+        with:
+          python-version: 3.11
+          architecture: x64
+          enable-pep582: true
+      - name: Install dependencies
+        run: pdm install -d -G dev
+      - name: Configure Git user
+        run: |
+          git config --local user.name "${GITHUB_ACTOR}"
+          git config --local user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+      - name: Run bumpver
+        run: |
+          pdm run bumpver update --${{ inputs.bumpType }}
+      - name: Push commit and tag to the main branch
+        run: |
+          git push --follow-tags
