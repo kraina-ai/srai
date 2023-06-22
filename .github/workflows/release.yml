@@ -39,4 +39,4 @@ jobs:
         run: pdm install -d -G dev
       - name: Run bumpver
         run: |
-          pdm run bumpver update --push --${{ inputs.bumpType }} -vvv
+          pdm run bumpver update --tag-commit --push --${{ inputs.bumpType }} -vvv
