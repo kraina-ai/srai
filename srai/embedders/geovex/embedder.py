@@ -12,6 +12,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
@@ -120,7 +121,9 @@ class GeoVexEmbedder(CountEmbedder):
                 f" r={self._r} neighbors."
             )
 
-        return pd.DataFrame(np.concatenate(embeddings), index=self._dataset.get_ordered_index())
+        df = pd.DataFrame(np.concatenate(embeddings), index=self._dataset.get_ordered_index())
+        df.index.name = REGIONS_INDEX
+        return df
 
     def fit(
         self,
@@ -128,7 +131,6 @@ class GeoVexEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: H3Neighbourhood,
-        batch_size: int = 32,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -141,7 +143,6 @@ class GeoVexEmbedder(CountEmbedder):
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
             neighbourhood (H3Neighbourhood): The neighbourhood to use.
                 Should be intialized with the same regions.
-            batch_size (int, optional): Batch size. Defaults to 32.
             learning_rate (float, optional): Learning rate. Defaults to 0.001.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs.
                 This is where the number of epochs can be set. Defaults to None.
@@ -150,7 +151,7 @@ class GeoVexEmbedder(CountEmbedder):
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
         counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, batch_size, shuffle=True
+            regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
         )
         self._model = GeoVexModel(
             k_dim=len(counts_df.columns),
@@ -188,7 +189,6 @@ class GeoVexEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: H3Neighbourhood,
-        batch_size: int = 32,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
     ) -> pd.DataFrame:
@@ -202,7 +202,6 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood (H3Neighbourhood): The neighbourhood to use.
                 Should be intialized with the same regions.
             negative_sample_k_distance (int, optional): Distance of negative samples. Defaults to 2.
-            batch_size (int, optional): Batch size. Defaults to 32.
             learning_rate (float, optional): Learning rate. Defaults to 0.001.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. This is where the
                 number of epochs can be set. Defaults to None.
@@ -212,7 +211,6 @@ class GeoVexEmbedder(CountEmbedder):
             features_gdf=features_gdf,
             joint_gdf=joint_gdf,
             neighbourhood=neighbourhood,
-            batch_size=batch_size,
             learning_rate=learning_rate,
             trainer_kwargs=trainer_kwargs,
         )

@@ -8,7 +8,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
-from typing import Any, Generic, List, NamedTuple, Set, Tuple, TypeVar
+from typing import Any, Generic, List, Set, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -31,18 +31,7 @@ except ImportError:
 T = TypeVar("T")
 
 
-class HexagonalDatasetItem(NamedTuple):
-    """
-    Hexagonal dataset item.
-
-    Attributes:
-        hex_matrix (torch.Tensor): Anchor regions.
-    """
-
-    hex_matrix: "torch.Tensor"
-
-
-class HexagonalDataset(Dataset[HexagonalDatasetItem], Generic[T]):  # type: ignore
+class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
     """
     Dataset for the hexagonal encoder model.
 
@@ -135,7 +124,7 @@ class HexagonalDataset(Dataset[HexagonalDatasetItem], Generic[T]):  # type: igno
         """
         return len(self._valid_h3)
 
-    def __getitem__(self, index: Any) -> HexagonalDatasetItem:
+    def __getitem__(self, index: Any) -> "torch.Tensor":
         """
         Return a single item from the dataset.
 
@@ -150,7 +139,7 @@ class HexagonalDataset(Dataset[HexagonalDatasetItem], Generic[T]):  # type: igno
 
     def _build_tensor(
         self, target_idx: int, neighbors_idxs: List[Tuple[int, Tuple[int, int]]]
-    ) -> HexagonalDatasetItem:
+    ) -> "torch.Tensor":
         import torch
 
         # build the 3d tensor
@@ -180,7 +169,7 @@ class HexagonalDataset(Dataset[HexagonalDatasetItem], Generic[T]):  # type: igno
 
         # return the tensor and the target (which is same as the tensor)
         # should we return the target as a copy of the tensor?
-        return HexagonalDatasetItem(hex_matrix=tensor)
+        return tensor
 
     def _assert_k_ring_correct(self, k_ring: int) -> None:
         if k_ring < 2:
