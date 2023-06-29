@@ -8,20 +8,14 @@ References:
 """
 from typing import TYPE_CHECKING, List, Tuple
 
+from srai.embedders import Model
 from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
 
 
-try:  # pragma: no cover
-    from pytorch_lightning import LightningModule
-
-except ImportError:
-    from srai.utils._pytorch_stubs import LightningModule
-
-
-class Hex2VecModel(LightningModule):  # type: ignore
+class Hex2VecModel(Model):
     """
     Hex2Vec embedding model.
 
@@ -50,6 +44,7 @@ class Hex2VecModel(LightningModule):  # type: ignore
         from torch import nn
 
         super().__init__()
+        self.layer_sizes = layer_sizes
         self.learning_rate = learning_rate
 
         if len(layer_sizes) < 2:
