@@ -92,6 +92,10 @@ class Hex2VecEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: Neighbourhood[T],
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_neighbourhood: Optional[Neighbourhood[T]] = None,
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
@@ -137,7 +141,22 @@ class Hex2VecEmbedder(CountEmbedder):
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
         trainer = pl.Trainer(**trainer_kwargs)
-        trainer.fit(self._model, dataloader)
+        if (
+            val_regions_gdf is not None
+            and val_features_gdf is not None
+            and val_joint_gdf is not None
+            and val_neighbourhood is not None
+        ):
+            val_counts_df = self._get_raw_counts(val_regions_gdf, val_features_gdf, val_joint_gdf)
+            val_dataset = NeighbourDataset(
+                val_counts_df, val_neighbourhood, negative_sample_k_distance
+            )
+            val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+            trainer_kwargs["val_dataloaders"] = [val_dataloader]
+            trainer.fit(self._model, dataloader, val_dataloader)
+        else:
+            trainer.fit(self._model, dataloader)
+
         self._is_fitted = True
 
     def fit_transform(
@@ -146,6 +165,10 @@ class Hex2VecEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: Neighbourhood[T],
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_neighbourhood: Optional[Neighbourhood[T]] = None,
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
@@ -181,6 +204,10 @@ class Hex2VecEmbedder(CountEmbedder):
             features_gdf,
             joint_gdf,
             neighbourhood,
+            val_regions_gdf,
+            val_features_gdf,
+            val_joint_gdf,
+            val_neighbourhood,
             negative_sample_k_distance,
             batch_size,
             learning_rate,

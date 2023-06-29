@@ -150,3 +150,7 @@ files/
 
 # ruff
 .ruff_cache
+
+./wandb
+./models
+./data

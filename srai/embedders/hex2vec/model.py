@@ -6,6 +6,7 @@ This module contains the embedding model from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Tuple
 
 from srai.embedders import Model
@@ -178,3 +179,22 @@ class Hex2VecModel(Model):
         import torch
 
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+
+    def get_kwargs(self) -> dict:
+        """Get model save kwargs."""
+        return {"layer_sizes": self.layer_sizes, "learning_rate": self.learning_rate}
+
+    @classmethod
+    def load(cls, path: Path, **kwargs: dict) -> "Hex2VecModel":
+        """
+        Load model from a file.
+
+        Args:
+            path (str): Path to the file.
+            **kwargs (dict): Additional kwargs to pass to the model constructor.
+        """
+        import torch
+
+        model = cls(**kwargs)
+        model.load_state_dict(torch.load(path))
+        return model
