@@ -272,6 +272,17 @@ plot_numeric_data(regions, embeddings, 0, map=folium_map)
   <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
+### Pre-trained models usage
+
+We provide pre-trained models for some of the embedding methods. To use them, simply download them from [here](https://drive.google.com/drive/folders/14sH33-kNxA0q1O1abPWTpuix8raR_XbD?usp=drive_link) and load them using `load` method:
+
+```python
+from srai.embedders import Hex2VecEmbedder
+
+model_path = "path/to/model"
+embedder = Hex2VecEmbedder.load(model_path)
+```
+
 ### Plotting, utilities and more
 
 We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://srai-lab.github.io/srai).
