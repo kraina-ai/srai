@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Freeze osmnx version to <=1.4.0, as 1.5.0 is not compatible with our code [#303](https://github.com/srai-lab/srai/issues/303)
+
 ### Security
 
 ## [0.1.1] - 2023-04-27
