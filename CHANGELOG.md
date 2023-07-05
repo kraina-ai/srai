@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Loading and saving fittable embedders
-
 ### Changed
-
-- BREAKING: renamed Regionizer to Regionalizer [#282](https://github.com/srai-lab/srai/issues/282)
 
 ### Deprecated
 
@@ -21,9 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Freeze osmnx version to <=1.4.0, as 1.5.0 is not compatible with our code [#303](https://github.com/srai-lab/srai/issues/303)
-
 ### Security
+
+## [0.2.0] - 2023-07-05
+
+### Added
+
+- Loading and saving fittable embedders
+
+### Changed
+
+- BREAKING: renamed Regionizer to Regionalizer [#282](https://github.com/srai-lab/srai/issues/282)
+
+### Fixed
+
+- Freeze osmnx version to <=1.4.0, as 1.5.0 is not compatible with our code [#303](https://github.com/srai-lab/srai/issues/303)
 
 ## [0.1.1] - 2023-04-27
 
@@ -87,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.1.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/srai-lab/srai/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/srai-lab/srai/compare/0.0.1...0.1.1
 [0.0.1]: https://github.com/srai-lab/srai/compare/687500b...0.0.1
