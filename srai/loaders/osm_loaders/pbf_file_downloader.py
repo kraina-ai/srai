@@ -16,7 +16,6 @@ import shapely.wkt as wktlib
 import topojson as tp
 from shapely.geometry import Polygon, mapping
 from shapely.geometry.base import BaseGeometry
-from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
@@ -219,20 +218,27 @@ class PbfFileDownloader:
         points.
 
         Makes sure that the generated polygon with fully cover the original one by increasing the
-        buffer size incrementally.
+        buffer size incrementally. Buffering is applied to the last simplified geometry to speed up
+        the process.
         """
         is_fully_covered = False
         buffer_size_meters = 50
+
+        polygon_to_buffer = polygon
+
         while not is_fully_covered:
-            buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
-            simplified_polygon = self._simplify_polygon(buffered_polygon)
+            buffered_polygon = buffer_geometry(polygon_to_buffer, meters=buffer_size_meters)
+            simplified_polygon = self._simplify_polygon(buffered_polygon, 1000)
             closed_polygon = remove_interiors(simplified_polygon)
             is_fully_covered = polygon.covered_by(closed_polygon)
             buffer_size_meters += 50
+
+            polygon_to_buffer = closed_polygon
+
         return closed_polygon
 
-    def _simplify_polygon(self, polygon: Polygon) -> Polygon:
-        """Simplify a polygon boundary to up to 1000 points."""
+    def _simplify_polygon(self, polygon: Polygon, exterior_max_points: int = 1000) -> Polygon:
+        """Simplify a polygon boundary to up to provided number of points."""
         simplified_polygon = polygon
 
         for simplify_tolerance in self.SIMPLIFICATION_TOLERANCE_VALUES:
@@ -245,14 +251,14 @@ class PbfFileDownloader:
                 .to_gdf(winding_order="CW_CCW", crs=WGS84_CRS, validate=True)
                 .geometry[0]
             )
-            simplified_polygon = make_valid(simplified_polygon)
-            if len(simplified_polygon.exterior.coords) < 1000:
+
+            if len(simplified_polygon.exterior.coords) < exterior_max_points:
                 break
 
-        if len(simplified_polygon.exterior.coords) > 1000:
+        if len(simplified_polygon.exterior.coords) > exterior_max_points:
             simplified_polygon = polygon.convex_hull
 
-        if len(simplified_polygon.exterior.coords) > 1000:
+        if len(simplified_polygon.exterior.coords) > exterior_max_points:
             simplified_polygon = polygon.minimum_rotated_rectangle
 
         return simplified_polygon
