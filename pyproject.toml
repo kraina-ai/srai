@@ -111,6 +111,9 @@ docs = [
 performance = ["scalene"]
 license = ["licensecheck"]
 
+[tool.pdm.scripts]
+post_install = "pre-commit install"
+
 [tool.black]
 line-length = 100
 target-version = ["py38", "py39", "py310", "py311"]

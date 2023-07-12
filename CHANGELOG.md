@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Improved simplification and buffering of polygons for Protomaps extracts [#309](https://github.com/srai-lab/srai/issues/309)
+
 ### Security
 
 ## [0.2.0] - 2023-07-05
