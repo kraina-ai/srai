@@ -26,6 +26,7 @@ dependencies = [
     "s2",
     "typeguard",
     "requests",
+    "h3ronpy",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
