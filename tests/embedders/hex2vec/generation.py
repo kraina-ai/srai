@@ -3,15 +3,16 @@ from pathlib import Path
 from typing import Optional
 
 import geopandas as gpd
+import h3
+from h3ronpy.pandas.vector import cells_to_polygons
 from pytorch_lightning import seed_everything
 
-from srai.constants import WGS84_CRS
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.embedders.hex2vec.embedder import Hex2VecEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import osm_tags_type
 from srai.neighbourhoods import H3Neighbourhood
-from srai.regionalizers import H3Regionalizer
 from srai.utils import geocode_to_region_gdf
 from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
 
@@ -32,11 +33,10 @@ def generate_test_case(
     regions_indexes = neighbourhood.get_neighbours_up_to_distance(root_region_index, radius)
     regions_indexes.add(root_region_index)
     regions_indexes = list(regions_indexes)  # type: ignore
-    regionalizer = H3Regionalizer(h3_res)
 
-    geoms = [regionalizer._h3_index_to_shapely_polygon(r) for r in regions_indexes]
+    geoms = cells_to_polygons([h3.str_to_int(r) for r in regions_indexes]).values
     regions_gdf = gpd.GeoDataFrame(index=regions_indexes, geometry=geoms, crs=WGS84_CRS)
-    regions_gdf.index.name = "region_id"
+    regions_gdf.index.name = REGIONS_INDEX
 
     area_gdf = geocode_to_region_gdf(geocoding_name)
     loader = OSMPbfLoader()
