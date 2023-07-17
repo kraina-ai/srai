@@ -510,6 +510,16 @@ version = "4.0.0b2"
 summary = "Hierarchical hexagonal geospatial indexing system"
 
 [[package]]
+name = "h3ronpy"
+version = "0.17.2"
+summary = "Data science toolkit for the H3 geospatial grid"
+dependencies = [
+    "Shapely>=1.7",
+    "numpy",
+    "pyarrow>=10.0",
+]
+
+[[package]]
 name = "haversine"
 version = "2.8.0"
 requires_python = ">=3.5"
@@ -2314,9 +2324,8 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.2"
-cross_platform = true
 groups = ["default", "all", "dev", "docs", "license", "lint", "performance", "test", "visualization"]
-content_hash = "sha256:2f9952184716d9ef9a1f3316f2734e2566877fc8a87f4e4dacf9c467ec280b60"
+content_hash = "sha256:4bcd68bf7400864d809471237a67a0f94a060f7ace6ed7227b7516d4b56b61fa"
 
 [metadata.files]
 "aiohttp 3.8.4" = [
@@ -3074,6 +3083,12 @@ content_hash = "sha256:2f9952184716d9ef9a1f3316f2734e2566877fc8a87f4e4dacf9c467e
     {url = "https://files.pythonhosted.org/packages/dd/cb/60340732d3f2ecbec0bf439697295c7eea8b59e8e992dcc056b001aea2ff/h3-4.0.0b2-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:ccd574740d6167fd91e5fc0d7ce1234ef2c5f58e1dbcb16b9fc6d6e69202d621"},
     {url = "https://files.pythonhosted.org/packages/fd/30/ce35791eac7efce2ff6458a94f1a936c8631418e0a0d2a8bf30fdd3ee51b/h3-4.0.0b2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e952df0562581c2a564fed48d5910822963307756de93157ba5a5f8535b42044"},
     {url = "https://files.pythonhosted.org/packages/fe/aa/9a97f3f866f79232a07f30bc838bb48e46b12ccf9e40b052720db7fd70ee/h3-4.0.0b2-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:0489e8892472b9514825d480544bac854862ce5cf94c7f497936053565787954"},
+]
+"h3ronpy 0.17.2" = [
+    {url = "https://files.pythonhosted.org/packages/0f/87/bd9b72f3e127732e9e84f6ab14971c64d537b08344f80163a7ed3e76c410/h3ronpy-0.17.2.tar.gz", hash = "sha256:b0b1adb5c5709a1a63c6d6bcc20706a29fa7263e4d0d9d255c0bc9a0f0b26b76"},
+    {url = "https://files.pythonhosted.org/packages/24/2d/8eeee30f3894940c0d47d8a3d85005fb9a8fc8e93fdbdbc0a702f23085e4/h3ronpy-0.17.2-cp38-abi3-macosx_10_7_x86_64.whl", hash = "sha256:43bc39f43f4d5342ace553296d23bee9d3ea3b10c0850ab9d01d2373a28bcdea"},
+    {url = "https://files.pythonhosted.org/packages/90/23/991ba93c9f8333bd2cf3d3333bc85336cfc189a20ff9c2c8e7464e492ae3/h3ronpy-0.17.2-cp38-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:14a5b5e14a7d54e06534fc94a11aa22792114dfab9a09e4a4c4ee19fe94e5c56"},
+    {url = "https://files.pythonhosted.org/packages/f2/f3/d107af14a392b0bae1fecab3c8105caa7ca817320bd9be0c528901b25106/h3ronpy-0.17.2-cp38-abi3-win_amd64.whl", hash = "sha256:622e325abe3b276ed264d855a3c9ff76ab5cac037a92961f4c4853e45973a9fa"},
 ]
 "haversine 2.8.0" = [
     {url = "https://files.pythonhosted.org/packages/b9/6b/0a774af6a2eea772aa99e5fbc7af7711eba02ff0dee3e71838c1b5926ef5/haversine-2.8.0.tar.gz", hash = "sha256:cca39afd2ae5f1e6ed9231b332395bb8afb2e0a64edf70c238c176492e60c150"},
@@ -3841,6 +3856,7 @@ content_hash = "sha256:2f9952184716d9ef9a1f3316f2734e2566877fc8a87f4e4dacf9c467e
     {url = "https://files.pythonhosted.org/packages/60/34/c90bacb4a72ead5c78e4d8291e0d3bb88cc3def3c76f059e9a8502fc421e/Pillow-10.0.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:22c10cc517668d44b211717fd9775799ccec4124b9a7f7b3635fc5386e584992"},
     {url = "https://files.pythonhosted.org/packages/62/66/6b011b44193fe724f10949ae59ad6e045811f9fdc7ee994687eec44a54c5/Pillow-10.0.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:5c6e3df6bdd396749bafd45314871b3d0af81ff935b2d188385e970052091017"},
     {url = "https://files.pythonhosted.org/packages/66/d4/054e491f0880bf0119ee79cdc03264e01d5732e06c454da8c69b83a7c8f2/Pillow-10.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:3a82c40d706d9aa9734289740ce26460a11aeec2d9c79b7af87bb35f0073c12f"},
+    {url = "https://files.pythonhosted.org/packages/6a/33/c278084a811d7a7a17c8dd14cb261248fdd0265263760fb753a5a719241e/Pillow-10.0.0-cp311-cp311-win_arm64.whl", hash = "sha256:bc2ec7c7b5d66b8ec9ce9f720dbb5fa4bace0f545acd34870eff4a369b44bf37"},
     {url = "https://files.pythonhosted.org/packages/6e/4b/350373454133ceef9b14ec804781d9c8e4e10ac112f85c55285140315a67/Pillow-10.0.0-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:c7cf14a27b0d6adfaebb3ae4153f1e516df54e47e42dcc073d7b3d76111a8d86"},
     {url = "https://files.pythonhosted.org/packages/72/17/6c1e6b0f78d21838844318057b7a939ab8a8d92deeb51d22563202b2db64/Pillow-10.0.0-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:3b08d4cc24f471b2c8ca24ec060abf4bebc6b144cb89cba638c720546b1cf538"},
     {url = "https://files.pythonhosted.org/packages/73/26/75fd7c1adc40bbdcbebc1adc120388d581e1d98a106257369a9bf8c44865/Pillow-10.0.0-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:1f62406a884ae75fb2f818694469519fb685cc7eaff05d3451a9ebe55c646891"},
@@ -3849,6 +3865,7 @@ content_hash = "sha256:2f9952184716d9ef9a1f3316f2734e2566877fc8a87f4e4dacf9c467e
     {url = "https://files.pythonhosted.org/packages/79/53/3a7277ae95bfe86b8b4db0ed1d08c4924aa2dfbfe51b8fe0e310b160a9c6/Pillow-10.0.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:c1fbe7621c167ecaa38ad29643d77a9ce7311583761abf7836e1510c580bf3dd"},
     {url = "https://files.pythonhosted.org/packages/7a/54/f6a14d95cba8ff082c550d836c9e5c23f1641d2ac291c23efe0494219b8c/Pillow-10.0.0-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:9fb218c8a12e51d7ead2a7c9e101a04982237d4855716af2e9499306728fb485"},
     {url = "https://files.pythonhosted.org/packages/7b/c9/08de9a629ce7cdeaea0ddca716e9efcd1844b2650f5b9dd8ec5609e40ffe/Pillow-10.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:520f2a520dc040512699f20fa1c363eed506e94248d71f85412b625026f6142c"},
+    {url = "https://files.pythonhosted.org/packages/83/c0/aaa4f7f9f0ed854d8b519739392ed17ee1aaaa352fd037646e97634a6bdb/Pillow-10.0.0-cp312-cp312-win_arm64.whl", hash = "sha256:1ce91b6ec08d866b14413d3f0bbdea7e24dfdc8e59f562bb77bc3fe60b6144ca"},
     {url = "https://files.pythonhosted.org/packages/8a/ec/3e874bc51ccebf03f1ca4ea1e177569c0d7b37ee5a16ff497a73ed5800e0/Pillow-10.0.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b4f69b3700201b80bb82c3a97d5e9254084f6dd5fb5b16fc1a7b974260f89f43"},
     {url = "https://files.pythonhosted.org/packages/8b/b3/d7b6ee16358d829ca482c74a96e2b9079bf33f8d7d37d16f8ebb19ddf5a4/Pillow-10.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3f07ea8d2f827d7d2a49ecf1639ec02d75ffd1b88dcc5b3a61bbb37a8759ad8d"},
     {url = "https://files.pythonhosted.org/packages/8f/b8/1bf1012eee3059d150194d1fab148f553f3df42cf412e4e6656c772afad9/Pillow-10.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:7be600823e4c8631b74e4a0d38384c73f680e6105a7d3c6824fcf226c178c7e6"},
