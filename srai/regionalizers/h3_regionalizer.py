@@ -15,6 +15,7 @@ References:
 
 
 import geopandas as gpd
+import h3
 from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
@@ -77,7 +78,7 @@ class H3Regionalizer(Regionalizer):
             flatten=True,
         ).unique()
         gdf_h3 = gpd.GeoDataFrame(
-            data={REGIONS_INDEX: h3_indexes},
+            data={REGIONS_INDEX: [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]},
             geometry=gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_indexes)),
             crs=WGS84_CRS,
         ).set_index(REGIONS_INDEX)
