@@ -68,7 +68,7 @@ class H3Regionalizer(Regionalizer):
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
 
-        gdf_exploded = self._explode_multipolygons(gdf_wgs84).reset_index()
+        gdf_exploded = self._explode_multipolygons(gdf_wgs84)
 
         h3_indexes = wkb_to_cells(
             gdf_exploded[GEOMETRY_COLUMN].to_wkb(),
