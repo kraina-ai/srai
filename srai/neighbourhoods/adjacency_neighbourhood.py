@@ -46,7 +46,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             if region_id not in self.lookup:
                 self.lookup[region_id] = self._get_adjacent_neighbours(region_id)
 
-    def _get_neighbours(self, index: Hashable) -> Set[Hashable]:
+    def get_neighbours(self, index: Hashable) -> Set[Hashable]:
         """
         Get the direct neighbours of any region using its index.
 
@@ -62,7 +62,9 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         if index not in self.lookup:
             self.lookup[index] = self._get_adjacent_neighbours(index)
 
-        return self.lookup[index]
+        neighbours = self.lookup[index]
+        neighbours = self._handle_center(index, 1, neighbours, at_distance=False)
+        return neighbours
 
     def _get_adjacent_neighbours(self, index: Hashable) -> Set[Hashable]:
         """

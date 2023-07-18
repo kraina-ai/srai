@@ -104,7 +104,7 @@ def test_empty_gdf_empty_set(empty_gdf: gpd.GeoDataFrame) -> None:
 def test_empty_gdf_empty_set_include_center(empty_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if empty GeoDataFrames return empty neighbourhoods."""
     neighbourhood = AdjacencyNeighbourhood(empty_gdf, include_center=True)
-    assert neighbourhood.get_neighbours(1) == {1}
+    assert neighbourhood.get_neighbours(1) == set()
 
 
 def test_lazy_loading_empty_set(squares_regions_fixture: gpd.GeoDataFrame) -> None:
