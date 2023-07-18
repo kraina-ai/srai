@@ -11,15 +11,15 @@ T = TypeVar("T")
 class LookupNeighbourhood(Neighbourhood[T]):
     """LookupNeighbourhood."""
 
-    def __init__(self, lookup: Dict[T, Set[T]], include_self: bool = False) -> None:
+    def __init__(self, lookup: Dict[T, Set[T]], include_center: bool = False) -> None:
         """
         LookupNeighbourhood constructor.
 
         Args:
             lookup (Dict[T, Set[T]]): Mapping of region to its neighbours.
-            include_self (bool): Whether to include the region itself in the neighbours.
+            include_center (bool): Whether to include the region itself in the neighbours.
         """
-        super().__init__(include_self)
+        super().__init__(include_center)
         self.lookup = lookup
 
     def _get_neighbours(self, index: T) -> Set[T]:
@@ -137,11 +137,11 @@ def test_get_neighbours_at_distance(
         (1, 5, set()),
     ],
 )
-def test_get_neighbours_at_distance_include_self(
+def test_get_neighbours_at_distance_include_center(
     index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
 ) -> None:
     """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_self=True)
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected
 
@@ -197,11 +197,11 @@ def test_get_neighbours_up_to_distance(
         (1, 5, {1, 2, 3, 4, 5, 6, 7, 8, 9}),
     ],
 )
-def test_get_neighbours_up_to_distance_include_self(
+def test_get_neighbours_up_to_distance_include_center(
     index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
 ) -> None:
     """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_self=True)
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected
 
@@ -257,14 +257,14 @@ def test_get_neighbours_at_distance_irregular(
         (4, 2, set()),
     ],
 )
-def test_get_neighbours_at_distance_irregular_include_self(
+def test_get_neighbours_at_distance_irregular_include_center(
     index: str,
     distance: int,
     expected: Set[str],
     grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
 ) -> None:
     """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_self=True)
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected
 
@@ -320,13 +320,13 @@ def test_get_neighbours_up_to_distance_irregular(
         (4, 2, {4, 1, 2, 3}),
     ],
 )
-def test_get_neighbours_up_to_distance_irregular_include_self(
+def test_get_neighbours_up_to_distance_irregular_include_center(
     index: str,
     distance: int,
     expected: Set[str],
     grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
 ) -> None:
     """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_self=True)
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected

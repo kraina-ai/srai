@@ -7,7 +7,7 @@ from srai.neighbourhoods import H3Neighbourhood
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index,include_self,expected",
+    "index,include_center,expected",
     [
         (
             "811e3ffffffffff",
@@ -86,13 +86,13 @@ from srai.neighbourhoods import H3Neighbourhood
         ),
     ],
 )
-def test_get_neighbours(index: str, include_self: bool, expected: Set[str]) -> None:
+def test_get_neighbours(index: str, include_center: bool, expected: Set[str]) -> None:
     """Test get_neighbours of H3Neighbourhood."""
-    assert H3Neighbourhood(include_self=include_self).get_neighbours(index) == expected
+    assert H3Neighbourhood(include_center=include_center).get_neighbours(index) == expected
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index,distance,include_self,expected",
+    "index,distance,include_center,expected",
     [
         ("811e3ffffffffff", -2, False, set()),
         ("811e3ffffffffff", -2, True, set()),
@@ -181,17 +181,19 @@ def test_get_neighbours(index: str, include_self: bool, expected: Set[str]) -> N
     ],
 )
 def test_get_neighbours_up_to_distance(
-    index: str, distance: int, include_self: bool, expected: Set[str]
+    index: str, distance: int, include_center: bool, expected: Set[str]
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood."""
     assert (
-        H3Neighbourhood(include_self=include_self).get_neighbours_up_to_distance(index, distance)
+        H3Neighbourhood(include_center=include_center).get_neighbours_up_to_distance(
+            index, distance
+        )
         == expected
     )
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index,distance,include_self,expected",
+    "index,distance,include_center,expected",
     [
         ("811e3ffffffffff", -2, False, set()),
         ("811e3ffffffffff", -2, True, set()),
@@ -266,10 +268,10 @@ def test_get_neighbours_up_to_distance(
     ],
 )
 def test_get_neighbours_at_distance(
-    index: str, distance: int, include_self: bool, expected: Set[str]
+    index: str, distance: int, include_center: bool, expected: Set[str]
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood."""
     assert (
-        H3Neighbourhood(include_self=include_self).get_neighbours_at_distance(index, distance)
+        H3Neighbourhood(include_center=include_center).get_neighbours_at_distance(index, distance)
         == expected
     )

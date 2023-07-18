@@ -19,7 +19,7 @@ class H3Neighbourhood(Neighbourhood[str]):
     """
 
     def __init__(
-        self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_self: bool = False
+        self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_center: bool = False
     ) -> None:
         """
         Initializes the H3Neighbourhood.
@@ -35,9 +35,9 @@ class H3Neighbourhood(Neighbourhood[str]):
             regions_gdf (Optional[gpd.GeoDataFrame], optional): The regions that are being analyzed.
                 The H3Neighbourhood will only look for neighbours among these regions.
                 Defaults to None.
-            include_self (bool): Whether to include the region itself in the neighbours.
+            include_center (bool): Whether to include the region itself in the neighbours.
         """
-        super().__init__(include_self)
+        super().__init__(include_center)
         self._available_indices: Optional[Set[str]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)

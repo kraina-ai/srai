@@ -24,15 +24,15 @@ class Neighbourhood(ABC, Generic[IndexType]):
     `H3Neighbourhood` class for an example.
     """
 
-    def __init__(self, include_self: bool = False) -> None:
+    def __init__(self, include_center: bool = False) -> None:
         """
         Initializes the Neighbourhood.
 
         Args:
-            include_self (bool): Whether to include the region itself in the neighbours.
+            include_center (bool): Whether to include the region itself in the neighbours.
         """
         super().__init__()
-        self.include_self = include_self
+        self.include_center = include_center
 
     @abstractmethod
     def _get_neighbours(self, index: IndexType) -> Set[IndexType]:
@@ -59,7 +59,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours = self._get_neighbours(index)
-        neighbours = self._assert_self_handled(index, 1, neighbours, at_distance=False)
+        neighbours = self._handle_self(index, 1, neighbours, at_distance=False)
         return neighbours
 
     def _get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
@@ -91,7 +91,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours = self._get_neighbours_up_to_distance(index, distance)
-        neighbours = self._assert_self_handled(index, distance, neighbours, at_distance=False)
+        neighbours = self._handle_self(index, distance, neighbours, at_distance=False)
         return neighbours
 
     def _get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
@@ -128,7 +128,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours = self._get_neighbours_at_distance(index, distance)
-        neighbours = self._assert_self_handled(index, distance, neighbours, at_distance=True)
+        neighbours = self._handle_self(index, distance, neighbours, at_distance=True)
         return neighbours
 
     def _get_neighbours_with_distances(
@@ -152,13 +152,13 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
         return set(visited_indexes.items())
 
-    def _assert_self_handled(
+    def _handle_self(
         self, index: IndexType, distance: int, neighbours: Set[IndexType], at_distance: bool
     ) -> Set[IndexType]:
         if distance < 0:
             return set()
         elif distance == 0:
-            if self.include_self:
+            if self.include_center:
                 neighbours.add(index)
             else:
                 neighbours.discard(index)
@@ -166,7 +166,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             if at_distance:
                 neighbours.discard(index)
             else:
-                if self.include_self:
+                if self.include_center:
                     neighbours.add(index)
                 else:
                     neighbours.discard(index)
