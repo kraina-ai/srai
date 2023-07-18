@@ -81,18 +81,31 @@ def two_rings_regions_some_missing() -> gpd.GeoDataFrame:
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "regions_gdf_fixture,expected",
+    "regions_gdf_fixture,include_self,expected",
     [
         (
             "empty_gdf",
+            False,
+            set(),
+        ),
+        (
+            "empty_gdf",
+            True,
             set(),
         ),
         (
             "single_hex_gdf",
+            False,
             set(),
         ),
         (
+            "single_hex_gdf",
+            True,
+            {"811e3ffffffffff"},
+        ),
+        (
             "hex_without_one_neighbour_gdf",
+            False,
             {
                 "811f3ffffffffff",
                 "811fbffffffffff",
@@ -101,25 +114,44 @@ def two_rings_regions_some_missing() -> gpd.GeoDataFrame:
                 "811e7ffffffffff",
             },
         ),
+        (
+            "hex_without_one_neighbour_gdf",
+            True,
+            {
+                "811f3ffffffffff",
+                "811fbffffffffff",
+                "811ebffffffffff",
+                "811efffffffffff",
+                "811e7ffffffffff",
+                "811e3ffffffffff",
+            },
+        ),
     ],
 )
 def test_get_neighbours_with_regions_gdf(
-    regions_gdf_fixture: str, expected: Set[str], request: Any
+    regions_gdf_fixture: str, include_self: bool, expected: Set[str], request: Any
 ) -> None:
     """Test get_neighbours of H3Neighbourhood with a specified regions GeoDataFrame."""
     regions_gdf = request.getfixturevalue(regions_gdf_fixture)
-    assert H3Neighbourhood(regions_gdf).get_neighbours("811e3ffffffffff") == expected
+    assert H3Neighbourhood(regions_gdf, include_self).get_neighbours("811e3ffffffffff") == expected
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "distance,expected",
+    "distance,include_self,expected",
     [
         (
             0,
+            False,
             set(),
         ),
         (
+            0,
+            True,
+            {"862bac507ffffff"},
+        ),
+        (
             1,
+            False,
             {
                 "862bac50fffffff",
                 "862bac517ffffff",
@@ -128,7 +160,19 @@ def test_get_neighbours_with_regions_gdf(
             },
         ),
         (
+            1,
+            True,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862bac507ffffff",
+            },
+        ),
+        (
             2,
+            False,
             {
                 "862bac50fffffff",
                 "862bac517ffffff",
@@ -145,27 +189,64 @@ def test_get_neighbours_with_regions_gdf(
                 "862bacc8fffffff",
             },
         ),
+        (
+            2,
+            True,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+                "862bac507ffffff",
+            },
+        ),
     ],
 )
 def test_get_neighbours_up_to_distance_with_regions_gdf(
-    distance: int, expected: Set[str], request: Any
+    distance: int, include_self: bool, expected: Set[str], request: Any
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions."""
     regions_gdf = request.getfixturevalue("two_rings_regions_some_missing")
-    neighbourhood = H3Neighbourhood(regions_gdf)
+    neighbourhood = H3Neighbourhood(regions_gdf, include_self)
     initial_region_index = "862bac507ffffff"
     assert neighbourhood.get_neighbours_up_to_distance(initial_region_index, distance) == expected
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "distance,expected",
+    "distance,include_self,expected",
     [
         (
             0,
+            False,
             set(),
         ),
         (
+            0,
+            True,
+            {"862bac507ffffff"},
+        ),
+        (
             1,
+            False,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+            },
+        ),
+        (
+            1,
+            True,
             {
                 "862bac50fffffff",
                 "862bac517ffffff",
@@ -175,6 +256,22 @@ def test_get_neighbours_up_to_distance_with_regions_gdf(
         ),
         (
             2,
+            False,
+            {
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+            },
+        ),
+        (
+            2,
+            True,
             {
                 "862ba124fffffff",
                 "862ba126fffffff",
@@ -190,10 +287,10 @@ def test_get_neighbours_up_to_distance_with_regions_gdf(
     ],
 )
 def test_get_neighbours_at_distance_with_regions_gdf(
-    distance: int, expected: Set[str], request: Any
+    distance: int, include_self: bool, expected: Set[str], request: Any
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood with a specified regions GeoDataFrame."""
     regions_gdf = request.getfixturevalue("two_rings_regions_some_missing")
-    neighbourhood = H3Neighbourhood(regions_gdf)
+    neighbourhood = H3Neighbourhood(regions_gdf, include_self)
     initial_region_index = "862bac507ffffff"
     assert neighbourhood.get_neighbours_at_distance(initial_region_index, distance) == expected
