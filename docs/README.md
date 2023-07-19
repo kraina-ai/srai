@@ -118,13 +118,12 @@ parks_gdf.explore(m=folium_map, color="forestgreen")
 Road network downloading is a special case of OSM data downloading. To download road network for a given area, use `OSMWayLoader` class:
 
 ```python
-from srai.loaders import OSMWayLoader
-from srai.loaders.osm_way_loader import NetworkType
+from srai.loaders import OSMNetworkType, OSMWayLoader
 from srai.utils import geocode_to_region_gdf
 from srai.plotting import plot_regions
 
 area = geocode_to_region_gdf("Utrecht, Netherlands")
-loader = OSMWayLoader(NetworkType.BIKE)
+loader = OSMWayLoader(OSMNetworkType.BIKE)
 
 nodes, edges = loader.load(area)
 

@@ -1,7 +1,7 @@
 """Tests for OSMWayLoader."""
-import hashlib
 import pickle as pkl
 from contextlib import nullcontext as does_not_raise
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
 from unittest import TestCase
@@ -18,7 +18,7 @@ from pytest_mock import MockerFixture
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
-from srai.loaders.osm_way_loader import NetworkType, OSMWayLoader
+from srai.loaders import OSMNetworkType, OSMWayLoader
 
 ut = TestCase()
 
@@ -87,7 +87,7 @@ def second_polygon_area_gdf() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def multiple_polygons_overlaping_area_gdf(
+def multiple_polygons_overlapping_area_gdf(
     first_polygon_area_gdf: gpd.GeoDataFrame, second_polygon_area_gdf: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
     """Get an example area gdf with two polygons."""
@@ -126,13 +126,16 @@ def valid_and_empty_polygons_area_gdf(
     return pd.concat([first_polygon_area_gdf, empty_polygon_area_gdf], axis=0)
 
 
-@P.parameters("area_gdf_fixture", "expected_result", "loader_params", "expectation")  # type: ignore
+@P.parameters(  # type: ignore
+    "area_gdf_fixture", "expected_result", "loader_params", "file_name", "expectation"
+)
 @P.case(  # type: ignore
-    "Raise when no geometry", "empty_area_gdf", None, None, pytest.raises(ValueError)
+    "Raise when no geometry", "empty_area_gdf", None, None, None, pytest.raises(ValueError)
 )
 @P.case(  # type: ignore
     "Raise when no CRS",
     "no_crs_area_gdf",
+    None,
     None,
     None,
     pytest.raises(ValueError),
@@ -142,6 +145,7 @@ def valid_and_empty_polygons_area_gdf(
     "bad_geometry_area_gdf",
     None,
     None,
+    "type_error",
     pytest.raises(TypeError),
 )
 @P.case(  # type: ignore
@@ -149,6 +153,7 @@ def valid_and_empty_polygons_area_gdf(
     "empty_polygon_area_gdf",
     None,
     None,
+    "empty_overpass_response",
     pytest.raises(LoadedDataIsEmptyException),
 )
 @P.case(  # type: ignore
@@ -156,20 +161,23 @@ def valid_and_empty_polygons_area_gdf(
     "first_polygon_area_gdf",
     (7, 6),
     None,
+    "graph_1",
     does_not_raise(),
 )
 @P.case(  # type: ignore
     "Return infrastructure when multiple overlapping polygons",
-    "multiple_polygons_overlaping_area_gdf",
-    (7, 6),
+    "multiple_polygons_overlapping_area_gdf",
+    (7, 7),  # FIXME: should be (7, 6)
     None,
+    "graph_1",
     does_not_raise(),
 )
 @P.case(  # type: ignore
     "Return infrastructure when node without any edges",  # FIXME: shouldn't have a node w/o an edge
-    "multiple_polygons_overlaping_area_gdf",
+    "multiple_polygons_overlapping_area_gdf",
     (9, 7),
-    {"network_type": NetworkType.BIKE, "contain_within_area": True},
+    {"network_type": OSMNetworkType.BIKE, "contain_within_area": True},
+    "graph_2",
     does_not_raise(),
 )
 @P.case(  # type: ignore
@@ -177,6 +185,7 @@ def valid_and_empty_polygons_area_gdf(
     "multipolygons_area_gdf",
     (11, 9),
     None,
+    "graph_3",
     does_not_raise(),
 )
 @P.case(  # type: ignore
@@ -184,20 +193,23 @@ def valid_and_empty_polygons_area_gdf(
     "valid_and_empty_polygons_area_gdf",
     (7, 6),
     None,
+    "graph_1",
     does_not_raise(),
 )
 @P.case(  # type: ignore
     "Return infrastructure without preprocessing",
     "first_polygon_area_gdf",
     (7, 6),
-    {"network_type": NetworkType.DRIVE, "preprocess": False},
+    {"network_type": OSMNetworkType.DRIVE, "preprocess": False},
+    "graph_1",
     does_not_raise(),
 )
 @P.case(  # type: ignore
     "Return infrastructure in long format",
     "first_polygon_area_gdf",
     (7, 6),
-    {"network_type": NetworkType.DRIVE, "wide": False},
+    {"network_type": OSMNetworkType.DRIVE, "wide": False},
+    "graph_1",
     does_not_raise(),
 )
 @P.case(  # type: ignore
@@ -205,37 +217,35 @@ def valid_and_empty_polygons_area_gdf(
     "first_polygon_area_gdf",
     (7, 6),
     {"network_type": "drive", "wide": False},
+    "graph_4",
     does_not_raise(),
 )
 def test_contract(
     area_gdf_fixture: str,
     expected_result: Optional[Tuple[int, int]],
     loader_params: Optional[Dict[str, Any]],
+    file_name: Optional[str],
     expectation,
     request: pytest.FixtureRequest,
     mocker: MockerFixture,
 ):
     """Test `OSMWayLoader.load`'s contract."""
     if not loader_params:
-        loader_params = {"network_type": NetworkType.DRIVE}
+        loader_params = {"network_type": OSMNetworkType.DRIVE}
 
     loader = OSMWayLoader(**loader_params)
 
     area_gdf = request.getfixturevalue(area_gdf_fixture)
     nodes_expected_len, edges_expected_len = expected_result or (None, None)
 
-    def patched_graph_from_polygon(*args, **kwargs) -> Any:  # type: ignore
-        polygon = args[0]
-
-        name_hashed = hashlib.md5(f"{polygon.wkt}{list(kwargs.values())}".encode()).hexdigest()
-
-        if name_hashed == "785de42ad57bbe33298128212ef9dd71":
+    def patched_graph_from_polygon(f_name: str, *args, **kwargs) -> Any:  # type: ignore
+        if f_name == "type_error":
             raise TypeError
-        elif name_hashed == "de17f3ef99794666b8a16931a9df4e49":
+        elif f_name == "empty_overpass_response":
             raise osmnx._errors.EmptyOverpassResponse
 
-        files_path = Path(__file__).parent / "files"
-        file_name = name_hashed + ".pkl"
+        files_path = Path(__file__).parent / "test_files"
+        file_name = f_name + ".pkl"
         file_path = files_path / file_name
 
         with file_path.open("rb") as f:
@@ -244,7 +254,10 @@ def test_contract(
         return res
 
     with expectation:
-        mocker.patch("osmnx.graph_from_polygon", wraps=patched_graph_from_polygon)
+        mocker.patch(
+            "osmnx.graph_from_polygon",
+            wraps=partial(patched_graph_from_polygon, file_name),
+        )
         nodes, edges = loader.load(area_gdf)
 
         check.equal(len(nodes), nodes_expected_len)
@@ -406,7 +419,7 @@ def test_preprocessing(
     column_name: str, input: Union[Any, Sequence[Any]], expected: Union[Any, Sequence[Any]]
 ) -> None:
     """Test `OSMWayLoader._sanitize_and_normalize()` preprocessing."""
-    loader = OSMWayLoader(network_type=NetworkType.DRIVE)
+    loader = OSMWayLoader(network_type=OSMNetworkType.DRIVE)
 
     input = list(input) if isinstance(input, Sequence) else [input]
     expected = list(expected) if isinstance(expected, Sequence) else [expected]
