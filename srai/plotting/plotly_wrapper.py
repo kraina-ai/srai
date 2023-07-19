@@ -350,7 +350,6 @@ def _calculate_mapbox_zoom(
     Returns:
         float: zoom level for a mapbox plot.
     """
-
     minx, miny, maxx, maxy = regions_gdf.geometry.total_bounds
     max_bound = max(abs(maxx - minx), abs(maxy - miny)) * 111
     zoom = float(12.5 - np.log(max_bound))
