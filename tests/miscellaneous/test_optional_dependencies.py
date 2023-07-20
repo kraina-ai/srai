@@ -7,8 +7,8 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import box
 
+from srai._optional import ImportErrorHandle, import_optional_dependency
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.utils._optional import ImportErrorHandle, import_optional_dependency
 
 
 @pytest.fixture  # type: ignore

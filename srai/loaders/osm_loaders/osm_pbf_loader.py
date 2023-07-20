@@ -9,13 +9,10 @@ from typing import Hashable, List, Mapping, Optional, Sequence, Union
 import geopandas as gpd
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import (
-    grouped_osm_tags_type,
-    osm_tags_type,
-)
-from srai.utils._optional import import_optional_dependencies
+from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
 
 
 class OSMPbfLoader(OSMLoader):
