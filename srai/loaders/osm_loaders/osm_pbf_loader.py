@@ -12,7 +12,7 @@ import pandas as pd
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 class OSMPbfLoader(OSMLoader):
@@ -55,7 +55,7 @@ class OSMPbfLoader(OSMLoader):
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Union[osm_tags_type, grouped_osm_tags_type],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
@@ -75,7 +75,7 @@ class OSMPbfLoader(OSMLoader):
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,

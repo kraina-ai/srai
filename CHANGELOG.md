@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
 - `srai.h3` module with functions for translating list of h3 cells into shapely polygons and calculating local ij coordinates.
 
 ### Changed
 
 - Refactored H3Regionalizer to be faster using [h3ronpy](https://github.com/nmandery/h3ronpy) library [#311](https://github.com/srai-lab/srai/issues/311)
 - BREAKING! Renamed NetworkType to OSMNetworkType and made it importable directly from `srai.loaders` [#227](https://github.com/srai-lab/srai/issues/227)
+- BREAKING! Renamed osm_filter_type and grouped_osm_filter_type into OsmTagsFilter and GroupedOsmTagsFilter [#261](https://github.com/srai-lab/srai/issues/261)
 - BREAKING! Removed `utils` module [#128](https://github.com/srai-lab/srai/issues/128)
   - `srai.utils._optional` moved to `srai._optional`
   - `srai.utils._pytorch_stubs` moved to `srai.embedders._pytorch_stubs`
