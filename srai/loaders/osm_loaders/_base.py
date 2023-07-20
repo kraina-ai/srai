@@ -8,13 +8,13 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai._typing import is_expected_type
 from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters._typing import (
     grouped_osm_tags_type,
     merge_grouped_osm_tags_type,
     osm_tags_type,
 )
-from srai.utils.typing import is_expected_type
 
 
 class OSMLoader(Loader, abc.ABC):

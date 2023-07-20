@@ -1,7 +1,7 @@
 """Module contains a dedicated type alias for OSM tags filter."""
 from typing import Dict, List, Union, cast
 
-from srai.utils.typing import is_expected_type
+from srai._typing import is_expected_type
 
 osm_tags_type = Dict[str, Union[List[str], str, bool]]
 
