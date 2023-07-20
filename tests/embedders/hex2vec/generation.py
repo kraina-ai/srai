@@ -11,7 +11,7 @@ from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.embedders.hex2vec.embedder import Hex2VecEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters import osm_tags_type
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 from srai.utils import geocode_to_region_gdf
 from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
@@ -24,7 +24,7 @@ def generate_test_case(
     h3_res: int,
     radius: int,
     seed: int,
-    tags: Optional[osm_tags_type] = None,
+    tags: Optional[OsmTagsFilter] = None,
 ) -> None:
     """Generate test case for Hex2VecEmbedder."""
     if tags is None:

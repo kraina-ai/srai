@@ -16,7 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters._typing import osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
 
 if TYPE_CHECKING:
     import os
@@ -46,7 +46,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     def __init__(
         self,
-        tags: Optional[osm_tags_type] = None,
+        tags: Optional[OsmTagsFilter] = None,
         region_geometry: Optional[BaseGeometry] = None,
     ) -> None:
         """
