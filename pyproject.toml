@@ -183,6 +183,8 @@ push = false
 
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"srai/__init__.py" = ['__version__ = "{version}"']
+"CITATION.cff" = ['version: {version}']
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
