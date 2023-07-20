@@ -7,6 +7,7 @@ methods available in this library.
 """
 
 from ._base import Loader
+from .download import download_file
 from .geoparquet_loader import GeoparquetLoader
 from .gtfs_loader import GTFSLoader
 from .osm_loaders import OSMLoader, OSMOnlineLoader, OSMPbfLoader, OSMTileLoader
@@ -22,4 +23,5 @@ __all__ = [
     "OSMPbfLoader",
     "OSMTileLoader",
     "OSMNetworkType",
+    "download_file",
 ]

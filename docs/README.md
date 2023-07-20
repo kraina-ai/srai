@@ -142,8 +142,8 @@ To extract features from GTFS use `GTFSLoader`. It will extract trip count and a
 ```python
 from pathlib import Path
 
-from srai.loaders import GTFSLoader
-from srai.utils import geocode_to_region_gdf, download_file
+from srai.loaders import GTFSLoader, download_file
+from srai.utils import geocode_to_region_gdf
 from srai.plotting import plot_regions
 
 area = geocode_to_region_gdf("Vienna, Austria")
