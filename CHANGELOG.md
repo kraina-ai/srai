@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactored H3Regionalizer to be faster using [h3ronpy](https://github.com/nmandery/h3ronpy) library [#311](https://github.com/srai-lab/srai/issues/311)
 - BREAKING! Renamed NetworkType to OSMNetworkType and made it importable directly from `srai.loaders` [#227](https://github.com/srai-lab/srai/issues/227)
+- BREAKING! Removed `utils` module [#128](https://github.com/srai-lab/srai/issues/128)
+  - `srai.utils._optional` moved to `srai._optional`
+  - `srai.utils._pytorch_stubs` moved to `srai.embedders._pytorch_stubs`
+  - `srai.utils.download` moved to `srai.loaders.download` (and can be imported with `from srai.loaders import download_file`)
+  - `srai.utils.geocode` moved to `srai.regionalizers.geocode` (and can be imported with `from srai.regionalizers import geocode_to_region_gdf`)
+  - `srai.utils.geometry` and `srai.utils.merge` moved to `srai.geometry`
+  - `srai.utils.typing` moved to `srai._typing`
 
 ### Deprecated
 
