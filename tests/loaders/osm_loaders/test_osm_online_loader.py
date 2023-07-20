@@ -7,7 +7,7 @@ from pandas.testing import assert_frame_equal
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
-from srai.loaders.osm_loaders.filters._typing import osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
 
 if TYPE_CHECKING:
     from shapely.geometry import Polygon
@@ -22,7 +22,7 @@ def mock_osmnx(
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
     empty_polygon = area_with_no_objects_gdf["geometry"][0]
 
-    def mock_geometries_from_polygon(polygon: "Polygon", tags: osm_tags_type) -> gpd.GeoDataFrame:
+    def mock_geometries_from_polygon(polygon: "Polygon", tags: OsmTagsFilter) -> gpd.GeoDataFrame:
         tag_key, tag_value = list(tags.items())[0]
         gdf = gdfs[tag_key]
         if tag_value is True:
@@ -66,7 +66,7 @@ def mock_osmnx(
 )
 def test_osm_online_loader(
     area_gdf_fixture: str,
-    query: osm_tags_type,
+    query: OsmTagsFilter,
     expected_result_gdf_fixture: str,
     request: Any,
 ):

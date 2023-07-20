@@ -13,10 +13,7 @@ from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import (
-    grouped_osm_tags_type,
-    osm_tags_type,
-)
+from srai.loaders.osm_loaders.filters._typing import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.utils._optional import import_optional_dependencies
 
 
@@ -48,7 +45,7 @@ class OSMOnlineLoader(OSMLoader):
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Union[osm_tags_type, grouped_osm_tags_type],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Download OSM features with specified tags for a given area.
@@ -61,7 +58,7 @@ class OSMOnlineLoader(OSMLoader):
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -102,7 +99,7 @@ class OSMOnlineLoader(OSMLoader):
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
-    def _flatten_tags(self, tags: osm_tags_type) -> List[Tuple[str, Union[str, bool]]]:
+    def _flatten_tags(self, tags: OsmTagsFilter) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))
