@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `srai.h3` module with functions for translating list of h3 cells into shapely polygons and calculating local ij coordinates.
+
 ### Changed
 
 - Refactored H3Regionalizer to be faster using [h3ronpy](https://github.com/nmandery/h3ronpy) library [#311](https://github.com/srai-lab/srai/issues/311)
