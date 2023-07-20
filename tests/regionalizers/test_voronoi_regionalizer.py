@@ -7,9 +7,9 @@ import pytest
 from shapely.geometry import Point, Polygon
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.geometry import merge_disjointed_gdf_geometries
 from srai.regionalizers import VoronoiRegionalizer
 from srai.regionalizers._spherical_voronoi import generate_voronoi_regions
-from srai.utils.geometry import merge_disjointed_gdf_geometries
 
 
 def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:

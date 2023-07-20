@@ -19,8 +19,8 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
+from srai.geometry import buffer_geometry, flatten_geometry, remove_interiors
 from srai.loaders import download_file
-from srai.utils import buffer_geometry, flatten_geometry, remove_interiors
 
 
 class PbfFileDownloader:
