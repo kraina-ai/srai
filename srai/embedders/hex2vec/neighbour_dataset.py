@@ -23,7 +23,7 @@ try:  # pragma: no cover
     from torch.utils.data import Dataset
 
 except ImportError:
-    from srai.utils._pytorch_stubs import Dataset
+    from srai.embedders._pytorch_stubs import Dataset
 
 
 T = TypeVar("T")
