@@ -10,7 +10,7 @@ from shapely.geometry import Point, box
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.regionalizers import AdministrativeBoundaryRegionalizer
-from srai.utils import merge_disjointed_gdf_geometries
+from srai.utils.geometry import merge_disjointed_gdf_geometries
 
 bbox = box(minx=-180, maxx=180, miny=-90, maxy=90)
 bbox_gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [bbox]}, crs=WGS84_CRS)
