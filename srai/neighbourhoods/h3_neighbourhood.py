@@ -36,6 +36,8 @@ class H3Neighbourhood(Neighbourhood[str]):
                 The H3Neighbourhood will only look for neighbours among these regions.
                 Defaults to None.
             include_center (bool): Whether to include the region itself in the neighbours.
+            This is the default value used for all the methods of the class,
+            unless overridden in the function parameter.
         """
         super().__init__(include_center)
         self._available_indices: Optional[Set[str]] = None
@@ -48,6 +50,8 @@ class H3Neighbourhood(Neighbourhood[str]):
 
         Args:
             index (str): H3 index of the region.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours.
@@ -63,6 +67,8 @@ class H3Neighbourhood(Neighbourhood[str]):
         Args:
             index (str): H3 index of the region.
             distance (int): Distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours up to the given distance.
@@ -85,6 +91,8 @@ class H3Neighbourhood(Neighbourhood[str]):
         Args:
             index (str): H3 index of the region.
             distance (int): Distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours at the given distance.

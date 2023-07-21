@@ -30,7 +30,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
         Args:
             include_center (bool): Whether to include the region itself in the neighbours.
-            This will be the default value used for all the methods of the class,
+            This is the default value used for all the methods of the class,
             unless overridden in the function parameter.
         """
         super().__init__()

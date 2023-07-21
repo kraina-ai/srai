@@ -28,6 +28,8 @@ class LookupNeighbourhood(Neighbourhood[T]):
 
         Args:
             index (T): Index of region in mapping.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
         """
         return self.lookup[index]
 
