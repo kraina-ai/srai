@@ -459,3 +459,36 @@ def test_get_neighbours_include_center_override(
 
     neighbours = neighbourhood.get_neighbours(index, include_center=False)
     assert neighbours == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "index, expected, expected_with_include_center",
+    [
+        (1, {2, 3, 4}, {2, 3, 4, 1}),
+        (2, {1, 4}, {1, 4, 2}),
+        (3, {1, 4}, {1, 4, 3}),
+        (4, {1, 2, 3}, {1, 2, 3, 4}),
+    ],
+)
+def test_get_neighbours_irregular_include_center_override(
+    index: str,
+    expected: Set[str],
+    expected_with_include_center: Set[str],
+    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
+) -> None:
+    """Test get_neighbours with irregular neighbourhood and overriding include_center."""
+    # Test with class include_center=False
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
+    neighbours = neighbourhood.get_neighbours(index)
+    assert neighbours == expected
+
+    neighbours = neighbourhood.get_neighbours(index, include_center=True)
+    assert neighbours == expected_with_include_center
+
+    # Test with class include_center=True
+    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
+    neighbours = neighbourhood.get_neighbours(index)
+    assert neighbours == expected_with_include_center
+
+    neighbours = neighbourhood.get_neighbours(index, include_center=False)
+    assert neighbours == expected
