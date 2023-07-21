@@ -1,5 +1,5 @@
 """Tests for LookupNeighbourhood."""
-from typing import Dict, Set, TypeVar
+from typing import Dict, Set, TypeVar, Optional
 
 import pytest
 
@@ -22,7 +22,7 @@ class LookupNeighbourhood(Neighbourhood[T]):
         super().__init__(include_center)
         self.lookup = lookup
 
-    def get_neighbours(self, index: T) -> Set[T]:
+    def get_neighbours(self, index: T, include_center: Optional[bool] = None) -> Set[T]:
         """
         Get neighbours for region at index.
 

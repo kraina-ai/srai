@@ -4,7 +4,7 @@ Adjacency neighbourhood.
 This module contains the AdjacencyNeighbourhood class, that allows to get the neighbours of any
 region based on its borders.
 """
-from typing import Dict, Hashable, Set
+from typing import Dict, Hashable, Optional, Set
 
 import geopandas as gpd
 
@@ -46,7 +46,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             if region_id not in self.lookup:
                 self.lookup[region_id] = self._get_adjacent_neighbours(region_id)
 
-    def get_neighbours(self, index: Hashable) -> Set[Hashable]:
+    def get_neighbours(self, index: Hashable, include_center: Optional[bool] = None) -> Set[Hashable]:
         """
         Get the direct neighbours of any region using its index.
 
@@ -63,7 +63,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             self.lookup[index] = self._get_adjacent_neighbours(index)
 
         neighbours = self.lookup[index]
-        neighbours = self._handle_center(index, 1, neighbours, at_distance=False)
+        neighbours = self._handle_center(index, 1, neighbours, at_distance=False, include_center_override=include_center)
         return neighbours
 
     def _get_adjacent_neighbours(self, index: Hashable) -> Set[Hashable]:

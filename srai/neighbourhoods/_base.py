@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Dict, Generic, Set, Tuple, TypeVar
+from typing import Dict, Generic, Optional, Set, Tuple, TypeVar
 
 from functional import seq
 
@@ -30,12 +30,14 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
         Args:
             include_center (bool): Whether to include the region itself in the neighbours.
+            This will be the default value used for all the methods of the class,
+            unless overridden in the function parameter.
         """
         super().__init__()
         self.include_center = include_center
 
     @abstractmethod
-    def get_neighbours(self, index: IndexType) -> Set[IndexType]:
+    def get_neighbours(self, index: IndexType, include_center: Optional[bool] = None) -> Set[IndexType]:
         """
         Get the direct neighbours of a region using its index.
 
@@ -47,7 +49,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
 
-    def get_neighbours_up_to_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
+    def get_neighbours_up_to_distance(self, index: IndexType, distance: int, include_center: Optional[bool] = None) -> Set[IndexType]:
         """
         Get the neighbours of a region up to a certain distance.
 
@@ -61,10 +63,10 @@ class Neighbourhood(ABC, Generic[IndexType]):
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
         neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
-        neighbours = self._handle_center(index, distance, neighbours, at_distance=False)
+        neighbours = self._handle_center(index, distance, neighbours, at_distance=False, include_center_override=include_center)
         return neighbours
 
-    def get_neighbours_at_distance(self, index: IndexType, distance: int) -> Set[IndexType]:
+    def get_neighbours_at_distance(self, index: IndexType, distance: int, include_center: Optional[bool] = None) -> Set[IndexType]:
         """
         Get the neighbours of a region at a certain distance.
 
@@ -84,7 +86,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             .to_set()
         )
         neighbours_at_distance = self._handle_center(
-            index, distance, neighbours_at_distance, at_distance=True
+            index, distance, neighbours_at_distance, at_distance=True, include_center_override=include_center
         )
         return neighbours_at_distance
 
@@ -110,12 +112,17 @@ class Neighbourhood(ABC, Generic[IndexType]):
         return set(visited_indexes.items())
 
     def _handle_center(
-        self, index: IndexType, distance: int, neighbours: Set[IndexType], at_distance: bool
+        self, index: IndexType, distance: int, neighbours: Set[IndexType], at_distance: bool, include_center_override: Optional[bool]
     ) -> Set[IndexType]:
+        if include_center_override is None:
+            include_center = self.include_center
+        else:
+            include_center = include_center_override
+
         if distance < 0:
             return set()
         elif distance == 0:
-            if self.include_center:
+            if include_center:
                 neighbours.add(index)
             else:
                 neighbours.discard(index)
@@ -123,7 +130,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             if at_distance:
                 neighbours.discard(index)
             else:
-                if self.include_center:
+                if include_center:
                     neighbours.add(index)
                 else:
                     neighbours.discard(index)
