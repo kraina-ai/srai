@@ -11,20 +11,43 @@ from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 def shapely_geometry_to_h3(
-    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries],
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
     h3_resolution: int,
-    buffer: bool,
+    buffer: bool = True,
 ) -> List[str]:
-    """TODO."""
+    """
+    Convert Shapely geometry to H3 indexes.
+
+    Args:
+        geometry (Union[BaseGeometry, Iterable[BaseGeometry], GeoSeries, GeoDataFrame]):
+            Shapely geometry to be converted.
+        h3_resolution (int): H3 resolution of the cells. See [1] for a full comparison.
+        buffer (bool, optional): Whether to fully cover the geometries with
+            H3 Cells (visible on the borders). Defaults to True.
+
+    Returns:
+        List[str]: List of H3 indexes that cover a given geometry.
+
+    Raises:
+        ValueError: If resolution is not between 0 and 15.
+
+    References:
+        1. https://h3geo.org/docs/core-library/restable/
+    """
+    if not (0 <= h3_resolution <= 15):
+        raise ValueError(f"Resolution {h3_resolution} is not between 0 and 15.")
+
     wkb = []
-    if isinstance(geometry, Iterable):
-        wkb = [sub_geometry.wkb for sub_geometry in geometry]
-    elif isinstance(geometry, gpd.GeoSeries):
+    if isinstance(geometry, gpd.GeoSeries):
         wkb = geometry.to_wkb()
+    elif isinstance(geometry, gpd.GeoDataFrame):
+        wkb = geometry[GEOMETRY_COLUMN].to_wkb()
+    elif isinstance(geometry, Iterable):
+        wkb = [sub_geometry.wkb for sub_geometry in geometry]
     else:
         wkb = [geometry.wkb]
 
@@ -36,7 +59,16 @@ def shapely_geometry_to_h3(
 
 
 def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd.GeoSeries:
-    """TODO."""
+    """
+    Convert H3 index to GeoPandas GeoSeries.
+
+    Args:
+        h3_index (Union[int, str, Iterable[Union[int, str]]]): H3 index (or list of indexes)
+            to be converted.
+
+    Returns:
+        GeoSeries: Geometries as GeoSeries with default CRS applied.
+    """
     if isinstance(h3_index, (str, int)):
         return h3_to_geoseries([h3_index])
     else:
@@ -59,7 +91,16 @@ def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> List[Polygon]
 def h3_to_shapely_geometry(
     h3_index: Union[int, str, Iterable[Union[int, str]]]
 ) -> Union[Polygon, List[Polygon]]:
-    """TODO."""
+    """
+    Convert H3 index to Shapely polygon.
+
+    Args:
+        h3_index (Union[int, str, Iterable[Union[int, str]]]): H3 index (or list of indexes)
+            to be converted.
+
+    Returns:
+        Union[Polygon, List[Polygon]]: Converted polygon (or list of polygons).
+    """
     if isinstance(h3_index, (str, int)):
         coords = h3.cell_to_boundary(h3_index, geo_json=True)
         return Polygon(coords)
