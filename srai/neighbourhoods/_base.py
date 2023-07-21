@@ -46,6 +46,8 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Args:
             index (IndexType): Unique identifier of the region.
                 Dependant on the implementation.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[IndexType]: Indexes of the neighbours.
@@ -61,6 +63,8 @@ class Neighbourhood(ABC, Generic[IndexType]):
             index (IndexType): Unique identifier of the region.
                 Dependant on the implementation.
             distance (int): Maximum distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[IndexType]: Indexes of the neighbours.
@@ -82,6 +86,8 @@ class Neighbourhood(ABC, Generic[IndexType]):
             index (IndexType): Unique identifier of the region.
                 Dependant on the implementation.
             distance (int): Distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[IndexType]: Indexes of the neighbours.
