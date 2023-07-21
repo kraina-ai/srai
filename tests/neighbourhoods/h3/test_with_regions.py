@@ -296,3 +296,228 @@ def test_get_neighbours_at_distance_with_regions_gdf(
     neighbourhood = H3Neighbourhood(regions_gdf, include_center)
     initial_region_index = "862bac507ffffff"
     assert neighbourhood.get_neighbours_at_distance(initial_region_index, distance) == expected
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "regions_gdf_fixture,expected,expected_with_include_center",
+    [
+        (
+            "empty_gdf",
+            set(),
+            set(),
+        ),
+        (
+            "single_hex_gdf",
+            set(),
+            {"811e3ffffffffff"},
+        ),
+        (
+            "hex_without_one_neighbour_gdf",
+            {
+                "811f3ffffffffff",
+                "811fbffffffffff",
+                "811ebffffffffff",
+                "811efffffffffff",
+                "811e7ffffffffff",
+            },
+            {
+                "811f3ffffffffff",
+                "811fbffffffffff",
+                "811ebffffffffff",
+                "811efffffffffff",
+                "811e7ffffffffff",
+                "811e3ffffffffff",
+            },
+        ),
+    ],
+)
+def test_get_neighbours_with_regions_gdf_include_center_override(
+    regions_gdf_fixture: str,
+    expected: Set[str],
+    expected_with_include_center: Set[str],
+    request: Any,
+) -> None:
+    """Test get_neighbours of H3Neighbourhood with a specified regions GeoDataFrame."""
+    center_region = "811e3ffffffffff"
+    regions_gdf = request.getfixturevalue(regions_gdf_fixture)
+
+    neighbourhood = H3Neighbourhood(regions_gdf)
+    assert neighbourhood.get_neighbours(center_region) == expected
+    assert (
+        neighbourhood.get_neighbours(center_region, include_center=True)
+        == expected_with_include_center
+    )
+
+    neighbourhood_with_include_center = H3Neighbourhood(regions_gdf, include_center=True)
+    assert (
+        neighbourhood_with_include_center.get_neighbours(center_region)
+        == expected_with_include_center
+    )
+    assert (
+        neighbourhood_with_include_center.get_neighbours(center_region, include_center=False)
+        == expected
+    )
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "distance,expected,expected_with_include_center",
+    [
+        (
+            0,
+            set(),
+            {"862bac507ffffff"},
+        ),
+        (
+            1,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+            },
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862bac507ffffff",
+            },
+        ),
+        (
+            2,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+            },
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+                "862bac507ffffff",
+            },
+        ),
+    ],
+)
+def test_get_neighbours_up_to_distance_with_regions_gdf_include_center_override(
+    distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
+) -> None:
+    """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions."""
+    center_region = "862bac507ffffff"
+    regions_gdf = request.getfixturevalue("two_rings_regions_some_missing")
+
+    neighbourhood = H3Neighbourhood(regions_gdf)
+    assert neighbourhood.get_neighbours_up_to_distance(center_region, distance) == expected
+    assert (
+        neighbourhood.get_neighbours_up_to_distance(center_region, distance, include_center=True)
+        == expected_with_include_center
+    )
+
+    neighbourhood_with_include_center = H3Neighbourhood(regions_gdf, include_center=True)
+    assert (
+        neighbourhood_with_include_center.get_neighbours_up_to_distance(center_region, distance)
+        == expected_with_include_center
+    )
+    assert (
+        neighbourhood_with_include_center.get_neighbours_up_to_distance(
+            center_region, distance, include_center=False
+        )
+        == expected
+    )
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "distance,expected,expected_with_include_center",
+    [
+        (
+            0,
+            set(),
+            {"862bac507ffffff"},
+        ),
+        (
+            1,
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+            },
+            {
+                "862bac50fffffff",
+                "862bac517ffffff",
+                "862bac51fffffff",
+                "862bac527ffffff",
+            },
+        ),
+        (
+            2,
+            {
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+            },
+            {
+                "862ba124fffffff",
+                "862ba126fffffff",
+                "862bac427ffffff",
+                "862bac437ffffff",
+                "862bac557ffffff",
+                "862bac577ffffff",
+                "862bac5a7ffffff",
+                "862bac5afffffff",
+                "862bacc8fffffff",
+            },
+        ),
+    ],
+)
+def test_get_neighbours_at_distance_with_regions_gdf_include_center_override(
+    distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
+) -> None:
+    """Test get_neighbours_at_distance of H3Neighbourhood with a specified regions GeoDataFrame."""
+    center_region = "862bac507ffffff"
+    regions_gdf = request.getfixturevalue("two_rings_regions_some_missing")
+
+    neighbourhood = H3Neighbourhood(regions_gdf)
+    assert neighbourhood.get_neighbours_at_distance(center_region, distance) == expected
+    assert (
+        neighbourhood.get_neighbours_at_distance(center_region, distance, include_center=True)
+        == expected_with_include_center
+    )
+
+    neighbourhood_with_include_center = H3Neighbourhood(regions_gdf, include_center=True)
+    assert (
+        neighbourhood_with_include_center.get_neighbours_at_distance(center_region, distance)
+        == expected_with_include_center
+    )
+    assert (
+        neighbourhood_with_include_center.get_neighbours_at_distance(
+            center_region, distance, include_center=False
+        )
+        == expected
+    )
