@@ -54,7 +54,9 @@ class H3Neighbourhood(Neighbourhood[str]):
         """
         return self.get_neighbours_up_to_distance(index, 1, include_center)
 
-    def get_neighbours_up_to_distance(self, index: str, distance: int, include_center: Optional[bool] = None) -> Set[str]:
+    def get_neighbours_up_to_distance(
+        self, index: str, distance: int, include_center: Optional[bool] = None
+    ) -> Set[str]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
@@ -69,10 +71,14 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_disk(index, distance)
-        neighbours = self._handle_center(index, distance, neighbours, at_distance=False, include_center_override=include_center)
+        neighbours = self._handle_center(
+            index, distance, neighbours, at_distance=False, include_center_override=include_center
+        )
         return self._select_available(neighbours)
 
-    def get_neighbours_at_distance(self, index: str, distance: int, include_center: Optional[bool] = None) -> Set[str]:
+    def get_neighbours_at_distance(
+        self, index: str, distance: int, include_center: Optional[bool] = None
+    ) -> Set[str]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
@@ -87,7 +93,9 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_ring(index, distance)
-        neighbours = self._handle_center(index, distance, neighbours, at_distance=True, include_center_override=include_center)
+        neighbours = self._handle_center(
+            index, distance, neighbours, at_distance=True, include_center_override=include_center
+        )
         return self._select_available(neighbours)
 
     def _select_available(self, indices: Set[str]) -> Set[str]:
