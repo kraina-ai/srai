@@ -63,8 +63,7 @@ def h3_to_shapely_geometry(
     if isinstance(h3_index, (str, int)):
         coords = h3.cell_to_boundary(h3_index, geo_json=True)
         return Polygon(coords)
-    else:
-        return h3_to_geoseries(h3_index).values.tolist()
+    return h3_to_geoseries(h3_index).values.tolist()
 
 
 @overload
