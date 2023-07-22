@@ -9,8 +9,12 @@ from shapely.geometry.base import BaseGeometry
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters import BASE_OSM_GROUPS_FILTER, HEX2VEC_FILTER
-from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
+from srai.loaders.osm_loaders.filters import (
+    BASE_OSM_GROUPS_FILTER,
+    HEX2VEC_FILTER,
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+)
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
 from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
@@ -165,7 +169,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
 )
 def test_pbf_handler(
     test_file_name: str,
-    query: osm_tags_type,
+    query: OsmTagsFilter,
     expected_result_length: int,
     expected_features_columns_length: int,
 ):
@@ -238,7 +242,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 def test_osm_pbf_loader(
     test_geometries: List[BaseGeometry],
     pbf_file: Path,
-    query: Union[osm_tags_type, grouped_osm_tags_type],
+    query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     expected_result_length: int,
     expected_features_columns_length: int,
 ):
