@@ -1,5 +1,5 @@
 """Tests for LookupNeighbourhood."""
-from typing import Dict, Optional, Set, TypeVar
+from typing import Any, Dict, Optional, Set, TypeVar
 
 import pytest
 
@@ -92,361 +92,35 @@ def grid_3_by_3_irrregular_neighbourhood() -> Dict[int, Set[int]]:
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index, expected",
+    "neighbourhood_fixture,index,expected",
     [
-        (1, {2, 4}),
-        (2, {1, 3, 5}),
-        (3, {2, 6}),
-        (4, {1, 5, 7}),
-        (5, {2, 4, 6, 8}),
-        (6, {3, 5, 9}),
-        (7, {4, 8}),
-        (8, {5, 7, 9}),
-        (9, {6, 8}),
+        ("grid_3_by_3_neighbourhood", 1, {2, 4}),
+        ("grid_3_by_3_neighbourhood", 2, {1, 3, 5}),
+        ("grid_3_by_3_neighbourhood", 3, {2, 6}),
+        ("grid_3_by_3_neighbourhood", 4, {1, 5, 7}),
+        ("grid_3_by_3_neighbourhood", 5, {2, 4, 6, 8}),
+        ("grid_3_by_3_neighbourhood", 6, {3, 5, 9}),
+        ("grid_3_by_3_neighbourhood", 7, {4, 8}),
+        ("grid_3_by_3_neighbourhood", 8, {5, 7, 9}),
+        ("grid_3_by_3_neighbourhood", 9, {6, 8}),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, {2, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, {1, 2, 3}),
     ],
 )
 def test_get_neighbours(
-    index: str, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test get_neighbours."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, expected",
-    [
-        (1, {2, 4, 1}),
-        (2, {1, 3, 5, 2}),
-        (3, {2, 6, 3}),
-        (4, {1, 5, 7, 4}),
-        (5, {2, 4, 6, 8, 5}),
-        (6, {3, 5, 9, 6}),
-        (7, {4, 8, 7}),
-        (8, {5, 7, 9, 8}),
-        (9, {6, 8, 9}),
-    ],
-)
-def test_get_neighbours_include_center(
-    index: str, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test get_neighbours with include_center=True."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, expected",
-    [
-        (1, {2, 3, 4}),
-        (2, {1, 4}),
-        (3, {1, 4}),
-        (4, {1, 2, 3}),
-    ],
-)
-def test_get_neighbours_irregular(
+    neighbourhood_fixture: str,
     index: str,
     expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test get_neighbours with irregular neighbourhood."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, expected",
-    [
-        (1, {2, 3, 4, 1}),
-        (2, {1, 4, 2}),
-        (3, {1, 4, 3}),
-        (4, {1, 2, 3, 4}),
-    ],
-)
-def test_get_neighbours_irregular_include_center(
-    index: str,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test get_neighbours with irregular neighbourhood and include_center=True."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (5, -2, set()),
-        (5, -1, set()),
-        (5, 0, set()),
-        (5, 1, {2, 4, 6, 8}),
-        (5, 2, {1, 3, 7, 9}),
-        (5, 3, set()),
-        (4, 1, {1, 5, 7}),
-        (4, 2, {2, 6, 8}),
-        (4, 3, {3, 9}),
-        (4, 4, set()),
-        (1, 1, {2, 4}),
-        (1, 2, {3, 5, 7}),
-        (1, 3, {6, 8}),
-        (1, 4, {9}),
-        (1, 5, set()),
-    ],
-)
-def test_get_neighbours_at_distance(
-    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
-    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (5, -2, set()),
-        (5, -1, set()),
-        (5, 0, {5}),
-        (5, 1, {2, 4, 6, 8}),
-        (5, 2, {1, 3, 7, 9}),
-        (5, 3, set()),
-        (4, 0, {4}),
-        (4, 1, {1, 5, 7}),
-        (4, 2, {2, 6, 8}),
-        (4, 3, {3, 9}),
-        (4, 4, set()),
-        (1, 0, {1}),
-        (1, 1, {2, 4}),
-        (1, 2, {3, 5, 7}),
-        (1, 3, {6, 8}),
-        (1, 4, {9}),
-        (1, 5, set()),
-    ],
-)
-def test_get_neighbours_at_distance_include_center(
-    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (5, -2, set()),
-        (5, -1, set()),
-        (5, 0, set()),
-        (5, 1, {2, 4, 6, 8}),
-        (5, 2, {1, 2, 3, 4, 6, 7, 8, 9}),
-        (5, 3, {1, 2, 3, 4, 6, 7, 8, 9}),
-        (4, 1, {1, 5, 7}),
-        (4, 2, {1, 2, 5, 6, 7, 8}),
-        (4, 3, {1, 2, 3, 5, 6, 7, 8, 9}),
-        (4, 4, {1, 2, 3, 5, 6, 7, 8, 9}),
-        (1, 1, {2, 4}),
-        (1, 2, {2, 3, 4, 5, 7}),
-        (1, 3, {2, 3, 4, 5, 6, 7, 8}),
-        (1, 4, {2, 3, 4, 5, 6, 7, 8, 9}),
-        (1, 5, {2, 3, 4, 5, 6, 7, 8, 9}),
-    ],
-)
-def test_get_neighbours_up_to_distance(
-    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
-    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (5, -2, set()),
-        (5, -1, set()),
-        (5, 0, {5}),
-        (5, 1, {5, 2, 4, 6, 8}),
-        (5, 2, {5, 1, 2, 3, 4, 6, 7, 8, 9}),
-        (5, 3, {5, 1, 2, 3, 4, 6, 7, 8, 9}),
-        (4, 0, {4}),
-        (4, 1, {4, 1, 5, 7}),
-        (4, 2, {4, 1, 2, 5, 6, 7, 8}),
-        (4, 3, {4, 1, 2, 3, 5, 6, 7, 8, 9}),
-        (4, 4, {4, 1, 2, 3, 5, 6, 7, 8, 9}),
-        (1, 0, {1}),
-        (1, 1, {1, 2, 4}),
-        (1, 2, {1, 2, 3, 4, 5, 7}),
-        (1, 3, {1, 2, 3, 4, 5, 6, 7, 8}),
-        (1, 4, {1, 2, 3, 4, 5, 6, 7, 8, 9}),
-        (1, 5, {1, 2, 3, 4, 5, 6, 7, 8, 9}),
-    ],
-)
-def test_get_neighbours_up_to_distance_include_center(
-    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
-) -> None:
-    """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (1, -2, set()),
-        (1, -1, set()),
-        (1, 0, set()),
-        (1, 1, {2, 3, 4}),
-        (1, 2, set()),
-        (2, 1, {1, 4}),
-        (2, 2, {3}),
-        (2, 3, set()),
-        (3, 1, {1, 4}),
-        (3, 2, {2}),
-        (3, 3, set()),
-        (4, 1, {1, 2, 3}),
-        (4, 2, set()),
-    ],
-)
-def test_get_neighbours_at_distance_irregular(
-    index: str,
-    distance: int,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
-    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (1, -2, set()),
-        (1, -1, set()),
-        (1, 0, {1}),
-        (1, 1, {2, 3, 4}),
-        (1, 2, set()),
-        (2, 0, {2}),
-        (2, 1, {1, 4}),
-        (2, 2, {3}),
-        (2, 3, set()),
-        (3, 0, {3}),
-        (3, 1, {1, 4}),
-        (3, 2, {2}),
-        (3, 3, set()),
-        (4, 0, {4}),
-        (4, 1, {1, 2, 3}),
-        (4, 2, set()),
-    ],
-)
-def test_get_neighbours_at_distance_irregular_include_center(
-    index: str,
-    distance: int,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (1, -2, set()),
-        (1, -1, set()),
-        (1, 0, set()),
-        (1, 1, {2, 3, 4}),
-        (1, 2, {2, 3, 4}),
-        (2, 1, {1, 4}),
-        (2, 2, {1, 3, 4}),
-        (2, 3, {1, 3, 4}),
-        (3, 1, {1, 4}),
-        (3, 2, {1, 2, 4}),
-        (3, 3, {1, 2, 4}),
-        (4, 1, {1, 2, 3}),
-        (4, 2, {1, 2, 3}),
-    ],
-)
-def test_get_neighbours_up_to_distance_irregular(
-    index: str,
-    distance: int,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
-    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
-    [
-        (1, -2, set()),
-        (1, -1, set()),
-        (1, 0, {1}),
-        (1, 1, {1, 2, 3, 4}),
-        (1, 2, {1, 2, 3, 4}),
-        (2, 0, {2}),
-        (2, 1, {2, 1, 4}),
-        (2, 2, {2, 1, 3, 4}),
-        (2, 3, {2, 1, 3, 4}),
-        (3, 0, {3}),
-        (3, 1, {3, 1, 4}),
-        (3, 2, {3, 1, 2, 4}),
-        (3, 3, {3, 1, 2, 4}),
-        (4, 0, {4}),
-        (4, 1, {4, 1, 2, 3}),
-        (4, 2, {4, 1, 2, 3}),
-    ],
-)
-def test_get_neighbours_up_to_distance_irregular_include_center(
-    index: str,
-    distance: int,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test neighbours up to a distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, expected",
-    [
-        (1, {2, 4}),
-        (2, {1, 3, 5}),
-        (3, {2, 6}),
-        (4, {1, 5, 7}),
-        (5, {2, 4, 6, 8}),
-        (6, {3, 5, 9}),
-        (7, {4, 8}),
-        (8, {5, 7, 9}),
-        (9, {6, 8}),
-    ],
-)
-def test_get_neighbours_include_center_override(
-    index: str,
-    expected: Set[str],
-    grid_3_by_3_neighbourhood: Dict[str, Set[str]],
+    request: Any,
 ) -> None:
     """Test get_neighbours with overriding include_center."""
     # Test with class include_center=False
+    neighbourhood_data = request.getfixturevalue(neighbourhood_fixture)
     expected_with_include_center = expected | {index}
 
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data)
     neighbours = neighbourhood.get_neighbours(index)
     assert neighbours == expected
 
@@ -454,7 +128,7 @@ def test_get_neighbours_include_center_override(
     assert neighbours == expected_with_include_center
 
     # Test with class include_center=True
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data, include_center=True)
     neighbours = neighbourhood.get_neighbours(index)
     assert neighbours == expected_with_include_center
 
@@ -463,77 +137,61 @@ def test_get_neighbours_include_center_override(
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index, expected",
+    "neighbourhood_fixture, index, distance, expected, expected_with_include_center",
     [
-        (1, {2, 3, 4}),
-        (2, {1, 4}),
-        (3, {1, 4}),
-        (4, {1, 2, 3}),
+        ("grid_3_by_3_neighbourhood", 5, -2, set(), set()),
+        ("grid_3_by_3_neighbourhood", 5, -1, set(), set()),
+        ("grid_3_by_3_neighbourhood", 5, 0, set(), {5}),
+        ("grid_3_by_3_neighbourhood", 5, 1, {2, 4, 6, 8}, {2, 4, 6, 8}),
+        ("grid_3_by_3_neighbourhood", 5, 2, {1, 3, 7, 9}, {1, 3, 7, 9}),
+        ("grid_3_by_3_neighbourhood", 5, 3, set(), set()),
+        ("grid_3_by_3_neighbourhood", 4, 0, set(), {4}),
+        ("grid_3_by_3_neighbourhood", 4, 1, {1, 5, 7}, {1, 5, 7}),
+        ("grid_3_by_3_neighbourhood", 4, 2, {2, 6, 8}, {2, 6, 8}),
+        ("grid_3_by_3_neighbourhood", 4, 3, {3, 9}, {3, 9}),
+        ("grid_3_by_3_neighbourhood", 4, 4, set(), set()),
+        ("grid_3_by_3_neighbourhood", 1, 0, set(), {1}),
+        ("grid_3_by_3_neighbourhood", 1, 1, {2, 4}, {2, 4}),
+        ("grid_3_by_3_neighbourhood", 1, 2, {3, 5, 7}, {3, 5, 7}),
+        ("grid_3_by_3_neighbourhood", 1, 3, {6, 8}, {6, 8}),
+        ("grid_3_by_3_neighbourhood", 1, 4, {9}, {9}),
+        ("grid_3_by_3_neighbourhood", 1, 5, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, -2, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, -1, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 0, set(), {1}),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 1, {2, 3, 4}, {2, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 2, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 0, set(), {2}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 1, {1, 4}, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 2, {3}, {3}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 3, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 0, set(), {3}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 1, {1, 4}, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 2, {2}, {2}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 3, set(), set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 0, set(), {4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 1, {1, 2, 3}, {1, 2, 3}),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 2, set(), set()),
     ],
 )
-def test_get_neighbours_irregular_include_center_override(
-    index: str,
-    expected: Set[str],
-    grid_3_by_3_irrregular_neighbourhood: Dict[str, Set[str]],
-) -> None:
-    """Test get_neighbours with irregular neighbourhood and overriding include_center."""
-    # Test with class include_center=False
-    expected_with_include_center = expected | {index}
-
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected
-
-    neighbours = neighbourhood.get_neighbours(index, include_center=True)
-    assert neighbours == expected_with_include_center
-
-    # Test with class include_center=True
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_irrregular_neighbourhood, include_center=True)
-    neighbours = neighbourhood.get_neighbours(index)
-    assert neighbours == expected_with_include_center
-
-    neighbours = neighbourhood.get_neighbours(index, include_center=False)
-    assert neighbours == expected
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected, expected_with_include_center",
-    [
-        (5, -2, set(), set()),
-        (5, -1, set(), set()),
-        (5, 0, set(), {5}),
-        (5, 1, {2, 4, 6, 8}, {2, 4, 6, 8}),
-        (5, 2, {1, 3, 7, 9}, {1, 3, 7, 9}),
-        (5, 3, set(), set()),
-        (4, 0, set(), {4}),
-        (4, 1, {1, 5, 7}, {1, 5, 7}),
-        (4, 2, {2, 6, 8}, {2, 6, 8}),
-        (4, 3, {3, 9}, {3, 9}),
-        (4, 4, set(), set()),
-        (1, 0, set(), {1}),
-        (1, 1, {2, 4}, {2, 4}),
-        (1, 2, {3, 5, 7}, {3, 5, 7}),
-        (1, 3, {6, 8}, {6, 8}),
-        (1, 4, {9}, {9}),
-        (1, 5, set(), set()),
-    ],
-)
-def test_get_neighbours_at_distance_include_center_override(
+def test_get_neighbours_at_distance(
+    neighbourhood_fixture: str,
     index: str,
     distance: int,
     expected: Set[str],
     expected_with_include_center: Set[str],
-    grid_3_by_3_neighbourhood: Dict[str, Set[str]],
+    request: Any,
 ) -> None:
     """Test neighbours at distance."""
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
+    neighbourhood_data = request.getfixturevalue(neighbourhood_fixture)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected
 
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance, include_center=True)
     assert neighbours == expected_with_include_center
 
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data, include_center=True)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
     assert neighbours == expected_with_include_center
 
@@ -542,42 +200,59 @@ def test_get_neighbours_at_distance_include_center_override(
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index, distance, expected",
+    "neighbourhood_fixture, index, distance, expected",
     [
-        (5, -2, set()),
-        (5, -1, set()),
-        (5, 0, set()),
-        (5, 1, {2, 4, 6, 8}),
-        (5, 2, {1, 2, 3, 4, 6, 7, 8, 9}),
-        (5, 3, {1, 2, 3, 4, 6, 7, 8, 9}),
-        (4, 0, set()),
-        (4, 1, {1, 5, 7}),
-        (4, 2, {1, 2, 5, 6, 7, 8}),
-        (4, 3, {1, 2, 3, 5, 6, 7, 8, 9}),
-        (4, 4, {1, 2, 3, 5, 6, 7, 8, 9}),
-        (1, 0, set()),
-        (1, 1, {2, 4}),
-        (1, 2, {2, 3, 4, 5, 7}),
-        (1, 3, {2, 3, 4, 5, 6, 7, 8}),
-        (1, 4, {2, 3, 4, 5, 6, 7, 8, 9}),
-        (1, 5, {2, 3, 4, 5, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 5, -2, set()),
+        ("grid_3_by_3_neighbourhood", 5, -1, set()),
+        ("grid_3_by_3_neighbourhood", 5, 0, set()),
+        ("grid_3_by_3_neighbourhood", 5, 1, {2, 4, 6, 8}),
+        ("grid_3_by_3_neighbourhood", 5, 2, {1, 2, 3, 4, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 5, 3, {1, 2, 3, 4, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 4, 0, set()),
+        ("grid_3_by_3_neighbourhood", 4, 1, {1, 5, 7}),
+        ("grid_3_by_3_neighbourhood", 4, 2, {1, 2, 5, 6, 7, 8}),
+        ("grid_3_by_3_neighbourhood", 4, 3, {1, 2, 3, 5, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 4, 4, {1, 2, 3, 5, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 1, 0, set()),
+        ("grid_3_by_3_neighbourhood", 1, 1, {2, 4}),
+        ("grid_3_by_3_neighbourhood", 1, 2, {2, 3, 4, 5, 7}),
+        ("grid_3_by_3_neighbourhood", 1, 3, {2, 3, 4, 5, 6, 7, 8}),
+        ("grid_3_by_3_neighbourhood", 1, 4, {2, 3, 4, 5, 6, 7, 8, 9}),
+        ("grid_3_by_3_neighbourhood", 1, 5, {2, 3, 4, 5, 6, 7, 8, 9}),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, -2, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, -1, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 0, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 1, {2, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 1, 2, {2, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 0, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 1, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 2, {1, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 2, 3, {1, 3, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 0, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 1, {1, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 2, {1, 2, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 3, 3, {1, 2, 4}),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 0, set()),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 1, {1, 2, 3}),
+        ("grid_3_by_3_irrregular_neighbourhood", 4, 2, {1, 2, 3}),
     ],
 )
-def test_get_neighbours_up_to_distance_include_center_override(
-    index: str, distance: int, expected: Set[str], grid_3_by_3_neighbourhood: Dict[str, Set[str]]
+def test_get_neighbours_up_to_distance(
+    neighbourhood_fixture: str, index: str, distance: int, expected: Set[str], request: Any
 ) -> None:
     """Test neighbours up to a distance."""
+    neighbourhood_data = request.getfixturevalue(neighbourhood_fixture)
     expected_with_include_center = expected.copy()
     if distance >= 0:
         expected_with_include_center.add(index)
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected
 
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance, include_center=True)
     assert neighbours == expected_with_include_center
 
-    neighbourhood = LookupNeighbourhood(grid_3_by_3_neighbourhood, include_center=True)
+    neighbourhood = LookupNeighbourhood(neighbourhood_data, include_center=True)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
     assert neighbours == expected_with_include_center
 
