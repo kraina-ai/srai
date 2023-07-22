@@ -113,7 +113,7 @@ def two_rings_regions_some_missing() -> gpd.GeoDataFrame:
         ),
     ],
 )
-def test_get_neighbours_with_regions_gdf_include_center_override(
+def test_get_neighbours_with_regions_gdf(
     regions_gdf_fixture: str,
     expected: Set[str],
     expected_with_include_center: Set[str],
@@ -201,7 +201,7 @@ def test_get_neighbours_with_regions_gdf_include_center_override(
         ),
     ],
 )
-def test_get_neighbours_up_to_distance_with_regions_gdf_include_center_override(
+def test_get_neighbours_up_to_distance_with_regions_gdf(
     distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions."""
@@ -278,7 +278,7 @@ def test_get_neighbours_up_to_distance_with_regions_gdf_include_center_override(
         ),
     ],
 )
-def test_get_neighbours_at_distance_with_regions_gdf_include_center_override(
+def test_get_neighbours_at_distance_with_regions_gdf(
     distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood with a specified regions GeoDataFrame."""

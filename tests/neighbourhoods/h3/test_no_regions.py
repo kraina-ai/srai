@@ -71,7 +71,7 @@ from srai.neighbourhoods import H3Neighbourhood
         ),
     ],
 )
-def test_get_neighbours_include_override(
+def test_get_neighbours(
     index: str, expected: Set[str], expected_with_include_center: Set[str]
 ) -> None:
     """Test get_neighbours of H3Neighbourhood."""
@@ -158,7 +158,7 @@ def test_get_neighbours_include_override(
         ),
     ],
 )
-def test_get_neighbours_up_to_distance_include_center_override(
+def test_get_neighbours_up_to_distance(
     index: str, distance: int, expected: Set[str], expected_with_include_center: Set[str]
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood."""
@@ -242,7 +242,7 @@ def test_get_neighbours_up_to_distance_include_center_override(
         ),
     ],
 )
-def test_get_neighbours_at_distance_include_center_override(
+def test_get_neighbours_at_distance(
     index: str, distance: int, expected: Set[str], expected_with_include_center: Set[str]
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood."""
