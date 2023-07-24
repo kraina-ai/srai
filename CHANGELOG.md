@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2023-MM-DD
 
 ### Added
-- `include_center` parameter to Neighbourhoods [[#288](https://github.com/srai-lab/srai/issues/288)]
+- `include_center` parameter to Neighbourhoods [#288](https://github.com/srai-lab/srai/issues/288)
 
 - Added `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
 
