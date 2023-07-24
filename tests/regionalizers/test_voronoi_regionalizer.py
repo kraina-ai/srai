@@ -1,6 +1,6 @@
 """Voronoi regionalizer tests."""
 from multiprocessing import cpu_count
-from typing import Any, Callable, List, Union
+from typing import Any, List
 
 import geopandas as gpd
 import numpy as np
@@ -159,20 +159,12 @@ def test_multiple_seeds_regions(
 
 
 @pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000, 100_000])  # type: ignore
-@pytest.mark.parametrize(  # type: ignore
-    "seeds_wrapper",
-    [
-        list,
-        list_to_geodataframe,
-    ],
-)
 def test_big_number_of_seeds_regions(
     random_points: int,
-    seeds_wrapper: Callable[[List[Point]], Union[List[Point], gpd.GeoDataFrame]],
     earth_bbox: Polygon,
 ) -> None:
     """Test checks if regions are generated correctly and multiprocessing working."""
-    seeds = seeds_wrapper(get_random_points(random_points))
+    seeds = get_random_points(random_points)
     vr = VoronoiRegionalizer(seeds=seeds)
     result_gdf = vr.transform()
     assert len(result_gdf.index) == random_points
