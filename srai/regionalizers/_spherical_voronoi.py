@@ -35,6 +35,8 @@ from srai.constants import WGS84_CRS
 SPHERE_PARTS: List[SphericalPolygon] = []
 SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 
+SCIPY_THRESHOLD = 1e-8
+
 
 def _generate_sphere_parts() -> None:
     global SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES  # noqa: PLW0603
@@ -72,7 +74,7 @@ def generate_voronoi_regions(
     max_meters_between_points: int = 10_000,
     num_of_multiprocessing_workers: int = -1,
     multiprocessing_activation_threshold: Optional[int] = None,
-) -> gpd.GeoDataFrame:
+) -> List[MultiPolygon]:
     """
     Generate Thessien polygons for a given list of seeds.
 
@@ -95,7 +97,7 @@ def generate_voronoi_regions(
             amount of points might not be feasible. Defaults to 100.
 
     Returns:
-        gpd.GeoDataFrame: List of MultiPolygons cut into up to 4 polygons based
+        List[MultiPolygon]: List of MultiPolygons cut into up to 4 polygons based
             on quadrants of a sphere.
 
     Raises:
@@ -133,7 +135,7 @@ def generate_voronoi_regions(
 
     radius = 1
     center = np.array([0, 0, 0])
-    sv = SphericalVoronoi(sphere_points, radius, center, threshold=1e-8)
+    sv = SphericalVoronoi(sphere_points, radius, center, threshold=SCIPY_THRESHOLD)
     sv.sort_vertices_of_regions()
 
     _generate_sphere_parts()
@@ -165,11 +167,7 @@ def generate_voronoi_regions(
             for region_id in tqdm(region_ids, desc="Generating regions")
         )
 
-    regions_gdf = gpd.GeoDataFrame(
-        data={"geometry": generated_regions}, index=region_ids, crs=WGS84_CRS
-    )
-
-    return regions_gdf
+    return generated_regions
 
 
 def _parse_num_of_multiprocessing_workers(num_of_multiprocessing_workers: int) -> int:
@@ -357,7 +355,7 @@ def _interpolate_edge(
     prev_lon = None
     prev_lat = None
 
-    for pt in geometric_slerp(start_point, end_point, step_ticks):
+    for pt in geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD):
         lon, lat = _map_from_geocentric(pt[0], pt[1], pt[2], ell)
         lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
         if prev_lon is not None and abs(prev_lon - lon) >= 90:
