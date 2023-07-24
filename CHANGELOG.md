@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Improved simplification and buffering of polygons for Protomaps extracts [#309](https://github.com/srai-lab/srai/issues/309)
+- Eliminated some occasional errors in large scale executions of VoronoiRegionalizer [#313](https://github.com/srai-lab/srai/issues/313)
 
 ### Security
 
