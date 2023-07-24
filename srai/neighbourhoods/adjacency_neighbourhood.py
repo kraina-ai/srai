@@ -31,7 +31,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
             include_center (bool): Whether to include the region itself in the neighbours.
             This is the default value used for all the methods of the class,
-            unless overridden in the function parameter.
+            unless overridden in the function call.
 
         Raises:
             ValueError: If regions_gdf doesn't have geometry column.

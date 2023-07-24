@@ -37,7 +37,7 @@ class H3Neighbourhood(Neighbourhood[str]):
                 Defaults to None.
             include_center (bool): Whether to include the region itself in the neighbours.
             This is the default value used for all the methods of the class,
-            unless overridden in the function parameter.
+            unless overridden in the function call.
         """
         super().__init__(include_center)
         self._available_indices: Optional[Set[str]] = None

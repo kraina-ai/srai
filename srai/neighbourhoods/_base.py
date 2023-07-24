@@ -21,7 +21,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
     The subclasses only need to implement the `get_neighbours` method, but can also override the
     `get_neighbours_up_to_distance` and `get_neighbours_at_distance` methods for performance
     reasons.  See the `H3Neighbourhood` class for an example. The class also provides a
-    `_handle_center` method, which can be used to handle the region itself.
+    `_handle_center` method, which can be used to handle including/excluding the center region.
     """
 
     def __init__(self, include_center: bool = False) -> None:
@@ -31,7 +31,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
         Args:
             include_center (bool): Whether to include the region itself in the neighbours.
             This is the default value used for all the methods of the class,
-            unless overridden in the function parameter.
+            unless overridden in the function call.
         """
         super().__init__()
         self.include_center = include_center
