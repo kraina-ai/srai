@@ -180,7 +180,8 @@ def test_big_number_of_seeds_regions(
 ) -> None:
     """Test checks if regions are generated correctly and multiprocessing working."""
     seeds = seeds_wrapper(get_random_points(random_points))
-    result_gdf = generate_voronoi_regions(seeds)
+    vr = VoronoiRegionalizer(seeds=seeds)
+    result_gdf = vr.transform()
     assert len(result_gdf.index) == len(seeds)
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
