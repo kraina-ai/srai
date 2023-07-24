@@ -323,24 +323,9 @@ def _create_polygon(
         if reverse_slerp:
             start, end = end, start
 
-        edge_points: List[Tuple[float, float]] = []
-
-        prev_lon = None
-        prev_lat = None
-
-        for pt in geometric_slerp(start, end, t_vals):
-            lon, lat = _map_from_geocentric(pt[0], pt[1], pt[2], ell)
-            lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
-            if prev_lon is not None and abs(prev_lon - lon) >= 90:
-                sign = 1 if lat > 0 else -1
-                max_lat = sign * max(abs(prev_lat), abs(lat))
-                if edge_points[-1] != (prev_lon, max_lat):
-                    edge_points.append((prev_lon, max_lat))
-                if edge_points[-1] != (lon, lat):
-                    edge_points.append((lon, max_lat))
-            edge_points.append((lon, lat))
-            prev_lon = lon
-            prev_lat = lat
+        edge_points = _interpolate_edge(
+            start_point=start, end_point=end, step_ticks=t_vals, ell=ell, bbox_bounds=bbox_bounds
+        )
 
         polygon_points.extend(edge_points if not reverse_slerp else reversed(edge_points))
 
@@ -358,6 +343,35 @@ def _create_polygon(
             )
 
     return polygon
+
+
+def _interpolate_edge(
+    start_point: Tuple[float, float],
+    end_point: Tuple[float, float],
+    step_ticks: List[float],
+    ell: Ellipsoid,
+    bbox_bounds: Tuple[float, float, float, float],
+) -> List[Tuple[float, float]]:
+    edge_points: List[Tuple[float, float]] = []
+
+    prev_lon = None
+    prev_lat = None
+
+    for pt in geometric_slerp(start_point, end_point, step_ticks):
+        lon, lat = _map_from_geocentric(pt[0], pt[1], pt[2], ell)
+        lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
+        if prev_lon is not None and abs(prev_lon - lon) >= 90:
+            sign = 1 if lat > 0 else -1
+            max_lat = sign * max(abs(prev_lat), abs(lat))
+            if edge_points[-1] != (prev_lon, max_lat):
+                edge_points.append((prev_lon, max_lat))
+            if edge_points[-1] != (lon, lat):
+                edge_points.append((lon, max_lat))
+        edge_points.append((lon, lat))
+        prev_lon = lon
+        prev_lat = lat
+
+    return edge_points
 
 
 def _map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[float, float]:
