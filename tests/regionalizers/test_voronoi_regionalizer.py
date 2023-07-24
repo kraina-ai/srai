@@ -141,12 +141,12 @@ def test_multiprocessing_activation_threshold(
     "max_meters_between_points",
     [100, 1_000, 10_000, 100_000],
 )
-def test_multiple_seeds_regions(
+def test_regions_edge_resolution(
     max_meters_between_points: int,
     gdf_earth_poles: gpd.GeoDataFrame,
     earth_bbox: Polygon,
 ) -> None:
-    """Test checks if regions are generated correctly."""
+    """Test checks if regions with different resolution are generated correctly."""
     vr = VoronoiRegionalizer(
         seeds=gdf_earth_poles, max_meters_between_points=max_meters_between_points
     )
@@ -159,11 +159,11 @@ def test_multiple_seeds_regions(
 
 
 @pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000, 100_000])  # type: ignore
-def test_big_number_of_seeds_regions(
+def test_multiple_seeds_regions(
     random_points: int,
     earth_bbox: Polygon,
 ) -> None:
-    """Test checks if regions are generated correctly and multiprocessing working."""
+    """Test checks if regions are generated correctly."""
     seeds = get_random_points(random_points)
     vr = VoronoiRegionalizer(seeds=seeds)
     result_gdf = vr.transform()
