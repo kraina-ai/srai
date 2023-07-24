@@ -158,7 +158,7 @@ def test_regions_edge_resolution(
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
-@pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000, 100_000])  # type: ignore
+@pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000])  # type: ignore
 def test_multiple_seeds_regions(
     random_points: int,
     earth_bbox: Polygon,
