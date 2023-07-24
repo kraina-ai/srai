@@ -138,25 +138,18 @@ def test_multiprocessing_activation_threshold(
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "seeds_fixture",
-    [
-        "earth_poles",
-        "gdf_earth_poles",
-    ],
-)
-@pytest.mark.parametrize(  # type: ignore
     "max_meters_between_points",
     [100, 1_000, 10_000, 100_000],
 )
 def test_multiple_seeds_regions(
-    seeds_fixture: str,
     max_meters_between_points: int,
+    gdf_earth_poles: gpd.GeoDataFrame,
     earth_bbox: Polygon,
-    request: Any,
 ) -> None:
     """Test checks if regions are generated correctly."""
-    seeds = request.getfixturevalue(seeds_fixture)
-    vr = VoronoiRegionalizer(seeds=seeds, max_meters_between_points=max_meters_between_points)
+    vr = VoronoiRegionalizer(
+        seeds=gdf_earth_poles, max_meters_between_points=max_meters_between_points
+    )
     result_gdf = vr.transform()
     assert len(result_gdf.index) == 6
     assert result_gdf.geometry.unary_union.difference(
@@ -165,7 +158,7 @@ def test_multiple_seeds_regions(
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
-@pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000])  # type: ignore
+@pytest.mark.parametrize("random_points", [10, 100, 1_000, 10_000, 100_000])  # type: ignore
 @pytest.mark.parametrize(  # type: ignore
     "seeds_wrapper",
     [
@@ -182,7 +175,7 @@ def test_big_number_of_seeds_regions(
     seeds = seeds_wrapper(get_random_points(random_points))
     vr = VoronoiRegionalizer(seeds=seeds)
     result_gdf = vr.transform()
-    assert len(result_gdf.index) == len(seeds)
+    assert len(result_gdf.index) == random_points
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
     ).is_empty, "Result doesn't cover bounding box"
