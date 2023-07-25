@@ -5,9 +5,10 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
+import platform
 from functools import partial
 from math import ceil
-from multiprocessing import cpu_count
+from multiprocessing import Pool, cpu_count
 from typing import Hashable, List, Optional, Tuple, Union
 
 import geopandas as gpd
@@ -151,14 +152,24 @@ def generate_voronoi_regions(
     region_ids = list(range(total_regions))
 
     generated_regions: List[MultiPolygon]
+
     if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
-        generated_regions = process_map(
-            create_regions_func,
-            region_ids,
-            desc="Generating regions",
-            max_workers=num_of_multiprocessing_workers,
-            chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-        )
+        # process_map doesn't work on OSX for this example.
+        if platform.system() == "Linux":
+            generated_regions = process_map(
+                create_regions_func,
+                region_ids,
+                desc="Generating regions",
+                max_workers=num_of_multiprocessing_workers,
+                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+            )
+        else:
+            with Pool(num_of_multiprocessing_workers) as p:
+                generated_regions = p.map(
+                    create_regions_func,
+                    region_ids,
+                    chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+                )
     else:
         generated_regions = [
             create_regions_func(region_id=region_id)

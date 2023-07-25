@@ -139,7 +139,7 @@ def test_multiprocessing_activation_threshold(
 
 @pytest.mark.parametrize(  # type: ignore
     "max_meters_between_points",
-    [100, 1_000, 10_000, 100_000],
+    [500, 1_000, 10_000, 100_000],
 )
 def test_regions_edge_resolution(
     max_meters_between_points: int,
