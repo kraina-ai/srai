@@ -5,10 +5,9 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
-import platform
 from functools import partial
 from math import ceil
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count
 from typing import Hashable, List, Optional, Tuple, Union
 
 import geopandas as gpd
@@ -139,8 +138,6 @@ def generate_voronoi_regions(
     sv = SphericalVoronoi(sphere_points, radius, center, threshold=SCIPY_THRESHOLD)
     sv.sort_vertices_of_regions()
 
-    _generate_sphere_parts()
-
     create_regions_func = partial(
         _create_region,
         sv=sv,
@@ -154,22 +151,13 @@ def generate_voronoi_regions(
     generated_regions: List[MultiPolygon]
 
     if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
-        # process_map doesn't work on OSX for this example.
-        if platform.system() == "Linux":
-            generated_regions = process_map(
-                create_regions_func,
-                region_ids,
-                desc="Generating regions",
-                max_workers=num_of_multiprocessing_workers,
-                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-            )
-        else:
-            with Pool(num_of_multiprocessing_workers) as p:
-                generated_regions = p.map(
-                    create_regions_func,
-                    region_ids,
-                    chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-                )
+        generated_regions = process_map(
+            create_regions_func,
+            region_ids,
+            desc="Generating regions",
+            max_workers=num_of_multiprocessing_workers,
+            chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+        )
     else:
         generated_regions = [
             create_regions_func(region_id=region_id)
@@ -265,6 +253,7 @@ def _create_region(
     region_vertices = [v for v in sv.vertices[region]]
     sph_pol = SphericalPolygon(region_vertices)
     sphere_intersection_parts = []
+    _generate_sphere_parts()
     for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
         if sph_pol.intersects_poly(sphere_part):
             intersection = sph_pol.intersection(sphere_part)
