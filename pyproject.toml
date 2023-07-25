@@ -19,7 +19,6 @@ dependencies = [
     "geoparquet",
     "pyfunctional",
     "rtree",
-    "scipy",
     "pyarrow",
     "topojson",
     "tqdm",
@@ -67,7 +66,7 @@ osm = [
     "pillow",
 ] # osmnx<=1.4.0 because of internal API change in 1.5.0
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d", "haversine", "spherical-geometry"]
+voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
