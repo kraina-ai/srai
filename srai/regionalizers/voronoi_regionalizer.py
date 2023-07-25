@@ -62,7 +62,8 @@ class VoronoiRegionalizer(Regionalizer):
             ValueError: If provided seeds geodataframe has no crs defined.
         """
         import_optional_dependencies(
-            dependency_group="voronoi", modules=["haversine", "pymap3d", "spherical_geometry"]
+            dependency_group="voronoi",
+            modules=["haversine", "pymap3d", "scipy", "spherical_geometry"],
         )
         self.region_ids: List[Hashable] = []
         self.seeds: List[Point] = []
