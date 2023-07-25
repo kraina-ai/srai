@@ -148,7 +148,9 @@ def test_regions_edge_resolution(
 ) -> None:
     """Test checks if regions with different resolution are generated correctly."""
     vr = VoronoiRegionalizer(
-        seeds=gdf_earth_poles, max_meters_between_points=max_meters_between_points
+        seeds=gdf_earth_poles,
+        max_meters_between_points=max_meters_between_points,
+        multiprocessing_activation_threshold=6,
     )
     result_gdf = vr.transform()
     assert len(result_gdf.index) == 6
