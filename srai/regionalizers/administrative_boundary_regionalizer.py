@@ -3,7 +3,10 @@ Administrative Boundary Regionalizer.
 
 This module contains administrative boundary regionalizer implementation.
 """
+import hashlib
+import json
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import geopandas as gpd
@@ -218,9 +221,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         """
         Query Overpass and catch exceptions.
 
-        Since `overpass` library doesn't have useful http error wrapping like `osmnx` does [1],
-        this method allows for retry after waiting some time. Additionally, caching mechanism
-        uses `osmnx` internal methods built for this purpose.
+        This method allows for retry after waiting some time, and caches the response.
 
         Args:
             query (str): Overpass query.
@@ -231,21 +232,24 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         Returns:
             List[Dict[str, Any]]: Query elements result from Overpass.
-
-        References:
-            1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
         """
-        from osmnx.downloader import _retrieve_from_cache, _save_to_cache
         from overpass import MultipleRequestsError, ServerLoadError
+
+        h = hashlib.new("sha256")
+        h.update(query.encode())
+        query_hash = h.hexdigest()
+        query_file_path = Path("cache").resolve() / f"{query_hash}.json"
 
         while True:
             try:
-                query_result = _retrieve_from_cache(url=query, check_remark=False)
-                if query_result is None:
+                if not query_file_path.exists():
                     query_result = self.overpass_api.get(
                         query, verbosity="ids tags", responseformat="json"
                     )
-                    _save_to_cache(url=query, response_json=query_result, sc=200)
+                    query_file_path.write_text(json.dumps(query_result))
+                else:
+                    query_result = json.loads(query_file_path.read_text())
+
                 elements: List[Dict[str, Any]] = query_result["elements"]
                 return elements
             except (MultipleRequestsError, ServerLoadError):
