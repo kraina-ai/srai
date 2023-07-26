@@ -62,10 +62,10 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 # pdm add -G osm <library>
 osm = [
     "osmium",
-    "osmnx<=1.4.0",
+    "osmnx",
     "overpass",
     "pillow",
-] # osmnx<=1.4.0 because of internal API change in 1.5.0
+]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "spherical-geometry"]
 # pdm add -G gtfs <library>
