@@ -244,6 +244,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
                     query_result = self.overpass_api.get(
                         query, verbosity="ids tags", responseformat="json"
                     )
+                    query_file_path.parent.mkdir(parents=True, exist_ok=True)
                     query_file_path.write_text(json.dumps(query_result))
                 else:
                     query_result = json.loads(query_file_path.read_text())
