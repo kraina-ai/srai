@@ -16,6 +16,7 @@ from tqdm.auto import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
+from srai.loaders import Loader
 from srai.utils._optional import import_optional_dependencies
 
 from . import constants
@@ -23,14 +24,14 @@ from . import constants
 logger = logging.getLogger(__name__)
 
 
-class NetworkType(str, Enum):
+class OSMNetworkType(str, Enum):
     """
     Type of the street network.
 
     See [1] for more details.
 
     References:
-        [1] https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
+        1. https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.graph.graph_from_place
     """
 
     ALL_PRIVATE = "all_private"
@@ -41,7 +42,7 @@ class NetworkType(str, Enum):
     WALK = "walk"
 
 
-class OSMWayLoader:
+class OSMWayLoader(Loader):
     """
     OSMWayLoader downloads road infrastructure from OSM.
 
@@ -54,7 +55,7 @@ class OSMWayLoader:
 
     def __init__(
         self,
-        network_type: Union[NetworkType, str],
+        network_type: Union[OSMNetworkType, str],
         contain_within_area: bool = False,
         preprocess: bool = True,
         wide: bool = True,

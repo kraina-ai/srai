@@ -191,8 +191,8 @@ Acceptable features assembled based on [1] and [2].
 Assembled values that are officially defined in the wiki and are related to the `way` OSM type.
 
 References:
-    [1] https://taginfo.openstreetmap.org/
-    [2] https://wiki.openstreetmap.org/wiki/Main_Page
+    1. https://taginfo.openstreetmap.org/
+    2. https://wiki.openstreetmap.org/wiki/Main_Page
 """
 
 
@@ -340,6 +340,6 @@ Notes:
     Consider using better (full) table in machine readable format available in [2].
 
 References:
-    [1] https://wiki.openstreetmap.org/wiki/Key:maxspeed#Implicit_maxspeed_values
-    [2] https://wiki.openstreetmap.org/wiki/Default_speed_limits
+    1. https://wiki.openstreetmap.org/wiki/Key:maxspeed#Implicit_maxspeed_values
+    2. https://wiki.openstreetmap.org/wiki/Default_speed_limits
 """

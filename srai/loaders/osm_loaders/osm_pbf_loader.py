@@ -9,12 +9,13 @@ from typing import Hashable, List, Mapping, Optional, Sequence, Union
 import geopandas as gpd
 import pandas as pd
 
-from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.loaders.osm_loaders._base import OSMLoader
+from srai.loaders.osm_loaders.filters._typing import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.utils._optional import import_optional_dependencies
 
 
-class OSMPbfLoader:
+class OSMPbfLoader(OSMLoader):
     """
     OSMPbfLoader.
 
@@ -54,7 +55,7 @@ class OSMPbfLoader:
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: osm_tags_type,
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
@@ -74,7 +75,7 @@ class OSMPbfLoader:
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (osm_tags_type): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -102,7 +103,9 @@ class OSMPbfLoader:
 
         clipping_polygon = area_wgs84.geometry.unary_union
 
-        pbf_handler = PbfFileHandler(tags=tags, region_geometry=clipping_polygon)
+        merged_tags = self._merge_osm_tags_filter(tags)
+
+        pbf_handler = PbfFileHandler(tags=merged_tags, region_geometry=clipping_polygon)
 
         results = []
         for region_id, pbf_files in downloaded_pbf_files.items():
@@ -113,10 +116,10 @@ class OSMPbfLoader:
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        features_columns = result_gdf.columns.drop(labels=["geometry"]).sort_values()
-        result_gdf = result_gdf[["geometry", *features_columns]]
+        features_columns = result_gdf.columns.drop(labels=[GEOMETRY_COLUMN]).sort_values()
+        result_gdf = result_gdf[[GEOMETRY_COLUMN, *features_columns]]
 
-        return result_gdf
+        return self._parse_features_gdf_to_groups(result_gdf, tags)
 
     def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
         if not gdfs:

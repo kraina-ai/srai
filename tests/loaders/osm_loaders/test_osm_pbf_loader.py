@@ -1,6 +1,6 @@
 """Tests for OSMPbfLoader."""
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import geopandas as gpd
 import pytest
@@ -9,8 +9,12 @@ from shapely.geometry.base import BaseGeometry
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters import (
+    BASE_OSM_GROUPS_FILTER,
+    HEX2VEC_FILTER,
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+)
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
 from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
@@ -165,7 +169,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
 )
 def test_pbf_handler(
     test_file_name: str,
-    query: osm_tags_type,
+    query: OsmTagsFilter,
     expected_result_length: int,
     expected_features_columns_length: int,
 ):
@@ -193,18 +197,10 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 @pytest.mark.parametrize(  # type: ignore
     "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length",
     [
-        ([Point([(-73.981883, 40.768081)])], None, None, 10, 38),
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, None, 0, 0),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 0),
         ([Point([(-73.981883, 40.768081)])], None, HEX2VEC_FILTER, 2, 3),
-        (
-            [Point([(-73.981883, 40.768081)])],
-            Path(__file__).parent
-            / "test_files"
-            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            None,
-            10,
-            38,
-        ),
+        ([Point([(-73.981883, 40.768081)])], None, BASE_OSM_GROUPS_FILTER, 3, 3),
         (
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
@@ -215,11 +211,29 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             3,
         ),
         (
+            [Point([(-73.981883, 40.768081)])],
+            Path(__file__).parent
+            / "test_files"
+            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
+            BASE_OSM_GROUPS_FILTER,
+            3,
+            3,
+        ),
+        (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
             Path(__file__).parent
             / "test_files"
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            None,
+            HEX2VEC_FILTER,
+            0,
+            0,
+        ),
+        (
+            [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
+            Path(__file__).parent
+            / "test_files"
+            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
+            BASE_OSM_GROUPS_FILTER,
             0,
             0,
         ),
@@ -228,7 +242,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 def test_osm_pbf_loader(
     test_geometries: List[BaseGeometry],
     pbf_file: Path,
-    query: osm_tags_type,
+    query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     expected_result_length: int,
     expected_features_columns_length: int,
 ):

@@ -12,11 +12,12 @@ from functional import seq
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders._base import OSMLoader
+from srai.loaders.osm_loaders.filters._typing import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.utils._optional import import_optional_dependencies
 
 
-class OSMOnlineLoader:
+class OSMOnlineLoader(OSMLoader):
     """
     OSMOnlineLoader.
 
@@ -44,7 +45,7 @@ class OSMOnlineLoader:
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: osm_tags_type,
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Download OSM features with specified tags for a given area.
@@ -57,7 +58,7 @@ class OSMOnlineLoader:
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (osm_tags_type): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -74,7 +75,9 @@ class OSMOnlineLoader:
 
         area_wgs84 = area.to_crs(crs=WGS84_CRS)
 
-        _tags = self._flatten_tags(tags)
+        merged_tags = self._merge_osm_tags_filter(tags)
+
+        _tags = self._flatten_tags(merged_tags)
 
         total_tags_num = len(_tags)
         total_queries = len(area) * total_tags_num
@@ -92,10 +95,11 @@ class OSMOnlineLoader:
                 results.append(geometries[[GEOMETRY_COLUMN, key]])
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
+        result_gdf = self._flatten_index(result_gdf)
 
-        return self._flatten_index(result_gdf)
+        return self._parse_features_gdf_to_groups(result_gdf, tags)
 
-    def _flatten_tags(self, tags: osm_tags_type) -> List[Tuple[str, Union[str, bool]]]:
+    def _flatten_tags(self, tags: OsmTagsFilter) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))

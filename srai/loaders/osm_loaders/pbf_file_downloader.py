@@ -16,16 +16,10 @@ import shapely.wkt as wktlib
 import topojson as tp
 from shapely.geometry import Polygon, mapping
 from shapely.geometry.base import BaseGeometry
-from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.utils import (
-    buffer_geometry,
-    download_file,
-    flatten_geometry,
-    remove_interiors,
-)
+from srai.utils import buffer_geometry, download_file, flatten_geometry, remove_interiors
 
 
 class PbfFileDownloader:
@@ -46,7 +40,7 @@ class PbfFileDownloader:
     PROTOMAPS_API_START_URL = "https://app.protomaps.com/downloads/osm"
     PROTOMAPS_API_DOWNLOAD_URL = "https://app.protomaps.com/downloads/{}/download"
 
-    _PBAR_FORMAT = "Downloading pbf file ({})"
+    _PBAR_FORMAT = "[{}] Downloading pbf file #{} ({})"
 
     SIMPLIFICATION_TOLERANCE_VALUES = [
         1e-07,
@@ -100,12 +94,15 @@ class PbfFileDownloader:
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
             regions_mapping[region_id] = [
-                self.download_pbf_file_for_polygon(polygon) for polygon in polygons
+                self.download_pbf_file_for_polygon(polygon, region_id, polygon_id + 1)
+                for polygon_id, polygon in enumerate(polygons)
             ]
 
         return regions_mapping
 
-    def download_pbf_file_for_polygon(self, polygon: Polygon) -> Path:
+    def download_pbf_file_for_polygon(
+        self, polygon: Polygon, region_id: str = "OSM", polygon_id: int = 1
+    ) -> Path:
         """
         Download PBF file for a single Polygon.
 
@@ -118,6 +115,10 @@ class PbfFileDownloader:
 
         Args:
             polygon (Polygon): Polygon boundary of an area to be extracted.
+            region_id (str, optional): Region name to be set in progress bar.
+                Defaults to "OSM".
+            polygon_id (int, optional): Polygon number to be set in progress bar.
+                Defaults to 1.
 
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
@@ -125,7 +126,7 @@ class PbfFileDownloader:
         geometry_hash = self._get_geometry_hash(polygon)
         pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
-        if not pbf_file_path.exists():
+        if not pbf_file_path.exists():  # pragma: no cover
             boundary_polygon = self._prepare_polygon_for_download(polygon)
             geometry_geojson = mapping(boundary_polygon)
 
@@ -179,15 +180,21 @@ class PbfFileDownloader:
                     elems_prog = status_response.get("ElemsProg", None)
 
                     if cells_total > 0 and cells_prog is not None and cells_prog < cells_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Cells"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Cells")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_prog
                     elif nodes_total > 0 and nodes_prog is not None and nodes_prog < nodes_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Nodes"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Nodes")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_total + nodes_prog
                     elif elems_total > 0 and elems_prog is not None and elems_prog < elems_total:
-                        pbar.set_description(self._PBAR_FORMAT.format("Elements"))
+                        pbar.set_description(
+                            self._PBAR_FORMAT.format(region_id, polygon_id, "Elements")
+                        )
                         pbar.total = cells_total + nodes_total + elems_total
                         pbar.n = cells_total + nodes_total + elems_prog
                     else:
@@ -210,21 +217,28 @@ class PbfFileDownloader:
         Function buffers the polygon, closes internal holes and simplifies its boundary to 1000
         points.
 
-        Makes sure that the generated polygon with fully cover the original one by increasing
-        the buffer size incrementally.
+        Makes sure that the generated polygon with fully cover the original one by increasing the
+        buffer size incrementally. Buffering is applied to the last simplified geometry to speed up
+        the process.
         """
         is_fully_covered = False
         buffer_size_meters = 50
+
+        polygon_to_buffer = polygon
+
         while not is_fully_covered:
-            buffered_polygon = buffer_geometry(polygon, meters=buffer_size_meters)
-            simplified_polygon = self._simplify_polygon(buffered_polygon)
+            buffered_polygon = buffer_geometry(polygon_to_buffer, meters=buffer_size_meters)
+            simplified_polygon = self._simplify_polygon(buffered_polygon, 1000)
             closed_polygon = remove_interiors(simplified_polygon)
             is_fully_covered = polygon.covered_by(closed_polygon)
             buffer_size_meters += 50
+
+            polygon_to_buffer = closed_polygon
+
         return closed_polygon
 
-    def _simplify_polygon(self, polygon: Polygon) -> Polygon:
-        """Simplify a polygon boundary to up to 1000 points."""
+    def _simplify_polygon(self, polygon: Polygon, exterior_max_points: int = 1000) -> Polygon:
+        """Simplify a polygon boundary to up to provided number of points."""
         simplified_polygon = polygon
 
         for simplify_tolerance in self.SIMPLIFICATION_TOLERANCE_VALUES:
@@ -237,14 +251,14 @@ class PbfFileDownloader:
                 .to_gdf(winding_order="CW_CCW", crs=WGS84_CRS, validate=True)
                 .geometry[0]
             )
-            simplified_polygon = make_valid(simplified_polygon)
-            if len(simplified_polygon.exterior.coords) < 1000:
+
+            if len(simplified_polygon.exterior.coords) < exterior_max_points:
                 break
 
-        if len(simplified_polygon.exterior.coords) > 1000:
+        if len(simplified_polygon.exterior.coords) > exterior_max_points:
             simplified_polygon = polygon.convex_hull
 
-        if len(simplified_polygon.exterior.coords) > 1000:
+        if len(simplified_polygon.exterior.coords) > exterior_max_points:
             simplified_polygon = polygon.minimum_rotated_rectangle
 
         return simplified_polygon

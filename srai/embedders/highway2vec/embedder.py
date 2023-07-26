@@ -4,18 +4,18 @@ Highway2Vec embedder.
 This module contains the embedder from the `highway2vec` paper [1].
 
 References:
-    [1] https://doi.org/10.1145/3557918.3565865
+    1. https://doi.org/10.1145/3557918.3565865
 """
-from typing import Any, Dict, Optional
+import json
+from pathlib import Path
+from typing import Any, Dict, Optional, Type, Union
 
 import geopandas as gpd
 import pandas as pd
-import pytorch_lightning as pl
-import torch
-from torch.utils.data import DataLoader
 
-from srai.embedders import Embedder
+from srai.embedders import Embedder, ModelT
 from srai.exceptions import ModelNotFitException
+from srai.utils._optional import import_optional_dependencies
 
 from .model import Highway2VecModel
 
@@ -31,6 +31,10 @@ class Highway2VecEmbedder(Embedder):
             hidden_size (int, optional): Hidden size in encoder and decoder. Defaults to 64.
             embedding_size (int, optional): Embedding size. Defaults to 30.
         """
+        import_optional_dependencies(
+            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+        )
+
         self._model: Optional[Highway2VecModel] = None
         self._hidden_size = hidden_size
         self._embedding_size = embedding_size
@@ -58,6 +62,8 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        import torch
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         self._check_is_fitted()
         features_df = self._remove_geometry_if_present(features_gdf)
@@ -94,6 +100,10 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
+        import pytorch_lightning as pl
+        import torch
+        from torch.utils.data import DataLoader
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
 
@@ -149,3 +159,57 @@ class Highway2VecEmbedder(Embedder):
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
+
+    def _save(self, path: Union[Path, str], embedder_config: Dict[str, Any]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        self._check_is_fitted()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        self._model.save(path / "model.pt")  # type: ignore
+
+        config = {
+            "model_config": self._model.get_config(),  # type: ignore
+            "embedder_config": embedder_config,
+        }
+        with open(path / "config.json", "w") as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+
+    def save(self, path: Union[Path, str]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Path): Path to the directory.
+        """
+        embedder_config = {"hidden_size": self._hidden_size, "embedding_size": self._embedding_size}
+        self._save(path, embedder_config)
+
+    @classmethod
+    def _load(cls, path: Union[Path, str], model_module: Type[ModelT]) -> "Highway2VecEmbedder":
+        if isinstance(path, str):
+            path = Path(path)
+
+        with (path / "config.json").open("r") as f:
+            config = json.load(f)
+        embedder = cls(**config["embedder_config"])
+        model_path = path / "model.pt"
+        model = model_module.load(model_path, **config["model_config"])
+        embedder._model = model
+        embedder._is_fitted = True
+        return embedder
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "Highway2VecEmbedder":
+        """
+        Load the model from a directory.
+
+        Args:
+            path (Path): Path to the directory.
+
+        Returns:
+            Hex2VecEmbedder: The loaded embedder.
+        """
+        return cls._load(path, Highway2VecModel)

@@ -91,7 +91,7 @@ def rounded_regions_fixture() -> gpd.GeoDataFrame:
 
 def test_no_geometry_gdf_attribute_error(no_geometry_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if GeoDataFrames without geometry are disallowed."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         AdjacencyNeighbourhood(no_geometry_gdf)
 
 
@@ -101,9 +101,21 @@ def test_empty_gdf_empty_set(empty_gdf: gpd.GeoDataFrame) -> None:
     assert neighbourhood.get_neighbours(1) == set()
 
 
+def test_empty_gdf_empty_set_include_center(empty_gdf: gpd.GeoDataFrame) -> None:
+    """Test checks if empty GeoDataFrames return empty neighbourhoods."""
+    neighbourhood = AdjacencyNeighbourhood(empty_gdf, include_center=True)
+    assert neighbourhood.get_neighbours(1) == set()
+
+
 def test_lazy_loading_empty_set(squares_regions_fixture: gpd.GeoDataFrame) -> None:
     """Test checks if lookup table is empty after init."""
     neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture)
+    assert neighbourhood.lookup == {}
+
+
+def test_lazy_loading_empty_set_include_center(squares_regions_fixture: gpd.GeoDataFrame) -> None:
+    """Test checks if lookup table is empty after init."""
+    neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture, include_center=True)
     assert neighbourhood.lookup == {}
 
 
@@ -114,6 +126,16 @@ def test_adjacency_lazy_loading(rounded_regions_fixture: gpd.GeoDataFrame) -> No
     assert neighbours == {"W", "S"}
     assert neighbourhood.lookup == {
         "SW": {"W", "S"},
+    }
+
+
+def test_adjacency_lazy_loading_include_center(rounded_regions_fixture: gpd.GeoDataFrame) -> None:
+    """Test checks if lookup table is lazily populated."""
+    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture, include_center=True)
+    neighbours = neighbourhood.get_neighbours("SW")
+    assert neighbours == {"W", "S", "SW"}
+    assert neighbourhood.lookup == {
+        "SW": {"W", "S", "SW"},
     }
 
 
@@ -156,64 +178,121 @@ def test_generate_all_neighbourhoods_squares_regions(
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index, distance, neighbours_expected",
+    "index,distance,expected,expected_include_center",
     [
-        ("SW", -2, set()),
-        ("SW", -1, set()),
-        ("SW", 0, set()),
-        ("SW", 1, {"S", "W"}),
-        ("SW", 2, {"CENTER", "SE", "NW"}),
-        ("SW", 3, {"N", "E"}),
-        ("SW", 4, {"NE"}),
-        ("SW", 5, set()),
-        ("CENTER", 1, {"N", "E", "S", "W"}),
-        ("CENTER", 2, {"NW", "NE", "SW", "SE"}),
-        ("CENTER", 3, set()),
-        ("N", 1, {"NW", "NE", "CENTER"}),
-        ("N", 2, {"E", "S", "W"}),
-        ("N", 3, {"SE", "SW"}),
-        ("N", 4, set()),
+        ("SW", -2, set(), set()),
+        ("SW", -1, set(), set()),
+        ("SW", 0, set(), {"SW"}),
+        ("SW", 1, {"S", "W"}, {"S", "W"}),
+        ("SW", 2, {"CENTER", "SE", "NW"}, {"CENTER", "SE", "NW"}),
+        ("SW", 3, {"N", "E"}, {"N", "E"}),
+        ("SW", 4, {"NE"}, {"NE"}),
+        ("SW", 5, set(), set()),
+        ("CENTER", 0, set(), {"CENTER"}),
+        ("CENTER", 1, {"N", "E", "S", "W"}, {"N", "E", "S", "W"}),
+        ("CENTER", 2, {"NW", "NE", "SW", "SE"}, {"NW", "NE", "SW", "SE"}),
+        ("CENTER", 3, set(), set()),
+        ("N", 0, set(), {"N"}),
+        ("N", 1, {"NW", "NE", "CENTER"}, {"NW", "NE", "CENTER"}),
+        ("N", 2, {"E", "S", "W"}, {"E", "S", "W"}),
+        ("N", 3, {"SE", "SW"}, {"SE", "SW"}),
+        ("N", 4, set(), set()),
     ],
 )
 def test_adjacency_lazy_loading_at_distance(
     index: str,
     distance: int,
-    neighbours_expected: Set[str],
+    expected: Set[str],
+    expected_include_center: Set[str],
     rounded_regions_fixture: gpd.GeoDataFrame,
 ) -> None:
     """Test checks `get_neighbours_at_distance` function with rounded regions."""
     neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture)
     neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
-    assert neighbours == neighbours_expected
+    assert neighbours == expected
+    neighbours = neighbourhood.get_neighbours_at_distance(index, distance, include_center=True)
+    assert neighbours == expected_include_center
+
+    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture, include_center=True)
+    neighbours = neighbourhood.get_neighbours_at_distance(index, distance)
+    assert neighbours == expected_include_center
+    neighbours = neighbourhood.get_neighbours_at_distance(index, distance, include_center=False)
+    assert neighbours == expected
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "index, distance, neighbours_expected",
+    "index,distance,expected,expected_include_center",
     [
-        ("SW", -2, set()),
-        ("SW", -1, set()),
-        ("SW", 0, set()),
-        ("SW", 1, {"S", "W"}),
-        ("SW", 2, {"S", "W", "CENTER", "SE", "NW"}),
-        ("SW", 3, {"S", "W", "CENTER", "SE", "NW", "N", "E"}),
-        ("SW", 4, {"S", "W", "CENTER", "SE", "NW", "N", "E", "NE"}),
-        ("SW", 5, {"S", "W", "CENTER", "SE", "NW", "N", "E", "NE"}),
-        ("CENTER", 1, {"N", "E", "S", "W"}),
-        ("CENTER", 2, {"N", "E", "S", "W", "NW", "NE", "SW", "SE"}),
-        ("CENTER", 3, {"N", "E", "S", "W", "NW", "NE", "SW", "SE"}),
-        ("N", 1, {"NW", "NE", "CENTER"}),
-        ("N", 2, {"NW", "NE", "CENTER", "E", "S", "W"}),
-        ("N", 3, {"NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"}),
-        ("N", 4, {"NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"}),
+        ("SW", -2, set(), set()),
+        ("SW", -1, set(), set()),
+        ("SW", 0, set(), {"SW"}),
+        ("SW", 1, {"S", "W"}, {"SW", "S", "W"}),
+        ("SW", 2, {"S", "W", "CENTER", "SE", "NW"}, {"SW", "S", "W", "CENTER", "SE", "NW"}),
+        (
+            "SW",
+            3,
+            {"S", "W", "CENTER", "SE", "NW", "N", "E"},
+            {"SW", "S", "W", "CENTER", "SE", "NW", "N", "E"},
+        ),
+        (
+            "SW",
+            4,
+            {"S", "W", "CENTER", "SE", "NW", "N", "E", "NE"},
+            {"SW", "S", "W", "CENTER", "SE", "NW", "N", "E", "NE"},
+        ),
+        (
+            "SW",
+            5,
+            {"S", "W", "CENTER", "SE", "NW", "N", "E", "NE"},
+            {"SW", "S", "W", "CENTER", "SE", "NW", "N", "E", "NE"},
+        ),
+        ("CENTER", 0, set(), {"CENTER"}),
+        ("CENTER", 1, {"N", "E", "S", "W"}, {"CENTER", "N", "E", "S", "W"}),
+        (
+            "CENTER",
+            2,
+            {"N", "E", "S", "W", "NW", "NE", "SW", "SE"},
+            {"CENTER", "N", "E", "S", "W", "NW", "NE", "SW", "SE"},
+        ),
+        (
+            "CENTER",
+            3,
+            {"N", "E", "S", "W", "NW", "NE", "SW", "SE"},
+            {"CENTER", "N", "E", "S", "W", "NW", "NE", "SW", "SE"},
+        ),
+        ("N", 0, set(), {"N"}),
+        ("N", 1, {"NW", "NE", "CENTER"}, {"N", "NW", "NE", "CENTER"}),
+        ("N", 2, {"NW", "NE", "CENTER", "E", "S", "W"}, {"N", "NW", "NE", "CENTER", "E", "S", "W"}),
+        (
+            "N",
+            3,
+            {"NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"},
+            {"N", "NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"},
+        ),
+        (
+            "N",
+            4,
+            {"NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"},
+            {"N", "NW", "NE", "CENTER", "E", "S", "W", "SE", "SW"},
+        ),
     ],
 )
 def test_adjacency_lazy_loading_up_to_distance(
     index: str,
     distance: int,
-    neighbours_expected: Set[str],
+    expected: Set[str],
+    expected_include_center: Set[str],
     rounded_regions_fixture: gpd.GeoDataFrame,
 ) -> None:
     """Test checks `get_neighbours_up_to_distance` function with rounded regions."""
     neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture)
     neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
-    assert neighbours == neighbours_expected
+    assert neighbours == expected
+    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance, include_center=True)
+    assert neighbours == expected_include_center
+
+    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture, include_center=True)
+    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance)
+    assert neighbours == expected_include_center
+    neighbours = neighbourhood.get_neighbours_up_to_distance(index, distance, include_center=False)
+    assert neighbours == expected

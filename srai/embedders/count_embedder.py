@@ -14,7 +14,9 @@ from srai.embedders import Embedder
 class CountEmbedder(Embedder):
     """Simple Embedder that counts occurences of feature values."""
 
-    def __init__(self, expected_output_features: Optional[List[str]] = None) -> None:
+    def __init__(
+        self, expected_output_features: Optional[List[str]] = None, count_subcategories: bool = True
+    ) -> None:
         """
         Init CountEmbedder.
 
@@ -23,11 +25,15 @@ class CountEmbedder(Embedder):
                 to be found in the resulting embedding. If not None, the missing features are added
                 and filled with 0. The unexpected features are removed.
                 The resulting columns are sorted accordingly. Defaults to None.
+            count_subcategories (bool, optional): Whether to count all subcategories individually
+                or count features only on the highest level based on features column name.
+                Defaults to True.
         """
-        if expected_output_features is not None:
-            self.expected_output_features = pd.Series(expected_output_features)
-        else:
-            self.expected_output_features = None
+        self.expected_output_features: Optional[pd.Series] = (
+            None if expected_output_features is None else pd.Series(expected_output_features)
+        )
+
+        self.count_subcategories = count_subcategories
 
     def transform(
         self,
@@ -42,7 +48,7 @@ class CountEmbedder(Embedder):
         Expects features_gdf to be in wide format with each column
         being a separate type of feature (e.g. amenity, leisure)
         and rows to hold values of these features for each object.
-        The resulting GeoDataFrame will have columns made by combining
+        The resulting DataFrame will have columns made by combining
         the feature name (column) and value (row) e.g. amenity_fuel or type_0.
         The rows will hold numbers of this type of feature in each region.
 
@@ -52,7 +58,7 @@ class CountEmbedder(Embedder):
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
+            pd.DataFrame: Embedding for each region in regions_gdf.
 
         Raises:
             ValueError: If features_gdf is empty and self.expected_output_features is not set.
@@ -75,17 +81,19 @@ class CountEmbedder(Embedder):
         features_df = self._remove_geometry_if_present(features_gdf)
         joint_df = self._remove_geometry_if_present(joint_gdf)
 
-        feature_encodings = pd.get_dummies(features_df)
+        if self.count_subcategories:
+            feature_encodings = pd.get_dummies(features_df)
+        else:
+            feature_encodings = features_df.notna().astype(int)
         joint_with_encodings = joint_df.join(feature_encodings)
         region_embeddings = joint_with_encodings.groupby(level=0).sum()
 
-        if self.expected_output_features is not None:
-            region_embeddings = self._filter_to_expected_features(region_embeddings)
+        region_embeddings = self._maybe_filter_to_expected_features(region_embeddings)
         region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
 
         return region_embedding_df
 
-    def _filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
+    def _maybe_filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
         """
         Add missing and remove excessive columns from embeddings.
 
@@ -95,9 +103,15 @@ class CountEmbedder(Embedder):
         Returns:
             pd.DataFrame: Embeddings with expected columns only.
         """
+        if self.expected_output_features is None:
+            return region_embeddings
+
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(region_embeddings.columns)
         ]
-        region_embeddings[missing_features] = 0
+        missing_features_df = pd.DataFrame(
+            0, index=region_embeddings.index, columns=missing_features
+        )
+        region_embeddings = pd.concat([region_embeddings, missing_features_df], axis=1)
         region_embeddings = region_embeddings[self.expected_output_features]
         return region_embeddings

@@ -4,22 +4,27 @@ site_url: null
 repo_url: https://github.com/srai-lab/srai
 repo_name: srai-lab/srai
 
-edit_uri: ""
+edit_uri: "edit/main/docs/"
 
 watch:
   - examples
+
 
 theme:
   name: material
   features:
     - navigation.tabs
-    - navigation.tabs.stick
+    - navigation.tabs.sticky
     - navigation.instant
     - navigation.tracking
     - navigation.top
     - navigation.indexes
+    - navigation.path
     - toc.follow
     - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.code.copy
   favicon: assets/logos/favicon.ico
   logo: assets/logos/srai-logo-symbol.svg
   icon:
@@ -100,8 +105,19 @@ plugins:
       scripts:
         - docs/copy_examples.py
         - docs/generate_api.py
+        - docs/gen_ref_pages.py
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [srai]
+          options:
+            show_source: true
+            show_root_heading: false
+            show_root_toc_entry: false
+            docstring_section_style: "spacy"
+            separate_signature: true
+            show_signature_annotations: true
   - mkdocs-jupyter:
       include: ["*.ipynb"]
       ignore_h1_titles: true

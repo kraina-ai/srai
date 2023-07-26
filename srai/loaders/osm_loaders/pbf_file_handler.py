@@ -4,7 +4,7 @@ PBF File Handler.
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union, cast
 
 import geopandas as gpd
 import osmium
@@ -16,8 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
-from srai.loaders.osm_loaders.filters.osm_tags_type import osm_tags_type
+from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
 
 if TYPE_CHECKING:
     import os
@@ -47,14 +46,14 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
 
     def __init__(
         self,
-        tags: Optional[osm_tags_type] = HEX2VEC_FILTER,
+        tags: Optional[OsmTagsFilter] = None,
         region_geometry: Optional[BaseGeometry] = None,
     ) -> None:
         """
         Initialize PbfFileHandler.
 
         Args:
-            tags (osm_tags_type): A dictionary
+            tags (osm_tags_type, optional): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -63,8 +62,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
-                If `None`, handler will allow all of the tags to be parsed.
-                Defaults to the predefined HEX2VEC_FILTER.
+                If `None`, handler will allow all of the tags to be parsed. Defaults to `None`.
             region_geometry (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
         """
@@ -77,6 +75,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         self.region_geometry = region_geometry
         self.wkbfab = osmium.geom.WKBFactory()
         self.features_cache: Dict[str, Dict[str, Any]] = {}
+        self.features_count: Optional[int] = None
 
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
@@ -98,8 +97,11 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with OSM features.
         """
-        with tqdm(desc="Parsing pbf file") as self.pbar:
-            self._clear_cache()
+        self._clear_cache()
+        if self.features_count is None:
+            self._count_features(file_paths, region_id)
+
+        with tqdm(desc="Parsing pbf file", total=self.features_count) as self.pbar:
             for path_no, path in enumerate(file_paths):
                 self.path_no = path_no + 1
                 description = self._PBAR_FORMAT.format(region_id, str(self.path_no))
@@ -115,7 +117,8 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 features_gdf = gpd.GeoDataFrame(
                     index=gpd.pd.Index(name=FEATURES_INDEX, data=[]), crs=WGS84_CRS, geometry=[]
                 )
-            self._clear_cache()
+
+        self._clear_cache()
         return features_gdf
 
     def node(self, node: osmium.osm.Node) -> None:
@@ -130,9 +133,12 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Node
         """
-        self._parse_osm_object(
-            osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
-        )
+        if self.counting_features:
+            self._count_feature()
+        else:
+            self._parse_osm_object(
+                osm_object=node, osm_type="node", parse_to_wkb_function=self.wkbfab.create_point
+            )
 
     def way(self, way: osmium.osm.Way) -> None:
         """
@@ -146,9 +152,12 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Way
         """
-        self._parse_osm_object(
-            osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
-        )
+        if self.counting_features:
+            self._count_feature()
+        else:
+            self._parse_osm_object(
+                osm_object=way, osm_type="way", parse_to_wkb_function=self.wkbfab.create_linestring
+            )
 
     def area(self, area: osmium.osm.Area) -> None:
         """
@@ -162,16 +171,35 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         References:
             1. https://docs.osmcode.org/pyosmium/latest/ref_osm.html#osmium.osm.Area
         """
-        self._parse_osm_object(
-            osm_object=area,
-            osm_type="way" if area.from_way() else "relation",
-            parse_to_wkb_function=self.wkbfab.create_multipolygon,
-            osm_id=area.orig_id(),
-        )
+        if self.counting_features:
+            self._count_feature()
+        else:
+            self._parse_osm_object(
+                osm_object=area,
+                osm_type="way" if area.from_way() else "relation",
+                parse_to_wkb_function=self.wkbfab.create_multipolygon,
+                osm_id=area.orig_id(),
+            )
 
     def _clear_cache(self) -> None:
         """Clear memory from accumulated features."""
         self.features_cache.clear()
+
+    def _count_features(
+        self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
+    ) -> None:
+        with tqdm(desc=f"[{region_id}] Counting pbf features") as self.pbar:
+            self.counting_features = True
+            self.features_count = 0
+            for path in file_paths:
+                self.apply_file(path)
+            self.pbar.update(n=self.features_count % 100_000)
+            self.counting_features = False
+
+    def _count_feature(self) -> None:
+        self.features_count = cast(int, self.features_count) + 1
+        if self.features_count % 100_000 == 0:
+            self.pbar.update(n=100_000)
 
     def _parse_osm_object(
         self,
@@ -234,7 +262,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         try:
             wkb = parse_to_wkb_function(osm_object)
             geometry = wkblib.loads(wkb, hex=True)
-        except RuntimeError as ex:
+        except Exception as ex:
             message = str(ex)
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
