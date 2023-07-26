@@ -3,7 +3,7 @@ from typing import Optional
 import geopandas as gpd
 
 
-class Dataset:
+class RegionsData:
     def __init__(
         self,
         regions: Optional[gpd.GeoDataFrame],

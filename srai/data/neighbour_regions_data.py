@@ -2,11 +2,11 @@ from typing import Optional
 
 import geopandas as gpd
 
-from srai.data.dataset import Dataset
+from srai.data.regions_data import RegionsData
 from srai.neighbourhoods import Neighbourhood
 
 
-class NeighbourhoodDataset(Dataset):
+class NeighbourhoodRegionsData(RegionsData):
     def __init__(
         self,
         regions: Optional[gpd.GeoDataFrame],
