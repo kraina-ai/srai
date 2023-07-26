@@ -19,7 +19,6 @@ dependencies = [
     "geoparquet",
     "pyfunctional",
     "rtree",
-    "scipy",
     "pyarrow",
     "topojson",
     "tqdm",
@@ -67,7 +66,7 @@ osm = [
     "pillow",
 ]
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d", "haversine", "spherical-geometry"]
+voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
