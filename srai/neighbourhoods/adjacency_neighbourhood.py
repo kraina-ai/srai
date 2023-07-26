@@ -4,7 +4,7 @@ Adjacency neighbourhood.
 This module contains the AdjacencyNeighbourhood class, that allows to get the neighbours of any
 region based on its borders.
 """
-from typing import Dict, Hashable, Set
+from typing import Dict, Hashable, Optional, Set
 
 import geopandas as gpd
 
@@ -23,16 +23,20 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    def __init__(self, regions_gdf: gpd.GeoDataFrame) -> None:
+    def __init__(self, regions_gdf: gpd.GeoDataFrame, include_center: bool = False) -> None:
         """
         Init AdjacencyNeighbourhood.
 
         Args:
             regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
+            include_center (bool): Whether to include the region itself in the neighbours.
+            This is the default value used for all the methods of the class,
+            unless overridden in the function call.
 
         Raises:
             ValueError: If regions_gdf doesn't have geometry column.
         """
+        super().__init__(include_center)
         if GEOMETRY_COLUMN not in regions_gdf.columns:
             raise ValueError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
@@ -44,12 +48,16 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             if region_id not in self.lookup:
                 self.lookup[region_id] = self._get_adjacent_neighbours(region_id)
 
-    def get_neighbours(self, index: Hashable) -> Set[Hashable]:
+    def get_neighbours(
+        self, index: Hashable, include_center: Optional[bool] = None
+    ) -> Set[Hashable]:
         """
         Get the direct neighbours of any region using its index.
 
         Args:
             index (Hashable): Unique identifier of the region.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[Hashable]: Indexes of the neighbours.
@@ -60,7 +68,11 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         if index not in self.lookup:
             self.lookup[index] = self._get_adjacent_neighbours(index)
 
-        return self.lookup[index]
+        neighbours = self.lookup[index]
+        neighbours = self._handle_center(
+            index, 1, neighbours, at_distance=False, include_center_override=include_center
+        )
+        return neighbours
 
     def _get_adjacent_neighbours(self, index: Hashable) -> Set[Hashable]:
         """

@@ -24,7 +24,7 @@ from . import constants
 logger = logging.getLogger(__name__)
 
 
-class NetworkType(str, Enum):
+class OSMNetworkType(str, Enum):
     """
     Type of the street network.
 
@@ -55,7 +55,7 @@ class OSMWayLoader(Loader):
 
     def __init__(
         self,
-        network_type: Union[NetworkType, str],
+        network_type: Union[OSMNetworkType, str],
         contain_within_area: bool = False,
         preprocess: bool = True,
         wide: bool = True,

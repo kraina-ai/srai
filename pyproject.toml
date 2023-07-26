@@ -1,13 +1,13 @@
 [project]
 name = "srai"
-version = "0.1.4"
+version = "0.2.0"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
     { name = "SRAI Lab", email = "spatialrepresentationsforai@gmail.com" },
     { name = "Piotr Gramacki" },
     { name = "Kacper Leśniara" },
     { name = "Kamil Raczycki" },
-    { name = "Szymon Woźniak" }
+    { name = "Szymon Woźniak" },
 ]
 # pdm add <library>
 dependencies = [
@@ -26,6 +26,7 @@ dependencies = [
     "s2",
     "typeguard",
     "requests",
+    "h3ronpy",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -59,13 +60,24 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = ["osmium", "osmnx", "overpass", "pillow"]
+osm = [
+    "osmium",
+    "osmnx<=1.4.0",
+    "overpass",
+    "pillow",
+] # osmnx<=1.4.0 because of internal API change in 1.5.0
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
-plotting = ["folium", "mapclassify", "plotly", "kaleido<=0.2.1"]  # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
+plotting = [
+    "folium",
+    "mapclassify",
+    "matplotlib",
+    "plotly",
+    "kaleido<=0.2.1",
+] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
 torch = ["pytorch-lightning", "torch"]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
@@ -110,6 +122,9 @@ docs = [
 ]
 performance = ["scalene"]
 license = ["licensecheck"]
+
+[tool.pdm.scripts]
+post_install = "pre-commit install"
 
 [tool.black]
 line-length = 100
@@ -170,7 +185,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.1.4"
+current_version = "0.2.0"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 commit = true
@@ -178,7 +193,12 @@ tag = false
 push = false
 
 [tool.bumpver.file_patterns]
-"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"pyproject.toml" = [
+    '^current_version = "{version}"$',
+    '^version = "{version}"$',
+]
+"srai/__init__.py" = ['^__version__ = "{version}"$']
+"CITATION.cff" = ['^version: {version}$']
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]

@@ -126,10 +126,10 @@ class Hex2VecEmbedder(CountEmbedder):
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
 
-        if self.expected_output_features is None:  # type: ignore
+        if self.expected_output_features is None:  # type: ignore[has-type]
             self.expected_output_features = pd.Series(counts_df.columns)
 
-        num_features = len(self.expected_output_features)  # type: ignore
+        num_features = len(self.expected_output_features)  # type: ignore[arg-type]
         self._model = Hex2VecModel(
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
         )

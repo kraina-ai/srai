@@ -5,10 +5,7 @@ from unittest import TestCase
 
 import pytest
 
-from srai.loaders.osm_loaders.filters._typing import (
-    merge_grouped_osm_tags_type,
-    osm_tags_type,
-)
+from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter, merge_grouped_osm_tags_filter
 
 ut = TestCase()
 
@@ -93,9 +90,9 @@ ut = TestCase()
     ],
 )
 def test_merge_grouped_filters(
-    grouped_filter: Any, expected_result_filter: osm_tags_type, expectation: Any
+    grouped_filter: Any, expected_result_filter: OsmTagsFilter, expectation: Any
 ) -> None:
     """Test merging grouped tags filter into a base osm filter."""
     with expectation:
-        merged_filters = merge_grouped_osm_tags_type(grouped_filter)
+        merged_filters = merge_grouped_osm_tags_filter(grouped_filter)
         ut.assertDictEqual(expected_result_filter, merged_filters)

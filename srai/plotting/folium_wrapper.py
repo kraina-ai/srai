@@ -7,12 +7,6 @@ function.
 from itertools import cycle, islice
 from typing import List, Optional, Set, Union
 
-from srai.utils._optional import import_optional_dependencies
-
-import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
-
-# flake8: noqa E402
-
 import branca.colormap as cm
 import folium
 import geopandas as gpd
@@ -23,6 +17,9 @@ import plotly.express as px
 from srai.constants import REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
+from srai.utils._optional import import_optional_dependencies
+
+import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
 
 
 def plot_regions(

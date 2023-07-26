@@ -36,7 +36,7 @@ jobs:
           architecture: x64
           enable-pep582: true
       - name: Install dependencies
-        run: pdm install -d -G dev
+        run: pdm install -d -G dev --skip=post_install
       - name: Run bumpver
         run: |
           pdm run bumpver update --tag-commit --push --${{ inputs.bumpType }} -vvv

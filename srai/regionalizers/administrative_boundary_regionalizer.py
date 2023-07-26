@@ -150,10 +150,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
             import warnings
 
             warnings.warn(
-                (
-                    "Couldn't find any administrative boundaries with"
-                    f" `admin_level`={self.admin_level}."
-                ),
+                "Couldn't find any administrative boundaries with"
+                f" `admin_level`={self.admin_level}.",
                 RuntimeWarning,
                 stacklevel=2,
             )
