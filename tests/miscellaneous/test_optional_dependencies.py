@@ -20,6 +20,7 @@ def optional_packages() -> List[str]:
         "overpass",
         "pymap3d",
         "haversine",
+        "scipy",
         "spherical_geometry",
         "gtfs_kit",
         "folium",

@@ -18,7 +18,9 @@ class H3Neighbourhood(Neighbourhood[str]):
     This class allows to get the neighbours of an H3 region.
     """
 
-    def __init__(self, regions_gdf: Optional[gpd.GeoDataFrame] = None) -> None:
+    def __init__(
+        self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_center: bool = False
+    ) -> None:
         """
         Initializes the H3Neighbourhood.
 
@@ -33,31 +35,40 @@ class H3Neighbourhood(Neighbourhood[str]):
             regions_gdf (Optional[gpd.GeoDataFrame], optional): The regions that are being analyzed.
                 The H3Neighbourhood will only look for neighbours among these regions.
                 Defaults to None.
+            include_center (bool): Whether to include the region itself in the neighbours.
+            This is the default value used for all the methods of the class,
+            unless overridden in the function call.
         """
-        super().__init__()
+        super().__init__(include_center)
         self._available_indices: Optional[Set[str]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 
-    def get_neighbours(self, index: str) -> Set[str]:
+    def get_neighbours(self, index: str, include_center: Optional[bool] = None) -> Set[str]:
         """
         Get the direct neighbours of an H3 region using its index.
 
         Args:
             index (str): H3 index of the region.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours.
         """
-        return self.get_neighbours_up_to_distance(index, 1)
+        return self.get_neighbours_up_to_distance(index, 1, include_center)
 
-    def get_neighbours_up_to_distance(self, index: str, distance: int) -> Set[str]:
+    def get_neighbours_up_to_distance(
+        self, index: str, distance: int, include_center: Optional[bool] = None
+    ) -> Set[str]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
         Args:
             index (str): H3 index of the region.
             distance (int): Distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours up to the given distance.
@@ -66,16 +77,22 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_disk(index, distance)
-        neighbours.discard(index)
+        neighbours = self._handle_center(
+            index, distance, neighbours, at_distance=False, include_center_override=include_center
+        )
         return self._select_available(neighbours)
 
-    def get_neighbours_at_distance(self, index: str, distance: int) -> Set[str]:
+    def get_neighbours_at_distance(
+        self, index: str, distance: int, include_center: Optional[bool] = None
+    ) -> Set[str]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
         Args:
             index (str): H3 index of the region.
             distance (int): Distance to the neighbours.
+            include_center (Optional[bool]): Whether to include the region itself in the neighbours.
+            If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
             Set[str]: Indexes of the neighbours at the given distance.
@@ -84,7 +101,9 @@ class H3Neighbourhood(Neighbourhood[str]):
             return set()
 
         neighbours: Set[str] = h3.grid_ring(index, distance)
-        neighbours.discard(index)
+        neighbours = self._handle_center(
+            index, distance, neighbours, at_distance=True, include_center_override=include_center
+        )
         return self._select_available(neighbours)
 
     def _select_available(self, indices: Set[str]) -> Set[str]:
@@ -93,4 +112,4 @@ class H3Neighbourhood(Neighbourhood[str]):
         return indices.intersection(self._available_indices)
 
     def _distance_incorrect(self, distance: int) -> bool:
-        return distance <= 0
+        return distance < 0
