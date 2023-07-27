@@ -1,7 +1,6 @@
 """Utility H3 related functions."""
 
-from collections.abc import Iterable
-from typing import List, Literal, Tuple, Union, overload
+from typing import Iterable, List, Literal, Tuple, Union, overload
 
 import geopandas as gpd
 import h3
