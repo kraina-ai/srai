@@ -7,7 +7,7 @@ from pandas.testing import assert_frame_equal
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
-from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 
 if TYPE_CHECKING:
     from shapely.geometry import Polygon

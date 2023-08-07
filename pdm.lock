@@ -529,7 +529,7 @@ summary = "Hierarchical hexagonal geospatial indexing system"
 
 [[package]]
 name = "h3ronpy"
-version = "0.17.2"
+version = "0.17.4"
 summary = "Data science toolkit for the H3 geospatial grid"
 dependencies = [
     "Shapely>=1.7",
@@ -2360,7 +2360,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-content_hash = "sha256:fc6f33de0a32db546b016e11ef714b82da4b979d79ab0c31f90599fdd4f6a78f"
+content_hash = "sha256:bf7006156f874b71f59d10d18a20457833beb6e8dacd6ac8c8afb13123453a19"
 
 [metadata.files]
 "aiohttp 3.8.5" = [
@@ -3111,11 +3111,11 @@ content_hash = "sha256:fc6f33de0a32db546b016e11ef714b82da4b979d79ab0c31f90599fdd
     {url = "https://files.pythonhosted.org/packages/fd/30/ce35791eac7efce2ff6458a94f1a936c8631418e0a0d2a8bf30fdd3ee51b/h3-4.0.0b2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e952df0562581c2a564fed48d5910822963307756de93157ba5a5f8535b42044"},
     {url = "https://files.pythonhosted.org/packages/fe/aa/9a97f3f866f79232a07f30bc838bb48e46b12ccf9e40b052720db7fd70ee/h3-4.0.0b2-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:0489e8892472b9514825d480544bac854862ce5cf94c7f497936053565787954"},
 ]
-"h3ronpy 0.17.2" = [
-    {url = "https://files.pythonhosted.org/packages/0f/87/bd9b72f3e127732e9e84f6ab14971c64d537b08344f80163a7ed3e76c410/h3ronpy-0.17.2.tar.gz", hash = "sha256:b0b1adb5c5709a1a63c6d6bcc20706a29fa7263e4d0d9d255c0bc9a0f0b26b76"},
-    {url = "https://files.pythonhosted.org/packages/24/2d/8eeee30f3894940c0d47d8a3d85005fb9a8fc8e93fdbdbc0a702f23085e4/h3ronpy-0.17.2-cp38-abi3-macosx_10_7_x86_64.whl", hash = "sha256:43bc39f43f4d5342ace553296d23bee9d3ea3b10c0850ab9d01d2373a28bcdea"},
-    {url = "https://files.pythonhosted.org/packages/90/23/991ba93c9f8333bd2cf3d3333bc85336cfc189a20ff9c2c8e7464e492ae3/h3ronpy-0.17.2-cp38-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:14a5b5e14a7d54e06534fc94a11aa22792114dfab9a09e4a4c4ee19fe94e5c56"},
-    {url = "https://files.pythonhosted.org/packages/f2/f3/d107af14a392b0bae1fecab3c8105caa7ca817320bd9be0c528901b25106/h3ronpy-0.17.2-cp38-abi3-win_amd64.whl", hash = "sha256:622e325abe3b276ed264d855a3c9ff76ab5cac037a92961f4c4853e45973a9fa"},
+"h3ronpy 0.17.4" = [
+    {url = "https://files.pythonhosted.org/packages/84/f1/7f41961ad818f9b49fb16e68bc704218f03ad65beef48b96aefc4c0aea54/h3ronpy-0.17.4-cp38-abi3-win_amd64.whl", hash = "sha256:bcdd460dcf69cdfb03aca5e0d8599e1fe670d9b40e7a69133996d474cde5a742"},
+    {url = "https://files.pythonhosted.org/packages/ad/bf/6feca53dd0797fd83e117b8547c1cba41e46782f824d2b1b2b57dac84bd4/h3ronpy-0.17.4.tar.gz", hash = "sha256:1a341d82122366fbbaef29550449d7c67854ad351f15be02e8d600b8cb810fed"},
+    {url = "https://files.pythonhosted.org/packages/c0/e3/3362e56e1b6aeb6e21dd8d2a2c0f8ecb48a8132f39772c6f3478f95e5019/h3ronpy-0.17.4-cp38-abi3-macosx_10_7_x86_64.whl", hash = "sha256:82b761c2febd840779866d1370a8860fcf0457c3c6c94d296f8abe31e2028cf0"},
+    {url = "https://files.pythonhosted.org/packages/cb/bc/1ebeee02871998301835da8ad1d26e15bf514e89e70179118ee5ac5036ed/h3ronpy-0.17.4-cp38-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:dbc6f272b48d0824f742be89eae59a13e3e6f3932db40f39f8c268cea6d2787a"},
 ]
 "haversine 2.8.0" = [
     {url = "https://files.pythonhosted.org/packages/b9/6b/0a774af6a2eea772aa99e5fbc7af7711eba02ff0dee3e71838c1b5926ef5/haversine-2.8.0.tar.gz", hash = "sha256:cca39afd2ae5f1e6ed9231b332395bb8afb2e0a64edf70c238c176492e60c150"},

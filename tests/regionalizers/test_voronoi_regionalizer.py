@@ -9,6 +9,7 @@ from pymap3d import Ellipsoid
 from shapely.geometry import Point, Polygon
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.geometry import merge_disjointed_gdf_geometries
 from srai.regionalizers import VoronoiRegionalizer
 from srai.regionalizers._spherical_voronoi import (
     _map_from_geocentric,
@@ -16,7 +17,6 @@ from srai.regionalizers._spherical_voronoi import (
     _parse_num_of_multiprocessing_workers,
     generate_voronoi_regions,
 )
-from srai.utils import merge_disjointed_gdf_geometries
 
 
 def get_random_points(number_of_points: int) -> List[Point]:

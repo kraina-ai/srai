@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `include_center` parameter to Neighbourhoods [#288](https://github.com/srai-lab/srai/issues/288)
 
-- Added `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
+- `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
+- `srai.h3` module with functions for translating list of h3 cells into shapely polygons and calculating local ij coordinates.
 
 ### Changed
 
@@ -18,6 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BREAKING! Renamed NetworkType to OSMNetworkType and made it importable directly from `srai.loaders` [#227](https://github.com/srai-lab/srai/issues/227)
 - BREAKING! Renamed osm_filter_type and grouped_osm_filter_type into OsmTagsFilter and GroupedOsmTagsFilter [#261](https://github.com/srai-lab/srai/issues/261)
 - Removed osmnx dependency version cap [#303](https://github.com/srai-lab/srai/issues/303)
+- BREAKING! Removed `utils` module [#128](https://github.com/srai-lab/srai/issues/128)
+  - `srai.utils._optional` moved to `srai._optional`
+  - `srai.utils._pytorch_stubs` moved to `srai.embedders._pytorch_stubs`
+  - `srai.utils.download` moved to `srai.loaders.download` (and can be imported with `from srai.loaders import download_file`)
+  - `srai.utils.geocode` moved to `srai.regionalizers.geocode` (and can be imported with `from srai.regionalizers import geocode_to_region_gdf`)
+  - `srai.utils.geometry` and `srai.utils.merge` moved to `srai.geometry`
+  - `srai.utils.typing` moved to `srai._typing`
 
 ### Deprecated
 

@@ -97,8 +97,8 @@ Example with `OSMOnlineLoader`:
 
 ```python
 from srai.loaders import OSMOnlineLoader
-from srai.utils import geocode_to_region_gdf
 from srai.plotting import plot_regions
+from srai.regionalizers import geocode_to_region_gdf
 
 query = {"leisure": "park"}
 area = geocode_to_region_gdf("Wrocław, Poland")
@@ -119,8 +119,8 @@ Road network downloading is a special case of OSM data downloading. To download 
 
 ```python
 from srai.loaders import OSMNetworkType, OSMWayLoader
-from srai.utils import geocode_to_region_gdf
 from srai.plotting import plot_regions
+from srai.regionalizers import geocode_to_region_gdf
 
 area = geocode_to_region_gdf("Utrecht, Netherlands")
 loader = OSMWayLoader(OSMNetworkType.BIKE)
@@ -142,9 +142,9 @@ To extract features from GTFS use `GTFSLoader`. It will extract trip count and a
 ```python
 from pathlib import Path
 
-from srai.loaders import GTFSLoader
-from srai.utils import geocode_to_region_gdf, download_file
+from srai.loaders import GTFSLoader, download_file
 from srai.plotting import plot_regions
+from srai.regionalizers import geocode_to_region_gdf
 
 area = geocode_to_region_gdf("Vienna, Austria")
 gtfs_file = Path("vienna_gtfs.zip")
@@ -173,8 +173,7 @@ Regionalization is a process of dividing a given area into smaller regions. This
 Example:
 
 ```python
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 
 area = geocode_to_region_gdf("Berlin, Germany")
 regionalizer = H3Regionalizer(resolution=7)
@@ -206,8 +205,7 @@ from srai.embedders import CountEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMOnlineLoader
 from srai.plotting import plot_regions, plot_numeric_data
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 
 loader = OSMOnlineLoader()
 regionalizer = H3Regionalizer(resolution=9)
@@ -238,8 +236,7 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 from srai.plotting import plot_regions, plot_numeric_data
 
 loader = OSMPbfLoader()
