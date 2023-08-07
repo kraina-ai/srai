@@ -9,9 +9,9 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.8", "3.9", "3.10"]
-        # include:
-        #   - os: macos-latest
-        #     python-version: "3.10"
+        include:
+          - os: macos-latest
+            python-version: "3.10"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -30,7 +30,15 @@ jobs:
           cache: true
           cache-dependency-path: "**/pdm.lock"
       - name: Install dependencies
-        run: pdm install -d -G test --skip=post_install
+        # run: pdm install -d -G test --skip=post_install
+        run: pdm install -dG:all --skip=post_install
+      - uses: jannekem/run-python-script-action@v1
+        name: Run h3ronpy test
+        with:
+          script: |
+            from srai.h3 import shapely_geometry_to_h3
+            from shapely.geometry import Point
+            shapely_geometry_to_h3(geometry=Point(0,0), h3_resolution=9)
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
