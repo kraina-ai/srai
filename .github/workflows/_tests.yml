@@ -30,7 +30,8 @@ jobs:
           cache: true
           cache-dependency-path: "**/pdm.lock"
       - name: Install dependencies
-        run: pdm install -d -G test --skip=post_install
+        run: pdm install -dG:all --skip=post_install
+        # run: pdm install -d -G test --skip=post_install
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
