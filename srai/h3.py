@@ -57,6 +57,7 @@ def shapely_geometry_to_h3(
     return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
 
 
+# TODO: write tests (#322)
 def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd.GeoSeries:
     """
     Convert H3 index to GeoPandas GeoSeries.
@@ -87,6 +88,7 @@ def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> List[Polygon]
     ...
 
 
+# TODO: write tests (#322)
 def h3_to_shapely_geometry(
     h3_index: Union[int, str, Iterable[Union[int, str]]]
 ) -> Union[Polygon, List[Polygon]]:
