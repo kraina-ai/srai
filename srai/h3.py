@@ -8,7 +8,7 @@ import h3
 import numpy as np
 import numpy.typing as npt
 from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
-from shapely.geometry import Polygon
+from shapely.geometry import Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
@@ -67,12 +67,33 @@ def _polygon_to_h3_index_raw(
     h3_resolution: int,
     buffer: bool = True,
 ) -> List[str]:
-    def _polygon_shapely_to_h3(polygon: Polygon) -> h3.Polygon:
-        exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
+    def _polygon_shapely_to_h3(
+        geometry: Union[Point, Polygon], h3_resolution: int, buffer: bool
+    ) -> List[str]:
+        if isinstance(geometry, Point):
+            return [h3.latlng_to_cell(geometry.y, geometry.x, h3_resolution)]
+
+        buffer_distance_meters = 2 * h3.average_hexagon_edge_length(h3_resolution, unit="m")
+
+        buffered_geometry = (
+            buffer_geometry(geometry, buffer_distance_meters) if buffer else geometry
+        )
+
+        exterior = [coord[::-1] for coord in list(buffered_geometry.exterior.coords)]
         interiors = [
-            [coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors
+            [coord[::-1] for coord in list(interior.coords)]
+            for interior in buffered_geometry.interiors
         ]
-        return h3.Polygon(exterior, *interiors)
+        h3_cells: List[str] = h3.polygon_to_cells(h3.Polygon(exterior, *interiors), h3_resolution)
+
+        if buffer:
+            h3_cells = [
+                h3_cell
+                for h3_cell in h3_cells
+                if _h3_index_to_polygon_raw(h3_cell).intersects(geometry)
+            ]
+
+        return h3_cells
 
     from functional import seq
 
@@ -87,16 +108,11 @@ def _polygon_to_h3_index_raw(
     else:
         return _polygon_to_h3_index_raw([geometry], h3_resolution, buffer)
 
-    if buffer:
-        buffer_distance_meters = 2 * h3.average_hexagon_edge_length(h3_resolution, unit="m")
-        geoseries = geoseries.apply(
-            lambda polygon: buffer_geometry(polygon, buffer_distance_meters)
-        )
+    geoseries = geoseries.explode(ignore_index=True, index_parts=True)
 
     h3_indexes: List[str] = (
         seq(geoseries)
-        .map(_polygon_shapely_to_h3)
-        .flat_map(lambda polygon: h3.polygon_to_cells(polygon, h3_resolution))
+        .flat_map(lambda polygon: _polygon_shapely_to_h3(polygon, h3_resolution, buffer))
         .distinct()
         .to_list()
     )
