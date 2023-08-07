@@ -1,5 +1,6 @@
 """Utility H3 related functions."""
 
+from sys import platform
 from typing import Iterable, List, Literal, Tuple, Union, overload
 
 import geopandas as gpd
@@ -11,6 +12,7 @@ from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.geometry import buffer_geometry
 
 
 def shapely_geometry_to_h3(
@@ -40,6 +42,9 @@ def shapely_geometry_to_h3(
     if not (0 <= h3_resolution <= 15):
         raise ValueError(f"Resolution {h3_resolution} is not between 0 and 15.")
 
+    if _is_macos():
+        return _polygon_to_h3_index_raw(geometry, h3_resolution, buffer)
+
     wkb = []
     if isinstance(geometry, gpd.GeoSeries):
         wkb = geometry.to_wkb()
@@ -57,6 +62,48 @@ def shapely_geometry_to_h3(
     return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
 
 
+def _polygon_to_h3_index_raw(
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+    h3_resolution: int,
+    buffer: bool = True,
+) -> List[str]:
+    def _polygon_shapely_to_h3(polygon: Polygon) -> h3.Polygon:
+        exterior = [coord[::-1] for coord in list(polygon.exterior.coords)]
+        interiors = [
+            [coord[::-1] for coord in list(interior.coords)] for interior in polygon.interiors
+        ]
+        return h3.Polygon(exterior, *interiors)
+
+    from functional import seq
+
+    geoseries: gpd.GeoSeries
+
+    if isinstance(geometry, gpd.GeoSeries):
+        geoseries = geometry
+    elif isinstance(geometry, gpd.GeoDataFrame):
+        geoseries = geometry[GEOMETRY_COLUMN]
+    elif isinstance(geometry, Iterable):
+        geoseries = gpd.GeoSeries(geometry, crs=WGS84_CRS)
+    else:
+        return _polygon_to_h3_index_raw([geometry], h3_resolution, buffer)
+
+    if buffer:
+        buffer_distance_meters = 2 * h3.average_hexagon_edge_length(h3_resolution, unit="m")
+        geoseries = geoseries.apply(
+            lambda polygon: buffer_geometry(polygon, buffer_distance_meters)
+        )
+
+    h3_indexes: List[str] = (
+        seq(geoseries)
+        .map(_polygon_shapely_to_h3)
+        .flat_map(lambda polygon: h3.polygon_to_cells(polygon, h3_resolution))
+        .distinct()
+        .to_list()
+    )
+
+    return h3_indexes
+
+
 # TODO: write tests (#322)
 def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd.GeoSeries:
     """
@@ -72,10 +119,26 @@ def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd
     if isinstance(h3_index, (str, int)):
         return h3_to_geoseries([h3_index])
     else:
+        if _is_macos():
+            return gpd.GeoSeries(
+                [_h3_index_to_polygon_raw(h3_cell) for h3_cell in h3_index], crs=WGS84_CRS
+            )
+
         h3_int_indexes = (
             h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_index
         )
         return gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_int_indexes), crs=WGS84_CRS)
+
+
+def _h3_index_to_polygon_raw(h3_index: Union[int, str]) -> Polygon:
+    if isinstance(h3_index, int):
+        h3_index = h3.int_to_str(h3_index)
+    h3_poly = h3.cells_to_polygons([h3_index])[0]
+
+    return Polygon(
+        shell=[coord[::-1] for coord in h3_poly.outer],
+        holes=[[coord[::-1] for coord in hole] for hole in h3_poly.holes],
+    )
 
 
 @overload
@@ -166,3 +229,8 @@ def get_local_ij_index(
         local_ijs = [(coords[0], coords[1]) for coords in local_ijs]
 
     return local_ijs
+
+
+def _is_macos() -> bool:
+    """Return flag if code is run on OS X."""
+    return platform == "darwin"
