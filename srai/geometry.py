@@ -8,6 +8,15 @@ from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
 
+__all__ = [
+    "flatten_geometry_series",
+    "flatten_geometry",
+    "remove_interiors",
+    "buffer_geometry",
+    "merge_disjointed_polygons",
+    "merge_disjointed_gdf_geometries",
+]
+
 
 def flatten_geometry_series(geometry_series: gpd.GeoSeries) -> List[BaseGeometry]:
     """Flatten all geometries from a series into a list of BaseGeometries."""
