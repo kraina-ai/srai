@@ -81,3 +81,20 @@ class GTFS2VecModel(Model):
         loss = F.mse_loss(x_hat, x)
         self.log("train_loss", loss)
         return loss
+
+    def validation_step(self, batch: "torch.Tensor", batch_idx: Any) -> "torch.Tensor":
+        """
+        Validation step.
+
+        Args:
+            batch (torch.Tensor): Batch.
+            batch_idx (Any): Batch index.
+        """
+        from torch.nn import functional as F
+
+        x = batch
+        z = self.encoder(x)
+        x_hat = self.decoder(z)
+        loss = F.mse_loss(x_hat, x)
+        self.log("val_loss", loss)
+        return loss

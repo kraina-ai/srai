@@ -11,7 +11,7 @@ References:
 import json
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import geopandas as gpd
 import numpy as np
@@ -84,6 +84,9 @@ class GTFS2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
     ) -> None:
         """
         Fit model to a given data.
@@ -92,23 +95,29 @@ class GTFS2VecEmbedder(Embedder):
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            val_regions_gdf: (Optional[gpd.GeoDataFrame], optional): Validation region indexes.
+            val_features_gdf: (Optional[gpd.GeoDataFrame], optional): Validation feature indexes.
+            val_joint_gdf: (Optional[gpd.GeoDataFrame], optional): Validation joiner result.
 
         Raises:
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
-
+        features, val_features = self._prepare_train_val_features(
+            regions_gdf, features_gdf, joint_gdf, val_regions_gdf, val_features_gdf, val_joint_gdf
+        )
         if not self._skip_autoencoder:
-            self._model = self._train_model_unsupervised(features)
+            self._model = self._train_model_unsupervised(features, val_features)
 
     def fit_transform(
         self,
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
     ) -> pd.DataFrame:
         """
         Fit model and transform a given data.
@@ -117,6 +126,9 @@ class GTFS2VecEmbedder(Embedder):
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            val_regions_gdf: (Optional[gpd.GeoDataFrame], optional): Validation region indexes.
+            val_features_gdf: (Optional[gpd.GeoDataFrame], optional): Validation feature indexes.
+            val_joint_gdf: (Optional[gpd.GeoDataFrame], optional): Validation joiner result.
 
         Returns:
             pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
@@ -126,13 +138,13 @@ class GTFS2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
-
+        features, val_features = self._prepare_train_val_features(
+            regions_gdf, features_gdf, joint_gdf, val_regions_gdf, val_features_gdf, val_joint_gdf
+        )
         if self._skip_autoencoder:
             return features
         else:
-            self._model = self._train_model_unsupervised(features)
+            self._model = self._train_model_unsupervised(features, val_features)
             return self._embed(features)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
@@ -140,6 +152,27 @@ class GTFS2VecEmbedder(Embedder):
         if self._model is None:
             raise ModelNotFitException("Model not fit! Run fit() or fit_transform() first.")
         return self._model
+
+    def _prepare_train_val_features(
+        self,
+        regions_gdf: gpd.GeoDataFrame,
+        features_gdf: gpd.GeoDataFrame,
+        joint_gdf: gpd.GeoDataFrame,
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
+        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+        val_features = None
+        if (
+            val_regions_gdf is not None
+            and val_features_gdf is not None
+            and val_joint_gdf is not None
+        ):
+            self._validate_indexes(val_regions_gdf, val_features_gdf, val_joint_gdf)
+            val_features = self._prepare_features(val_regions_gdf, val_features_gdf, val_joint_gdf)
+        return features, val_features
 
     def _prepare_features(
         self,
@@ -227,12 +260,15 @@ class GTFS2VecEmbedder(Embedder):
 
         return features
 
-    def _train_model_unsupervised(self, features: pd.DataFrame) -> GTFS2VecModel:
+    def _train_model_unsupervised(
+        self, features: pd.DataFrame, val_features: Optional[pd.DataFrame]
+    ) -> GTFS2VecModel:
         """
         Train model unsupervised.
 
         Args:
             features (pd.DataFrame): Features.
+            val_features (Optional[pd.DataFrame]): Validation features.
         """
         import pytorch_lightning as pl
         from torch.utils.data import DataLoader
@@ -242,11 +278,17 @@ class GTFS2VecEmbedder(Embedder):
             n_hidden=self._hidden_size,
             n_embed=self._embedding_size,
         )
-        X = features.to_numpy().astype(np.float32)
-        x_dataloader = DataLoader(X, batch_size=24, shuffle=True, num_workers=4)
+        train_x = features.to_numpy().astype(np.float32)
+        train_x_dataloader = DataLoader(train_x, batch_size=24, shuffle=True, num_workers=4)
+
+        val_x_dataloader = None
+        if val_features is not None:
+            val_x = val_features.to_numpy().astype(np.float32)
+            val_x_dataloader = DataLoader(val_x, batch_size=24, shuffle=True, num_workers=4)
+
         trainer = pl.Trainer(max_epochs=10)
 
-        trainer.fit(model, x_dataloader)
+        trainer.fit(model, train_x_dataloader, val_x_dataloader)
 
         return model
 
