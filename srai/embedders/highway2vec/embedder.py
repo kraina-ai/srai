@@ -81,6 +81,9 @@ class Highway2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
         dataloader_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -91,6 +94,9 @@ class Highway2VecEmbedder(Embedder):
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            val_regions_gdf: (Optional[gpd.GeoDataFrame], optional): Validation region indexes.
+            val_features_gdf: (Optional[gpd.GeoDataFrame], optional): Validation feature indexes.
+            val_joint_gdf: (Optional[gpd.GeoDataFrame], optional): Validation joiner result.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
             dataloader_kwargs (Optional[Dict[str, Any]], optional): Dataloader kwargs.
                 Defaults to None.
@@ -104,26 +110,35 @@ class Highway2VecEmbedder(Embedder):
         import torch
         from torch.utils.data import DataLoader
 
+        dataloader_kwargs = dataloader_kwargs or {}
+        if "batch_size" not in dataloader_kwargs:
+            dataloader_kwargs["batch_size"] = 128
+
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         features_df = self._remove_geometry_if_present(features_gdf)
+        dataloader = DataLoader(torch.Tensor(features_df.values), **dataloader_kwargs)
 
         num_features = len(features_df.columns)
         self._model = Highway2VecModel(
             n_features=num_features, n_hidden=self._hidden_size, n_embed=self._embedding_size
         )
 
-        dataloader_kwargs = dataloader_kwargs or {}
-        if "batch_size" not in dataloader_kwargs:
-            dataloader_kwargs["batch_size"] = 128
-
-        dataloader = DataLoader(torch.Tensor(features_df.values), **dataloader_kwargs)
+        val_dataloader = None
+        if (
+            val_regions_gdf is not None
+            and val_features_gdf is not None
+            and val_joint_gdf is not None
+        ):
+            self._validate_indexes(val_regions_gdf, val_features_gdf, val_joint_gdf)
+            val_features_df = self._remove_geometry_if_present(val_features_gdf)
+            val_dataloader = DataLoader(torch.Tensor(val_features_df.values), **dataloader_kwargs)
 
         trainer_kwargs = trainer_kwargs or {}
         if "max_epochs" not in trainer_kwargs:
             trainer_kwargs["max_epochs"] = 10
 
         trainer = pl.Trainer(**trainer_kwargs)
-        trainer.fit(self._model, dataloader)
+        trainer.fit(self._model, dataloader, val_dataloader)
         self._is_fitted = True
 
     def fit_transform(
@@ -131,6 +146,9 @@ class Highway2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
         trainer_kwargs: Optional[Dict[str, Any]] = None,
         dataloader_kwargs: Optional[Dict[str, Any]] = None,
     ) -> pd.DataFrame:
@@ -141,6 +159,9 @@ class Highway2VecEmbedder(Embedder):
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            val_regions_gdf: (Optional[gpd.GeoDataFrame], optional): Validation region indexes.
+            val_features_gdf: (Optional[gpd.GeoDataFrame], optional): Validation feature indexes.
+            val_joint_gdf: (Optional[gpd.GeoDataFrame], optional): Validation joiner result.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
             dataloader_kwargs (Optional[Dict[str, Any]], optional): Dataloader kwargs.
                 Defaults to None.
@@ -153,7 +174,16 @@ class Highway2VecEmbedder(Embedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        self.fit(regions_gdf, features_gdf, joint_gdf, trainer_kwargs, dataloader_kwargs)
+        self.fit(
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            val_regions_gdf,
+            val_features_gdf,
+            val_joint_gdf,
+            trainer_kwargs,
+            dataloader_kwargs,
+        )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
 
     def _check_is_fitted(self) -> None:

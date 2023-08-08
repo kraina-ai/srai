@@ -72,6 +72,16 @@ class Highway2VecModel(Model):
         """
         return self._common_step(batch, batch_idx, "train")
 
+    def validation_step(self, batch: "torch.Tensor", batch_idx: int) -> "torch.Tensor":
+        """
+        Validation step.
+
+        Args:
+            batch (torch.Tensor): Batch.
+            batch_idx (int): Batch index.
+        """
+        return self._common_step(batch, batch_idx, "val")
+
     def _common_step(self, batch: "torch.Tensor", batch_idx: int, stage: str) -> "torch.Tensor":
         """
         Perform common step.
@@ -79,7 +89,7 @@ class Highway2VecModel(Model):
         Args:
             batch (torch.Tensor): Batch.
             batch_idx (int): Batch index.
-            stage (str): Name of the stage - e.g. train, valid, test.
+            stage (str): Name of the stage - e.g. train, val, test.
         """
         import torch.nn.functional as F
 
