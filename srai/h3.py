@@ -14,6 +14,13 @@ from shapely.geometry.base import BaseGeometry
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.geometry import buffer_geometry
 
+__all__ = [
+    "shapely_geometry_to_h3",
+    "h3_to_geoseries",
+    "h3_to_shapely_geometry",
+    "get_local_ij_index",
+]
+
 
 def shapely_geometry_to_h3(
     geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
