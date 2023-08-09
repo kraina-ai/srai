@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.3.1] - 2023-08-09
+
+### Fixed
+
+- Repaired bug with `VoronoiRegionalizer` and wrong polygon orientation.
+
 ## [0.3.0] - 2023-08-08
 
 ### Added
@@ -121,7 +127,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.3.0...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.3.1...HEAD
+[0.3.1]: https://github.com/srai-lab/srai/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/srai-lab/srai/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/srai-lab/srai/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/srai-lab/srai/compare/0.0.1...0.1.1
