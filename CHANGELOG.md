@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Repaired bug with `VoronoiRegionalizer` and wrong polygon orientation.
+
 ### Security
 
 ## [0.3.0] - 2023-08-08

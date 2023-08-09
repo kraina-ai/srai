@@ -315,15 +315,11 @@ def _create_polygon(
         steps = ceil(haversine_distance / max_step)
         t_vals = np.linspace(0, 1, steps)
 
-        reverse_slerp = end_lat > start_lat or (start_lat == end_lat and end_lon > start_lon)
-        if reverse_slerp:
-            start, end = end, start
-
         edge_points = _interpolate_edge(
             start_point=start, end_point=end, step_ticks=t_vals, ell=ell, bbox_bounds=bbox_bounds
         )
 
-        polygon_points.extend(edge_points if not reverse_slerp else reversed(edge_points))
+        polygon_points.extend(edge_points)
 
     polygon = Polygon(polygon_points)
     polygon = make_valid(polygon)
