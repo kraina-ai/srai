@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import pytest
 
-from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter, merge_grouped_osm_tags_filter
+from srai.loaders.osm_loaders.filters import OsmTagsFilter, merge_grouped_osm_tags_filter
 
 ut = TestCase()
 

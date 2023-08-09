@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.neighbourhoods import Neighbourhood
-from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -23,7 +23,7 @@ try:  # pragma: no cover
     from torch.utils.data import Dataset
 
 except ImportError:
-    from srai.utils._pytorch_stubs import Dataset
+    from srai.embedders._pytorch_stubs import Dataset
 
 
 T = TypeVar("T")

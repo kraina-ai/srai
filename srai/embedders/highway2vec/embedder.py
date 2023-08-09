@@ -13,9 +13,9 @@ from typing import Any, Dict, Optional, Type, Union
 import geopandas as gpd
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.embedders import Embedder, ModelT
 from srai.exceptions import ModelNotFitException
-from srai.utils._optional import import_optional_dependencies
 
 from .model import Highway2VecModel
 

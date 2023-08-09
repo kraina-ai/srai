@@ -16,7 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 
 if TYPE_CHECKING:
     import os

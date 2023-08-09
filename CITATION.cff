@@ -14,9 +14,9 @@ authors:
   given-names: "Szymon"
   orcid: "https://orcid.org/0000-0002-2047-1649"
 title: "SRAI: Spatial Representations for Artificial Intelligence"
-version: 0.2.0
+version: 0.3.0
 date-released: 2022-11-23
-url: "https://srai-lab.github.io/srai/0.0.1"
+url: "https://srai-lab.github.io/srai"
 repository-code: "https://github.com/srai-lab/srai"
 licence: Apache-2.0
 keywords:

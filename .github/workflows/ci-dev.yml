@@ -53,8 +53,6 @@ jobs:
       MKDOCS_DEV: true
     steps:
       - uses: actions/checkout@v3
-      - name: Fetch gh-pages branch
-        run: git fetch origin gh-pages --depth=1
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -101,5 +99,7 @@ jobs:
                 data = f.read().replace('{current_year}', time.strftime("%Y"))
             with open(file_name, "w") as f:
                 f.write(data)
+      - name: Fetch gh-pages branch
+        run: git fetch origin gh-pages --depth=1
       - name: Publish dev documentation
         run: mike deploy --push dev

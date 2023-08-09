@@ -8,8 +8,8 @@ References:
 """
 from typing import TYPE_CHECKING
 
+from srai._optional import import_optional_dependencies
 from srai.embedders import Model
-from srai.utils._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch

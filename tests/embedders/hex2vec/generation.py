@@ -13,7 +13,7 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import geocode_to_region_gdf
 from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
 
 

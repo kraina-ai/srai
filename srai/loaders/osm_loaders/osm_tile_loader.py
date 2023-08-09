@@ -12,8 +12,8 @@ import geopandas as gpd
 import pandas as pd
 import requests
 
+from srai._optional import import_optional_dependencies
 from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
-from srai.utils._optional import import_optional_dependencies
 
 from .osm_tile_data_collector import (
     DataCollector,

@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
-from srai.utils._optional import import_optional_dependencies
 
 import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
 

@@ -14,12 +14,12 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
 from srai.exceptions import ModelNotFitException
 from srai.neighbourhoods import Neighbourhood
-from srai.utils._optional import import_optional_dependencies
 
 T = TypeVar("T")
 
