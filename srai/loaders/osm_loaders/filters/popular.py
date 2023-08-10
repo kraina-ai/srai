@@ -44,7 +44,7 @@ def get_popular_tags(
     """
     taginfo_api_response = requests.get(
         _TAGINFO_API_TAGS,
-        headers={"User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)"},
+        headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
     )
     taginfo_api_response.raise_for_status()
     taginfo_data = taginfo_api_response.json()["data"]

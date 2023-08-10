@@ -141,7 +141,7 @@ class PbfFileDownloader:
                 "Cookie": f"csrftoken={csrf_token}",
                 "X-CSRFToken": csrf_token,
                 "Content-Type": "application/json; charset=utf-8",
-                "User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)",
+                "User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)",
             }
             request_payload = {
                 "region": {"type": "geojson", "data": geometry_geojson},

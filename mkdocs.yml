@@ -1,8 +1,8 @@
 site_name: srai
 site_url: null
 
-repo_url: https://github.com/srai-lab/srai
-repo_name: srai-lab/srai
+repo_url: https://github.com/kraina-ai/srai
+repo_name: kraina-ai/srai
 
 edit_uri: "edit/main/docs/"
 
@@ -67,7 +67,7 @@ extra:
 
 
             Thanks for your feedback! Help us improve this page by
-            using our <a href="https://github.com/srai-lab/srai/issues/new/?title=[Feedback]+{title}+-+{url}" target="_blank" rel="noopener">feedback form</a>.
+            using our <a href="https://github.com/kraina-ai/srai/issues/new/?title=[Feedback]+{title}+-+{url}" target="_blank" rel="noopener">feedback form</a>.
   consent:
     title: Cookie consent
     description: >-

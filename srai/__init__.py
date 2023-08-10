@@ -6,7 +6,7 @@ API. It aims to provide simple and efficient solutions to geospatial problems th
 everybody and reusable in various contexts where geospatial data can be used.
 
 See
-https://srai-lab.github.io/srai/
+https://kraina-ai.github.io/srai/
 for complete documentation.
 """
 

@@ -1,20 +1,20 @@
 <p align="center">
-  <img width="300" src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/logos/srai-logo-transparent.png">
+  <img width="300" src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/logos/srai-logo-transparent.png">
 </p>
 <p align="center">
-    <img alt="GitHub" src="https://img.shields.io/github/license/srai-lab/srai?logo=apache&logoColor=%23fff">
-    <img src="https://img.shields.io/github/checks-status/srai-lab/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
-    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-dev.yml" target="_blank">
-        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff">
+    <img alt="GitHub" src="https://img.shields.io/github/license/kraina-ai/srai?logo=apache&logoColor=%23fff">
+    <img src="https://img.shields.io/github/checks-status/kraina-ai/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-dev.yml" target="_blank">
+        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff">
     </a>
-    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-prod.yml" target="_blank">
-        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff">
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-prod.yml" target="_blank">
+        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff">
     </a>
-    <a href="https://results.pre-commit.ci/latest/github/srai-lab/srai/main" target="_blank">
-        <img src="https://results.pre-commit.ci/badge/github/srai-lab/srai/main.svg" alt="pre-commit.ci status">
+    <a href="https://results.pre-commit.ci/latest/github/kraina-ai/srai/main" target="_blank">
+        <img src="https://results.pre-commit.ci/badge/github/kraina-ai/srai/main.svg" alt="pre-commit.ci status">
     </a>
-    <a href="https://www.codefactor.io/repository/github/srai-lab/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/srai-lab/srai?logo=codefactor&logoColor=%23fff"></a>
-    <a href="https://app.codecov.io/gh/srai-lab/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/srai-lab/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
+    <a href="https://www.codefactor.io/repository/github/kraina-ai/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/kraina-ai/srai?logo=codefactor&logoColor=%23fff"></a>
+    <a href="https://app.codecov.io/gh/kraina-ai/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/kraina-ai/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
     <a href="https://pypi.org/project/srai" target="_blank">
         <img src="https://img.shields.io/pypi/v/srai?color=%2334D058&label=pypi%20package&logo=pypi&logoColor=%23fff" alt="Package version">
     </a>
@@ -110,7 +110,7 @@ parks_gdf.explore(m=folium_map, color="forestgreen")
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading road network
@@ -132,7 +132,7 @@ edges[["geometry"]].explore(m=folium_map, color="seagreen")
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading GTFS data
@@ -158,7 +158,7 @@ features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Regionalization
@@ -185,7 +185,7 @@ plot_regions(regions_gdf=regions, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/regionalization.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/regionalization.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Embedding
@@ -225,7 +225,7 @@ plot_numeric_data(regions, embeddings, "amenity_bicycle_parking", map=folium_map
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 `CountEmbedder` is a simple method, which does not require fitting. Other methods, such as `Hex2VecEmbedder` or `GTFS2VecEmbedder` require fitting and can be used in a similar way to `scikit-learn` estimators:
@@ -265,12 +265,12 @@ plot_numeric_data(regions, embeddings, 0, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Plotting, utilities and more
 
-We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://srai-lab.github.io/srai).
+We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://kraina-ai.github.io/srai).
 
 ## Contributing
 
@@ -295,6 +295,6 @@ TBD
 
 ## License
 
-This library is licensed under the [Apache License 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
+This library is licensed under the [Apache License 2.0](https://github.com/kraina-ai/srai/blob/main/LICENSE.md).
 
 The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).
