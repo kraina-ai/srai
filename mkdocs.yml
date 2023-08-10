@@ -94,7 +94,7 @@ extra_css:
   - assets/css/jupyter.css
 
 copyright: >
-  Copyright &copy; 2022 - {current_year} SRAI Lab –
+  Copyright &copy; 2022 - {current_year} Kraina AI –
   <a href="#__consent">Change cookie settings</a>
 
 plugins:
