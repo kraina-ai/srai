@@ -48,6 +48,8 @@ jobs:
     name: Publish dev library 📦 documentation 📄 to Github Pages 🌐
     needs: [run-tests]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
       MKDOCS_DEV: true
