@@ -45,16 +45,15 @@ jobs:
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
-#       Restore after #338
-#       - name: Upload coverage to Codecov
-#         uses: Wandalen/wretry.action@master
-#         with:
-#           action: codecov/codecov-action@v3
-#           with: |
-#             env_vars: OS,PYTHON
-#             fail_ci_if_error: true
-#             files: ./coverage.python${{ matrix.python-version }}.xml,
-#             flags: ${{ matrix.os }}-python${{ matrix.python-version }}
-#             verbose: true
-#           attempt_limit: 100
-#           attempt_delay: 10000
+      - name: Upload coverage to Codecov
+        uses: Wandalen/wretry.action@master
+        with:
+          action: codecov/codecov-action@v3
+          with: |
+            env_vars: OS,PYTHON
+            fail_ci_if_error: true
+            files: ./coverage.python${{ matrix.python-version }}.xml,
+            flags: ${{ matrix.os }}-python${{ matrix.python-version }}
+            verbose: true
+          attempt_limit: 100
+          attempt_delay: 10000
