@@ -48,10 +48,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://srai-lab.github.io/srai"
-Repository = "https://github.com/srai-lab/srai"
-Documentation = "https://srai-lab.github.io/srai"
-Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
+Homepage = "https://kraina-ai.github.io/srai"
+Repository = "https://github.com/kraina-ai/srai"
+Documentation = "https://kraina-ai.github.io/srai"
+Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # Make sure to edit test_optional_dependencies.py:

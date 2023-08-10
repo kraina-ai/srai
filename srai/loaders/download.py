@@ -19,7 +19,7 @@ def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
     Path(fname).parent.mkdir(parents=True, exist_ok=True)
     resp = requests.get(
         url,
-        headers={"User-Agent": "SRAI Python package (https://github.com/srai-lab/srai)"},
+        headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
         stream=True,
     )
     total = int(resp.headers.get("content-length", 0))

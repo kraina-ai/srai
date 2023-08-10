@@ -16,8 +16,8 @@ authors:
 title: "SRAI: Spatial Representations for Artificial Intelligence"
 version: 0.3.1
 date-released: 2022-11-23
-url: "https://srai-lab.github.io/srai"
-repository-code: "https://github.com/srai-lab/srai"
+url: "https://kraina-ai.github.io/srai"
+repository-code: "https://github.com/kraina-ai/srai"
 licence: Apache-2.0
 keywords:
 - python
