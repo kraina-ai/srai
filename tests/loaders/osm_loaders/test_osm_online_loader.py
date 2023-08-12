@@ -2,7 +2,9 @@
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
+import osmnx as ox
 import pytest
+from packaging import version
 from pandas.testing import assert_frame_equal
 
 from srai.constants import WGS84_CRS
@@ -39,8 +41,10 @@ def mock_osmnx(
             return gpd.GeoDataFrame(crs=WGS84_CRS, geometry=[])
         return None
 
-    mocker.patch("osmnx.geometries_from_polygon", new=mock_geometries_from_polygon)
-    mocker.patch("osmnx.features_from_polygon", new=mock_geometries_from_polygon)
+    if version.parse(ox.__version__) >= version.parse("1.5.0"):
+        mocker.patch("osmnx.features_from_polygon", new=mock_geometries_from_polygon)
+    else:
+        mocker.patch("osmnx.geometries_from_polygon", new=mock_geometries_from_polygon)
 
 
 @pytest.mark.parametrize(  # type: ignore
