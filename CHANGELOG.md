@@ -11,20 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Migrated the repository ownership from `srai-lab` to `kraina-ai`.
-- Improved speed of `OSMPbfLoader` by moving intersection step to the end.
-- Changed API and improved `plotting.plot_numeric_data` function.
-- Changed `AdministrativeBoundaryRegionalizer` loading speed.
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Added checks for `osmnx` `1.5.0` version with deprecated `geometry` module.
-
 ### Security
+
+## [0.3.2] - 2023-08-12
+
+### Changed
+
+- Migrated the repository ownership from `srai-lab` to `kraina-ai`.
+- Improved speed of `OSMPbfLoader` by moving intersection step to the end.
+- Changed API and improved `plotting.plot_numeric_data` function.
+- Changed `AdministrativeBoundaryRegionalizer` loading speed.
+
+### Fixed
+
+- Added checks for `osmnx` `1.5.0` version with deprecated `geometry` module.
 
 ## [0.3.1] - 2023-08-09
 
@@ -134,7 +140,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.3.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/srai-lab/srai/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/srai-lab/srai/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/srai-lab/srai/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/srai-lab/srai/compare/0.1.1...0.2.0
