@@ -257,5 +257,9 @@ def test_osm_pbf_loader(
     loader = OSMPbfLoader(pbf_file=pbf_file, download_directory=download_directory)
     result = loader.load(area, tags=query)
 
-    assert len(result) == expected_result_length
-    assert len(result.columns) == expected_features_columns_length + 1
+    assert (
+        len(result) == expected_result_length
+    ), f"Mismatched result length ({len(result)}, {expected_result_length})"
+    assert (
+        len(result.columns) == expected_features_columns_length + 1
+    ), f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"

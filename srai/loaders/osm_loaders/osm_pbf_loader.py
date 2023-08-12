@@ -112,13 +112,17 @@ class OSMPbfLoader(OSMLoader):
             features_gdf = pbf_handler.get_features_gdf(
                 file_paths=pbf_files, region_id=str(region_id)
             )
+            features_gdf = features_gdf[features_gdf.intersects(clipping_polygon)]
             results.append(features_gdf)
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        features_columns = result_gdf.columns.drop(labels=[GEOMETRY_COLUMN]).sort_values()
-        result_gdf = result_gdf[[GEOMETRY_COLUMN, *features_columns]]
-        result_gdf = result_gdf[result_gdf.intersects(clipping_polygon)]
+        features_columns = [
+            column
+            for column in result_gdf.columns
+            if column != GEOMETRY_COLUMN and result_gdf[column].notnull().any()
+        ]
+        result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
