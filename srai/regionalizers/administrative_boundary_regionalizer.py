@@ -20,7 +20,8 @@ from tqdm import tqdm
 from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.geometry import flatten_geometry_series
-from srai.regionalizers import Regionalizer, geocode_to_region_gdf
+from srai.regionalizers import Regionalizer
+from srai.regionalizers.geocode import geocode_to_region_gdf
 
 
 class AdministrativeBoundaryRegionalizer(Regionalizer):
