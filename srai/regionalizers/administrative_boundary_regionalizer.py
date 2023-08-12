@@ -20,7 +20,7 @@ from tqdm import tqdm
 from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.geometry import flatten_geometry_series
-from srai.regionalizers import Regionalizer
+from srai.regionalizers import Regionalizer, geocode_to_region_gdf
 
 
 class AdministrativeBoundaryRegionalizer(Regionalizer):
@@ -84,7 +84,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         """  # noqa: W505, E501
         import_optional_dependencies(
             dependency_group="osm",
-            modules=["osmnx", "overpass"],
+            modules=["overpass"],
         )
         from overpass import API
 
@@ -111,8 +111,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         Regionalize a given GeoDataFrame.
 
         Will query Overpass [1] server using `overpass` [2] library for closed administrative
-        boundaries on a given admin_level and then download geometries for each relation using
-        `osmnx` [3] library.
+        boundaries on a given admin_level and then download geometries for each relation.
 
         If `prioritize_english_name` is set to `True`, method will try to extract the `name:en` tag
         first before resorting to the `name` tag. If boundary doesn't have a `name` tag, an `id`
@@ -139,7 +138,6 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         References:
             1. https://wiki.openstreetmap.org/wiki/Overpass_API
             2. https://github.com/mvexel/overpass-api-python-wrapper
-            3. https://github.com/gboeing/osmnx
             4. https://github.com/mattijn/topojson
         """
         gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
@@ -297,10 +295,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         }
 
     def _get_boundary_geometry(self, relation_id: str) -> BaseGeometry:
-        """Download a geometry of a relation using `osmnx` library."""
-        from osmnx import geocode_to_gdf
-
-        return geocode_to_gdf(query=[f"R{relation_id}"], by_osmid=True).geometry[0]
+        """Download a geometry of a relation."""
+        return geocode_to_region_gdf(query=f"R{relation_id}", by_osmid=True).geometry[0]
 
     def _toposimplify_gdf(self, regions_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Create a topology to ensure proper boundaries between regions and simplify it."""
