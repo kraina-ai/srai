@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated the repository ownership from `srai-lab` to `kraina-ai`.
 - Improved speed of `OSMPbfLoader` by moving intersection step to the end.
 - Changed API and improved `plotting.plot_numeric_data` function.
+- Changed `AdministrativeBoundaryRegionalizer` loading speed.
 
 ### Deprecated
 
