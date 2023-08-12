@@ -105,7 +105,7 @@ class OSMPbfLoader(OSMLoader):
 
         merged_tags = self._merge_osm_tags_filter(tags)
 
-        pbf_handler = PbfFileHandler(tags=merged_tags, region_geometry=clipping_polygon)
+        pbf_handler = PbfFileHandler(tags=merged_tags)
 
         results = []
         for region_id, pbf_files in downloaded_pbf_files.items():
@@ -118,6 +118,7 @@ class OSMPbfLoader(OSMLoader):
 
         features_columns = result_gdf.columns.drop(labels=[GEOMETRY_COLUMN]).sort_values()
         result_gdf = result_gdf[[GEOMETRY_COLUMN, *features_columns]]
+        result_gdf = result_gdf[result_gdf.intersects(clipping_polygon)]
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
