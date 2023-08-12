@@ -2,8 +2,8 @@
 from typing import Any, Dict, List, Union
 
 import geopandas as gpd
-import osmnx as ox
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
 
 
@@ -28,6 +28,13 @@ def geocode_to_region_gdf(
     References:
         1. https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.geocoder.geocode_to_gdf
     """
+    import_optional_dependencies(
+        dependency_group="osm",
+        modules=["osmnx"],
+    )
+
+    import osmnx as ox
+
     geocoded_gdf = ox.geocode_to_gdf(query=query, by_osmid=by_osmid, which_result=None)
     regions_gdf = (
         geocoded_gdf[["display_name", "geometry"]]

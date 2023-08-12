@@ -9,6 +9,7 @@ from typing import List, Tuple, Union
 import geopandas as gpd
 import pandas as pd
 from functional import seq
+from packaging import version
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
@@ -87,10 +88,15 @@ class OSMOnlineLoader(OSMLoader):
 
         results = []
 
+        osmnx_new_api = version.parse(ox.__version__) >= version.parse("1.5.0")
+        osmnx_download_function = (
+            ox.features_from_polygon if osmnx_new_api else ox.geometries_from_polygon
+        )
+
         pbar = tqdm(product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries)
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            geometries = ox.geometries_from_polygon(polygon, {key: value})
+            geometries = osmnx_download_function(polygon, {key: value})
             if not geometries.empty:
                 results.append(geometries[[GEOMETRY_COLUMN, key]])
 

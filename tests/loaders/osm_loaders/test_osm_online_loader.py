@@ -2,7 +2,9 @@
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
+import osmnx as ox
 import pytest
+from packaging import version
 from pandas.testing import assert_frame_equal
 
 from srai.constants import WGS84_CRS
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 def mock_osmnx(
     mocker, two_polygons_area_gdf, area_with_no_objects_gdf, amenities_gdf, building_gdf
 ):
-    """Patch `ox.geometries_from_polygon` to return data from predefined gdfs."""
+    """Patch `osmnx` functions to return data from predefined gdfs."""
     gdfs = {"amenity": amenities_gdf, "building": building_gdf}
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
     empty_polygon = area_with_no_objects_gdf["geometry"][0]
@@ -39,7 +41,10 @@ def mock_osmnx(
             return gpd.GeoDataFrame(crs=WGS84_CRS, geometry=[])
         return None
 
-    mocker.patch("osmnx.geometries_from_polygon", new=mock_geometries_from_polygon)
+    if version.parse(ox.__version__) >= version.parse("1.5.0"):
+        mocker.patch("osmnx.features_from_polygon", new=mock_geometries_from_polygon)
+    else:
+        mocker.patch("osmnx.geometries_from_polygon", new=mock_geometries_from_polygon)
 
 
 @pytest.mark.parametrize(  # type: ignore
