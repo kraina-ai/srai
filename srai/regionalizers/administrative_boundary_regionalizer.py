@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional, Union
 
 import geopandas as gpd
 import topojson as tp
-from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely import union
+from shapely.geometry import GeometryCollection, MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
@@ -198,19 +198,21 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         """Query and optimize downloading data from Overpass."""
         elements_ids = set()
         generated_regions: List[Dict[str, Any]] = []
+        unary_geometry = GeometryCollection()
 
         all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
-                unary_geometry = unary_union([r[GEOMETRY_COLUMN] for r in generated_regions])
                 if not geometry.covered_by(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
                         if boundary["id"] not in elements_ids:
                             elements_ids.add(boundary["id"])
-                            generated_regions.append(self._parse_overpass_element(boundary))
+                            parsed_region = self._parse_overpass_element(boundary)
+                            generated_regions.append(parsed_region)
+                            unary_geometry = union(unary_geometry, parsed_region[GEOMETRY_COLUMN])
                             pbar.update(1)
 
         return generated_regions
