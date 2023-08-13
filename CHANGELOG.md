@@ -19,6 +19,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.3.3] - 2023-08-13
+
+### Added
+
+### Changed
+
+- Modified `OSMPbfLoader` intersection logic.
+- Changed default tiles style for `plotting.plot_numeric_data` function.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## [0.3.2] - 2023-08-12
 
 ### Changed
