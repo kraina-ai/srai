@@ -101,8 +101,6 @@ class OSMPbfLoader(OSMLoader):
                 download_directory=self.download_directory
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
-        clipping_polygon = area_wgs84.geometry.unary_union
-
         merged_tags = self._merge_osm_tags_filter(tags)
 
         pbf_handler = PbfFileHandler(tags=merged_tags)
@@ -112,8 +110,8 @@ class OSMPbfLoader(OSMLoader):
             features_gdf = pbf_handler.get_features_gdf(
                 file_paths=pbf_files, region_id=str(region_id)
             )
-            features_gdf = features_gdf[features_gdf.intersects(clipping_polygon)]
-            results.append(features_gdf)
+            matching_features_ids = features_gdf.sjoin(area_wgs84).index
+            results.append(features_gdf.loc[matching_features_ids])
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 

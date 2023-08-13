@@ -24,7 +24,7 @@ import_optional_dependencies(dependency_group="plotting", modules=["folium", "pl
 
 def plot_regions(
     regions_gdf: gpd.GeoDataFrame,
-    tiles_style: str = "CartoDB positron",
+    tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.qualitative.Bold,
@@ -69,7 +69,7 @@ def plot_numeric_data(
     regions_gdf: gpd.GeoDataFrame,
     data_column: str,
     embedding_df: Optional[Union[pd.DataFrame, gpd.GeoDataFrame]] = None,
-    tiles_style: str = "OpenStreetMap",
+    tiles_style: str = "CartoDB positron",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
@@ -87,7 +87,7 @@ def plot_numeric_data(
         data_column (str): Name of the column used to colour the regions.
         tiles_style (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
-            Defaults to "OpenStreetMap".
+            Defaults to "CartoDB positron".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
