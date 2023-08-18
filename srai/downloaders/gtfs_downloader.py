@@ -16,8 +16,8 @@ import pandas as pd
 from functional import seq
 from shapely.geometry import box
 
+from srai.constants import WGS84_CRS
 from srai.utils import download_file
-from srai.utils.constants import WGS84_CRS
 
 CATALOG_URL = "https://bit.ly/catalogs-csv"
 CACHE_DIR = Path.home() / ".cache" / "srai"
