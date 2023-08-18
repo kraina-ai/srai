@@ -25,6 +25,8 @@ dependencies = [
     "typeguard",
     "requests",
     "h3ronpy>=0.17.4",
+    "dask-geopandas",
+    "dask<2023.2.1",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
