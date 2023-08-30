@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped `h3ronpy` library to `0.17.5` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`.
+
 ### Deprecated
 
 ### Removed
