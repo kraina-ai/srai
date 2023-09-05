@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bumped `h3ronpy` library to `0.17.5` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`.
+- Refactored `OSMLoader`'s `GroupedOsmTagsFilter` features grouping to be faster by refactoring pandas operations [#354](https://github.com/srai-lab/srai/issues/354)
 
 ### Deprecated
 
@@ -60,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2023-08-08
 
 ### Added
+
 - `include_center` parameter to Neighbourhoods [#288](https://github.com/srai-lab/srai/issues/288)
 - `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
 - `srai.h3` module with functions for translating list of h3 cells into shapely polygons and calculating local ij coordinates.
