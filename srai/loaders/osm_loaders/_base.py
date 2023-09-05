@@ -20,6 +20,8 @@ from srai.loaders.osm_loaders.filters import (
 class OSMLoader(Loader, abc.ABC):
     """Abstract class for loaders."""
 
+    OSM_FILTER_GROUP_COLUMN_NAME = "osm_group_"
+
     @abc.abstractmethod
     def load(
         self,
@@ -113,8 +115,9 @@ class OSMLoader(Loader, abc.ABC):
         ):
             mask = self._get_matching_mask(features_gdf, osm_filter)
             if mask.any():
-                matching_columns.append(group_name)
-                features_gdf[group_name] = features_gdf[mask].apply(
+                group_name_column = f"{OSMLoader.OSM_FILTER_GROUP_COLUMN_NAME}{group_name}"
+                matching_columns.append(group_name_column)
+                features_gdf[group_name_column] = features_gdf[mask].apply(
                     lambda row, osm_filter=osm_filter: self._get_first_matching_osm_tag_value(
                         row=row, osm_filter=osm_filter
                     ),
@@ -123,6 +126,12 @@ class OSMLoader(Loader, abc.ABC):
 
         return (
             features_gdf[["geometry", *matching_columns]]
+            .rename(
+                columns={
+                    column_name: column_name.replace(OSMLoader.OSM_FILTER_GROUP_COLUMN_NAME, "")
+                    for column_name in matching_columns
+                }
+            )
             .replace(to_replace=[None], value=np.nan)
             .dropna(how="all", axis="columns")
         )
