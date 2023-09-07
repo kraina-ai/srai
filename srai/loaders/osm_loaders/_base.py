@@ -149,16 +149,16 @@ class OSMLoader(Loader, abc.ABC):
         Returns:
             pd.Series: Boolean mask.
         """
-        mask = pd.Series(True, index=features_gdf.index)
+        mask = pd.Series(False, index=features_gdf.index)
 
         for osm_tag_key, osm_tag_value in osm_filter.items():
             if osm_tag_key in features_gdf.columns:
                 if isinstance(osm_tag_value, bool) and osm_tag_value:
-                    mask &= features_gdf[osm_tag_key]
+                    mask |= features_gdf[osm_tag_key]
                 elif isinstance(osm_tag_value, str):
-                    mask &= features_gdf[osm_tag_key] == osm_tag_value
+                    mask |= features_gdf[osm_tag_key] == osm_tag_value
                 elif isinstance(osm_tag_value, list):
-                    mask &= features_gdf[osm_tag_key].isin(osm_tag_value)
+                    mask |= features_gdf[osm_tag_key].isin(osm_tag_value)
 
         return mask
 
