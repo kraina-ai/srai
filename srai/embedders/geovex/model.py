@@ -9,7 +9,7 @@ References:
 import math
 from typing import TYPE_CHECKING, Callable, List, Tuple
 
-from srai.utils._optional import import_optional_dependencies
+from srai._optional import import_optional_dependencies
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -21,7 +21,7 @@ try:  # pragma: no cover
     from torch import nn  # noqa: F811
 
 except ImportError:
-    from srai.utils._pytorch_stubs import LightningModule, nn, torch
+    from srai.embedders._pytorch_stubs import LightningModule, nn, torch
 
 
 def get_shape(r: int) -> int:
@@ -144,7 +144,7 @@ class GeoVeXLoss(nn.Module):  # type: ignore
         )
 
         log_likelihood = log_likelihood_0 + log_likelihood_greater_0
-        loss: "torch.Tensor" = -torch.sum(
+        loss: torch.Tensor = -torch.sum(
             log_likelihood * self._w_dist_matrix * self._w_num_matrix
         ) / (torch.sum(self._w_dist_matrix) * torch.sum(self._w_num_matrix))
         return loss
@@ -456,7 +456,7 @@ class GeoVexModel(LightningModule):  # type: ignore
         Returns:
             torch.Tensor: The output tensor.
         """
-        res: Tuple["torch.Tensor", "torch.Tensor"] = self.decoder(self.encoder(x))
+        res: Tuple[torch.Tensor, torch.Tensor] = self.decoder(self.encoder(x))
         return res[0], res[1]
 
     def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
@@ -499,7 +499,7 @@ class GeoVexModel(LightningModule):  # type: ignore
         Returns:
             List[torch.optim.Optimizer]: The optimizers.
         """
-        opt: "torch.optim.Optimizer" = torch.optim.Adam(
+        opt: torch.optim.Optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.lr,
         )

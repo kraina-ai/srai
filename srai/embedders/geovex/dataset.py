@@ -10,12 +10,12 @@ References:
 
 from typing import TYPE_CHECKING, Any, Generic, List, Set, Tuple, TypeVar
 
-import h3
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
+from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import H3Neighbourhood
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -32,21 +32,6 @@ T = TypeVar("T")
 
 # define a type for the dataset item
 CellInfo = Tuple[str, int, List[Tuple[int, Tuple[int, int]]]]
-
-
-def _get_ij_index(anchor_index: str, target_index: str) -> Tuple[int, int]:
-    """
-    Returns the H3 ij index of the second region with respect to the first one.
-
-    Args:
-        anchor_index (str): H3 index of the anchor region.
-        target_index (str): H3 index of the second region.
-
-    Returns:
-        Tuple[int, int]: The ij index of the second region with respect to the first one.
-    """
-    coords: Tuple[int, ...] = h3.cell_to_local_ij(anchor_index, target_index)
-    return coords[0], coords[1]
 
 
 class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
@@ -102,11 +87,11 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         valid_h3s = []
 
         for h3_index in tqdm(data.index, total=len(data)):
-            neighbors = neighbourhood.get_neighbours_up_to_distance(h3_index, neighbor_k_ring)
+            neighbors = neighbourhood.get_neighbours_up_to_distance(
+                h3_index, neighbor_k_ring, include_center=False, unchecked=True
+            )
             # check if all the neighbors are in the dataset
             if len(neighbors.intersection(all_indices)) == len(neighbors):
-                # all the neighbors are in the dataset, continue building the dataset
-                anchor = _get_ij_index(h3_index, h3_index)
                 # add the h3_index to the valid h3 indices, with the ring of neighbors
                 valid_h3s.append(
                     (
@@ -114,10 +99,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
                         data.index.get_loc(h3_index),
                         [
                             # get the index of the h3 in the dataset
-                            (
-                                data.index.get_loc(_h),
-                                self._subtract_ij(_get_ij_index(h3_index, _h), anchor),
-                            )
+                            (data.index.get_loc(_h), get_local_ij_index(h3_index, _h))
                             for _h in neighbors
                         ],
                     )
@@ -126,13 +108,6 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
                 # some of the neighbors are not in the dataset, add the h3_index to the invalid h3s
                 invalid_h3s.add(h3_index)
         return invalid_h3s, valid_h3s
-
-    @staticmethod
-    def _subtract_ij(ij_1: Tuple[int, int], ij_2: Tuple[int, int]) -> Tuple[int, int]:
-        return (
-            ij_1[0] - ij_2[0],
-            ij_1[1] - ij_2[1],
-        )
 
     def __len__(self) -> int:
         """
@@ -167,7 +142,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         # the target h3 is in the center of the tensor
         # the tensor is 2*neighbor_k_ring + 1 x 2*neighbor_k_ring + 1 x 2*neighbor_k_ring + 1
         # make a tensor of zeros, padded by 1 zero all around to make it even for the convolutions
-        tensor: "torch.Tensor" = torch.zeros(
+        tensor: torch.Tensor = torch.zeros(
             (
                 self._N,
                 2 * self._k + 2,
@@ -184,7 +159,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
 
         # set the neighbors of the target h3 to the diagonals of the tensor
         for neighbor_idx, (i, j) in neighbors_idxs:
-            tensor[:, self._k + i, self._k + j] = self._data_torch[neighbor_idx]
+            tensor[:, self._k + i, self._k - j] = self._data_torch[neighbor_idx]
 
         # return the tensor and the target (which is same as the tensor)
         # should we return the target as a copy of the tensor?
