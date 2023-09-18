@@ -12,13 +12,13 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.neighbourhoods import H3Neighbourhood
-from srai.utils._optional import import_optional_dependencies
 
 T = TypeVar("T")
 
@@ -26,7 +26,7 @@ try:  # pragma: no cover
     from torch.utils.data import DataLoader
 
 except ImportError:
-    from srai.utils._pytorch_stubs import DataLoader
+    from srai.embedders._pytorch_stubs import DataLoader
 
 
 class GeoVexEmbedder(CountEmbedder):

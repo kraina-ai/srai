@@ -8,22 +8,24 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
-from typing import Any, Generic, List, Set, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, List, Set, Tuple, TypeVar
 
 import h3
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.neighbourhoods import H3Neighbourhood
-from srai.utils._optional import import_optional_dependencies
+
+if TYPE_CHECKING:  # pragma: no cover
+    import torch
 
 try:  # pragma: no cover
-    import torch
     from torch.utils.data import Dataset
 
 except ImportError:
-    from srai.utils._pytorch_stubs import Dataset, torch
+    from srai.embedders._pytorch_stubs import Dataset
 
 
 T = TypeVar("T")
