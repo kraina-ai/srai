@@ -8,20 +8,14 @@ References:
 """
 from typing import TYPE_CHECKING
 
-from srai.utils._optional import import_optional_dependencies
+from srai._optional import import_optional_dependencies
+from srai.embedders import Model
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
 
 
-try:  # pragma: no cover
-    from pytorch_lightning import LightningModule
-
-except ImportError:
-    from srai.utils._pytorch_stubs import LightningModule
-
-
-class Highway2VecModel(LightningModule):  # type: ignore
+class Highway2VecModel(Model):
     """Autoencoder based embedding model for highway2vec."""
 
     def __init__(self, n_features: int, n_hidden: int = 64, n_embed: int = 30, lr: float = 1e-3):
@@ -53,6 +47,9 @@ class Highway2VecModel(LightningModule):  # type: ignore
             nn.ReLU(),
             nn.Linear(n_hidden, n_features),
         )
+        self.n_features = n_features
+        self.n_hidden = n_hidden
+        self.n_embed = n_embed
         self.lr = lr
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":

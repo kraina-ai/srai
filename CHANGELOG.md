@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- BREAKING: renamed Regionizer to Regionalizer [#282](https://github.com/srai-lab/srai/issues/282)
+- Bumped `h3ronpy` library to `0.17.5` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`.
+- Refactored `OSMLoader`'s `GroupedOsmTagsFilter` features grouping to be faster by refactoring pandas operations [#354](https://github.com/srai-lab/srai/issues/354)
 
 ### Deprecated
 
@@ -20,6 +21,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [0.3.3] - 2023-08-13
+
+### Added
+
+### Changed
+
+- Modified `OSMPbfLoader` intersection logic.
+- Changed default tiles style for `plotting.plot_numeric_data` function.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.3.2] - 2023-08-12
+
+### Changed
+
+- Migrated the repository ownership from `srai-lab` to `kraina-ai`.
+- Improved speed of `OSMPbfLoader` by moving intersection step to the end.
+- Changed API and improved `plotting.plot_numeric_data` function.
+- Changed `AdministrativeBoundaryRegionalizer` loading speed.
+
+### Fixed
+
+- Added checks for `osmnx` `1.5.0` version with deprecated `geometry` module.
+
+## [0.3.1] - 2023-08-09
+
+### Fixed
+
+- Repaired bug with `VoronoiRegionalizer` and wrong polygon orientation.
+
+## [0.3.0] - 2023-08-08
+
+### Added
+
+- `include_center` parameter to Neighbourhoods [#288](https://github.com/srai-lab/srai/issues/288)
+- `__version__` entry to library API. [#305](https://github.com/srai-lab/srai/issues/305)
+- `srai.h3` module with functions for translating list of h3 cells into shapely polygons and calculating local ij coordinates.
+
+### Changed
+
+- Refactored H3Regionalizer to be faster using [h3ronpy](https://github.com/nmandery/h3ronpy) library [#311](https://github.com/srai-lab/srai/issues/311)
+- BREAKING! Renamed NetworkType to OSMNetworkType and made it importable directly from `srai.loaders` [#227](https://github.com/srai-lab/srai/issues/227)
+- BREAKING! Renamed osm_filter_type and grouped_osm_filter_type into OsmTagsFilter and GroupedOsmTagsFilter [#261](https://github.com/srai-lab/srai/issues/261)
+- Removed osmnx dependency version cap [#303](https://github.com/srai-lab/srai/issues/303)
+- BREAKING! Removed `utils` module [#128](https://github.com/srai-lab/srai/issues/128)
+  - `srai.utils._optional` moved to `srai._optional`
+  - `srai.utils._pytorch_stubs` moved to `srai.embedders._pytorch_stubs`
+  - `srai.utils.download` moved to `srai.loaders.download` (and can be imported with `from srai.loaders import download_file`)
+  - `srai.utils.geocode` moved to `srai.regionalizers.geocode` (and can be imported with `from srai.regionalizers import geocode_to_region_gdf`)
+  - `srai.utils.geometry` and `srai.utils.merge` moved to `srai.geometry`
+  - `srai.utils.typing` moved to `srai._typing`
+
+### Fixed
+
+- Improved simplification and buffering of polygons for Protomaps extracts [#309](https://github.com/srai-lab/srai/issues/309)
+- Eliminated some occasional errors in large scale executions of VoronoiRegionalizer [#313](https://github.com/srai-lab/srai/issues/313)
+
+## [0.2.0] - 2023-07-05
+
+### Added
+
+- Loading and saving fittable embedders
+
+### Changed
+
+- BREAKING: renamed Regionizer to Regionalizer [#282](https://github.com/srai-lab/srai/issues/282)
+
+### Fixed
+
+- Freeze osmnx version to <=1.4.0, as 1.5.0 is not compatible with our code [#303](https://github.com/srai-lab/srai/issues/303)
 
 ## [0.1.1] - 2023-04-27
 
@@ -83,6 +161,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.1.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/srai-lab/srai/compare/0.3.1...0.3.2
+[0.3.1]: https://github.com/srai-lab/srai/compare/0.3.0...0.3.1
+[0.3.0]: https://github.com/srai-lab/srai/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/srai-lab/srai/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/srai-lab/srai/compare/0.0.1...0.1.1
 [0.0.1]: https://github.com/srai-lab/srai/compare/687500b...0.0.1

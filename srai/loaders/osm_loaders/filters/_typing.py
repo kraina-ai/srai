@@ -1,31 +1,31 @@
 """Module contains a dedicated type alias for OSM tags filter."""
 from typing import Dict, List, Union, cast
 
-from srai.utils.typing import is_expected_type
+from srai._typing import is_expected_type
 
-osm_tags_type = Dict[str, Union[List[str], str, bool]]
+OsmTagsFilter = Dict[str, Union[List[str], str, bool]]
 
-grouped_osm_tags_type = Dict[str, Dict[str, Union[List[str], str, bool]]]
+GroupedOsmTagsFilter = Dict[str, OsmTagsFilter]
 
 
-def merge_grouped_osm_tags_type(grouped_filter: grouped_osm_tags_type) -> osm_tags_type:
+def merge_grouped_osm_tags_filter(grouped_filter: GroupedOsmTagsFilter) -> OsmTagsFilter:
     """
     Merge grouped osm tags filter into a base one.
 
     Function merges all filter categories into a single one for an OSM loader to use.
 
     Args:
-        grouped_filter (grouped_osm_tags_type): Grouped filter to be merged into a single one.
+        grouped_filter (GroupedOsmTagsFilter): Grouped filter to be merged into a single one.
 
     Returns:
         osm_tags_type: Merged filter.
     """
-    if not is_expected_type(grouped_filter, grouped_osm_tags_type):
+    if not is_expected_type(grouped_filter, GroupedOsmTagsFilter):
         raise ValueError(
-            "Provided filter doesn't match required `grouped_osm_tags_type` definition."
+            "Provided filter doesn't match required `GroupedOsmTagsFilter` definition."
         )
 
-    result: osm_tags_type = {}
+    result: OsmTagsFilter = {}
     for sub_filter in grouped_filter.values():
         for osm_tag_key, osm_tag_value in sub_filter.items():
             if osm_tag_key not in result:

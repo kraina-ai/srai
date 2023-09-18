@@ -1,37 +1,39 @@
 """Base class for OSM loaders."""
 
 import abc
-from typing import Dict, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from srai._typing import is_expected_type
 from srai.loaders import Loader
-from srai.loaders.osm_loaders.filters._typing import (
-    grouped_osm_tags_type,
-    merge_grouped_osm_tags_type,
-    osm_tags_type,
+from srai.loaders.osm_loaders.filters import (
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+    merge_grouped_osm_tags_filter,
 )
-from srai.utils.typing import is_expected_type
 
 
 class OSMLoader(Loader, abc.ABC):
     """Abstract class for loaders."""
 
+    OSM_FILTER_GROUP_COLUMN_NAME = "osm_group_"
+
     @abc.abstractmethod
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Union[osm_tags_type, grouped_osm_tags_type],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:  # pragma: no cover
         """
         Load data for a given area.
 
         Args:
             area (gpd.GeoDataFrame): GeoDataFrame with the area of interest.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): OSM tags filter.
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter.
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with the downloaded data.
@@ -39,58 +41,58 @@ class OSMLoader(Loader, abc.ABC):
         raise NotImplementedError
 
     def _merge_osm_tags_filter(
-        self, tags: Union[osm_tags_type, grouped_osm_tags_type]
-    ) -> osm_tags_type:
+        self, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
+    ) -> OsmTagsFilter:
         """
         Merge OSM tags filter into `osm_tags_type` type.
 
-        Optionally merges `grouped_osm_tags_type` into `osm_tags_type` to allow loaders to load all
+        Optionally merges `GroupedOsmTagsFilter` into `OsmTagsFilter` to allow loaders to load all
         defined groups during single operation.
 
         Args:
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): OSM tags filter definition.
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter definition.
 
         Raises:
             AttributeError: When provided tags don't match both
-                `osm_tags_type` or `grouped_osm_tags_type`.
+                `OsmTagsFilter` or `GroupedOsmTagsFilter`.
 
         Returns:
             osm_tags_type: Merged filters.
         """
-        if is_expected_type(tags, osm_tags_type):
-            return cast(osm_tags_type, tags)
-        elif is_expected_type(tags, grouped_osm_tags_type):
-            return merge_grouped_osm_tags_type(cast(grouped_osm_tags_type, tags))
+        if is_expected_type(tags, OsmTagsFilter):
+            return cast(OsmTagsFilter, tags)
+        elif is_expected_type(tags, GroupedOsmTagsFilter):
+            return merge_grouped_osm_tags_filter(cast(GroupedOsmTagsFilter, tags))
 
         raise AttributeError(
             "Provided tags don't match required type definitions"
-            " (osm_tags_type or grouped_osm_tags_type)."
+            " (OsmTagsFilter or GroupedOsmTagsFilter)."
         )
 
     def _parse_features_gdf_to_groups(
-        self, features_gdf: gpd.GeoDataFrame, tags: Union[osm_tags_type, grouped_osm_tags_type]
+        self, features_gdf: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
     ) -> gpd.GeoDataFrame:
         """
-        Optionally group raw OSM features into groups defined in `grouped_osm_tags_type`.
+        Optionally group raw OSM features into groups defined in `GroupedOsmTagsFilter`.
 
         Args:
             features_gdf (gpd.GeoDataFrame): Generated features from the loader.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): OSM tags filter definition.
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter definition.
 
         Returns:
             gpd.GeoDataFrame: Parsed features_gdf.
         """
-        if is_expected_type(tags, grouped_osm_tags_type):
-            features_gdf = self._group_features_gdf(features_gdf, cast(grouped_osm_tags_type, tags))
+        if is_expected_type(tags, GroupedOsmTagsFilter):
+            features_gdf = self._group_features_gdf(features_gdf, cast(GroupedOsmTagsFilter, tags))
         return features_gdf
 
     def _group_features_gdf(
-        self, features_gdf: gpd.GeoDataFrame, group_filter: grouped_osm_tags_type
+        self, features_gdf: gpd.GeoDataFrame, group_filter: GroupedOsmTagsFilter
     ) -> gpd.GeoDataFrame:
         """
-        Group raw OSM features into groups defined in `grouped_osm_tags_type`.
+        Group raw OSM features into groups defined in `GroupedOsmTagsFilter`.
 
-        Creates new features based on definition from `grouped_osm_tags_type`.
+        Creates new features based on definition from `GroupedOsmTagsFilter`.
         Returns transformed GeoDataFrame with columns based on group names from the filter.
         Values are built by concatenation of matching tag key and value with
         an equal sign (eg. amenity=parking). Since many tags can match a definition
@@ -98,52 +100,70 @@ class OSMLoader(Loader, abc.ABC):
 
         Args:
             features_gdf (gpd.GeoDataFrame): Generated features from the loader.
-            group_filter (grouped_osm_tags_type): Grouped OSM tags filter definition.
+            group_filter (GroupedOsmTagsFilter): Grouped OSM tags filter definition.
 
         Returns:
             gpd.GeoDataFrame: Parsed grouped features_gdf.
         """
-        for index, row in tqdm(
-            features_gdf.iterrows(), desc="Grouping features", total=len(features_gdf.index)
+        if len(features_gdf) == 0:
+            return features_gdf[["geometry"]]
+
+        matching_columns = []
+
+        for group_name, osm_filter in tqdm(
+            group_filter.items(), desc="Grouping features", total=len(group_filter)
         ):
-            grouped_features = self._get_osm_filter_groups(row=row, group_filter=group_filter)
-            for group_name, feature_value in grouped_features.items():
-                features_gdf.loc[index, group_name] = feature_value
+            mask = self._get_matching_mask(features_gdf, osm_filter)
+            if mask.any():
+                group_name_column = f"{OSMLoader.OSM_FILTER_GROUP_COLUMN_NAME}{group_name}"
+                matching_columns.append(group_name_column)
+                features_gdf[group_name_column] = features_gdf[mask].apply(
+                    lambda row, osm_filter=osm_filter: self._get_first_matching_osm_tag_value(
+                        row=row, osm_filter=osm_filter
+                    ),
+                    axis=1,
+                )
 
-        matching_columns = [
-            column for column in group_filter.keys() if column in features_gdf.columns
-        ]
-
-        return features_gdf[["geometry", *matching_columns]].replace(
-            to_replace=[None], value=np.nan
+        return (
+            features_gdf[["geometry", *matching_columns]]
+            .rename(
+                columns={
+                    column_name: column_name.replace(OSMLoader.OSM_FILTER_GROUP_COLUMN_NAME, "")
+                    for column_name in matching_columns
+                }
+            )
+            .replace(to_replace=[None], value=np.nan)
+            .dropna(how="all", axis="columns")
         )
 
-    def _get_osm_filter_groups(
-        self, row: pd.Series, group_filter: grouped_osm_tags_type
-    ) -> Dict[str, str]:
+    def _get_matching_mask(
+        self, features_gdf: gpd.GeoDataFrame, osm_filter: OsmTagsFilter
+    ) -> pd.Series:
         """
-        Get new group features for a single row.
+        Create a boolean mask to identify rows matching the OSM tags filter.
 
         Args:
-            row (pd.Series): Row to be analysed.
-            group_filter (grouped_osm_tags_type): Grouped OSM tags filter definition.
+            features_gdf (gpd.GeoDataFrame): Generated features from the loader.
+            osm_filter (OsmTagsFilter): OSM tags filter definition.
 
         Returns:
-            Dict[str, str]: Dictionary with matching group names and values.
+            pd.Series: Boolean mask.
         """
-        result = {}
+        mask = pd.Series(False, index=features_gdf.index)
 
-        for group_name, osm_filter in group_filter.items():
-            matching_osm_tag = self._get_first_matching_osm_tag_value(
-                row=row, osm_filter=osm_filter
-            )
-            if matching_osm_tag:
-                result[group_name] = matching_osm_tag
+        for osm_tag_key, osm_tag_value in osm_filter.items():
+            if osm_tag_key in features_gdf.columns:
+                if isinstance(osm_tag_value, bool) and osm_tag_value:
+                    mask |= features_gdf[osm_tag_key]
+                elif isinstance(osm_tag_value, str):
+                    mask |= features_gdf[osm_tag_key] == osm_tag_value
+                elif isinstance(osm_tag_value, list):
+                    mask |= features_gdf[osm_tag_key].isin(osm_tag_value)
 
-        return result
+        return mask
 
     def _get_first_matching_osm_tag_value(
-        self, row: pd.Series, osm_filter: osm_tags_type
+        self, row: pd.Series, osm_filter: OsmTagsFilter
     ) -> Optional[str]:
         """
         Find first matching OSM tag key and value pair for a subgroup filter.

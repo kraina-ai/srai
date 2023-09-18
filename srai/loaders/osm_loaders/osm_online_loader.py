@@ -9,15 +9,13 @@ from typing import List, Tuple, Union
 import geopandas as gpd
 import pandas as pd
 from functional import seq
+from packaging import version
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import (
-    grouped_osm_tags_type,
-    osm_tags_type,
-)
-from srai.utils._optional import import_optional_dependencies
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 class OSMOnlineLoader(OSMLoader):
@@ -48,7 +46,7 @@ class OSMOnlineLoader(OSMLoader):
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Union[osm_tags_type, grouped_osm_tags_type],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Download OSM features with specified tags for a given area.
@@ -61,7 +59,7 @@ class OSMOnlineLoader(OSMLoader):
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -90,10 +88,15 @@ class OSMOnlineLoader(OSMLoader):
 
         results = []
 
+        osmnx_new_api = version.parse(ox.__version__) >= version.parse("1.5.0")
+        osmnx_download_function = (
+            ox.features_from_polygon if osmnx_new_api else ox.geometries_from_polygon
+        )
+
         pbar = tqdm(product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries)
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            geometries = ox.geometries_from_polygon(polygon, {key: value})
+            geometries = osmnx_download_function(polygon, {key: value})
             if not geometries.empty:
                 results.append(geometries[[GEOMETRY_COLUMN, key]])
 
@@ -102,7 +105,7 @@ class OSMOnlineLoader(OSMLoader):
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
-    def _flatten_tags(self, tags: osm_tags_type) -> List[Tuple[str, Union[str, bool]]]:
+    def _flatten_tags(self, tags: OsmTagsFilter) -> List[Tuple[str, Union[str, bool]]]:
         tags_flat: List[Tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))

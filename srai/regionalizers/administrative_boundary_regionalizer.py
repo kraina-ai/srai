@@ -3,21 +3,24 @@ Administrative Boundary Regionalizer.
 
 This module contains administrative boundary regionalizer implementation.
 """
+import hashlib
+import json
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import geopandas as gpd
 import topojson as tp
-from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely import union
+from shapely.geometry import GeometryCollection, MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import unary_union
 from shapely.validation import make_valid
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+from srai.geometry import flatten_geometry_series
 from srai.regionalizers import Regionalizer
-from srai.utils import flatten_geometry_series
-from srai.utils._optional import import_optional_dependencies
 
 
 class AdministrativeBoundaryRegionalizer(Regionalizer):
@@ -147,10 +150,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
             import warnings
 
             warnings.warn(
-                (
-                    "Couldn't find any administrative boundaries with"
-                    f" `admin_level`={self.admin_level}."
-                ),
+                "Couldn't find any administrative boundaries with"
+                f" `admin_level`={self.admin_level}.",
                 RuntimeWarning,
                 stacklevel=2,
             )
@@ -197,19 +198,21 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         """Query and optimize downloading data from Overpass."""
         elements_ids = set()
         generated_regions: List[Dict[str, Any]] = []
+        unary_geometry = GeometryCollection()
 
         all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
         with tqdm(desc="Loading boundaries") as pbar:
             for geometry in all_geometries:
-                unary_geometry = unary_union([r[GEOMETRY_COLUMN] for r in generated_regions])
                 if not geometry.covered_by(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
                         if boundary["id"] not in elements_ids:
                             elements_ids.add(boundary["id"])
-                            generated_regions.append(self._parse_overpass_element(boundary))
+                            parsed_region = self._parse_overpass_element(boundary)
+                            generated_regions.append(parsed_region)
+                            unary_geometry = union(unary_geometry, parsed_region[GEOMETRY_COLUMN])
                             pbar.update(1)
 
         return generated_regions
@@ -218,9 +221,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         """
         Query Overpass and catch exceptions.
 
-        Since `overpass` library doesn't have useful http error wrapping like `osmnx` does [1],
-        this method allows for retry after waiting some time. Additionally, caching mechanism
-        uses `osmnx` internal methods built for this purpose.
+        This method allows for retry after waiting some time, and caches the response.
 
         Args:
             query (str): Overpass query.
@@ -231,21 +232,25 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         Returns:
             List[Dict[str, Any]]: Query elements result from Overpass.
-
-        References:
-            1. https://github.com/gboeing/osmnx/blob/main/osmnx/downloader.py#L712
         """
-        from osmnx.downloader import _retrieve_from_cache, _save_to_cache
         from overpass import MultipleRequestsError, ServerLoadError
+
+        h = hashlib.new("sha256")
+        h.update(query.encode())
+        query_hash = h.hexdigest()
+        query_file_path = Path("cache").resolve() / f"{query_hash}.json"
 
         while True:
             try:
-                query_result = _retrieve_from_cache(url=query, check_remark=False)
-                if query_result is None:
+                if not query_file_path.exists():
                     query_result = self.overpass_api.get(
                         query, verbosity="ids tags", responseformat="json"
                     )
-                    _save_to_cache(url=query, response_json=query_result, sc=200)
+                    query_file_path.parent.mkdir(parents=True, exist_ok=True)
+                    query_file_path.write_text(json.dumps(query_result))
+                else:
+                    query_result = json.loads(query_file_path.read_text())
+
                 elements: List[Dict[str, Any]] = query_result["elements"]
                 return elements
             except (MultipleRequestsError, ServerLoadError):

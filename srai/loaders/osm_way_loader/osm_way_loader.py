@@ -14,17 +14,17 @@ import shapely.geometry as shpg
 from functional import seq
 from tqdm.auto import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
 from srai.loaders import Loader
-from srai.utils._optional import import_optional_dependencies
 
 from . import constants
 
 logger = logging.getLogger(__name__)
 
 
-class NetworkType(str, Enum):
+class OSMNetworkType(str, Enum):
     """
     Type of the street network.
 
@@ -55,7 +55,7 @@ class OSMWayLoader(Loader):
 
     def __init__(
         self,
-        network_type: Union[NetworkType, str],
+        network_type: Union[OSMNetworkType, str],
         contain_within_area: bool = False,
         preprocess: bool = True,
         wide: bool = True,

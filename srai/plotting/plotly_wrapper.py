@@ -5,21 +5,18 @@ This module contains functions for quick plotting of analysed gdfs using Plotly 
 """
 from typing import Any, Dict, List, Optional, Set
 
-from srai.utils._optional import import_optional_dependencies
-
-import_optional_dependencies(dependency_group="plotting", modules=["plotly"])
-
-# flake8: noqa E402
-
 import geopandas as gpd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
+
+import_optional_dependencies(dependency_group="plotting", modules=["plotly"])
 
 
 def plot_regions(
@@ -350,7 +347,6 @@ def _calculate_mapbox_zoom(
     Returns:
         float: zoom level for a mapbox plot.
     """
-
     minx, miny, maxx, maxy = regions_gdf.geometry.total_bounds
     max_bound = max(abs(maxx - minx), abs(maxy - miny)) * 111
     zoom = float(12.5 - np.log(max_bound))

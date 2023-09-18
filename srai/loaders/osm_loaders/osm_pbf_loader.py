@@ -9,13 +9,10 @@ from typing import Hashable, List, Mapping, Optional, Sequence, Union
 import geopandas as gpd
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import (
-    grouped_osm_tags_type,
-    osm_tags_type,
-)
-from srai.utils._optional import import_optional_dependencies
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 class OSMPbfLoader(OSMLoader):
@@ -58,7 +55,7 @@ class OSMPbfLoader(OSMLoader):
     def load(
         self,
         area: gpd.GeoDataFrame,
-        tags: Union[osm_tags_type, grouped_osm_tags_type],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
@@ -78,7 +75,7 @@ class OSMPbfLoader(OSMLoader):
 
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
-            tags (Union[osm_tags_type, grouped_osm_tags_type]): A dictionary
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -104,23 +101,26 @@ class OSMPbfLoader(OSMLoader):
                 download_directory=self.download_directory
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
-        clipping_polygon = area_wgs84.geometry.unary_union
-
         merged_tags = self._merge_osm_tags_filter(tags)
 
-        pbf_handler = PbfFileHandler(tags=merged_tags, region_geometry=clipping_polygon)
+        pbf_handler = PbfFileHandler(tags=merged_tags)
 
         results = []
         for region_id, pbf_files in downloaded_pbf_files.items():
             features_gdf = pbf_handler.get_features_gdf(
                 file_paths=pbf_files, region_id=str(region_id)
             )
-            results.append(features_gdf)
+            matching_features_ids = features_gdf.sjoin(area_wgs84).index
+            results.append(features_gdf.loc[matching_features_ids])
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
 
-        features_columns = result_gdf.columns.drop(labels=[GEOMETRY_COLUMN]).sort_values()
-        result_gdf = result_gdf[[GEOMETRY_COLUMN, *features_columns]]
+        features_columns = [
+            column
+            for column in result_gdf.columns
+            if column != GEOMETRY_COLUMN and result_gdf[column].notnull().any()
+        ]
+        result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 

@@ -1,18 +1,25 @@
 """Tests for OSMPbfLoader."""
 from pathlib import Path
 from typing import List, Union
+from unittest import TestCase
 
 import geopandas as gpd
 import pytest
 from shapely.geometry import MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
-from srai.constants import REGIONS_INDEX, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters import BASE_OSM_GROUPS_FILTER, HEX2VEC_FILTER
-from srai.loaders.osm_loaders.filters._typing import grouped_osm_tags_type, osm_tags_type
+from srai.loaders.osm_loaders.filters import (
+    BASE_OSM_GROUPS_FILTER,
+    HEX2VEC_FILTER,
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+)
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
 from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+
+ut = TestCase()
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -165,7 +172,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
 )
 def test_pbf_handler(
     test_file_name: str,
-    query: osm_tags_type,
+    query: OsmTagsFilter,
     expected_result_length: int,
     expected_features_columns_length: int,
 ):
@@ -191,12 +198,26 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length",
+    "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length,expected_features_columns_names",
     [
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0),
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 0),
-        ([Point([(-73.981883, 40.768081)])], None, HEX2VEC_FILTER, 2, 3),
-        ([Point([(-73.981883, 40.768081)])], None, BASE_OSM_GROUPS_FILTER, 3, 3),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0, []),
+        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 0, []),
+        (
+            [Point([(-73.981883, 40.768081)])],
+            None,
+            HEX2VEC_FILTER,
+            2,
+            3,
+            ["building", "historic", "tourism"],
+        ),
+        (
+            [Point([(-73.981883, 40.768081)])],
+            None,
+            BASE_OSM_GROUPS_FILTER,
+            3,
+            3,
+            ["transportation", "historic", "tourism"],
+        ),
         (
             [Point([(-73.981883, 40.768081)])],
             Path(__file__).parent
@@ -205,6 +226,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             HEX2VEC_FILTER,
             2,
             3,
+            ["building", "historic", "tourism"],
         ),
         (
             [Point([(-73.981883, 40.768081)])],
@@ -214,6 +236,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             BASE_OSM_GROUPS_FILTER,
             3,
             3,
+            ["transportation", "historic", "tourism"],
         ),
         (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
@@ -223,6 +246,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             HEX2VEC_FILTER,
             0,
             0,
+            [],
         ),
         (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
@@ -232,15 +256,17 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             BASE_OSM_GROUPS_FILTER,
             0,
             0,
+            [],
         ),
     ],
 )
 def test_osm_pbf_loader(
     test_geometries: List[BaseGeometry],
     pbf_file: Path,
-    query: Union[osm_tags_type, grouped_osm_tags_type],
+    query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     expected_result_length: int,
     expected_features_columns_length: int,
+    expected_features_columns_names: List[str],
 ):
     """Test `OSMPbfLoader.load()`."""
     download_directory = Path(__file__).parent / "test_files"
@@ -253,5 +279,10 @@ def test_osm_pbf_loader(
     loader = OSMPbfLoader(pbf_file=pbf_file, download_directory=download_directory)
     result = loader.load(area, tags=query)
 
-    assert len(result) == expected_result_length
-    assert len(result.columns) == expected_features_columns_length + 1
+    assert (
+        len(result) == expected_result_length
+    ), f"Mismatched result length ({len(result)}, {expected_result_length})"
+    assert (
+        len(result.columns) == expected_features_columns_length + 1
+    ), f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
+    ut.assertCountEqual(result.columns, expected_features_columns_names + [GEOMETRY_COLUMN])

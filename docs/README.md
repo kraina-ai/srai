@@ -1,20 +1,20 @@
 <p align="center">
-  <img width="300" src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/logos/srai-logo-transparent.png">
+  <img width="300" src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/logos/srai-logo-transparent.png">
 </p>
 <p align="center">
-    <img alt="GitHub" src="https://img.shields.io/github/license/srai-lab/srai?logo=apache&logoColor=%23fff">
-    <img src="https://img.shields.io/github/checks-status/srai-lab/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
-    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-dev.yml" target="_blank">
-        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff">
+    <img alt="GitHub" src="https://img.shields.io/github/license/kraina-ai/srai?logo=apache&logoColor=%23fff">
+    <img src="https://img.shields.io/github/checks-status/kraina-ai/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-dev.yml" target="_blank">
+        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff">
     </a>
-    <a href="https://github.com/srai-lab/srai/actions/workflows/ci-prod.yml" target="_blank">
-        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/srai-lab/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff">
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-prod.yml" target="_blank">
+        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff">
     </a>
-    <a href="https://results.pre-commit.ci/latest/github/srai-lab/srai/main" target="_blank">
-        <img src="https://results.pre-commit.ci/badge/github/srai-lab/srai/main.svg" alt="pre-commit.ci status">
+    <a href="https://results.pre-commit.ci/latest/github/kraina-ai/srai/main" target="_blank">
+        <img src="https://results.pre-commit.ci/badge/github/kraina-ai/srai/main.svg" alt="pre-commit.ci status">
     </a>
-    <a href="https://www.codefactor.io/repository/github/srai-lab/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/srai-lab/srai?logo=codefactor&logoColor=%23fff"></a>
-    <a href="https://app.codecov.io/gh/srai-lab/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/srai-lab/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
+    <a href="https://www.codefactor.io/repository/github/kraina-ai/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/kraina-ai/srai?logo=codefactor&logoColor=%23fff"></a>
+    <a href="https://app.codecov.io/gh/kraina-ai/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/kraina-ai/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
     <a href="https://pypi.org/project/srai" target="_blank">
         <img src="https://img.shields.io/pypi/v/srai?color=%2334D058&label=pypi%20package&logo=pypi&logoColor=%23fff" alt="Package version">
     </a>
@@ -97,7 +97,7 @@ Example with `OSMOnlineLoader`:
 
 ```python
 from srai.loaders import OSMOnlineLoader
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import geocode_to_region_gdf
 from srai.plotting import plot_regions
 
 query = {"leisure": "park"}
@@ -110,7 +110,7 @@ parks_gdf.explore(m=folium_map, color="forestgreen")
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_osm_data.jpg"  style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading road network
@@ -118,13 +118,12 @@ parks_gdf.explore(m=folium_map, color="forestgreen")
 Road network downloading is a special case of OSM data downloading. To download road network for a given area, use `OSMWayLoader` class:
 
 ```python
-from srai.loaders import OSMWayLoader
-from srai.loaders.osm_way_loader import NetworkType
-from srai.utils import geocode_to_region_gdf
+from srai.loaders import OSMNetworkType, OSMWayLoader
+from srai.regionalizers import geocode_to_region_gdf
 from srai.plotting import plot_regions
 
 area = geocode_to_region_gdf("Utrecht, Netherlands")
-loader = OSMWayLoader(NetworkType.BIKE)
+loader = OSMWayLoader(OSMNetworkType.BIKE)
 
 nodes, edges = loader.load(area)
 
@@ -133,7 +132,7 @@ edges[["geometry"]].explore(m=folium_map, color="seagreen")
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_road_network_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Downloading GTFS data
@@ -143,8 +142,8 @@ To extract features from GTFS use `GTFSLoader`. It will extract trip count and a
 ```python
 from pathlib import Path
 
-from srai.loaders import GTFSLoader
-from srai.utils import geocode_to_region_gdf, download_file
+from srai.loaders import GTFSLoader, download_file
+from srai.regionalizers import geocode_to_region_gdf
 from srai.plotting import plot_regions
 
 area = geocode_to_region_gdf("Vienna, Austria")
@@ -159,7 +158,7 @@ features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/downloading_gtfs_data.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Regionalization
@@ -174,8 +173,7 @@ Regionalization is a process of dividing a given area into smaller regions. This
 Example:
 
 ```python
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 
 area = geocode_to_region_gdf("Berlin, Germany")
 regionalizer = H3Regionalizer(resolution=7)
@@ -187,7 +185,7 @@ plot_regions(regions_gdf=regions, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/regionalization.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/regionalization.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Embedding
@@ -207,8 +205,7 @@ from srai.embedders import CountEmbedder
 from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMOnlineLoader
 from srai.plotting import plot_regions, plot_numeric_data
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 
 loader = OSMOnlineLoader()
 regionalizer = H3Regionalizer(resolution=9)
@@ -224,11 +221,11 @@ embedder = CountEmbedder()
 embeddings = embedder.transform(regions, features, joint)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
-plot_numeric_data(regions, embeddings, "amenity_bicycle_parking", map=folium_map)
+plot_numeric_data(regions, "amenity_bicycle_parking", embeddings, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/embedding_count_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 `CountEmbedder` is a simple method, which does not require fitting. Other methods, such as `Hex2VecEmbedder` or `GTFS2VecEmbedder` require fitting and can be used in a similar way to `scikit-learn` estimators:
@@ -239,8 +236,7 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
-from srai.regionalizers import H3Regionalizer
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import H3Regionalizer, geocode_to_region_gdf
 from srai.plotting import plot_regions, plot_numeric_data
 
 loader = OSMPbfLoader()
@@ -265,16 +261,16 @@ embedder = Hex2VecEmbedder([15, 10, 3])
 embeddings = embedder.fit_transform(regions, features, joint, neighbourhood, batch_size=128)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
-plot_numeric_data(regions, embeddings, 0, map=folium_map)
+plot_numeric_data(regions, 0, embeddings, map=folium_map)
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/srai-lab/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/embedding_hex2vec_embedder.jpg" style="max-width:600px;width:100%"/>
 </p>
 
 ### Plotting, utilities and more
 
-We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://srai-lab.github.io/srai).
+We also provide utilities for different spatial operations and plotting functions adopted to data formats used in `srai` For a full list of available methods, please refer to the [documentation](https://kraina-ai.github.io/srai).
 
 ## Contributing
 
@@ -299,6 +295,6 @@ TBD
 
 ## License
 
-This library is licensed under the [Apache License 2.0](https://github.com/srai-lab/srai/blob/main/LICENSE.md).
+This library is licensed under the [Apache License 2.0](https://github.com/kraina-ai/srai/blob/main/LICENSE.md).
 
 The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).

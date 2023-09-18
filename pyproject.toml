@@ -1,13 +1,12 @@
 [project]
 name = "srai"
-version = "0.1.1"
+version = "0.3.3"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
-    { name = "SRAI Lab", email = "spatialrepresentationsforai@gmail.com" },
-    { name = "Piotr Gramacki" },
-    { name = "Kacper Leśniara" },
-    { name = "Kamil Raczycki" },
-    { name = "Szymon Woźniak" }
+    { name = "Piotr Gramacki", email = "pgramacki@kraina.ai" },
+    { name = "Kacper Leśniara", email = "klesniara@kraina.ai" },
+    { name = "Kamil Raczycki", email = "kraczycki@kraina.ai" },
+    { name = "Szymon Woźniak", email = "swozniak@kraina.ai" },
 ]
 # pdm add <library>
 dependencies = [
@@ -19,13 +18,13 @@ dependencies = [
     "geoparquet",
     "pyfunctional",
     "rtree",
-    "scipy",
     "pyarrow",
     "topojson",
     "tqdm",
     "s2",
     "typeguard",
     "requests",
+    "h3ronpy>=0.17.5",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -48,10 +47,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://srai-lab.github.io/srai"
-Repository = "https://github.com/srai-lab/srai"
-Documentation = "https://srai-lab.github.io/srai"
-Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
+Homepage = "https://kraina-ai.github.io/srai"
+Repository = "https://github.com/kraina-ai/srai"
+Documentation = "https://kraina-ai.github.io/srai"
+Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # Make sure to edit test_optional_dependencies.py:
@@ -61,11 +60,17 @@ Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
 # pdm add -G osm <library>
 osm = ["osmium", "osmnx", "overpass", "pillow"]
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d", "haversine", "spherical-geometry"]
+voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
-plotting = ["folium", "mapclassify", "plotly", "kaleido<=0.2.1"]  # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
+plotting = [
+    "folium",
+    "mapclassify",
+    "matplotlib",
+    "plotly",
+    "kaleido<=0.2.1",
+] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
 torch = ["pytorch-lightning", "torch"]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
@@ -110,6 +115,9 @@ docs = [
 ]
 performance = ["scalene"]
 license = ["licensecheck"]
+
+[tool.pdm.scripts]
+post_install = "pre-commit install"
 
 [tool.black]
 line-length = 100
@@ -170,7 +178,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.1.1"
+current_version = "0.3.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 commit = true
@@ -178,7 +186,12 @@ tag = false
 push = false
 
 [tool.bumpver.file_patterns]
-"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"pyproject.toml" = [
+    '^current_version = "{version}"$',
+    '^version = "{version}"$',
+]
+"srai/__init__.py" = ['^__version__ = "{version}"$']
+"CITATION.cff" = ['^version: {version}$']
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
