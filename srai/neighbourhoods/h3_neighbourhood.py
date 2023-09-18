@@ -3,7 +3,7 @@ H3 neighbourhood.
 
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
 
 import geopandas as gpd
 import h3
@@ -86,20 +86,6 @@ class H3Neighbourhood(Neighbourhood[str]):
         neighbours: Set[str] = h3.grid_ring(index, distance)
         neighbours.discard(index)
         return self._select_available(neighbours)
-
-    def get_ij_index(self, anchor_index: str, target_index: str) -> Tuple[int, int]:
-        """
-        Returns the H3 ij index of the second region with respect to the first one.
-
-        Args:
-            anchor_index (str): H3 index of the anchor region.
-            target_index (str): H3 index of the second region.
-
-        Returns:
-            Tuple[int, int]: The ij index of the second region with respect to the first one.
-        """
-        coords: Tuple[int, ...] = h3.cell_to_local_ij(anchor_index, target_index)
-        return coords[0], coords[1]
 
     def _select_available(self, indices: Set[str]) -> Set[str]:
         if self._available_indices is None:

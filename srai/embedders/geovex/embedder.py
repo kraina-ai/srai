@@ -76,7 +76,12 @@ class GeoVexEmbedder(CountEmbedder):
         self._dataset = dataset
 
         # save invalid h3s for later
-        self._invalid_h3s: List[str] = []
+        self._invalid_cells: List[str] = []
+
+    @property
+    def invalid_cells(self) -> List[str]:
+        """List of invalid h3s."""
+        return self._invalid_cells
 
     def transform(
         self,
@@ -95,33 +100,38 @@ class GeoVexEmbedder(CountEmbedder):
         Returns:
             pd.DataFrame: Region embeddings.
         """
-        from torch.utils.data import DataLoader
+        neighbourhood = H3Neighbourhood(
+            regions_gdf=regions_gdf,
+        )
 
-        self._check_is_fitted()
+        _, dataloader, self._dataset = self._prepare_dataset(
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            self._batch_size,
+            shuffle=False,
+        )
 
-        if self._dataset is None:
-            # build the dataset
-            _, dataloader, self._dataset = self._prepare_dataset(
-                regions_gdf,
-                features_gdf,
-                joint_gdf,
-                self._neighbourhood,
-                self._batch_size,
-                shuffle=False,
-            )
-        else:
-            dataloader = DataLoader(self._dataset, batch_size=self._batch_size, shuffle=False)
+        return self._transform(dataset=self._dataset, dataloader=dataloader)
+
+    def _transform(
+        self,
+        dataset: HexagonalDataset[T],
+        dataloader: Optional[DataLoader] = None,
+    ) -> pd.DataFrame:
+        if dataloader is None:
+            dataloader = DataLoader(dataset, batch_size=self._batch_size, shuffle=False)
+
         embeddings = [
             self._model.encoder(batch).detach().numpy() for batch in dataloader  # type: ignore
         ]
-
-        if len(self._dataset.get_invalid_h3s()) > 0:
+        if len(dataset.get_invalid_cells()) > 0:
             print(
                 "Warning: Some regions were not able to be encoded, as they don't have"
                 f" r={self._r} neighbors."
             )
-
-        df = pd.DataFrame(np.concatenate(embeddings), index=self._dataset.get_ordered_index())
+        df = pd.DataFrame(np.concatenate(embeddings), index=dataset.get_ordered_index())
         df.index.name = REGIONS_INDEX
         return df
 
@@ -214,11 +224,8 @@ class GeoVexEmbedder(CountEmbedder):
             learning_rate=learning_rate,
             trainer_kwargs=trainer_kwargs,
         )
-        return self.transform(
-            regions_gdf=regions_gdf,
-            features_gdf=features_gdf,
-            joint_gdf=joint_gdf,
-        )
+        assert self._dataset is not None  # for mypy
+        return self._transform(dataset=self._dataset)
 
     def _get_raw_counts(
         self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
@@ -228,11 +235,6 @@ class GeoVexEmbedder(CountEmbedder):
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
-
-    @property
-    def invalid_h3s(self) -> List[str]:
-        """List of invalid h3s."""
-        return self._invalid_h3s
 
     def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         # TODO: this is copy pasted from Hex2VecEmbedder, should be refactored
