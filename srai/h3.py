@@ -6,7 +6,8 @@ import geopandas as gpd
 import h3
 import numpy as np
 import numpy.typing as npt
-from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
+from h3ronpy.arrow import cells_to_string, grid_disk
+from h3ronpy.arrow.vector import cells_to_wkb_polygons, geometry_to_cells, wkb_to_cells
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
@@ -173,3 +174,42 @@ def get_local_ij_index(
         local_ijs = [(coords[0], coords[1]) for coords in local_ijs]
 
     return local_ijs
+
+
+def ring_buffer_geometry(
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+    h3_resolution: int,
+    buffer: int,
+) -> Union[gpd.GeoSeries, BaseGeometry]:
+    """
+    Buffer a Shapely geometry with H3 cells, and return the bounding geometry.
+
+    If a GeoDataFrame is passed, the geometry column will be used and the return will be a GeoSeries
+
+    Args:
+        geometry (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+            The geometry to buffer.
+        h3_resolution (int): The H3 resolution to use.
+        buffer (int): The buffer distance in H3 cells.
+
+    Returns:
+        Union[gpd.GeoSeries, BaseGeometry]: The buffered geometry.
+    """
+    if isinstance(geometry, gpd.GeoDataFrame):
+        geometry = geometry[GEOMETRY_COLUMN]
+        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, buffer))
+
+    if isinstance(geometry, gpd.GeoSeries):
+        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, buffer))
+
+    if isinstance(geometry, Iterable):
+        return gpd.GeoSeries([ring_buffer_geometry(x, h3_resolution, buffer) for x in geometry])
+
+    assert isinstance(geometry, BaseGeometry)
+    h3s = geometry_to_cells(
+        geometry, compact=False, resolution=h3_resolution, all_intersecting=True
+    )
+    # buffer all the h3
+    buffered_h3s = set(cells_to_string(grid_disk(h3s, buffer, flatten=True)).tolist())
+    # get the bounding geometry
+    return h3_to_geoseries(buffered_h3s).unary_union
