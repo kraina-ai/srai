@@ -6,7 +6,7 @@ groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "pe
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:b35133f282a87d24cab216e4551c667386cecf1c7a2c90e01d1ca3a59680cc31"
+content_hash = "sha256:2ad334abb32b0bf79f2681ee9de48af03747b808fc846f3ab07e3596f201814e"
 
 [[package]]
 name = "aiohttp"
@@ -1234,7 +1234,7 @@ files = [
 
 [[package]]
 name = "h3ronpy"
-version = "0.17.5"
+version = "0.18.0"
 summary = "Data science toolkit for the H3 geospatial grid"
 dependencies = [
     "Shapely>=1.7",
@@ -1242,12 +1242,12 @@ dependencies = [
     "pyarrow>=10.0",
 ]
 files = [
-    {file = "h3ronpy-0.17.5-cp38-abi3-macosx_10_14_x86_64.whl", hash = "sha256:fb09eaedcd9d594903019cedcf0251c6a504b4baa4b2f7db7c5cf98287522cab"},
-    {file = "h3ronpy-0.17.5-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:43b0c69a4a155d0ceb513fc33ecd7e2379f86137269b205c51db628edfccc0be"},
-    {file = "h3ronpy-0.17.5-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f8c01ceb6b2ac5c3716d0d261119f2b447ff831e22cf9a9c02a1c64a8f0bcee8"},
-    {file = "h3ronpy-0.17.5-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5872b0c10d87ff67887b492140b7f656f0bb21c68659d99468c42d787ee80be7"},
-    {file = "h3ronpy-0.17.5-cp38-abi3-win_amd64.whl", hash = "sha256:9e97eb6e5bcf08c100e777f73b382551f0b71868ba9ee3111c1781df7390045f"},
-    {file = "h3ronpy-0.17.5.tar.gz", hash = "sha256:8966604c0c80aebfb3d9074db2a8b8359454e512737f8ab301712e9a33e45b4e"},
+    {file = "h3ronpy-0.18.0-cp38-abi3-macosx_10_14_x86_64.whl", hash = "sha256:5edd7be18aa95c667fbd557f577db992d692e2ba37ca48de203ddd3c4247c066"},
+    {file = "h3ronpy-0.18.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:b5c908669b2893bbb40057bfdfa1f1dc299fb0d8cc06ff7cdb99264e4bcc613f"},
+    {file = "h3ronpy-0.18.0-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:abb2794d3c846a3c92b04bf5f6c922f593057953e41dc6fe53012d341c974a95"},
+    {file = "h3ronpy-0.18.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cd5a1f650d4630e69860aa08905aad88202d49ae50fde38eaa5569683b37831f"},
+    {file = "h3ronpy-0.18.0-cp38-abi3-win_amd64.whl", hash = "sha256:b3cd7122f11365afaee184b87cada27e7f479d11558999a01f2ec375349ec5c7"},
+    {file = "h3ronpy-0.18.0.tar.gz", hash = "sha256:7f45b296793a0661c8319585cfe677cde921d478a74cb1e191e1282aff72a357"},
 ]
 
 [[package]]
