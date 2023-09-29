@@ -7,11 +7,11 @@ import h3
 import numpy as np
 import numpy.typing as npt
 from h3ronpy.arrow import cells_to_string, grid_disk
-from h3ronpy.arrow.vector import cells_to_wkb_polygons, geometry_to_cells, wkb_to_cells
+from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 __all__ = [
     "shapely_geometry_to_h3",
@@ -176,10 +176,34 @@ def get_local_ij_index(
     return local_ijs
 
 
+def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int) -> List[str]:
+    """
+    Buffer H3 indexes by a given number of k-rings.
+
+    List of provided H3 indexes will be buffered by a given distance.
+
+    Args:
+        h3_indexes (Iterable[Union[int, str]]): List of H3 indexes to be buffered.
+        distance (int): The k-ring buffer distance in H3 cells.
+
+    Returns:
+        List[str]: Buffered list of H3 cells containing both original and new cells.
+    """
+    assert all(
+        h3.is_valid_cell(h3_cell) for h3_cell in h3_indexes
+    ), "Not all values in h3_indexes are valid H3 cells."
+
+    h3_int_indexes = (
+        h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_indexes
+    )
+    buffered_h3s = set(cells_to_string(grid_disk(h3_int_indexes, distance, flatten=True)).tolist())
+    return list(buffered_h3s)
+
+
 def ring_buffer_geometry(
     geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
     h3_resolution: int,
-    buffer: int,
+    distance: int,
 ) -> Union[gpd.GeoSeries, BaseGeometry]:
     """
     Buffer a Shapely geometry with H3 cells, and return the bounding geometry.
@@ -190,26 +214,46 @@ def ring_buffer_geometry(
         geometry (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
             The geometry to buffer.
         h3_resolution (int): The H3 resolution to use.
-        buffer (int): The buffer distance in H3 cells.
+        distance (int): The k-ring buffer distance in H3 cells.
 
     Returns:
         Union[gpd.GeoSeries, BaseGeometry]: The buffered geometry.
     """
     if isinstance(geometry, gpd.GeoDataFrame):
         geometry = geometry[GEOMETRY_COLUMN]
-        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, buffer))
+        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, distance))
 
     if isinstance(geometry, gpd.GeoSeries):
-        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, buffer))
+        return geometry.apply(lambda x: ring_buffer_geometry(x, h3_resolution, distance))
 
     if isinstance(geometry, Iterable):
-        return gpd.GeoSeries([ring_buffer_geometry(x, h3_resolution, buffer) for x in geometry])
+        return gpd.GeoSeries([ring_buffer_geometry(x, h3_resolution, distance) for x in geometry])
 
     assert isinstance(geometry, BaseGeometry)
-    h3s = geometry_to_cells(
-        geometry, compact=False, resolution=h3_resolution, all_intersecting=True
-    )
+    h3s = shapely_geometry_to_h3(geometry, h3_resolution, buffer=True)
     # buffer all the h3
-    buffered_h3s = set(cells_to_string(grid_disk(h3s, buffer, flatten=True)).tolist())
+    buffered_h3s = ring_buffer_h3_indexes(h3s, distance=distance)
     # get the bounding geometry
     return h3_to_geoseries(buffered_h3s).unary_union
+
+
+def ring_buffer_h3_regions_gdf(regions_gdf: gpd.GeoDataFrame, distance: int) -> gpd.GeoDataFrame:
+    """
+    Buffer H3 indexes by a given number of k-rings.
+
+    List of provided H3 indexes will be buffered by a given distance.
+
+    Args:
+        regions_gdf (gpd.GeoDataFrame): GeoDataFrame with H3 regions from H3Regionalizer.
+        distance (int): The k-ring buffer distance in H3 cells.
+
+    Returns:
+        gpd.GeoDataFrame: Buffered regions_gdf with new H3 cells added.
+    """
+    buffered_h3_indexes = ring_buffer_h3_indexes(h3_indexes=regions_gdf.index, distance=distance)
+    buffered_gdf_h3 = gpd.GeoDataFrame(
+        data={REGIONS_INDEX: buffered_h3_indexes},
+        geometry=h3_to_geoseries(buffered_h3_indexes),
+        crs=WGS84_CRS,
+    ).set_index(REGIONS_INDEX)
+    return buffered_gdf_h3
