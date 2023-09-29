@@ -4,10 +4,11 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 from pathlib import Path
-from typing import Hashable, List, Mapping, Optional, Sequence, Union
+from typing import Hashable, Iterable, List, Mapping, Optional, Sequence, Union
 
 import geopandas as gpd
 import pandas as pd
+from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
@@ -54,7 +55,7 @@ class OSMPbfLoader(OSMLoader):
 
     def load(
         self,
-        area: gpd.GeoDataFrame,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
@@ -74,7 +75,8 @@ class OSMPbfLoader(OSMLoader):
             the constructor of the `OSMPbfLoader`.
 
         Args:
-            area (gpd.GeoDataFrame): Area for which to download objects.
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -91,7 +93,7 @@ class OSMPbfLoader(OSMLoader):
         from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
         from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
-        area_wgs84 = area.to_crs(crs=WGS84_CRS)
+        area_wgs84 = self._prepare_area_gdf(area)
 
         downloaded_pbf_files: Mapping[Hashable, Sequence[Union[str, Path]]]
         if self.pbf_file is not None:
