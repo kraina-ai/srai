@@ -5,6 +5,7 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
+import warnings
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
@@ -14,7 +15,7 @@ import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 from haversine import haversine
-from pymap3d import Ellipsoid, ecef2geodetic, geodetic2ecef
+from pymap3d import Ellipsoid, geodetic2ecef
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from shapely.geometry import (
     GeometryCollection,
@@ -309,8 +310,11 @@ def _create_polygon(
     for i in range(n):
         start = spherical_polygon_points[i]
         end = spherical_polygon_points[(i + 1) % n]
-        start_lon, start_lat = _map_from_geocentric(start[0], start[1], start[2], ell)
-        end_lon, end_lat = _map_from_geocentric(end[0], end[1], end[2], ell)
+        longitudes, latitudes = _map_from_geocentric(
+            [start[0], end[0]], [start[1], end[1]], [start[2], end[2]], ell
+        )
+        start_lon, start_lat = longitudes[0], latitudes[0]
+        end_lon, end_lat = longitudes[1], latitudes[1]
         haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
         steps = ceil(haversine_distance / max_step)
         t_vals = np.linspace(0, 1, steps)
@@ -349,9 +353,20 @@ def _interpolate_edge(
     prev_lon = None
     prev_lat = None
 
-    for pt in geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD):
-        lon, lat = _map_from_geocentric(pt[0], pt[1], pt[2], ell)
-        lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
+    slerped_points = geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD)
+
+    xs = [pt[0] for pt in slerped_points]
+    ys = [pt[1] for pt in slerped_points]
+    zs = [pt[2] for pt in slerped_points]
+
+    longitudes, latitudes = _map_from_geocentric(xs, ys, zs, ell)
+
+    # round imperfections
+    longitudes = np.round(longitudes, 8)
+    latitudes = np.round(latitudes, 8)
+
+    for longitude, latitude in zip(longitudes, latitudes):
+        lon, lat = _fix_lat_lon(longitude, latitude, bbox_bounds)
         if prev_lon is not None and abs(prev_lon - lon) >= 90:
             sign = 1 if lat > 0 else -1
             max_lat = sign * max(abs(prev_lat), abs(lat))
@@ -366,21 +381,177 @@ def _interpolate_edge(
     return edge_points
 
 
-def _map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[float, float]:
+def _map_from_geocentric(
+    x: npt.NDArray[np.float32],
+    y: npt.NDArray[np.float32],
+    z: npt.NDArray[np.float32],
+    ell: Ellipsoid,
+) -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
     """
     Wrapper for a ecef2geodetic function from pymap3d library.
 
     Args:
-        x (float): X cartesian coordinate.
-        y (float): Y cartesian coordinate.
-        z (float): Z cartesian coordinate.
+        x (npt.NDArray[np.float32]): X cartesian coordinate.
+        y (npt.NDArray[np.float32]): Y cartesian coordinate.
+        z (npt.NDArray[np.float32]): Z cartesian coordinate.
         ell (Ellipsoid): an ellipsoid.
 
     Returns:
-        Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
+        Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]: longitude and latitude coordinates
+            in a wgs84 crs.
     """
-    lat, lon, _ = ecef2geodetic(x, y, z, ell=ell)
+    lat, lon, _ = ecef2geodetic_vectorized(x, y, z, ell=ell)
     return lon, lat
+
+
+# Copyright (c) 2014-2022 Michael Hirsch, Ph.D.
+# Copyright (c) 2013, Felipe Geremia Nievinski
+# Copyright (c) 2004-2007 Michael Kleder
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted
+# provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+# and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of
+# conditions and the following disclaimer in the documentation and/or other materials provided
+# with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+def ecef2geodetic_vectorized(
+    x: npt.NDArray[np.float32],
+    y: npt.NDArray[np.float32],
+    z: npt.NDArray[np.float32],
+    ell: Ellipsoid,
+    deg: bool = True,
+) -> npt.NDArray[np.float32]:
+    """
+    Modified function for mapping ecdf to geodetic values from ellipsoid.
+
+    This function is a modified copy of `ecdf2geodetic` function from `pymap3d` library
+    and is redistributed under BSD-2 license.
+
+    Args:
+        x (npt.NDArray[np.float32]): X coordinates.
+        y (npt.NDArray[np.float32]): Y coordinates.
+        z (npt.NDArray[np.float32]): Z coordinates.
+        ell (Ellipsoid): Ellipsoid object.
+        deg (bool, optional): Flag whether to return values in degrees. Defaults to True.
+
+    Returns:
+        npt.NDArray[np.float32]: Parsed latitudes and longitudes
+    """
+    try:
+        x = np.asarray(x)
+        y = np.asarray(y)
+        z = np.asarray(z)
+    except NameError:
+        pass
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+
+    E = np.sqrt(ell.semimajor_axis**2 - ell.semiminor_axis**2)
+
+    # eqn. 4a
+    u = np.sqrt(0.5 * (r**2 - E**2) + 0.5 * np.hypot(r**2 - E**2, 2 * E * z))
+
+    Q = np.hypot(x, y)
+
+    huE = np.hypot(u, E)
+
+    # eqn. 4b
+    try:
+        with warnings.catch_warnings(record=False):
+            warnings.simplefilter("error")
+            Beta = np.arctan(huE / u * z / np.hypot(x, y))
+    except (ArithmeticError, RuntimeWarning):
+        _beta_arr = []
+
+        for _x, _y, _z, _u, _huE in zip(
+            np.atleast_1d(x),
+            np.atleast_1d(y),
+            np.atleast_1d(z),
+            np.atleast_1d(u),
+            np.atleast_1d(huE),
+        ):
+            try:
+                with warnings.catch_warnings(record=False):
+                    warnings.simplefilter("error")
+                    _beta = np.arctan(_huE / _u * _z / np.hypot(_x, _y))
+            except (ArithmeticError, RuntimeWarning):
+                if np.isclose(_z, 0):
+                    _beta = 0
+                elif _z > 0:
+                    _beta = np.pi / 2
+                else:
+                    _beta = -np.pi / 2
+            _beta_arr.append(_beta)
+
+        Beta = np.asarray(_beta_arr)
+        if len(x.shape) == 0:
+            Beta = np.asarray(Beta[0])
+
+    # eqn. 13
+    dBeta = ((ell.semiminor_axis * u - ell.semimajor_axis * huE + E**2) * np.sin(Beta)) / (
+        ell.semimajor_axis * huE * 1 / np.cos(Beta) - E**2 * np.cos(Beta)
+    )
+
+    Beta += dBeta
+
+    # eqn. 4c
+    lat = np.arctan(ell.semimajor_axis / ell.semiminor_axis * np.tan(Beta))
+
+    try:
+        # patch latitude for float32 precision loss
+        lim_pi2 = np.pi / 2 - np.finfo(dBeta.dtype).eps
+        lat = np.where(Beta >= lim_pi2, np.pi / 2, lat)
+        lat = np.where(Beta <= -lim_pi2, -np.pi / 2, lat)
+    except NameError:
+        pass
+
+    lon = np.arctan2(y, x)
+
+    # eqn. 7
+    cosBeta = np.cos(Beta)
+    try:
+        # patch altitude for float32 precision loss
+        cosBeta = np.where(Beta >= lim_pi2, 0, cosBeta)
+        cosBeta = np.where(Beta <= -lim_pi2, 0, cosBeta)
+    except NameError:
+        pass
+
+    alt = np.hypot(z - ell.semiminor_axis * np.sin(Beta), Q - ell.semimajor_axis * cosBeta)
+
+    # inside ellipsoid?
+    inside = (
+        x**2 / ell.semimajor_axis**2
+        + y**2 / ell.semimajor_axis**2
+        + z**2 / ell.semiminor_axis**2
+        < 1
+    )
+
+    try:
+        if inside.any():
+            # avoid all false assignment bug
+            alt[inside] = -alt[inside]
+    except (TypeError, AttributeError):
+        if inside:
+            alt = -alt
+
+    if deg:
+        lat = np.degrees(lat)
+        lon = np.degrees(lon)
+
+    return lat, lon, alt
 
 
 def _fix_lat_lon(
@@ -404,10 +575,6 @@ def _fix_lat_lon(
         Tuple[float, float]: Longitude and latitude of a point.
     """
     min_lon, min_lat, max_lon, max_lat = bbox
-
-    # round imperfections
-    lon = round(lon, 8)
-    lat = round(lat, 8)
 
     # switch signs
     if lon and abs(lon) == abs(min_lon):
