@@ -139,7 +139,7 @@ def test_multiprocessing_activation_threshold(
 
 @pytest.mark.parametrize(  # type: ignore
     "max_meters_between_points",
-    [500, 1_000, 10_000, 100_000],
+    [100_000, 10_000, 1_000, 500],
 )
 def test_regions_edge_resolution(
     max_meters_between_points: int,
@@ -204,7 +204,8 @@ def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygo
     vr = VoronoiRegionalizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
     assert len(result_gdf.index) == 6
-    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert result_gdf.unary_union.difference(earth_bbox).is_empty
+    assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
 @pytest.mark.parametrize(  # type: ignore
