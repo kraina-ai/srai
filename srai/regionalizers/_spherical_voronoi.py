@@ -43,18 +43,12 @@ def _generate_sphere_parts() -> None:
     global SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES  # noqa: PLW0603
 
     if not SPHERE_PARTS:
-        # LON: 0; LAT: 0
-        POINT_FRONT = (1.0, 0.0, 0.0)
-        # LON: 180; LAT: 0
-        POINT_BACK = (-1.0, 0.0, 0.0)
-        # LON: 0; LAT: 90
-        POINT_TOP = (0.0, 0.0, 1.0)
-        # LON: 0; LAT: -90
-        POINT_BOTTOM = (0.0, 0.0, -1.0)
-        # LON: -90; LAT: 0
-        POINT_LEFT = (0.0, -1.0, 0.0)
-        # LON: 90; LAT: 0
-        POINT_RIGHT = (0.0, 1.0, 0.0)
+        POINT_FRONT = (1.0, 0.0, 0.0)  # LON: 0; LAT: 0
+        POINT_BACK = (-1.0, 0.0, 0.0)  # LON: 180; LAT: 0
+        POINT_TOP = (0.0, 0.0, 1.0)  # LON: 0; LAT: 90
+        POINT_BOTTOM = (0.0, 0.0, -1.0)  # LON: 0; LAT: -90
+        POINT_LEFT = (0.0, -1.0, 0.0)  # LON: -90; LAT: 0
+        POINT_RIGHT = (0.0, 1.0, 0.0)  # LON: 90; LAT: 0
 
         SPHERE_PARTS = [
             SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
@@ -481,31 +475,33 @@ def ecef2geodetic_vectorized(
             warnings.simplefilter("error")
             Beta = np.arctan(huE / u * z / np.hypot(x, y))
     except (ArithmeticError, RuntimeWarning):
-        _beta_arr = []
+        is_zero_dimensions = len(x.shape) == 0
 
-        for _x, _y, _z, _u, _huE in zip(
-            np.atleast_1d(x),
-            np.atleast_1d(y),
-            np.atleast_1d(z),
-            np.atleast_1d(u),
-            np.atleast_1d(huE),
-        ):
-            try:
-                with warnings.catch_warnings(record=False):
-                    warnings.simplefilter("error")
-                    _beta = np.arctan(_huE / _u * _z / np.hypot(_x, _y))
-            except (ArithmeticError, RuntimeWarning):
-                if np.isclose(_z, 0):
-                    _beta = 0
-                elif _z > 0:
-                    _beta = np.pi / 2
-                else:
-                    _beta = -np.pi / 2
-            _beta_arr.append(_beta)
+        if is_zero_dimensions:
+            if np.isclose(z, 0):
+                Beta = 0
+            elif z > 0:
+                Beta = np.pi / 2
+            else:
+                Beta = -np.pi / 2
+        else:
+            _beta_arr = []
 
-        Beta = np.asarray(_beta_arr)
-        if len(x.shape) == 0:
-            Beta = np.asarray(Beta[0])
+            for _x, _y, _z, _u, _huE in zip(x, y, z, u, huE):
+                try:
+                    with warnings.catch_warnings(record=False):
+                        warnings.simplefilter("error")
+                        _beta = np.arctan(_huE / _u * _z / np.hypot(_x, _y))
+                except (ArithmeticError, RuntimeWarning):
+                    if np.isclose(_z, 0):
+                        _beta = 0
+                    elif _z > 0:
+                        _beta = np.pi / 2
+                    else:
+                        _beta = -np.pi / 2
+                _beta_arr.append(_beta)
+
+            Beta = np.asarray(_beta_arr)
 
     # eqn. 13
     dBeta = ((ell.semiminor_axis * u - ell.semimajor_axis * huE + E**2) * np.sin(Beta)) / (
