@@ -257,8 +257,15 @@ def _create_region(
     _generate_sphere_parts()
     for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
         if sph_pol.intersects_poly(sphere_part):
-            intersection = sph_pol.intersection(sphere_part)
-            sphere_intersection_parts.append((intersection, sphere_part_bbox))
+            if all(
+                sphere_part.contains_point(point)
+                for poly in sph_pol._polygons
+                for point in poly._points
+            ):
+                sphere_intersection_parts.append((sph_pol, sphere_part_bbox))
+            else:
+                intersection = sph_pol.intersection(sphere_part)
+                sphere_intersection_parts.append((intersection, sphere_part_bbox))
 
     multi_polygon_parts: List[Polygon] = []
     for sphere_intersection_part, bbox in sphere_intersection_parts:
