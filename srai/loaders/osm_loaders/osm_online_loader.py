@@ -4,12 +4,13 @@ OSM Online Loader.
 This module contains loader capable of loading OpenStreetMap features from Overpass.
 """
 from itertools import product
-from typing import List, Tuple, Union
+from typing import Iterable, List, Tuple, Union
 
 import geopandas as gpd
 import pandas as pd
 from functional import seq
 from packaging import version
+from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
@@ -45,7 +46,7 @@ class OSMOnlineLoader(OSMLoader):
 
     def load(
         self,
-        area: gpd.GeoDataFrame,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
@@ -58,7 +59,8 @@ class OSMOnlineLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (gpd.GeoDataFrame): Area for which to download objects.
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -74,14 +76,14 @@ class OSMOnlineLoader(OSMLoader):
         """
         import osmnx as ox
 
-        area_wgs84 = area.to_crs(crs=WGS84_CRS)
+        area_wgs84 = self._prepare_area_gdf(area)
 
         merged_tags = self._merge_osm_tags_filter(tags)
 
         _tags = self._flatten_tags(merged_tags)
 
         total_tags_num = len(_tags)
-        total_queries = len(area) * total_tags_num
+        total_queries = len(area_wgs84) * total_tags_num
 
         key_value_name_max_len = self._get_max_key_value_name_len(_tags)
         desc_max_len = key_value_name_max_len + len(self._PBAR_FORMAT.format("", ""))
