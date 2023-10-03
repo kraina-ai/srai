@@ -7,7 +7,7 @@ import h3
 import numpy as np
 import numpy.typing as npt
 from h3ronpy.arrow import cells_to_string, grid_disk
-from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
+from h3ronpy.arrow.vector import ContainmentMode, cells_to_wkb_polygons, wkb_to_cells
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
@@ -58,8 +58,11 @@ def shapely_geometry_to_h3(
     else:
         wkb = [geometry.wkb]
 
+    containment_mode = (
+        ContainmentMode.IntersectsBoundary if buffer else ContainmentMode.ContainsCentroid
+    )
     h3_indexes = wkb_to_cells(
-        wkb, resolution=h3_resolution, all_intersecting=buffer, flatten=True
+        wkb, resolution=h3_resolution, containment_mode=containment_mode, flatten=True
     ).unique()
 
     return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
