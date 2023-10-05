@@ -5,11 +5,12 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
+import hashlib
 import warnings
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Hashable, List, Optional, Tuple, Union
+from typing import Dict, Hashable, List, Optional, Set, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
@@ -133,31 +134,165 @@ def generate_voronoi_regions(
     sv = SphericalVoronoi(sphere_points, radius, center, threshold=SCIPY_THRESHOLD)
     sv.sort_vertices_of_regions()
 
-    create_regions_func = partial(
-        _create_region,
+    total_regions = len(sv.regions)
+    region_ids = list(range(total_regions))
+
+    activate_multiprocessing = (
+        num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold
+    )
+
+    # generate all spherical polygons
+
+    generate_spherical_polygons_parts_func = partial(
+        _generate_spherical_polygons_parts,
         sv=sv,
+    )
+
+    if activate_multiprocessing:
+        spherical_polygons_parts = [
+            polygon_part_tuple
+            for polygon_part_tuples in process_map(
+                generate_spherical_polygons_parts_func,
+                region_ids,
+                desc="Generating spherical polygons",
+                max_workers=num_of_multiprocessing_workers,
+                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+            )
+            for polygon_part_tuple in polygon_part_tuples
+        ]
+    else:
+        spherical_polygons_parts = [
+            polygon_part_tuple
+            for region_id in tqdm(region_ids, desc="Generating spherical polygons")
+            for polygon_part_tuple in generate_spherical_polygons_parts_func(region_id=region_id)
+        ]
+
+    # identify all edges
+
+    hashed_vertices: Dict[bytes, npt.NDArray[np.float32]] = {}
+    hashed_edges: Set[Tuple[bytes, bytes]] = set()
+
+    regions_parts: Dict[int, List[Tuple[int, List[Tuple[bytes, bytes]]]]] = {}
+
+    for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
+        if region_id not in regions_parts:
+            regions_parts[region_id] = []
+
+        n = len(spherical_polygon_points)
+        polygon_vertices_hashes = []
+        polygon_edges = []
+
+        # Hash all vertices
+        for i in range(n):
+            start: npt.NDArray[np.float32] = spherical_polygon_points[i]
+            start_hash = hashlib.sha256(start.data).digest()
+            hashed_vertices[start_hash] = start
+            polygon_vertices_hashes.append(start_hash)
+
+        # Map all edges
+        for i in range(n):
+            start_hash = polygon_vertices_hashes[i]
+            end_hash = polygon_vertices_hashes[(i + 1) % n]
+
+            if start_hash == end_hash:
+                continue
+
+            polygon_edges.append((start_hash, end_hash))
+
+            if (start_hash, end_hash) not in hashed_edges and (
+                end_hash,
+                start_hash,
+            ) not in hashed_edges:
+                hashed_edges.add(
+                    (
+                        start_hash,
+                        end_hash,
+                    )
+                )
+
+        regions_parts[region_id].append((sphere_part_id, polygon_edges))
+
+    # interpolate unique ones
+
+    interpolated_edges: Dict[Tuple[bytes, bytes], List[Tuple[float, float]]]
+
+    interpolate_polygon_edge_func = partial(
+        _interpolate_polygon_edge,
+        hashed_vertices=hashed_vertices,
         ell=unit_sphere_ellipsoid,
         max_meters_between_points=max_meters_between_points,
     )
 
-    total_regions = len(sv.regions)
-    region_ids = list(range(total_regions))
-
-    generated_regions: List[MultiPolygon]
-
-    if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
-        generated_regions = process_map(
-            create_regions_func,
-            region_ids,
-            desc="Generating regions",
-            max_workers=num_of_multiprocessing_workers,
-            chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-        )
+    if activate_multiprocessing:
+        interpolated_edges = {
+            hashed_edge: interpolated_edge
+            for hashed_edge, interpolated_edge in zip(
+                hashed_edges,
+                process_map(
+                    interpolate_polygon_edge_func,
+                    hashed_edges,
+                    desc="Interpolating edges",
+                    max_workers=num_of_multiprocessing_workers,
+                    chunksize=ceil(len(hashed_edges) / (4 * num_of_multiprocessing_workers)),
+                ),
+            )
+        }
     else:
-        generated_regions = [
-            create_regions_func(region_id=region_id)
-            for region_id in tqdm(region_ids, desc="Generating regions")
-        ]
+        interpolated_edges = {
+            hashed_edge: interpolate_polygon_edge_func(hashed_edge)
+            for hashed_edge in tqdm(hashed_edges, desc="Interpolating edges")
+        }
+
+    # use interpolated edges to map spherical polygons into regions
+
+    generated_regions: List[MultiPolygon] = []
+    _generate_sphere_parts()
+
+    for region_id in tqdm(region_ids, desc="Generating polygons"):
+        multi_polygon_parts: List[Polygon] = []
+
+        for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
+            polygon_points: List[Tuple[float, float]] = []
+
+            for edge_start, edge_end in region_polygon_edges:
+                if (edge_start, edge_end) in interpolated_edges:
+                    interpolated_edge = interpolated_edges[(edge_start, edge_end)]
+                else:
+                    interpolated_edge = interpolated_edges[(edge_end, edge_start)][::-1]
+
+                interpolated_edge = _fix_edge(
+                    interpolated_edge,
+                    SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id].bounds,
+                    prev_lon=polygon_points[-1][0] if polygon_points else None,
+                    prev_lat=polygon_points[-1][1] if polygon_points else None,
+                )
+
+                polygon_points.extend(interpolated_edge)
+
+            polygon = Polygon(polygon_points)
+            polygon = make_valid(polygon)
+            polygon = polygon.intersection(SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id])
+            if isinstance(polygon, GeometryCollection):
+                for geometry in polygon.geoms:
+                    if isinstance(geometry, (Polygon, MultiPolygon)):
+                        polygon = geometry
+                        break
+                else:
+                    raise RuntimeError(
+                        f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
+                    )
+
+            if isinstance(polygon, Polygon):
+                multi_polygon_parts.append(polygon)
+            elif isinstance(polygon, MultiPolygon):
+                multi_polygon_parts.extend(polygon.geoms)
+            elif isinstance(polygon, (LineString, MultiLineString, Point)):
+                pass
+            else:
+                raise RuntimeError(str(type(polygon)))
+
+        multi_polygon = MultiPolygon(multi_polygon_parts)
+        generated_regions.append(multi_polygon)
 
     return generated_regions
 
@@ -225,135 +360,105 @@ def _map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, f
     return x, y, z
 
 
-def _create_region(
+def _generate_spherical_polygons_parts(
     region_id: int,
     sv: SphericalVoronoi,
-    ell: Ellipsoid,
-    max_meters_between_points: int,
-) -> MultiPolygon:
+) -> List[Tuple[int, int, npt.NDArray[np.float32]]]:
     """
-    Parse spherical region into a WGS84 MultiPolygon.
+    Generate spherical polygon intersections with sphere parts.
 
     Args:
         region_id (int): Index of region in SphericalVoronoi result.
         sv (SphericalVoronoi): SphericalVoronoi object.
-        ell (Ellipsoid): Ellipsoid object.
-        max_meters_between_points (int): maximal distance between points
-            during interpolation of two vertices on a sphere.
 
     Returns:
-        MultiPolygon: Parsed region in WGS84 coordinates.
+        List[Tuple[int, int, npt.NDArray[np.float32]]]: List of intersections containing
+            region index, an index of a sphere part and a list of vertices.
     """
     region = sv.regions[region_id]
     region_vertices = [v for v in sv.vertices[region]]
     sph_pol = SphericalPolygon(region_vertices)
     sphere_intersection_parts = []
     _generate_sphere_parts()
-    for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
+
+    for sphere_part_index, sphere_part in enumerate(SPHERE_PARTS):
         if sph_pol.intersects_poly(sphere_part):
+            spherical_polygon_intersection = None
             if all(
                 sphere_part.contains_point(point)
                 for poly in sph_pol._polygons
                 for point in poly._points
             ):
-                sphere_intersection_parts.append((sph_pol, sphere_part_bbox))
+                spherical_polygon_intersection = sph_pol
             else:
                 intersection = sph_pol.intersection(sphere_part)
-                sphere_intersection_parts.append((intersection, sphere_part_bbox))
+                spherical_polygon_intersection = intersection
 
-    multi_polygon_parts: List[Polygon] = []
-    for sphere_intersection_part, bbox in sphere_intersection_parts:
-        for spherical_polygon_points in sphere_intersection_part.points:
-            polygon = _create_polygon(
-                spherical_polygon_points=spherical_polygon_points,
-                bbox=bbox,
-                ell=ell,
-                max_step=max_meters_between_points,
-            )
-            if isinstance(polygon, Polygon):
-                multi_polygon_parts.append(polygon)
-            elif isinstance(polygon, MultiPolygon):
-                multi_polygon_parts.extend(polygon.geoms)
-            elif isinstance(polygon, (LineString, MultiLineString, Point)):
-                pass
-            else:
-                raise RuntimeError(str(type(polygon)))
+            for points in spherical_polygon_intersection.points:
+                sphere_intersection_parts.append((region_id, sphere_part_index, points))
 
-    multi_polygon = MultiPolygon(multi_polygon_parts)
-    return multi_polygon
+    return sphere_intersection_parts
 
 
-def _create_polygon(
-    spherical_polygon_points: npt.NDArray[np.float32],
-    bbox: Polygon,
+def _interpolate_polygon_edge(
+    hashed_edge: Tuple[bytes, bytes],
+    hashed_vertices: Dict[bytes, npt.NDArray[np.float32]],
     ell: Ellipsoid,
-    max_step: int,
-) -> Polygon:
+    max_meters_between_points: int,
+) -> List[Tuple[float, float]]:
     """
-    Map polygon from a sphere to Shapely polygon.
-
-    Function maps and interpolates points from a sphere
-    into a wgs84 crs while keeping integrity across all coordinates.
+    Interpolates spherical polygon arc edge to the latitude and longitude.
 
     Args:
-        spherical_polygon_points (npt.NDArray): List of spherical points.
-        bbox (Polygon): Current sphere octant bounding box.
+        hashed_edge (Tuple[bytes, bytes]): Edge hash containing start and end point.
+        hashed_vertices (Dict[bytes, npt.NDArray[np.float32]]): Dict of hashed vertices.
         ell (Ellipsoid): Ellipsoid object.
-        max_step (int): Max step between interpolated points on an arc.
+        max_meters_between_points (int): Maximal distance between points.
 
     Returns:
-        Polygon: Mapped polygon in wgs84 crs.
+        List[Tuple[float, float]]: _description_
     """
-    polygon_points: List[Tuple[float, float]] = []
+    start_point_hash, end_point_hash = hashed_edge
+    start_point = hashed_vertices[start_point_hash]
+    end_point = hashed_vertices[end_point_hash]
 
-    n = len(spherical_polygon_points)
-    bbox_bounds = bbox.bounds
-    for i in range(n):
-        start = spherical_polygon_points[i]
-        end = spherical_polygon_points[(i + 1) % n]
-        longitudes, latitudes = _map_from_geocentric(
-            [start[0], end[0]], [start[1], end[1]], [start[2], end[2]], ell
-        )
-        start_lon, start_lat = longitudes[0], latitudes[0]
-        end_lon, end_lat = longitudes[1], latitudes[1]
-        haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
-        steps = ceil(haversine_distance / max_step)
-        t_vals = np.linspace(0, 1, steps)
+    longitudes, latitudes = _map_from_geocentric(
+        [start_point[0], end_point[0]],
+        [start_point[1], end_point[1]],
+        [start_point[2], end_point[2]],
+        ell,
+    )
+    start_lon, start_lat = longitudes[0], latitudes[0]
+    end_lon, end_lat = longitudes[1], latitudes[1]
+    haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
+    steps = max(ceil(haversine_distance / max_meters_between_points), 2)
+    t_vals = np.linspace(0, 1, steps)
 
-        edge_points = _interpolate_edge(
-            start_point=start, end_point=end, step_ticks=t_vals, ell=ell, bbox_bounds=bbox_bounds
-        )
+    edge_points = _interpolate_edge(
+        start_point=start_point, end_point=end_point, step_ticks=t_vals, ell=ell
+    )
 
-        polygon_points.extend(edge_points)
-
-    polygon = Polygon(polygon_points)
-    polygon = make_valid(polygon)
-    polygon = polygon.intersection(bbox)
-    if isinstance(polygon, GeometryCollection):
-        for geometry in polygon.geoms:
-            if isinstance(geometry, (Polygon, MultiPolygon)):
-                polygon = geometry
-                break
-        else:
-            raise RuntimeError(
-                f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
-            )
-
-    return polygon
+    return edge_points
 
 
 def _interpolate_edge(
-    start_point: Tuple[float, float],
-    end_point: Tuple[float, float],
+    start_point: Tuple[float, float, float],
+    end_point: Tuple[float, float, float],
     step_ticks: List[float],
     ell: Ellipsoid,
-    bbox_bounds: Tuple[float, float, float, float],
 ) -> List[Tuple[float, float]]:
-    edge_points: List[Tuple[float, float]] = []
+    """
+    Generates latitude and longitude positions for an arc on the sphere.
 
-    prev_lon = None
-    prev_lat = None
+    Args:
+        start_point (Tuple[float, float, float]): Start position on an unit sphere.
+        end_point (Tuple[float, float, float]): End position on an unit sphere.
+        step_ticks (List[float]): Number of steps between.
+        ell (Ellipsoid): Ellipsoid object.
 
+    Returns:
+        List[Tuple[float, float]]: List of latitude and longitude coordinates of the edge.
+    """
     slerped_points = geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD)
 
     xs = [pt[0] for pt in slerped_points]
@@ -366,20 +471,48 @@ def _interpolate_edge(
     longitudes = np.round(longitudes, 8)
     latitudes = np.round(latitudes, 8)
 
-    for longitude, latitude in zip(longitudes, latitudes):
+    return [(longitude, latitude) for longitude, latitude in zip(longitudes, latitudes)]
+
+
+def _fix_edge(
+    edge_points: List[Tuple[float, float]],
+    bbox_bounds: Tuple[float, float, float, float],
+    prev_lon: Optional[float] = None,
+    prev_lat: Optional[float] = None,
+) -> List[Tuple[float, float]]:
+    """
+    Fixes points laying on the edge between sphere parts.
+
+    Args:
+        edge_points (List[Tuple[float, float]]): Edge points to fix.
+        bbox_bounds (Tuple[float, float, float, float]): Boundary box to use in the fixing.
+        prev_lon (float, optional): Previous longitude of the edge. Can be passed to keep
+            the context of the previous edges. Defaults to None.
+        prev_lat (float, optional): Previous latitude of the edge. Can be passed to keep
+            the context of the previous edges. Defaults to None.
+
+    Returns:
+        List[Tuple[float, float]]: Fixed edge points.
+    """
+    fixed_edge_points: List[Tuple[float, float]] = []
+
+    if prev_lon is not None and prev_lat is not None:
+        fixed_edge_points.append((prev_lon, prev_lat))
+
+    for longitude, latitude in edge_points:
         lon, lat = _fix_lat_lon(longitude, latitude, bbox_bounds)
-        if prev_lon is not None and abs(prev_lon - lon) >= 90:
+        if prev_lon is not None and prev_lat is not None and abs(prev_lon - lon) >= 90:
             sign = 1 if lat > 0 else -1
             max_lat = sign * max(abs(prev_lat), abs(lat))
-            if edge_points[-1] != (prev_lon, max_lat):
-                edge_points.append((prev_lon, max_lat))
-            if edge_points[-1] != (lon, lat):
-                edge_points.append((lon, max_lat))
-        edge_points.append((lon, lat))
+            if fixed_edge_points[-1] != (prev_lon, max_lat):
+                fixed_edge_points.append((prev_lon, max_lat))
+            if fixed_edge_points[-1] != (lon, lat):
+                fixed_edge_points.append((lon, max_lat))
+        fixed_edge_points.append((lon, lat))
         prev_lon = lon
         prev_lat = lat
 
-    return edge_points
+    return fixed_edge_points
 
 
 def _map_from_geocentric(
@@ -565,7 +698,6 @@ def _fix_lat_lon(
     """
     Fix point signs and rounding.
 
-    Rounds latitude and longitude to 8 decimal places.
     Checks if any point is on a boundary and flips its sign
     to ensure validity of a polygon.
 
