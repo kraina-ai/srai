@@ -7,6 +7,7 @@ library.
 
 import hashlib
 import warnings
+from contextlib import suppress
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
@@ -584,12 +585,10 @@ def ecef2geodetic_vectorized(
     Returns:
         npt.NDArray[np.float32]: Parsed latitudes and longitudes
     """
-    try:
+    with suppress(NameError):
         x = np.asarray(x)
         y = np.asarray(y)
         z = np.asarray(z)
-    except NameError:
-        pass
 
     r = np.sqrt(x**2 + y**2 + z**2)
 
@@ -646,24 +645,20 @@ def ecef2geodetic_vectorized(
     # eqn. 4c
     lat = np.arctan(ell.semimajor_axis / ell.semiminor_axis * np.tan(Beta))
 
-    try:
+    with suppress(NameError):
         # patch latitude for float32 precision loss
         lim_pi2 = np.pi / 2 - np.finfo(dBeta.dtype).eps
         lat = np.where(Beta >= lim_pi2, np.pi / 2, lat)
         lat = np.where(Beta <= -lim_pi2, -np.pi / 2, lat)
-    except NameError:
-        pass
 
     lon = np.arctan2(y, x)
 
     # eqn. 7
     cosBeta = np.cos(Beta)
-    try:
+    with suppress(NameError):
         # patch altitude for float32 precision loss
         cosBeta = np.where(Beta >= lim_pi2, 0, cosBeta)
         cosBeta = np.where(Beta <= -lim_pi2, 0, cosBeta)
-    except NameError:
-        pass
 
     alt = np.hypot(z - ell.semiminor_axis * np.sin(Beta), Q - ell.semimajor_axis * cosBeta)
 
