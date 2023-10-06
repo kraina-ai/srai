@@ -377,25 +377,27 @@ def _generate_spherical_polygons_parts(
             region index, an index of a sphere part and a list of vertices.
     """
     region = sv.regions[region_id]
-    region_vertices = [v for v in sv.vertices[region]]
-    sph_pol = SphericalPolygon(region_vertices)
+    region_vertices = np.array([v for v in sv.vertices[region]])
+
+    sph_pol = None
+
     sphere_intersection_parts = []
     _generate_sphere_parts()
 
     for sphere_part_index, sphere_part in enumerate(SPHERE_PARTS):
-        if sph_pol.intersects_poly(sphere_part):
-            spherical_polygon_intersection = None
-            if all(
-                sphere_part.contains_point(point)
-                for poly in sph_pol._polygons
-                for point in poly._points
-            ):
-                spherical_polygon_intersection = sph_pol
-            else:
-                intersection = sph_pol.intersection(sphere_part)
-                spherical_polygon_intersection = intersection
+        # check if whole region is inside
+        if all(sphere_part.contains_point(point) for point in region_vertices):
+            sphere_intersection_parts.append((region_id, sphere_part_index, region_vertices))
+            # skip checking other sphere parts
+            break
+        # check if partially inside
+        elif any(sphere_part.contains_point(point) for point in region_vertices):
+            # delay SphericalPolygon creation since it's an expensive operation
+            if not sph_pol:
+                sph_pol = SphericalPolygon(region_vertices)
 
-            for points in spherical_polygon_intersection.points:
+            intersection = sph_pol.intersection(sphere_part)
+            for points in intersection.points:
                 sphere_intersection_parts.append((region_id, sphere_part_index, points))
 
     return sphere_intersection_parts
