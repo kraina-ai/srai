@@ -41,6 +41,10 @@ SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 SCIPY_THRESHOLD = 1e-8
 
 
+VertexHash = bytes
+EdgeHash = Tuple[VertexHash, VertexHash]
+
+
 def _generate_sphere_parts() -> None:
     global SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES  # noqa: PLW0603
 
@@ -170,10 +174,10 @@ def generate_voronoi_regions(
 
     # identify all edges
 
-    hashed_vertices: Dict[bytes, npt.NDArray[np.float32]] = {}
-    hashed_edges: Set[Tuple[bytes, bytes]] = set()
+    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]] = {}
+    hashed_edges: Set[EdgeHash] = set()
 
-    regions_parts: Dict[int, List[Tuple[int, List[Tuple[bytes, bytes]]]]] = {}
+    regions_parts: Dict[int, List[Tuple[int, List[EdgeHash]]]] = {}
 
     for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
         if region_id not in regions_parts:
@@ -215,7 +219,7 @@ def generate_voronoi_regions(
 
     # interpolate unique ones
 
-    interpolated_edges: Dict[Tuple[bytes, bytes], List[Tuple[float, float]]]
+    interpolated_edges: Dict[EdgeHash, List[Tuple[float, float]]]
 
     interpolate_polygon_edge_func = partial(
         _interpolate_polygon_edge,
@@ -404,8 +408,8 @@ def _generate_spherical_polygons_parts(
 
 
 def _interpolate_polygon_edge(
-    hashed_edge: Tuple[bytes, bytes],
-    hashed_vertices: Dict[bytes, npt.NDArray[np.float32]],
+    hashed_edge: EdgeHash,
+    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]],
     ell: Ellipsoid,
     max_meters_between_points: int,
 ) -> List[Tuple[float, float]]:
@@ -413,8 +417,8 @@ def _interpolate_polygon_edge(
     Interpolates spherical polygon arc edge to the latitude and longitude.
 
     Args:
-        hashed_edge (Tuple[bytes, bytes]): Edge hash containing start and end point.
-        hashed_vertices (Dict[bytes, npt.NDArray[np.float32]]): Dict of hashed vertices.
+        hashed_edge (EdgeHash): Edge hash containing start and end point.
+        hashed_vertices (Dict[VertexHash, npt.NDArray[np.float32]]): Dict of hashed vertices.
         ell (Ellipsoid): Ellipsoid object.
         max_meters_between_points (int): Maximal distance between points.
 
