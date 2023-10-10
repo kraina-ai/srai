@@ -11,7 +11,7 @@ from contextlib import suppress
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Dict, Hashable, List, Optional, Set, Tuple, Union
+from typing import Dict, Hashable, List, Optional, Set, Tuple, Union, cast
 
 import geopandas as gpd
 import numpy as np
@@ -383,7 +383,7 @@ def _generate_spherical_polygons_parts(
     region = sv.regions[region_id]
     region_vertices = np.array([v for v in sv.vertices[region]])
 
-    sph_pol = None
+    sph_pol: Optional[SphericalPolygon] = None
 
     sphere_intersection_parts = []
     _generate_sphere_parts()
@@ -401,6 +401,20 @@ def _generate_spherical_polygons_parts(
                 sph_pol = SphericalPolygon(region_vertices)
 
             intersection = sph_pol.intersection(sphere_part)
+            for points in intersection.points:
+                sphere_intersection_parts.append((region_id, sphere_part_index, points))
+
+    # second check for the corner case when the region is on the intersection of 3 or 4 sphere parts
+    # and sphere part only intersects a region's arc without vertex in it
+    if len(sphere_intersection_parts) in (2, 3):
+        for sphere_part_index, sphere_part in enumerate(SPHERE_PARTS):
+            if any(
+                sphere_intersection_part_tuple[1] == sphere_part_index
+                for sphere_intersection_part_tuple in sphere_intersection_parts
+            ):
+                continue
+
+            intersection = cast(SphericalPolygon, sph_pol).intersection(sphere_part)
             for points in intersection.points:
                 sphere_intersection_parts.append((region_id, sphere_part_index, points))
 
