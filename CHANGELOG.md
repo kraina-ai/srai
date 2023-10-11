@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bumped `h3ronpy` library to `0.18.0` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`. Changed internal API to use `ContainmentMode`.
 - Refactored `OSMLoader`'s `GroupedOsmTagsFilter` features grouping to be faster by refactoring pandas operations [#354](https://github.com/srai-lab/srai/issues/354)
-- Sped up `VoronoiRegionalizer` by removing redundant intersection operations and vectorizing ecdf2geodetic calculations [#359](https://github.com/kraina-ai/srai/issues/359)
+- Sped up `VoronoiRegionalizer` by removing redundant intersection operations and vectorizing ecdf2geodetic calculations [#351](https://github.com/kraina-ai/srai/issues/351)
+- Sped up `ContextualCountEmbedder` by removing iteration over dataframe rows and vectorizing operations to work at a whole `numpy` array at once [#359](https://github.com/kraina-ai/srai/issues/359)
 
 ### Deprecated
 
