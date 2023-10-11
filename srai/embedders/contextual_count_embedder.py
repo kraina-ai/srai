@@ -190,7 +190,9 @@ class ContextualCountEmbedder(CountEmbedder):
         for distance in range(1, self.neighbourhood_distance + 1):
             neighbours_series = counts_df.index.map(
                 lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                    self.neighbourhood.get_neighbours_at_distance(region_id, neighbour_distance)
+                    self.neighbourhood.get_neighbours_at_distance(
+                        region_id, neighbour_distance, include_center=False
+                    )
                 ).values
             )
             if len(neighbours_series) == 0:
