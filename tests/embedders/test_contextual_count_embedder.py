@@ -596,9 +596,9 @@ def test_correct_embedding(
         if expected_features_fixture is None
         else request.getfixturevalue(expected_features_fixture)
     )
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_regions")
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_features")
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_joint")
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue("gdf_regions")
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue("gdf_features")
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue("gdf_joint")
 
     embedder = ContextualCountEmbedder(
         neighbourhood=H3Neighbourhood(),
@@ -681,9 +681,9 @@ def test_empty(
         count_subcategories=count_subcategories,
         concatenate_vectors=concatenate_features,
     )
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
@@ -752,9 +752,9 @@ def test_incorrect_indexes(
     request: Any,
 ) -> None:
     """Test if cannot embed with incorrect dataframe indexes."""
-    regions_gdf = request.getfixturevalue(regions_fixture)
-    features_gdf = request.getfixturevalue(features_fixture)
-    joint_gdf = request.getfixturevalue(joint_fixture)
+    regions_gdf: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    features_gdf: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    joint_gdf: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
         ContextualCountEmbedder(
