@@ -336,10 +336,12 @@ class GeoVexModel(LightningModule):  # type: ignore
     at the center and radius R neighbors around it.
     """
 
+    MIN_FEATURES = 256
+
     def __init__(
         self,
         k_dim: int,
-        R: int,
+        radius: int,
         conv_layers: int = 2,
         emb_size: int = 32,
         learning_rate: float = 1e-5,
@@ -349,11 +351,17 @@ class GeoVexModel(LightningModule):  # type: ignore
 
         Args:
             k_dim (int): the number of input channels
-            R (int): the radius of the hexagonal region
+            radius (int): the radius of the hexagonal region
             conv_layers (int, optional): The number of convolutional layers. Defaults to 2.
             emb_size (int, optional): The dimension of the inner embedding. Defaults to 32.
             learning_rate (float, optional): The learning rate. Defaults to 1e-5.
         """
+        if k_dim < self.MIN_FEATURES:
+            raise ValueError(f"k_dim must be greater than {self.MIN_FEATURES}")
+
+        if radius < 2:
+            raise ValueError("R must be greater than 1")
+
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )
@@ -363,9 +371,7 @@ class GeoVexModel(LightningModule):  # type: ignore
 
         self.k_dim = k_dim
 
-        assert self.k_dim > 256, "k_dim must be greater than 256"
-
-        self.R = R
+        self.R = radius
         self.lr = learning_rate
         self.emb_size = emb_size
 

@@ -60,6 +60,8 @@ class GeoVexEmbedder(CountEmbedder):
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )
 
+        self._assert_feature_length(target_features)
+
         super().__init__(
             expected_output_features=target_features,
         )
@@ -100,6 +102,8 @@ class GeoVexEmbedder(CountEmbedder):
         Returns:
             pd.DataFrame: Region embeddings.
         """
+        self._check_is_fitted()
+
         neighbourhood = H3Neighbourhood(
             regions_gdf=regions_gdf,
         )
@@ -165,7 +169,7 @@ class GeoVexEmbedder(CountEmbedder):
         )
         self._model = GeoVexModel(
             k_dim=len(counts_df.columns),
-            R=self._r,
+            radius=self._r,
             conv_layers=self._convolutional_layers,
             emb_size=self._embedding_size,
             learning_rate=learning_rate,
@@ -244,3 +248,9 @@ class GeoVexEmbedder(CountEmbedder):
         if "max_epochs" not in trainer_kwargs:
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
+
+    def _assert_feature_length(self, target_features: List[str]) -> None:
+        if len(target_features) < GeoVexModel.MIN_FEATURES:
+            raise ValueError(
+                f"The convolutional layers in GeoVex expect >= {GeoVexModel.MIN_FEATURES} features."
+            )

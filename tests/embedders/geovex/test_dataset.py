@@ -1,23 +1,26 @@
 """GeoVex HexagonalDataset tests."""
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+import geopandas as gpd
 import pandas as pd
 import pytest
 
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.h3 import get_local_ij_index
-from srai.neighbourhoods import H3Neighbourhood
-
-if TYPE_CHECKING:
-    from pytest_mock import MockerFixture
-
+from srai.neighbourhoods import AdjacencyNeighbourhood, H3Neighbourhood
 
 ROOT_REGION = "891e205194bffff"
 RING_DISTANCE = 25
 
 
-# @pytest.fixture  # type: ignore
+@pytest.fixture  # type: ignore
+def empty_gdf() -> gpd.GeoDataFrame:
+    """Get empty GeoDataFrame."""
+    return gpd.GeoDataFrame(geometry=[])
+
+
+@pytest.fixture  # type: ignore
 def regions_data_df() -> pd.DataFrame:
     """Get example regions for testing."""
     neighbourhood = H3Neighbourhood()
@@ -42,16 +45,20 @@ def regions_data_df() -> pd.DataFrame:
     ],
 )
 def test_raises_with_incorrect_ring_distance(
-    ring_distance: int, expectation: Any, mocker: "MockerFixture"
+    ring_distance: int,
+    expectation: Any,
 ) -> None:
     """Test if HexagonalDataset checks ring_distance correctness."""
     data = pd.DataFrame()
-    neighbourhood = mocker.Mock()
+    neighbourhood = H3Neighbourhood()
     with expectation:
         HexagonalDataset(data, neighbourhood, neighbor_k_ring=ring_distance)
 
 
-@pytest.mark.parametrize("ring_distance", [2, 3, 4])  # type: ignore
+@pytest.mark.parametrize(
+    "ring_distance",
+    [2, 3, 4],
+)  # type: ignore
 def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame):
     """Test if HexagonalDataset constructs lookup tables correctly."""
     neighbourhood: H3Neighbourhood = H3Neighbourhood(regions_data_df)
@@ -63,6 +70,22 @@ def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame):
             ROOT_REGION, distance=RING_DISTANCE - ring_distance, include_center=True, unchecked=True
         )
     )
+
+
+@pytest.mark.parametrize(
+    "neighborhood_cls,expectation",
+    [(H3Neighbourhood, does_not_raise()), (AdjacencyNeighbourhood, pytest.raises(ValueError))],
+)  # type: ignore
+def test_neighborhood_type(
+    neighborhood_cls: Any,
+    expectation: Any,
+    regions_data_df: pd.DataFrame,
+    empty_gdf: gpd.GeoDataFrame,
+) -> None:
+    """Test if HexagonalDataset correctly accepts only H3Neighborhoods."""
+    neighborhood = neighborhood_cls(empty_gdf)
+    with expectation:
+        HexagonalDataset(regions_data_df, neighborhood)
 
 
 def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
@@ -99,7 +122,3 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
         ]
     )
     assert np.all(ijs.transpose(1, 0, -1) == desired)
-
-
-if __name__ == "__main__":
-    test_dataset_item(regions_data_df())
