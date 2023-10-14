@@ -5,16 +5,19 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
+import hashlib
+import warnings
+from contextlib import suppress
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Hashable, List, Optional, Tuple, Union
+from typing import Dict, Hashable, List, Optional, Set, Tuple, Union, cast
 
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 from haversine import haversine
-from pymap3d import Ellipsoid, ecef2geodetic, geodetic2ecef
+from pymap3d import Ellipsoid, geodetic2ecef
 from scipy.spatial import SphericalVoronoi, geometric_slerp
 from shapely.geometry import (
     GeometryCollection,
@@ -38,22 +41,20 @@ SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
 SCIPY_THRESHOLD = 1e-8
 
 
+VertexHash = bytes
+EdgeHash = Tuple[VertexHash, VertexHash]
+
+
 def _generate_sphere_parts() -> None:
     global SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES  # noqa: PLW0603
 
     if not SPHERE_PARTS:
-        # LON: 0; LAT: 0
-        POINT_FRONT = (1.0, 0.0, 0.0)
-        # LON: 180; LAT: 0
-        POINT_BACK = (-1.0, 0.0, 0.0)
-        # LON: 0; LAT: 90
-        POINT_TOP = (0.0, 0.0, 1.0)
-        # LON: 0; LAT: -90
-        POINT_BOTTOM = (0.0, 0.0, -1.0)
-        # LON: -90; LAT: 0
-        POINT_LEFT = (0.0, -1.0, 0.0)
-        # LON: 90; LAT: 0
-        POINT_RIGHT = (0.0, 1.0, 0.0)
+        POINT_FRONT = (1.0, 0.0, 0.0)  # LON: 0; LAT: 0
+        POINT_BACK = (-1.0, 0.0, 0.0)  # LON: 180; LAT: 0
+        POINT_TOP = (0.0, 0.0, 1.0)  # LON: 0; LAT: 90
+        POINT_BOTTOM = (0.0, 0.0, -1.0)  # LON: 0; LAT: -90
+        POINT_LEFT = (0.0, -1.0, 0.0)  # LON: -90; LAT: 0
+        POINT_RIGHT = (0.0, 1.0, 0.0)  # LON: 90; LAT: 0
 
         SPHERE_PARTS = [
             SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
@@ -138,31 +139,165 @@ def generate_voronoi_regions(
     sv = SphericalVoronoi(sphere_points, radius, center, threshold=SCIPY_THRESHOLD)
     sv.sort_vertices_of_regions()
 
-    create_regions_func = partial(
-        _create_region,
+    total_regions = len(sv.regions)
+    region_ids = list(range(total_regions))
+
+    activate_multiprocessing = (
+        num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold
+    )
+
+    # generate all spherical polygons
+
+    generate_spherical_polygons_parts_func = partial(
+        _generate_spherical_polygons_parts,
         sv=sv,
+    )
+
+    if activate_multiprocessing:
+        spherical_polygons_parts = [
+            polygon_part_tuple
+            for polygon_part_tuples in process_map(
+                generate_spherical_polygons_parts_func,
+                region_ids,
+                desc="Generating spherical polygons",
+                max_workers=num_of_multiprocessing_workers,
+                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+            )
+            for polygon_part_tuple in polygon_part_tuples
+        ]
+    else:
+        spherical_polygons_parts = [
+            polygon_part_tuple
+            for region_id in tqdm(region_ids, desc="Generating spherical polygons")
+            for polygon_part_tuple in generate_spherical_polygons_parts_func(region_id=region_id)
+        ]
+
+    # identify all edges
+
+    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]] = {}
+    hashed_edges: Set[EdgeHash] = set()
+
+    regions_parts: Dict[int, List[Tuple[int, List[EdgeHash]]]] = {}
+
+    for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
+        if region_id not in regions_parts:
+            regions_parts[region_id] = []
+
+        n = len(spherical_polygon_points)
+        polygon_vertices_hashes = []
+        polygon_edges = []
+
+        # Hash all vertices
+        for i in range(n):
+            start: npt.NDArray[np.float32] = spherical_polygon_points[i]
+            start_hash = hashlib.sha256(start.data).digest()
+            hashed_vertices[start_hash] = start
+            polygon_vertices_hashes.append(start_hash)
+
+        # Map all edges
+        for i in range(n):
+            start_hash = polygon_vertices_hashes[i]
+            end_hash = polygon_vertices_hashes[(i + 1) % n]
+
+            if start_hash == end_hash:
+                continue
+
+            polygon_edges.append((start_hash, end_hash))
+
+            if (start_hash, end_hash) not in hashed_edges and (
+                end_hash,
+                start_hash,
+            ) not in hashed_edges:
+                hashed_edges.add(
+                    (
+                        start_hash,
+                        end_hash,
+                    )
+                )
+
+        regions_parts[region_id].append((sphere_part_id, polygon_edges))
+
+    # interpolate unique ones
+
+    interpolated_edges: Dict[EdgeHash, List[Tuple[float, float]]]
+
+    interpolate_polygon_edge_func = partial(
+        _interpolate_polygon_edge,
+        hashed_vertices=hashed_vertices,
         ell=unit_sphere_ellipsoid,
         max_meters_between_points=max_meters_between_points,
     )
 
-    total_regions = len(sv.regions)
-    region_ids = list(range(total_regions))
-
-    generated_regions: List[MultiPolygon]
-
-    if num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold:
-        generated_regions = process_map(
-            create_regions_func,
-            region_ids,
-            desc="Generating regions",
-            max_workers=num_of_multiprocessing_workers,
-            chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-        )
+    if activate_multiprocessing:
+        interpolated_edges = {
+            hashed_edge: interpolated_edge
+            for hashed_edge, interpolated_edge in zip(
+                hashed_edges,
+                process_map(
+                    interpolate_polygon_edge_func,
+                    hashed_edges,
+                    desc="Interpolating edges",
+                    max_workers=num_of_multiprocessing_workers,
+                    chunksize=ceil(len(hashed_edges) / (4 * num_of_multiprocessing_workers)),
+                ),
+            )
+        }
     else:
-        generated_regions = [
-            create_regions_func(region_id=region_id)
-            for region_id in tqdm(region_ids, desc="Generating regions")
-        ]
+        interpolated_edges = {
+            hashed_edge: interpolate_polygon_edge_func(hashed_edge)
+            for hashed_edge in tqdm(hashed_edges, desc="Interpolating edges")
+        }
+
+    # use interpolated edges to map spherical polygons into regions
+
+    generated_regions: List[MultiPolygon] = []
+    _generate_sphere_parts()
+
+    for region_id in tqdm(region_ids, desc="Generating polygons"):
+        multi_polygon_parts: List[Polygon] = []
+
+        for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
+            polygon_points: List[Tuple[float, float]] = []
+
+            for edge_start, edge_end in region_polygon_edges:
+                if (edge_start, edge_end) in interpolated_edges:
+                    interpolated_edge = interpolated_edges[(edge_start, edge_end)]
+                else:
+                    interpolated_edge = interpolated_edges[(edge_end, edge_start)][::-1]
+
+                interpolated_edge = _fix_edge(
+                    interpolated_edge,
+                    SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id].bounds,
+                    prev_lon=polygon_points[-1][0] if polygon_points else None,
+                    prev_lat=polygon_points[-1][1] if polygon_points else None,
+                )
+
+                polygon_points.extend(interpolated_edge)
+
+            polygon = Polygon(polygon_points)
+            polygon = make_valid(polygon)
+            polygon = polygon.intersection(SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id])
+            if isinstance(polygon, GeometryCollection):
+                for geometry in polygon.geoms:
+                    if isinstance(geometry, (Polygon, MultiPolygon)):
+                        polygon = geometry
+                        break
+                else:
+                    raise RuntimeError(
+                        f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
+                    )
+
+            if isinstance(polygon, Polygon):
+                multi_polygon_parts.append(polygon)
+            elif isinstance(polygon, MultiPolygon):
+                multi_polygon_parts.extend(polygon.geoms)
+            elif isinstance(polygon, (LineString, MultiLineString, Point)):
+                pass
+            else:
+                raise RuntimeError(str(type(polygon)))
+
+        multi_polygon = MultiPolygon(multi_polygon_parts)
+        generated_regions.append(multi_polygon)
 
     return generated_regions
 
@@ -230,157 +365,344 @@ def _map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, f
     return x, y, z
 
 
-def _create_region(
+def _generate_spherical_polygons_parts(
     region_id: int,
     sv: SphericalVoronoi,
-    ell: Ellipsoid,
-    max_meters_between_points: int,
-) -> MultiPolygon:
+) -> List[Tuple[int, int, npt.NDArray[np.float32]]]:
     """
-    Parse spherical region into a WGS84 MultiPolygon.
+    Generate spherical polygon intersections with sphere parts.
 
     Args:
         region_id (int): Index of region in SphericalVoronoi result.
         sv (SphericalVoronoi): SphericalVoronoi object.
-        ell (Ellipsoid): Ellipsoid object.
-        max_meters_between_points (int): maximal distance between points
-            during interpolation of two vertices on a sphere.
 
     Returns:
-        MultiPolygon: Parsed region in WGS84 coordinates.
+        List[Tuple[int, int, npt.NDArray[np.float32]]]: List of intersections containing
+            region index, an index of a sphere part and a list of vertices.
     """
     region = sv.regions[region_id]
-    region_vertices = [v for v in sv.vertices[region]]
-    sph_pol = SphericalPolygon(region_vertices)
+    region_vertices = np.array([v for v in sv.vertices[region]])
+
+    sph_pol: Optional[SphericalPolygon] = None
+
     sphere_intersection_parts = []
     _generate_sphere_parts()
-    for sphere_part, sphere_part_bbox in zip(SPHERE_PARTS, SPHERE_PARTS_BOUNDING_BOXES):
-        if sph_pol.intersects_poly(sphere_part):
+
+    for sphere_part_index, sphere_part in enumerate(SPHERE_PARTS):
+        # check if whole region is inside
+        if all(sphere_part.contains_point(point) for point in region_vertices):
+            sphere_intersection_parts.append((region_id, sphere_part_index, region_vertices))
+            # skip checking other sphere parts
+            break
+        # check if partially inside
+        elif any(sphere_part.contains_point(point) for point in region_vertices):
+            # delay SphericalPolygon creation since it's an expensive operation
+            if not sph_pol:
+                sph_pol = SphericalPolygon(region_vertices)
+
             intersection = sph_pol.intersection(sphere_part)
-            sphere_intersection_parts.append((intersection, sphere_part_bbox))
+            for points in intersection.points:
+                sphere_intersection_parts.append((region_id, sphere_part_index, points))
 
-    multi_polygon_parts: List[Polygon] = []
-    for sphere_intersection_part, bbox in sphere_intersection_parts:
-        for spherical_polygon_points in sphere_intersection_part.points:
-            polygon = _create_polygon(
-                spherical_polygon_points=spherical_polygon_points,
-                bbox=bbox,
-                ell=ell,
-                max_step=max_meters_between_points,
-            )
-            if isinstance(polygon, Polygon):
-                multi_polygon_parts.append(polygon)
-            elif isinstance(polygon, MultiPolygon):
-                multi_polygon_parts.extend(polygon.geoms)
-            elif isinstance(polygon, (LineString, MultiLineString, Point)):
-                pass
-            else:
-                raise RuntimeError(str(type(polygon)))
+    # second check for the corner case when the region is on the intersection of 3 or 4 sphere parts
+    # and sphere part only intersects a region's arc without vertex in it
+    if len(sphere_intersection_parts) in (2, 3):
+        for sphere_part_index, sphere_part in enumerate(SPHERE_PARTS):
+            if any(
+                sphere_intersection_part_tuple[1] == sphere_part_index
+                for sphere_intersection_part_tuple in sphere_intersection_parts
+            ):
+                continue
 
-    multi_polygon = MultiPolygon(multi_polygon_parts)
-    return multi_polygon
+            intersection = cast(SphericalPolygon, sph_pol).intersection(sphere_part)
+            for points in intersection.points:
+                sphere_intersection_parts.append((region_id, sphere_part_index, points))
+
+    return sphere_intersection_parts
 
 
-def _create_polygon(
-    spherical_polygon_points: npt.NDArray[np.float32],
-    bbox: Polygon,
+def _interpolate_polygon_edge(
+    hashed_edge: EdgeHash,
+    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]],
     ell: Ellipsoid,
-    max_step: int,
-) -> Polygon:
+    max_meters_between_points: int,
+) -> List[Tuple[float, float]]:
     """
-    Map polygon from a sphere to Shapely polygon.
-
-    Function maps and interpolates points from a sphere
-    into a wgs84 crs while keeping integrity across all coordinates.
+    Interpolates spherical polygon arc edge to the latitude and longitude.
 
     Args:
-        spherical_polygon_points (npt.NDArray): List of spherical points.
-        bbox (Polygon): Current sphere octant bounding box.
+        hashed_edge (EdgeHash): Edge hash containing start and end point.
+        hashed_vertices (Dict[VertexHash, npt.NDArray[np.float32]]): Dict of hashed vertices.
         ell (Ellipsoid): Ellipsoid object.
-        max_step (int): Max step between interpolated points on an arc.
+        max_meters_between_points (int): Maximal distance between points.
 
     Returns:
-        Polygon: Mapped polygon in wgs84 crs.
+        List[Tuple[float, float]]: _description_
     """
-    polygon_points: List[Tuple[float, float]] = []
+    start_point_hash, end_point_hash = hashed_edge
+    start_point = hashed_vertices[start_point_hash]
+    end_point = hashed_vertices[end_point_hash]
 
-    n = len(spherical_polygon_points)
-    bbox_bounds = bbox.bounds
-    for i in range(n):
-        start = spherical_polygon_points[i]
-        end = spherical_polygon_points[(i + 1) % n]
-        start_lon, start_lat = _map_from_geocentric(start[0], start[1], start[2], ell)
-        end_lon, end_lat = _map_from_geocentric(end[0], end[1], end[2], ell)
-        haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
-        steps = ceil(haversine_distance / max_step)
-        t_vals = np.linspace(0, 1, steps)
+    longitudes, latitudes = _map_from_geocentric(
+        [start_point[0], end_point[0]],
+        [start_point[1], end_point[1]],
+        [start_point[2], end_point[2]],
+        ell,
+    )
+    start_lon, start_lat = longitudes[0], latitudes[0]
+    end_lon, end_lat = longitudes[1], latitudes[1]
+    haversine_distance = haversine((start_lat, start_lon), (end_lat, end_lon), unit="m")
+    steps = max(ceil(haversine_distance / max_meters_between_points), 2)
+    t_vals = np.linspace(0, 1, steps)
 
-        edge_points = _interpolate_edge(
-            start_point=start, end_point=end, step_ticks=t_vals, ell=ell, bbox_bounds=bbox_bounds
-        )
-
-        polygon_points.extend(edge_points)
-
-    polygon = Polygon(polygon_points)
-    polygon = make_valid(polygon)
-    polygon = polygon.intersection(bbox)
-    if isinstance(polygon, GeometryCollection):
-        for geometry in polygon.geoms:
-            if isinstance(geometry, (Polygon, MultiPolygon)):
-                polygon = geometry
-                break
-        else:
-            raise RuntimeError(
-                f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
-            )
-
-    return polygon
-
-
-def _interpolate_edge(
-    start_point: Tuple[float, float],
-    end_point: Tuple[float, float],
-    step_ticks: List[float],
-    ell: Ellipsoid,
-    bbox_bounds: Tuple[float, float, float, float],
-) -> List[Tuple[float, float]]:
-    edge_points: List[Tuple[float, float]] = []
-
-    prev_lon = None
-    prev_lat = None
-
-    for pt in geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD):
-        lon, lat = _map_from_geocentric(pt[0], pt[1], pt[2], ell)
-        lon, lat = _fix_lat_lon(lon, lat, bbox_bounds)
-        if prev_lon is not None and abs(prev_lon - lon) >= 90:
-            sign = 1 if lat > 0 else -1
-            max_lat = sign * max(abs(prev_lat), abs(lat))
-            if edge_points[-1] != (prev_lon, max_lat):
-                edge_points.append((prev_lon, max_lat))
-            if edge_points[-1] != (lon, lat):
-                edge_points.append((lon, max_lat))
-        edge_points.append((lon, lat))
-        prev_lon = lon
-        prev_lat = lat
+    edge_points = _interpolate_edge(
+        start_point=start_point, end_point=end_point, step_ticks=t_vals, ell=ell
+    )
 
     return edge_points
 
 
-def _map_from_geocentric(x: float, y: float, z: float, ell: Ellipsoid) -> Tuple[float, float]:
+def _interpolate_edge(
+    start_point: Tuple[float, float, float],
+    end_point: Tuple[float, float, float],
+    step_ticks: List[float],
+    ell: Ellipsoid,
+) -> List[Tuple[float, float]]:
+    """
+    Generates latitude and longitude positions for an arc on the sphere.
+
+    Args:
+        start_point (Tuple[float, float, float]): Start position on an unit sphere.
+        end_point (Tuple[float, float, float]): End position on an unit sphere.
+        step_ticks (List[float]): Number of steps between.
+        ell (Ellipsoid): Ellipsoid object.
+
+    Returns:
+        List[Tuple[float, float]]: List of latitude and longitude coordinates of the edge.
+    """
+    slerped_points = geometric_slerp(start_point, end_point, step_ticks, tol=SCIPY_THRESHOLD)
+
+    xs = [pt[0] for pt in slerped_points]
+    ys = [pt[1] for pt in slerped_points]
+    zs = [pt[2] for pt in slerped_points]
+
+    longitudes, latitudes = _map_from_geocentric(xs, ys, zs, ell)
+
+    # round imperfections
+    longitudes = np.round(longitudes, 8)
+    latitudes = np.round(latitudes, 8)
+
+    return [(longitude, latitude) for longitude, latitude in zip(longitudes, latitudes)]
+
+
+def _fix_edge(
+    edge_points: List[Tuple[float, float]],
+    bbox_bounds: Tuple[float, float, float, float],
+    prev_lon: Optional[float] = None,
+    prev_lat: Optional[float] = None,
+) -> List[Tuple[float, float]]:
+    """
+    Fixes points laying on the edge between sphere parts.
+
+    Args:
+        edge_points (List[Tuple[float, float]]): Edge points to fix.
+        bbox_bounds (Tuple[float, float, float, float]): Boundary box to use in the fixing.
+        prev_lon (float, optional): Previous longitude of the edge. Can be passed to keep
+            the context of the previous edges. Defaults to None.
+        prev_lat (float, optional): Previous latitude of the edge. Can be passed to keep
+            the context of the previous edges. Defaults to None.
+
+    Returns:
+        List[Tuple[float, float]]: Fixed edge points.
+    """
+    fixed_edge_points: List[Tuple[float, float]] = []
+
+    if prev_lon is not None and prev_lat is not None:
+        fixed_edge_points.append((prev_lon, prev_lat))
+
+    for longitude, latitude in edge_points:
+        lon, lat = _fix_lat_lon(longitude, latitude, bbox_bounds)
+        if prev_lon is not None and prev_lat is not None and abs(prev_lon - lon) >= 90:
+            sign = 1 if lat > 0 else -1
+            max_lat = sign * max(abs(prev_lat), abs(lat))
+            if fixed_edge_points[-1] != (prev_lon, max_lat):
+                fixed_edge_points.append((prev_lon, max_lat))
+            if fixed_edge_points[-1] != (lon, lat):
+                fixed_edge_points.append((lon, max_lat))
+        fixed_edge_points.append((lon, lat))
+        prev_lon = lon
+        prev_lat = lat
+
+    return fixed_edge_points
+
+
+def _map_from_geocentric(
+    x: npt.NDArray[np.float32],
+    y: npt.NDArray[np.float32],
+    z: npt.NDArray[np.float32],
+    ell: Ellipsoid,
+) -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
     """
     Wrapper for a ecef2geodetic function from pymap3d library.
 
     Args:
-        x (float): X cartesian coordinate.
-        y (float): Y cartesian coordinate.
-        z (float): Z cartesian coordinate.
+        x (npt.NDArray[np.float32]): X cartesian coordinate.
+        y (npt.NDArray[np.float32]): Y cartesian coordinate.
+        z (npt.NDArray[np.float32]): Z cartesian coordinate.
         ell (Ellipsoid): an ellipsoid.
 
     Returns:
-        Tuple[float, float]: longitude and latitude coordinates in a wgs84 crs.
+        Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]: longitude and latitude coordinates
+            in a wgs84 crs.
     """
-    lat, lon, _ = ecef2geodetic(x, y, z, ell=ell)
+    lat, lon, _ = ecef2geodetic_vectorized(x, y, z, ell=ell)
     return lon, lat
+
+
+# Copyright (c) 2014-2022 Michael Hirsch, Ph.D.
+# Copyright (c) 2013, Felipe Geremia Nievinski
+# Copyright (c) 2004-2007 Michael Kleder
+#
+# Redistribution and use in source and binary forms, with or without modification, are permitted
+# provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+# and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of
+# conditions and the following disclaimer in the documentation and/or other materials provided
+# with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS
+# OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+# OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+def ecef2geodetic_vectorized(
+    x: npt.NDArray[np.float32],
+    y: npt.NDArray[np.float32],
+    z: npt.NDArray[np.float32],
+    ell: Ellipsoid,
+    deg: bool = True,
+) -> npt.NDArray[np.float32]:
+    """
+    Modified function for mapping ecdf to geodetic values from ellipsoid.
+
+    This function is a modified copy of `ecdf2geodetic` function from `pymap3d` library
+    and is redistributed under BSD-2 license.
+
+    Args:
+        x (npt.NDArray[np.float32]): X coordinates.
+        y (npt.NDArray[np.float32]): Y coordinates.
+        z (npt.NDArray[np.float32]): Z coordinates.
+        ell (Ellipsoid): Ellipsoid object.
+        deg (bool, optional): Flag whether to return values in degrees. Defaults to True.
+
+    Returns:
+        npt.NDArray[np.float32]: Parsed latitudes and longitudes
+    """
+    with suppress(NameError):
+        x = np.asarray(x)
+        y = np.asarray(y)
+        z = np.asarray(z)
+
+    r = np.sqrt(x**2 + y**2 + z**2)
+
+    E = np.sqrt(ell.semimajor_axis**2 - ell.semiminor_axis**2)
+
+    # eqn. 4a
+    u = np.sqrt(0.5 * (r**2 - E**2) + 0.5 * np.hypot(r**2 - E**2, 2 * E * z))
+
+    Q = np.hypot(x, y)
+
+    huE = np.hypot(u, E)
+
+    # eqn. 4b
+    try:
+        with warnings.catch_warnings(record=False):
+            warnings.simplefilter("error")
+            Beta = np.arctan(huE / u * z / np.hypot(x, y))
+    except (ArithmeticError, RuntimeWarning):
+        is_zero_dimensions = len(x.shape) == 0
+
+        if is_zero_dimensions:
+            if np.isclose(z, 0):
+                Beta = 0
+            elif z > 0:
+                Beta = np.pi / 2
+            else:
+                Beta = -np.pi / 2
+        else:
+            _beta_arr = []
+
+            for _x, _y, _z, _u, _huE in zip(x, y, z, u, huE):
+                try:
+                    with warnings.catch_warnings(record=False):
+                        warnings.simplefilter("error")
+                        _beta = np.arctan(_huE / _u * _z / np.hypot(_x, _y))
+                except (ArithmeticError, RuntimeWarning):
+                    if np.isclose(_z, 0):
+                        _beta = 0
+                    elif _z > 0:
+                        _beta = np.pi / 2
+                    else:
+                        _beta = -np.pi / 2
+                _beta_arr.append(_beta)
+
+            Beta = np.asarray(_beta_arr)
+
+    # eqn. 13
+    dBeta = ((ell.semiminor_axis * u - ell.semimajor_axis * huE + E**2) * np.sin(Beta)) / (
+        ell.semimajor_axis * huE * 1 / np.cos(Beta) - E**2 * np.cos(Beta)
+    )
+
+    Beta += dBeta
+
+    # eqn. 4c
+    lat = np.arctan(ell.semimajor_axis / ell.semiminor_axis * np.tan(Beta))
+
+    with suppress(NameError):
+        # patch latitude for float32 precision loss
+        lim_pi2 = np.pi / 2 - np.finfo(dBeta.dtype).eps
+        lat = np.where(Beta >= lim_pi2, np.pi / 2, lat)
+        lat = np.where(Beta <= -lim_pi2, -np.pi / 2, lat)
+
+    lon = np.arctan2(y, x)
+
+    # eqn. 7
+    cosBeta = np.cos(Beta)
+    with suppress(NameError):
+        # patch altitude for float32 precision loss
+        cosBeta = np.where(Beta >= lim_pi2, 0, cosBeta)
+        cosBeta = np.where(Beta <= -lim_pi2, 0, cosBeta)
+
+    alt = np.hypot(z - ell.semiminor_axis * np.sin(Beta), Q - ell.semimajor_axis * cosBeta)
+
+    # inside ellipsoid?
+    inside = (
+        x**2 / ell.semimajor_axis**2
+        + y**2 / ell.semimajor_axis**2
+        + z**2 / ell.semiminor_axis**2
+        < 1
+    )
+
+    try:
+        if inside.any():
+            # avoid all false assignment bug
+            alt[inside] = -alt[inside]
+    except (TypeError, AttributeError):
+        if inside:
+            alt = -alt
+
+    if deg:
+        lat = np.degrees(lat)
+        lon = np.degrees(lon)
+
+    return lat, lon, alt
 
 
 def _fix_lat_lon(
@@ -391,7 +713,6 @@ def _fix_lat_lon(
     """
     Fix point signs and rounding.
 
-    Rounds latitude and longitude to 8 decimal places.
     Checks if any point is on a boundary and flips its sign
     to ensure validity of a polygon.
 
@@ -404,10 +725,6 @@ def _fix_lat_lon(
         Tuple[float, float]: Longitude and latitude of a point.
     """
     min_lon, min_lat, max_lon, max_lat = bbox
-
-    # round imperfections
-    lon = round(lon, 8)
-    lat = round(lat, 8)
 
     # switch signs
     if lon and abs(lon) == abs(min_lon):

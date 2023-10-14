@@ -1,6 +1,6 @@
 """Voronoi regionalizer tests."""
 from multiprocessing import cpu_count
-from typing import Any, List
+from typing import Any, List, cast
 
 import geopandas as gpd
 import numpy as np
@@ -8,7 +8,7 @@ import pytest
 from pymap3d import Ellipsoid
 from shapely.geometry import Point, Polygon
 
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.geometry import merge_disjointed_gdf_geometries
 from srai.regionalizers import VoronoiRegionalizer
 from srai.regionalizers._spherical_voronoi import (
@@ -50,6 +50,17 @@ def check_if_disjoint(gdf: gpd.GeoDataFrame) -> bool:
     )
     duplicated_seeds_ids = duplicated_regions.index.to_list()
     return len(duplicated_seeds_ids) == 0
+
+
+def check_if_seeds_match_regions(seeds: gpd.GeoDataFrame, regions: gpd.GeoDataFrame) -> bool:
+    """Check if order of seeds and regions is the same."""
+    seeds_index_column_name = f"{seeds.index.name or 'index'}_seeds"
+    joined_data = regions.reset_index().sjoin(seeds, rsuffix="seeds")
+
+    if len(joined_data) != len(regions):
+        return False
+
+    return cast(bool, (joined_data[REGIONS_INDEX] == joined_data[seeds_index_column_name]).all())
 
 
 def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:
@@ -139,7 +150,7 @@ def test_multiprocessing_activation_threshold(
 
 @pytest.mark.parametrize(  # type: ignore
     "max_meters_between_points",
-    [500, 1_000, 10_000, 100_000],
+    [100_000, 10_000, 1_000, 500],
 )
 def test_regions_edge_resolution(
     max_meters_between_points: int,
@@ -154,6 +165,9 @@ def test_regions_edge_resolution(
     )
     result_gdf = vr.transform()
     assert len(result_gdf.index) == 6
+    assert check_if_seeds_match_regions(
+        seeds=gdf_earth_poles, regions=result_gdf
+    ), "Seeds don't match generated regions"
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
     ).is_empty, "Result doesn't cover bounding box"
@@ -170,6 +184,9 @@ def test_multiple_seeds_regions(
     vr = VoronoiRegionalizer(seeds=seeds)
     result_gdf = vr.transform()
     assert len(result_gdf.index) == random_points
+    assert check_if_seeds_match_regions(
+        seeds=gpd.GeoDataFrame(geometry=seeds, crs=WGS84_CRS), regions=result_gdf
+    ), "Seeds don't match generated regions"
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
     ).is_empty, "Result doesn't cover bounding box"
@@ -193,6 +210,9 @@ def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Po
     vr = VoronoiRegionalizer(seeds=seeds_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 4
+    assert check_if_seeds_match_regions(
+        seeds=seeds_gdf, regions=result_gdf
+    ), "Seeds don't match generated regions"
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
     ).is_empty, "Result doesn't cover bounding box"
@@ -204,7 +224,11 @@ def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygo
     vr = VoronoiRegionalizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
     assert len(result_gdf.index) == 6
-    assert merge_disjointed_gdf_geometries(result_gdf).difference(earth_bbox).is_empty
+    assert check_if_seeds_match_regions(
+        seeds=gdf_earth_poles, regions=result_gdf
+    ), "Seeds don't match generated regions"
+    assert result_gdf.unary_union.difference(earth_bbox).is_empty
+    assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
 @pytest.mark.parametrize(  # type: ignore

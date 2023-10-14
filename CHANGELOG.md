@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Bumped `h3ronpy` library to `0.18.0` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`. Changed internal API to use `ContainmentMode`.
 - Refactored `OSMLoader`'s `GroupedOsmTagsFilter` features grouping to be faster by refactoring pandas operations [#354](https://github.com/srai-lab/srai/issues/354)
+- Sped up `VoronoiRegionalizer` by removing redundant intersection operations and vectorizing ecdf2geodetic calculations [#359](https://github.com/kraina-ai/srai/issues/359)
 
 ### Deprecated
 
@@ -24,20 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.3] - 2023-08-13
 
-### Added
-
 ### Changed
 
 - Modified `OSMPbfLoader` intersection logic.
 - Changed default tiles style for `plotting.plot_numeric_data` function.
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [0.3.2] - 2023-08-12
 
@@ -133,16 +124,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change default value inside `transform` function of IntersectionJoiner to not return geometry.
 - Make torch and pytorch-lightning as optional dependencies ([#210](https://github.com/srai-lab/srai/issues/210))
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - IntersectionJoiner incorrectly returned feature columns when `return_geom=False` ([#208](https://github.com/srai-lab/srai/issues/208))
 - Tests for pandas >=2
-
-### Security
 
 ## [0.0.1] - 2022-11-23
 
@@ -161,7 +146,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.3.2...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.3.3...HEAD
+[0.3.3]: https://github.com/srai-lab/srai/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/srai-lab/srai/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/srai-lab/srai/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/srai-lab/srai/compare/0.2.0...0.3.0
