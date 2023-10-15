@@ -10,6 +10,7 @@ import math
 from typing import TYPE_CHECKING, Callable, List, Tuple
 
 from srai._optional import import_optional_dependencies
+from srai.embedders import Model
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -17,11 +18,54 @@ if TYPE_CHECKING:  # pragma: no cover
 
 try:  # pragma: no cover
     import torch  # noqa: F811
-    from pytorch_lightning import LightningModule
     from torch import nn  # noqa: F811
 
 except ImportError:
-    from srai.embedders._pytorch_stubs import LightningModule, nn, torch
+    from srai.embedders._pytorch_stubs import nn, torch
+
+
+def get_radius(i: int, j: int) -> int:
+    """
+    Calculates the radius of a cube given its coordinates.
+
+    Ref https://www.redblobgames.com/grids/hexagons/#distances-axial
+
+    Args:
+        i (int): The x-coordinate of the cube.
+        j (int): The y-coordinate of the cube.
+
+    Returns:
+        int: The radius of the cube.
+    """
+    origin = (0, 0, 0)
+    target = (i, j, -i - j)
+    return cube_distance(origin, target)
+
+
+def cube_distance(a: Tuple[int, int, int], b: Tuple[int, int, int]) -> int:
+    """
+    Calculates the maximum distance between two points in a cube.
+
+    Args:
+        a (Tuple[int, int, int]): The first point.
+        b (Tuple[int, int, int]): The second point.
+    """
+    vec = cube_subtract(a, b)
+    return max(abs(vec[0]), abs(vec[1]), abs(vec[2]))
+
+
+def cube_subtract(a: Tuple[int, int, int], b: Tuple[int, int, int]) -> Tuple[int, int, int]:
+    """
+    Subtracts the coordinates of two 3D points and returns the resulting tuple.
+
+    Args:
+        a (Tuple[int, int, int]): The first point to subtract from.
+        b (Tuple[int, int, int]): The second point to subtract.
+
+    Returns:
+        Tuple[int, int, int]: The resulting tuple of subtracted coordinates.
+    """
+    return a[0] - b[0], a[1] - b[1], a[2] - b[2]
 
 
 def get_shape(r: int) -> int:
@@ -61,12 +105,17 @@ def build_mask_funcs(R: int) -> Tuple[Callable[[int, int], float], ...]:
         Returns:
             float: The weight of the loss function.
         """
-        r = max(abs(i - R), abs(j - R), abs(i - j))
+        q = j - R
+        r = i - R
+        r = get_radius(q, r)
         return 1 / (1 + r) if r <= R else 0
 
     def w_num(i: int, j: int) -> float:
         """
         The Numerosity Weighting Kernel. Equation (6) in [1].
+
+        The 6 is the number of hexagons in a ring,
+        which is multiplied by the ring number to get the total number of hexagons in the ring.
 
         Args:
             i (int): row index of the first point
@@ -75,8 +124,11 @@ def build_mask_funcs(R: int) -> Tuple[Callable[[int, int], float], ...]:
         Returns:
             float: The weight of the loss function.
         """
-        r = max(abs(i - R), abs(j - R), abs(i - j))
-        return 1 / (R * r) if r <= R and r > 0 else 1 if r == 0 else 0
+        # r represents the ring number, which can be found using the ij index
+        q = j - R
+        r = i - R
+        r = get_radius(q, r)
+        return 1 / (6 * r) if r <= R and r > 0 else 1 if r == 0 else 0
 
     return w_dist, w_num
 
@@ -97,19 +149,29 @@ class GeoVeXLoss(nn.Module):  # type: ignore
         """
         super().__init__()
         self.R = R
-        self._w_dist, self._w_num = build_mask_funcs(self.R)
 
         # strip out the padding from y,
         # so that the loss function is only calculated on the valid regions
         self.M = get_shape(self.R) - 1
 
-        self._w_dist_matrix = torch.tensor(
-            [[self._w_dist(i, j) for j in range(self.M)] for i in range(self.M)],
-            dtype=torch.float32,
+        # register the mask functions as buffers
+        # so that they are saved with the model
+        w_dist_func, w_num_func = build_mask_funcs(self.R)
+
+        self.register_buffer(
+            "_w_dist_matrix",
+            torch.tensor(
+                [[w_dist_func(i, j) for j in range(self.M)] for i in range(self.M)],
+                dtype=torch.float32,
+            ),
         )
-        self._w_num_matrix = torch.tensor(
-            [[self._w_num(i, j) for j in range(self.M)] for i in range(self.M)],
-            dtype=torch.float32,
+
+        self.register_buffer(
+            "_w_num_matrix",
+            torch.tensor(
+                [[w_num_func(i, j) for j in range(self.M)] for i in range(self.M)],
+                dtype=torch.float32,
+            ),
         )
 
     def forward(
@@ -322,11 +384,11 @@ class GeoVeXZIP(nn.Module):  # type: ignore
             self.M,
             self.M,
         )
-        pi = torch.clamp(pi, 1e-5, 1 - 1e-5)
+        pi = torch.clamp(pi, 1e-6, 1 - 1e-6)
         return pi, lambda_
 
 
-class GeoVexModel(LightningModule):  # type: ignore
+class GeoVexModel(Model):
     """
     GeoVeX Model.
 
