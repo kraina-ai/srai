@@ -24,7 +24,10 @@ class LightningModule:  # pragma: no cover
 class nn:  # pragma: no cover
     """Pytorch nn class stub."""
 
-    ...
+    class Module:
+        """Pytorch nn.Module class stub."""
+
+        ...
 
 
 class torch:  # pragma: no cover
