@@ -8,12 +8,12 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from typing import List, Optional
+from typing import Iterator, List, Optional, Tuple
 
 import geopandas as gpd
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
-from tqdm import tqdm
 
 from srai.embedders.count_embedder import CountEmbedder
 from srai.neighbourhoods import Neighbourhood
@@ -123,21 +123,9 @@ class ContextualCountEmbedder(CountEmbedder):
         base_columns = list(counts_df.columns)
 
         result_array = counts_df.values.astype(float)
-        for idx, region_id in tqdm(
-            enumerate(counts_df.index), desc="Generating embeddings", total=len(counts_df.index)
-        ):
-            if self.neighbourhood_distance == 0:
-                continue
 
-            for distance in range(1, self.neighbourhood_distance + 1):
-                neighbours = self.neighbourhood.get_neighbours_at_distance(region_id, distance)
-                matching_neighbours = counts_df.index.intersection(neighbours)
-                if matching_neighbours.empty:
-                    continue
-
-                values = counts_df.loc[matching_neighbours].values
-                flattened_values = np.average(values, axis=0)
-                result_array[idx, :] += flattened_values / ((distance + 1) ** 2)
+        for distance, averaged_values in self._get_averaged_values_for_distances(counts_df):
+            result_array += averaged_values / ((distance + 1) ** 2)
 
         return pd.DataFrame(data=result_array, index=counts_df.index, columns=base_columns)
 
@@ -159,7 +147,7 @@ class ContextualCountEmbedder(CountEmbedder):
                 by (neighbourhood distance + 1).
         """
         base_columns = list(counts_df.columns)
-        no_base_columns = len(base_columns)
+        number_of_base_columns = len(base_columns)
         columns = [
             f"{column}_{distance}"
             for distance in range(self.neighbourhood_distance + 1)
@@ -167,23 +155,57 @@ class ContextualCountEmbedder(CountEmbedder):
         ]
 
         result_array = np.zeros(shape=(len(counts_df.index), len(columns)))
-        result_array[:, 0:no_base_columns] = counts_df.values
-        for idx, region_id in tqdm(
-            enumerate(counts_df.index), desc="Generating embeddings", total=len(counts_df.index)
-        ):
-            if self.neighbourhood_distance == 0:
-                continue
+        result_array[:, 0:number_of_base_columns] = counts_df.values
 
-            for distance in range(1, self.neighbourhood_distance + 1):
-                neighbours = self.neighbourhood.get_neighbours_at_distance(region_id, distance)
-                matching_neighbours = counts_df.index.intersection(neighbours)
-                if matching_neighbours.empty:
-                    continue
-
-                values = counts_df.loc[matching_neighbours].values
-                flattened_values = np.average(values, axis=0)
-                result_array[idx, no_base_columns * distance : no_base_columns * (distance + 1)] = (
-                    flattened_values
-                )
+        for distance, averaged_values in self._get_averaged_values_for_distances(counts_df):
+            result_array[
+                :, number_of_base_columns * distance : number_of_base_columns * (distance + 1)
+            ] = averaged_values
 
         return pd.DataFrame(data=result_array, index=counts_df.index, columns=columns)
+
+    def _get_averaged_values_for_distances(
+        self, counts_df: pd.DataFrame
+    ) -> Iterator[Tuple[int, npt.NDArray[np.float32]]]:
+        """
+        Generate averaged values for neighbours at given distances.
+
+        Function will yield tuples of distances and averaged values arrays
+        calculated based on neighbours at a given distance.
+
+        Distance 0 is skipped.
+        If embedder has `neighbourhood_distance` set to 0, nothing will be returned.
+
+        Args:
+            counts_df (pd.DataFrame): Calculated features from CountEmbedder.
+
+        Yields:
+            Iterator[Tuple[int, npt.NDArray[np.float32]]]: Iterator of distances and values.
+        """
+        if self.neighbourhood_distance == 0:
+            return
+
+        number_of_base_columns = len(counts_df.columns)
+
+        for distance in range(1, self.neighbourhood_distance + 1):
+            neighbours_series = counts_df.index.map(
+                lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
+                    self.neighbourhood.get_neighbours_at_distance(
+                        region_id, neighbour_distance, include_center=False
+                    )
+                ).values
+            )
+            if len(neighbours_series) == 0:
+                continue
+
+            averaged_values_stacked = np.stack(
+                neighbours_series.map(
+                    lambda region_ids: (
+                        np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
+                        if len(region_ids) > 0
+                        else np.zeros((number_of_base_columns,))
+                    )
+                ).values
+            )
+
+            yield distance, averaged_values_stacked

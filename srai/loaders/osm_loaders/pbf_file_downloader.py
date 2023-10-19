@@ -8,19 +8,38 @@ import json
 import warnings
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Hashable, Sequence, Union
+from typing import Any, Callable, Dict, Hashable, List, Literal, Sequence, Union
 
 import geopandas as gpd
 import requests
 import shapely.wkt as wktlib
 import topojson as tp
 from shapely.geometry import Polygon, mapping
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.geometry import buffer_geometry, flatten_geometry, remove_interiors
+from srai.geometry import (
+    buffer_geometry,
+    flatten_geometry,
+    flatten_geometry_series,
+    remove_interiors,
+)
 from srai.loaders import download_file
+from srai.loaders.osm_loaders.openstreetmap_extracts import (
+    OpenStreetMapExtract,
+    find_smallest_containing_geofabrik_extracts,
+    find_smallest_containing_openstreetmap_fr_extracts,
+)
+
+PbfSourceLiteral = Literal["geofabrik", "openstreetmap_fr", "protomaps"]
+PbfSourceExtractsFunctions: Dict[
+    PbfSourceLiteral,
+    Callable[[Union[BaseGeometry, BaseMultipartGeometry]], List[OpenStreetMapExtract]],
+] = {
+    "geofabrik": find_smallest_containing_geofabrik_extracts,
+    "openstreetmap_fr": find_smallest_containing_openstreetmap_fr_extracts,
+}
 
 
 class PbfFileDownloader:
@@ -30,12 +49,15 @@ class PbfFileDownloader:
     PBF(Protocolbuffer Binary Format)[1] file downloader is a downloader
     capable of downloading `*.osm.pbf` files with OSM data for a given area.
 
-    This downloader uses free Protomaps[2] download service to extract a PBF
-    file for a given region.
+    This downloader can use multiple sources to extract a PBF file for a given region:
+     - Geofabrik - free hosting service with PBF files http://download.geofabrik.de/.
+     - OpenStreetMap.fr - free hosting service with PBF files https://download.openstreetmap.fr/.
+     - Protomaps - (will be deprecated!) free download service for downloading an extract for
+       an area of interest.
+
 
     References:
         1. https://wiki.openstreetmap.org/wiki/PBF_Format
-        2. https://protomaps.com/
     """
 
     PROTOMAPS_API_START_URL = "https://app.protomaps.com/downloads/osm"
@@ -64,15 +86,27 @@ class PbfFileDownloader:
         0.05,
     ]
 
-    def __init__(self, download_directory: Union[str, Path] = "files") -> None:
+    def __init__(
+        self, source: PbfSourceLiteral = "protomaps", download_directory: Union[str, Path] = "files"
+    ) -> None:
         """
         Initialize PbfFileDownloader.
 
         Args:
+            source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
+                Can be ine of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
+                Defaults to "geofabrik".
             download_directory (Union[str, Path], optional): Directory where to save
                 the downloaded `*.osm.pbf` files. Defaults to "files".
         """
+        self.source = source
         self.download_directory = download_directory
+
+        if self.source == "protomaps":
+            warnings.warn(
+                "Protomaps service is being deprecated. Download function might not work.",
+                stacklevel=1,
+            )
 
     def download_pbf_files_for_regions_gdf(
         self, regions_gdf: gpd.GeoDataFrame
@@ -86,22 +120,68 @@ class PbfFileDownloader:
         Args:
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
 
+        Raises:
+            ValueError: If provided geometries aren't shapely.geometry.Polygons.
+
         Returns:
             Dict[Hashable, Sequence[Path]]: List of Paths to downloaded PBF files per
                 each region_id.
         """
         regions_mapping: Dict[Hashable, Sequence[Path]] = {}
 
+        non_polygon_types = set(
+            type(geometry)
+            for geometry in flatten_geometry_series(regions_gdf.geometry)
+            if not isinstance(geometry, Polygon)
+        )
+        if non_polygon_types:
+            raise ValueError(f"Provided geometries aren't Polygons (found: {non_polygon_types})")
+
+        if self.source == "protomaps":
+            regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
+        elif self.source in PbfSourceExtractsFunctions:
+            regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                regions_gdf
+            )
+
+        return regions_mapping
+
+    def _download_pbf_files_for_polygons_from_existing_extracts(
+        self, regions_gdf: gpd.GeoDataFrame
+    ) -> Dict[Hashable, Sequence[Path]]:
+        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+
+        unary_union_geometry = regions_gdf.geometry.unary_union
+
+        extract_function = PbfSourceExtractsFunctions[self.source]
+        extracts = extract_function(unary_union_geometry)
+
+        for extract in extracts:
+            pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
+
+            download_file(url=extract.url, fname=pbf_file_path.as_posix(), force_download=False)
+
+            regions_mapping[extract.id] = [pbf_file_path]
+
+        return regions_mapping
+
+    def _download_pbf_files_for_polygons_from_protomaps(
+        self, regions_gdf: gpd.GeoDataFrame
+    ) -> Dict[Hashable, Sequence[Path]]:
+        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
             regions_mapping[region_id] = [
-                self.download_pbf_file_for_polygon(polygon, region_id, polygon_id + 1)
+                self._download_pbf_file_for_polygon_from_protomaps(
+                    polygon, region_id, polygon_id + 1
+                )
                 for polygon_id, polygon in enumerate(polygons)
             ]
 
         return regions_mapping
 
-    def download_pbf_file_for_polygon(
+    def _download_pbf_file_for_polygon_from_protomaps(
         self, polygon: Polygon, region_id: str = "OSM", polygon_id: int = 1
     ) -> Path:
         """
