@@ -190,7 +190,7 @@ def _find_smallest_containing_extracts_for_single_geometry(
             (~polygons_index_gdf["id"].isin(extracts_ids))
             & (polygons_index_gdf.intersects(geometry_to_cover))
         ]
-        if len(matching_rows) == 0 or iterations == 0:
+        if 0 in (len(matching_rows), iterations):
             raise RuntimeError("Couldn't find extracts matching given geometry.")
 
         smallest_extract = matching_rows.iloc[0]

@@ -123,7 +123,7 @@ class PbfFileDownloader:
 
         if self.source == "protomaps":
             regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
-        elif self.source in ["geofabrik", "openstreetmap_fr"]:
+        elif self.source in PbfSourceExtractsFunctions:
             regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
                 regions_gdf
             )
