@@ -6,7 +6,7 @@ groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "pe
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:2ad334abb32b0bf79f2681ee9de48af03747b808fc846f3ab07e3596f201814e"
+content_hash = "sha256:469b4e138ebe509b7151728c3f99534640e16be5716e5f8a5bf1726ea90a32a5"
 
 [[package]]
 name = "aiohttp"

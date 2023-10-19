@@ -13,6 +13,7 @@ from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
+from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
 
 
 class OSMPbfLoader(OSMLoader):
@@ -25,7 +26,7 @@ class OSMPbfLoader(OSMLoader):
 
     This loader uses `pyosmium`[3] library capable of parsing an `*.osm.pbf` file.
 
-    Additionally, it can download a pbf file extract for a given area using Protomaps API.
+    Additionally, it can download a pbf file extract for a given area using different sources.
 
     References:
         1. https://www.openstreetmap.org/
@@ -36,6 +37,7 @@ class OSMPbfLoader(OSMLoader):
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
+        download_source: PbfSourceLiteral = "geofabrik",
         download_directory: Union[str, Path] = "files",
     ) -> None:
         """
@@ -45,11 +47,15 @@ class OSMPbfLoader(OSMLoader):
             pbf_file (Union[str, Path], optional): Downloaded `*.osm.pbf` file to be used by
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
+            download_source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
+                Can be ine of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
+                Defaults to "geofabrik".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files"
         """
         import_optional_dependencies(dependency_group="osm", modules=["osmium"])
         self.pbf_file = pbf_file
+        self.download_source = download_source
         self.download_directory = download_directory
 
     def load(
@@ -68,11 +74,6 @@ class OSMPbfLoader(OSMLoader):
         Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
 
-        Note: If you want to extract data for a big area (like country, or more), it's encouraged
-            to use existing `*.osm.pbf` extracts from GeoFabrik (https://download.geofabrik.de/)
-            or BBBike (https://extract.bbbike.org/). You can provide those predownloaded files in
-            the constructor of the `OSMPbfLoader`.
-
         Args:
             area (gpd.GeoDataFrame): Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
@@ -84,6 +85,10 @@ class OSMPbfLoader(OSMLoader):
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
+
+        Raises:
+            ValueError: If PBF file is expected to be downloaded and provided geometries
+                aren't shapely.geometry.Polygons.
 
         Returns:
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
@@ -98,7 +103,7 @@ class OSMPbfLoader(OSMLoader):
             downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
         else:
             downloaded_pbf_files = PbfFileDownloader(
-                download_directory=self.download_directory
+                source=self.download_source, download_directory=self.download_directory
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
         merged_tags = self._merge_osm_tags_filter(tags)

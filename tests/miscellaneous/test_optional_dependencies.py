@@ -18,6 +18,7 @@ def optional_packages() -> List[str]:
         "osmium",
         "osmnx",
         "overpass",
+        "beautifulsoup4",
         "pymap3d",
         "haversine",
         "scipy",
