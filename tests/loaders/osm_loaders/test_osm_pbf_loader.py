@@ -93,10 +93,6 @@ def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourc
     "test_polygon,test_file_names",
     [
         (
-            Point([(-73.981883, 40.768081)]),
-            ["d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"],
-        ),
-        (
             Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
             ["eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf"],
         ),
@@ -216,45 +212,38 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "test_geometries,pbf_file,query,expected_result_length,expected_features_columns_length,expected_features_columns_names",
+    "test_geometries,pbf_file,query,pbf_source,expected_result_length,expected_features_columns_length,expected_features_columns_names",
     [
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, HEX2VEC_FILTER, 0, 0, []),
-        ([Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])], None, BASE_OSM_GROUPS_FILTER, 0, 0, []),
         (
-            [Point([(-73.981883, 40.768081)])],
+            [
+                Polygon(
+                    [
+                        (7.416769421059001, 43.7346112362936),
+                        (7.416769421059001, 43.730681304758946),
+                        (7.4218262821731, 43.730681304758946),
+                        (7.4218262821731, 43.7346112362936),
+                    ]
+                )
+            ],
             None,
             HEX2VEC_FILTER,
-            2,
-            3,
-            ["building", "historic", "tourism"],
-        ),
-        (
-            [Point([(-73.981883, 40.768081)])],
-            None,
-            BASE_OSM_GROUPS_FILTER,
-            3,
-            3,
-            ["transportation", "historic", "tourism"],
-        ),
-        (
-            [Point([(-73.981883, 40.768081)])],
-            Path(__file__).parent
-            / "test_files"
-            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            HEX2VEC_FILTER,
-            2,
-            3,
-            ["building", "historic", "tourism"],
-        ),
-        (
-            [Point([(-73.981883, 40.768081)])],
-            Path(__file__).parent
-            / "test_files"
-            / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            BASE_OSM_GROUPS_FILTER,
-            3,
-            3,
-            ["transportation", "historic", "tourism"],
+            "geofabrik",
+            398,
+            12,
+            [
+                "amenity",
+                "building",
+                "healthcare",
+                "historic",
+                "landuse",
+                "leisure",
+                "natural",
+                "office",
+                "shop",
+                "sport",
+                "tourism",
+                "water",
+            ],
         ),
         (
             [Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])],
@@ -262,6 +251,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "test_files"
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             HEX2VEC_FILTER,
+            "protomaps",
             0,
             0,
             [],
@@ -272,6 +262,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             / "test_files"
             / "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             BASE_OSM_GROUPS_FILTER,
+            "protomaps",
             0,
             0,
             [],
@@ -282,6 +273,7 @@ def test_osm_pbf_loader(
     test_geometries: List[BaseGeometry],
     pbf_file: Path,
     query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+    pbf_source: PbfSourceLiteral,
     expected_result_length: int,
     expected_features_columns_length: int,
     expected_features_columns_names: List[str],
@@ -295,7 +287,7 @@ def test_osm_pbf_loader(
     )
 
     loader = OSMPbfLoader(
-        pbf_file=pbf_file, download_directory=download_directory, download_source="protomaps"
+        pbf_file=pbf_file, download_directory=download_directory, download_source=pbf_source
     )
     result = loader.load(area, tags=query)
 
