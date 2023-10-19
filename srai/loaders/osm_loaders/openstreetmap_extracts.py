@@ -186,6 +186,14 @@ def _find_smallest_containing_extracts_for_single_geometry(
 
     extracts_ids: Set[str] = set()
     geometry_to_cover = geometry.buffer(0)
+
+    exactly_matching_geometry = polygons_index_gdf[
+        polygons_index_gdf.geometry.geom_almost_equals(geometry)
+    ]
+    if len(exactly_matching_geometry) == 1:
+        extracts_ids.add(exactly_matching_geometry.iloc[0].id)
+        return extracts_ids
+
     iterations = 100
     while not geometry_to_cover.is_empty and iterations > 0:
         matching_rows = polygons_index_gdf[
