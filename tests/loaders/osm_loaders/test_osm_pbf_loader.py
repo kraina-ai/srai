@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import geopandas as gpd
 import pytest
-from shapely.geometry import MultiPolygon, Point, Polygon
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
@@ -16,7 +16,7 @@ from srai.loaders.osm_loaders.filters import (
     GroupedOsmTagsFilter,
     OsmTagsFilter,
 )
-from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
+from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader, PbfSourceLiteral
 from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
 ut = TestCase()
@@ -69,6 +69,24 @@ def test_geometry_preparing(test_polygon: BaseGeometry):
     assert len(prepared_polygon.exterior.coords) <= 1000
     assert len(prepared_polygon.interiors) == 0
     assert test_polygon.covered_by(prepared_polygon)
+
+
+@pytest.mark.parametrize(
+    "test_geometry", [Point(1, 1), LineString([(1, 1), (0, 1)])]
+)  # type: ignore
+@pytest.mark.parametrize(
+    "pbf_source", ["geofabrik", "openstreetmap_fr", "protomaps"]
+)  # type: ignore
+def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourceLiteral) -> None:
+    """Test if `PbfFileDownloader` disallows non polygon geometries."""
+    with pytest.raises(ValueError):
+        regions_gdf = gpd.GeoDataFrame(
+            geometry=[test_geometry],
+            index=gpd.pd.Index(name=REGIONS_INDEX, data=[1]),
+            crs=WGS84_CRS,
+        )
+        downloader = PbfFileDownloader(source=pbf_source)
+        downloader.download_pbf_files_for_regions_gdf(regions_gdf)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -276,7 +294,9 @@ def test_osm_pbf_loader(
         crs=WGS84_CRS,
     )
 
-    loader = OSMPbfLoader(pbf_file=pbf_file, download_directory=download_directory)
+    loader = OSMPbfLoader(
+        pbf_file=pbf_file, download_directory=download_directory, download_source="protomaps"
+    )
     result = loader.load(area, tags=query)
 
     assert (
