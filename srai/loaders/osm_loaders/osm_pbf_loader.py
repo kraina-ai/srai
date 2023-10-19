@@ -86,6 +86,10 @@ class OSMPbfLoader(OSMLoader):
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
 
+        Raises:
+            ValueError: If PBF file is expected to be downloaded and provided geometries
+                aren't shapely.geometry.Polygons.
+
         Returns:
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
