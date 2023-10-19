@@ -19,7 +19,12 @@ from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.geometry import buffer_geometry, flatten_geometry, remove_interiors
+from srai.geometry import (
+    buffer_geometry,
+    flatten_geometry,
+    flatten_geometry_series,
+    remove_interiors,
+)
 from srai.loaders import download_file
 from srai.loaders.osm_loaders.openstreetmap_extracts import (
     OpenStreetMapExtract,
@@ -115,11 +120,22 @@ class PbfFileDownloader:
         Args:
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
 
+        Raises:
+            ValueError: If provided geometries aren't shapely.geometry.Polygons.
+
         Returns:
             Dict[Hashable, Sequence[Path]]: List of Paths to downloaded PBF files per
                 each region_id.
         """
         regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+
+        non_polygon_types = set(
+            type(geometry)
+            for geometry in flatten_geometry_series(regions_gdf.geometry)
+            if not isinstance(geometry, Polygon)
+        )
+        if non_polygon_types:
+            raise ValueError(f"Provided geometries aren't Polygons (found: {non_polygon_types})")
 
         if self.source == "protomaps":
             regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
