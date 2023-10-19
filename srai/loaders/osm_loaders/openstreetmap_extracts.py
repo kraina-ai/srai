@@ -14,12 +14,12 @@ from typing import Any, Iterable, List, Optional, Set, Union
 
 import geopandas as gpd
 import requests
-from bs4 import BeautifulSoup
 from shapely.geometry import MultiPolygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
+from srai._optional import import_optional_dependencies
 from srai.constants import WGS84_CRS
 from srai.geometry import flatten_geometry
 
@@ -77,6 +77,8 @@ def find_smallest_containing_openstreetmap_fr_extracts(
         List[GeofabrikExtract]: List of extracts name, URL to download it and boundary polygon.
     """
     global OPENSTREETMAP_FR_INDEX_GDF  # noqa: PLW0603
+
+    import_optional_dependencies(dependency_group="osm", modules=["bs4"])
 
     if OPENSTREETMAP_FR_INDEX_GDF is None:
         OPENSTREETMAP_FR_INDEX_GDF = _load_openstreetmap_fr_index()
@@ -366,6 +368,8 @@ def _iterate_openstreetmap_fr_index(
     Returns:
         List[OpenStreetMapExtract]: List of loaded osm.fr extracts objects.
     """
+    from bs4 import BeautifulSoup
+
     pbar.set_description_str(id_prefix)
     extracts = []
     result = requests.get(
