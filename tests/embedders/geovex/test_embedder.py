@@ -17,17 +17,18 @@ from tests.embedders.geovex.constants import EMBEDDING_SIZE, PREDEFINED_TEST_CAS
 
 
 @pytest.mark.parametrize(  # type: ignore
-    "target_features,expectation",
+    "target_features, conv_layer_size, expectation",
     [
-        (None, does_not_raise()),
-        (["building"], pytest.raises(ValueError)),
+        (None, 256, does_not_raise()),
+        (["building", "amenity"], 32, does_not_raise()),
+        (["building", "amenity"], 256, pytest.raises(ValueError)),
     ],
 )
-def test_checking_encoder_sizes(target_features: Union[str, List[str]], expectation: Any) -> None:
+def test_checking_encoder_sizes(
+    target_features: Union[str, List[str]], conv_layer_size, expectation: Any
+) -> None:
     """Test that incorrect encoder sizes raise ValueError."""
-    target_tags: Dict[str, List[str]] = (
-        target_features if target_features else HEX2VEC_FILTER  # type: ignore
-    )
+    target_tags: Dict[str, List[str]] = target_features or HEX2VEC_FILTER  # type: ignore
     target_features = [f"{t}_{st}" for t in target_tags for st in HEX2VEC_FILTER[t]]  # type: ignore
 
     neighbourhood = H3Neighbourhood()
@@ -35,6 +36,7 @@ def test_checking_encoder_sizes(target_features: Union[str, List[str]], expectat
         GeoVexEmbedder(
             target_features=target_features,
             neighbourhood=neighbourhood,
+            convolutional_layer_size=conv_layer_size,
         )
 
 
@@ -73,6 +75,8 @@ def test_embedder() -> None:
             neighbourhood=neighbourhood,
             neighbourhood_radius=radius,
             embedding_size=EMBEDDING_SIZE,
+            convolutional_layers=test_case["num_layers"],  # type: ignore
+            convolutional_layer_size=test_case["convolutional_layer_size"],  # type: ignore
         )
         result_df = embedder.fit_transform(
             regions_gdf, features_gdf, joint_gdf, neighbourhood, trainer_kwargs=TRAINER_KWARGS

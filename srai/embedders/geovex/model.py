@@ -398,8 +398,6 @@ class GeoVexModel(Model):
     at the center and radius R neighbors around it.
     """
 
-    MIN_FEATURES = 256
-
     def __init__(
         self,
         k_dim: int,
@@ -407,6 +405,7 @@ class GeoVexModel(Model):
         conv_layers: int = 2,
         emb_size: int = 32,
         learning_rate: float = 1e-5,
+        conv_layer_size: int = 256,
     ):
         """
         Initialize the GeoVeX model.
@@ -417,9 +416,13 @@ class GeoVexModel(Model):
             conv_layers (int, optional): The number of convolutional layers. Defaults to 2.
             emb_size (int, optional): The dimension of the inner embedding. Defaults to 32.
             learning_rate (float, optional): The learning rate. Defaults to 1e-5.
+            conv_layer_size (int, optional): The size of the initial convolutional layer.
         """
-        if k_dim < self.MIN_FEATURES:
-            raise ValueError(f"k_dim must be greater than {self.MIN_FEATURES}")
+        if k_dim < conv_layer_size:
+            raise ValueError(f"k_dim must be greater than {conv_layer_size}")
+
+        if conv_layers < 2:
+            raise ValueError("conv_layers must be greater than 1")
 
         if radius < 2:
             raise ValueError("R must be greater than 1")
@@ -457,7 +460,7 @@ class GeoVexModel(Model):
             )
             in_size = out_size
 
-        conv_sizes = [256 * 2**i for i in range(conv_layers)]
+        conv_sizes = [conv_layer_size * 2**i for i in range(conv_layers)]
         self.encoder = nn.Sequential(
             nn.BatchNorm2d(self.k_dim),
             nn.ReLU(),
@@ -465,7 +468,7 @@ class GeoVexModel(Model):
             HexagonalConv2d(
                 self.k_dim, conv_sizes[0], kernel_size=3, stride=2, padding=int(padding)
             ),
-            nn.BatchNorm2d(256),
+            nn.BatchNorm2d(conv_layer_size),
             nn.ReLU(),
             *(
                 # second conv block

@@ -40,6 +40,7 @@ class GeoVexEmbedder(CountEmbedder):
         neighbourhood_radius: int = 4,
         convolutional_layers: int = 2,
         embedding_size: int = 32,
+        convolutional_layer_size: int = 256,
         dataset: Optional[HexagonalDataset[T]] = None,
     ) -> None:
         """
@@ -47,20 +48,21 @@ class GeoVexEmbedder(CountEmbedder):
 
         Args:
             target_features (List[str]): The features that are to be used in the embedding.
-                Should be in "flat" format, i.e. "<super tag>_<sub_tag>".
+                Should be in "flat" format, i.e. "<super-tag>_<sub-tag>".
             neighbourhood (H3Neighbourhood): The neighbourhood to use.
                 Should be intialized with the same regions.
             batch_size (int, optional): Batch size. Defaults to 32.
             convolutional_layers (int, optional): Number of convolutional layers. Defaults to 2.
             neighbourhood_radius (int, optional): Radius of the neighbourhood. Defaults to 4.
             embedding_size (int, optional): Size of the embedding. Defaults to 32.
+            convolutional_layer_size (int, optional): Size of the first convolutional layer.
             dataset (Optional[HexagonalDataset], optional): Dataset to use. Defaults to None.
         """
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )
 
-        self._assert_feature_length(target_features)
+        self._assert_feature_length(target_features, convolutional_layer_size)
 
         super().__init__(
             expected_output_features=target_features,
@@ -71,6 +73,7 @@ class GeoVexEmbedder(CountEmbedder):
         self._r = neighbourhood_radius
         self._embedding_size = embedding_size
         self._convolutional_layers = convolutional_layers
+        self._convolutional_layer_size = convolutional_layer_size
 
         self._neighbourhood = neighbourhood
         self._batch_size = batch_size
@@ -173,6 +176,7 @@ class GeoVexEmbedder(CountEmbedder):
             conv_layers=self._convolutional_layers,
             emb_size=self._embedding_size,
             learning_rate=learning_rate,
+            conv_layer_size=self._convolutional_layer_size,
         )
         trainer = pl.Trainer(**trainer_kwargs)
         trainer.fit(self._model, dataloader)
@@ -249,8 +253,8 @@ class GeoVexEmbedder(CountEmbedder):
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
 
-    def _assert_feature_length(self, target_features: List[str]) -> None:
-        if len(target_features) < GeoVexModel.MIN_FEATURES:
+    def _assert_feature_length(self, target_features: List[str], conv_layer_size: int) -> None:
+        if len(target_features) < conv_layer_size:
             raise ValueError(
-                f"The convolutional layers in GeoVex expect >= {GeoVexModel.MIN_FEATURES} features."
+                f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."
             )

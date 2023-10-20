@@ -14,8 +14,6 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-from srai.regionalizers import geocode_to_region_gdf
-from srai.regionalizers.h3_regionalizer import H3Regionalizer
 from tests.embedders.geovex.constants import EMBEDDING_SIZE, TRAINER_KWARGS
 
 
@@ -28,6 +26,8 @@ def generate_test_case(
     model_radius: int,
     seed: int,
     tags: Optional[OsmTagsFilter] = None,
+    convolutional_layer_size: int = 256,
+    num_layers: int = 1,
 ) -> None:
     """Generate test case for GeoVexEmbedder."""
     seed_everything(seed)
@@ -46,12 +46,7 @@ def generate_test_case(
     regions_gdf = gpd.GeoDataFrame(index=regions_indexes, geometry=geoms, crs=WGS84_CRS)
     regions_gdf.index.name = REGIONS_INDEX
 
-    area_gdf = geocode_to_region_gdf(geocoding_name)
-
-    regionalizer = H3Regionalizer(resolution=h3_res)
-    base_h3_regions = regionalizer.transform(area_gdf)
-
-    regions_gdf = ring_buffer_h3_regions_gdf(base_h3_regions, distance=model_radius)
+    regions_gdf = ring_buffer_h3_regions_gdf(regions_gdf, distance=model_radius)
     buffered_geometry = regions_gdf.unary_union
 
     loader = OSMPbfLoader()
@@ -69,8 +64,9 @@ def generate_test_case(
         neighbourhood=neighbourhood,
         batch_size=10,
         neighbourhood_radius=model_radius,
-        convolutional_layers=2,
+        convolutional_layers=num_layers,
         embedding_size=EMBEDDING_SIZE,
+        convolutional_layer_size=convolutional_layer_size,
     )
 
     results_df = embedder.fit_transform(
@@ -87,7 +83,9 @@ def generate_test_case(
     files_prefix = f"{test_case_name}"
 
     output_path = Path(__file__).parent / "test_files"
-    regions_gdf.to_parquet(output_path / f"{files_prefix}_regions.parquet")
-    features_gdf.to_parquet(output_path / f"{files_prefix}_features.parquet")
+    regions_gdf.to_parquet(
+        output_path / f"{files_prefix}_regions.parquet",
+    )
+    features_gdf.to_parquet(output_path / f"{files_prefix}_features.parquet", compression="gzip")
     joint_gdf.to_parquet(output_path / f"{files_prefix}_joint.parquet")
     results_df.to_parquet(output_path / f"{files_prefix}_result.parquet")
