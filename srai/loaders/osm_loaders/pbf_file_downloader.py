@@ -3,7 +3,6 @@ PBF File Downloader.
 
 This module contains a downloader capable of downloading a PBF file from a free Protomaps service.
 """
-import hashlib
 import json
 import warnings
 from pathlib import Path
@@ -12,7 +11,6 @@ from typing import Any, Callable, Dict, Hashable, List, Literal, Sequence, Union
 
 import geopandas as gpd
 import requests
-import shapely.wkt as wktlib
 import topojson as tp
 from shapely.geometry import Polygon, mapping
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
@@ -23,6 +21,7 @@ from srai.geometry import (
     buffer_geometry,
     flatten_geometry,
     flatten_geometry_series,
+    get_geometry_hash,
     remove_interiors,
 )
 from srai.loaders import download_file
@@ -204,7 +203,7 @@ class PbfFileDownloader:
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
         """
-        geometry_hash = self._get_geometry_hash(polygon)
+        geometry_hash = get_geometry_hash(polygon)
         pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():  # pragma: no cover
@@ -343,10 +342,3 @@ class PbfFileDownloader:
             simplified_polygon = polygon.minimum_rotated_rectangle
 
         return simplified_polygon
-
-    def _get_geometry_hash(self, geometry: BaseGeometry) -> str:
-        """Generate SHA256 hash based on WKT representation of the polygon."""
-        wkt_string = wktlib.dumps(geometry)
-        h = hashlib.new("sha256")
-        h.update(wkt_string.encode())
-        return h.hexdigest()
