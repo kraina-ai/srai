@@ -13,8 +13,8 @@ from sys import platform
 from typing import Sequence, Union
 
 import numpy as np
-import tqdm
 from shapely.geometry import MultiPolygon, Polygon
+from tqdm import tqdm
 
 from srai.geometry import get_geometry_hash
 from srai.loaders.download import download_file
@@ -77,6 +77,9 @@ class PbfFileClipper:
             Path: Location of merged PBF file.
         """
         geometry_hash = get_geometry_hash(geometry)
+        final_osm_path_alphanumeric_safe = (
+            self.working_directory.resolve() / f"merged_{geometry_hash}.osm.pbf"
+        ).as_posix()
         final_osm_path = (self.working_directory.resolve() / f"{geometry_hash}.osm.pbf").as_posix()
 
         if Path(final_osm_path).exists():
@@ -91,19 +94,29 @@ class PbfFileClipper:
             self._generate_poly_file(geometry, poly_path)
 
             if platform in ("linux", "linux2"):
-                self._download_osmconvert_tool()
+                download_function = self._download_osmconvert_tool
+                tmp_file_extension = "o5m"
+                clip_function = self._clip_pbf_with_osmconvert
+                merge_function = self._merge_pbfs_with_osmconvert
             elif platform in ("darwin", "win32"):
-                self._download_osmosis_tool()
+                download_function = self._download_osmosis_tool
+                tmp_file_extension = "osm.pbf"
+                clip_function = self._clip_pbf_with_osmosis
+                merge_function = self._merge_pbfs_with_osmosis
             else:
                 raise RuntimeError(f"Unrecognized system platform: {platform}")
 
+            download_function()
+
             # clip all pbf_files in temp directory
             clipped_pbf_files_set = set()
-            for pbf_file_path in pbf_files:
+            for pbf_file_path in tqdm(pbf_files, desc="Clipping PBF files"):
                 pbf_file_path_posix = Path(pbf_file_path).as_posix()
                 pbf_file_name = Path(pbf_file_path).stem.split(".")[0]
+
                 osm_path = (
-                    tmp_dir_path.resolve() / f"pbf_files/{pbf_file_name}_{geometry_hash}.osm.pbf"
+                    tmp_dir_path.resolve()
+                    / f"pbf_files/{pbf_file_name}_{geometry_hash}.{tmp_file_extension}"
                 ).as_posix()
 
                 clipped_pbf_files_set.add(osm_path)
@@ -111,12 +124,7 @@ class PbfFileClipper:
                 if Path(osm_path).exists():
                     continue
 
-                if platform in ("linux", "linux2"):
-                    self._clip_pbf_with_osmconvert(pbf_file_path_posix, poly_path, osm_path)
-                elif platform in ("darwin", "win32"):
-                    self._clip_pbf_with_osmosis(pbf_file_path_posix, poly_path, osm_path)
-                else:
-                    raise RuntimeError(f"Unrecognized system platform: {platform}")
+                clip_function(pbf_file_path_posix, poly_path, osm_path)
 
             clipped_pbf_files_list = list(clipped_pbf_files_set)
 
@@ -125,12 +133,8 @@ class PbfFileClipper:
                 Path(clipped_pbf_files_list[0]).rename(final_osm_path)
             # merge all of the files and copy it
             else:
-                if platform in ("linux", "linux2"):
-                    self._merge_pbfs_with_osmconvert(clipped_pbf_files_list, final_osm_path)
-                elif platform in ("darwin", "win32"):
-                    self._merge_pbfs_with_osmosis(clipped_pbf_files_list, final_osm_path)
-                else:
-                    raise RuntimeError(f"Unrecognized system platform: {platform}")
+                merge_function(clipped_pbf_files_list, final_osm_path_alphanumeric_safe)
+                Path(final_osm_path_alphanumeric_safe).rename(final_osm_path)
 
         return Path(final_osm_path)
 
@@ -209,8 +213,12 @@ class PbfFileClipper:
         """Wrapper over osmconvert CLI tool."""
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
         os.system(
-            "{}  {} -B={} --complete-ways --complete-multipolygons -o={}".format(
-                self.OSMCONVERT_PATH, source_pbf_path, poly_file_path, output_pbf_path
+            "{}  {} -B={} --complete-ways --complete-multipolygons -t={} -o={}".format(
+                self.OSMCONVERT_PATH,
+                source_pbf_path,
+                poly_file_path,
+                Path(output_pbf_path).parent.as_posix(),
+                output_pbf_path,
             )
         )
 
@@ -225,21 +233,19 @@ class PbfFileClipper:
             )
         )
 
-    # osmconvert region1.pbf --out-o5m | osmconvert - region2.pbf -o=all.pbf
+    # osmconvert file1.o5m file2.o5m -o=merged.pbf
     def _merge_pbfs_with_osmconvert(self, pbf_paths: Sequence[str], output_pbf_path: str) -> None:
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
-        current_first_pbf_path = pbf_paths[0]
-        for current_second_pbf_path in pbf_paths[1:]:
-            command = (
-                f"{self.OSMCONVERT_PATH} {current_first_pbf_path} --out-o5m | "
-                f"{self.OSMCONVERT_PATH} - {current_second_pbf_path} -o={output_pbf_path}"
-            )
-            os.system(command)
-            current_first_pbf_path = output_pbf_path
+        joined_files = " ".join(pbf_paths)
+        command = f"{self.OSMCONVERT_PATH} {joined_files} -o={output_pbf_path}"
+        os.system(command)
 
-    # osmosis --rb file1.osm --rb file2.osm --merge --wb merged.osm
+    # osmosis --rb file1.pbf --rb file2.pbf --rb file3.pbf --merge --merge --wb merged.pbf
     def _merge_pbfs_with_osmosis(self, pbf_paths: Sequence[str], output_pbf_path: str) -> None:
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
         joined_files = " ".join([f"--rb {pbf_path}" for pbf_path in pbf_paths])
-        command = f"{self.OSMOSIS_EXECUTABLE_PATH} {joined_files} --merge --wb {output_pbf_path}"
+        merge_commands = " ".join(["--merge" for _ in range(len(pbf_paths) - 1)])
+        command = (
+            f"{self.OSMOSIS_EXECUTABLE_PATH} {joined_files} {merge_commands} --wb {output_pbf_path}"
+        )
         os.system(command)
