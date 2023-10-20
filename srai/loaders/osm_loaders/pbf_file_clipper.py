@@ -130,7 +130,7 @@ class PbfFileClipper:
 
             # if single file - copy it
             if len(clipped_pbf_files_list) == 1:
-                if platform in ("linux", "linux2"):
+                if tmp_file_extension == "o5m":
                     self._convert_o5m_to_pbf(clipped_pbf_files_list[0], final_osm_path)
                 else:
                     Path(clipped_pbf_files_list[0]).rename(final_osm_path)
