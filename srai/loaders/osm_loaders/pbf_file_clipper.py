@@ -130,7 +130,10 @@ class PbfFileClipper:
 
             # if single file - copy it
             if len(clipped_pbf_files_list) == 1:
-                Path(clipped_pbf_files_list[0]).rename(final_osm_path)
+                if platform in ("linux", "linux2"):
+                    self._convert_o5m_to_pbf(clipped_pbf_files_list[0], final_osm_path)
+                else:
+                    Path(clipped_pbf_files_list[0]).rename(final_osm_path)
             # merge all of the files and copy it
             else:
                 merge_function(clipped_pbf_files_list, final_osm_path_alphanumeric_safe)
@@ -248,4 +251,9 @@ class PbfFileClipper:
         command = (
             f"{self.OSMOSIS_EXECUTABLE_PATH} {joined_files} {merge_commands} --wb {output_pbf_path}"
         )
+        os.system(command)
+
+    def _convert_o5m_to_pbf(self, o5m_path: Sequence[str], output_pbf_path: str) -> None:
+        Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
+        command = f"{self.OSMCONVERT_PATH} {o5m_path} -o={output_pbf_path}"
         os.system(command)
