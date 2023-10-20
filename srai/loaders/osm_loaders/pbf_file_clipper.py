@@ -8,12 +8,12 @@ import os
 import stat
 import tempfile
 import zipfile
+from pathlib import Path
 from sys import platform
 from typing import Sequence, Union
 
 import numpy as np
 import tqdm
-from pathlib2 import Path
 from shapely.geometry import MultiPolygon, Polygon
 
 from srai.geometry import get_geometry_hash
