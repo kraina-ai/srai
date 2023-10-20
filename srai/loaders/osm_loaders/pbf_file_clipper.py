@@ -5,6 +5,7 @@ This module contains a clipper capable of clipping a PBF file to a smaller size 
 osmosis CLI tools.
 """
 import os
+import shutil
 import stat
 import tempfile
 import zipfile
@@ -77,9 +78,6 @@ class PbfFileClipper:
             Path: Location of merged PBF file.
         """
         geometry_hash = get_geometry_hash(geometry)
-        final_osm_path_alphanumeric_safe = (
-            self.working_directory.resolve() / f"merged_{geometry_hash}.osm.pbf"
-        ).as_posix()
         final_osm_path = (self.working_directory.resolve() / f"{geometry_hash}.osm.pbf").as_posix()
 
         if Path(final_osm_path).exists():
@@ -87,6 +85,10 @@ class PbfFileClipper:
 
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir_path = Path(tmp_dir_name)
+
+            final_osm_path_alphanumeric_safe = (
+                tmp_dir_path.resolve() / f"merged_{geometry_hash}.osm.pbf"
+            ).as_posix()
 
             poly_path = (tmp_dir_path.resolve() / f"poly_files/{geometry_hash}.poly").as_posix()
 
@@ -133,11 +135,11 @@ class PbfFileClipper:
                 if tmp_file_extension == "o5m":
                     self._convert_o5m_to_pbf(clipped_pbf_files_list[0], final_osm_path)
                 else:
-                    Path(clipped_pbf_files_list[0]).rename(final_osm_path)
+                    shutil.copy(clipped_pbf_files_list[0], final_osm_path)
             # merge all of the files and copy it
             else:
                 merge_function(clipped_pbf_files_list, final_osm_path_alphanumeric_safe)
-                Path(final_osm_path_alphanumeric_safe).rename(final_osm_path)
+                shutil.copy(final_osm_path_alphanumeric_safe, final_osm_path)
 
         return Path(final_osm_path)
 
@@ -231,7 +233,8 @@ class PbfFileClipper:
         """Wrapper over osmosis CLI tool."""
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
         os.system(
-            '{} --read-pbf file="{}" --bounding-polygon file="{}" --write-pbf file="{}"'.format(
+            '{} --read-pbf file="{}" --bounding-polygon file="{}" completeWays=yes'
+            ' completeRelations=yes --write-pbf file="{}"'.format(
                 self.OSMOSIS_EXECUTABLE_PATH, source_pbf_path, poly_file_path, output_pbf_path
             )
         )
