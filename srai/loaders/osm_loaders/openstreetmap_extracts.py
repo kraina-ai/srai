@@ -272,8 +272,12 @@ def _filter_extracts(
                 _filter_extracts_for_single_geometry(sub_geometry, sorted_extracts_gdf)
             )
 
+    simplified_extracts_ids = _simplify_selected_extracts(
+        filtered_extracts_ids, sorted_extracts_gdf
+    )
+
     for _, extract_row in sorted_extracts_gdf[
-        sorted_extracts_gdf["id"].isin(filtered_extracts_ids)
+        sorted_extracts_gdf["id"].isin(simplified_extracts_ids)
     ].iterrows():
         extract = OpenStreetMapExtract(
             id=extract_row.id,
@@ -316,6 +320,35 @@ def _filter_extracts_for_single_geometry(
         filtered_extracts_ids.add(extract_row.id)
 
     return filtered_extracts_ids
+
+
+def _simplify_selected_extracts(
+    filtered_extracts_ids: Set[str], sorted_extracts_gdf: gpd.GeoDataFrame
+) -> Set[str]:
+    simplified_extracts_ids: Set[str] = filtered_extracts_ids.copy()
+
+    matching_extracts = sorted_extracts_gdf[sorted_extracts_gdf["id"].isin(simplified_extracts_ids)]
+
+    simplify_again = True
+    while simplify_again:
+        simplify_again = False
+        extract_to_remove = None
+        for extract_id in simplified_extracts_ids:
+            extract_geometry = (
+                matching_extracts[sorted_extracts_gdf["id"] == extract_id].iloc[0].geometry
+            )
+            other_geometries = matching_extracts[
+                sorted_extracts_gdf["id"] != extract_id
+            ].unary_union
+            if extract_geometry.covered_by(other_geometries):
+                extract_to_remove = extract_id
+                simplify_again = True
+                break
+
+        if extract_to_remove is not None:
+            simplified_extracts_ids.remove(extract_to_remove)
+
+    return simplified_extracts_ids
 
 
 def _load_geofabrik_index() -> gpd.GeoDataFrame:
