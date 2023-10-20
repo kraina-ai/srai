@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `PbfFileClipper` for cutting bigger `osm.pbf` files into smaller sizes for faster operations. [#369](https://github.com/kraina-ai/srai/issues/369)
+
 ### Changed
 
 - Bumped `h3ronpy` library to `0.18.0` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`. Changed internal API to use `ContainmentMode`.
