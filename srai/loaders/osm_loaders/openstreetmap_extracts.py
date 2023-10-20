@@ -334,7 +334,7 @@ def _load_geofabrik_index() -> gpd.GeoDataFrame:
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
     gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "geofabrik_index.csv"
+        "cache/geofabrik_index.csv"
     )
     return gdf
 
@@ -354,7 +354,7 @@ def _load_openstreetmap_fr_index() -> gpd.GeoDataFrame:
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
     gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "osm_fr_index.csv"
+        "cache/osm_fr_index.csv"
     )
     return gdf
 

@@ -1,7 +1,7 @@
 """
 PBF File Downloader.
 
-This module contains a downloader capable of downloading a PBF file from a free Protomaps service.
+This module contains a downloader capable of downloading a PBF files from multiple sources.
 """
 import json
 import warnings
@@ -30,6 +30,7 @@ from srai.loaders.osm_loaders.openstreetmap_extracts import (
     find_smallest_containing_geofabrik_extracts,
     find_smallest_containing_openstreetmap_fr_extracts,
 )
+from srai.loaders.osm_loaders.pbf_file_clipper import PbfFileClipper
 
 PbfSourceLiteral = Literal["geofabrik", "openstreetmap_fr", "protomaps"]
 PbfSourceExtractsFunctions: Dict[
@@ -86,7 +87,7 @@ class PbfFileDownloader:
     ]
 
     def __init__(
-        self, source: PbfSourceLiteral = "protomaps", download_directory: Union[str, Path] = "files"
+        self, source: PbfSourceLiteral = "geofabrik", download_directory: Union[str, Path] = "files"
     ) -> None:
         """
         Initialize PbfFileDownloader.
@@ -100,6 +101,7 @@ class PbfFileDownloader:
         """
         self.source = source
         self.download_directory = download_directory
+        self.clipper = PbfFileClipper(working_directory=self.download_directory)
 
         if self.source == "protomaps":
             warnings.warn(
@@ -155,12 +157,22 @@ class PbfFileDownloader:
         extract_function = PbfSourceExtractsFunctions[self.source]
         extracts = extract_function(unary_union_geometry)
 
+        downloaded_pbf_files = []
+
         for extract in extracts:
             pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
 
             download_file(url=extract.url, fname=pbf_file_path.as_posix(), force_download=False)
 
-            regions_mapping[extract.id] = [pbf_file_path]
+            downloaded_pbf_files.append(pbf_file_path)
+
+        polygons = flatten_geometry(unary_union_geometry)
+
+        for region_id, row in regions_gdf.iterrows():
+            polygons = flatten_geometry(row.geometry)
+            regions_mapping[region_id] = [
+                self.clipper.clip_pbf_file(polygon, downloaded_pbf_files) for polygon in polygons
+            ]
 
         return regions_mapping
 
