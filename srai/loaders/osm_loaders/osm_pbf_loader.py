@@ -38,8 +38,9 @@ class OSMPbfLoader(OSMLoader):
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
-        download_source: PbfSourceLiteral = "geofabrik",
+        download_source: PbfSourceLiteral = "protomaps",
         download_directory: Union[str, Path] = "files",
+        switch_to_geofabrik_on_error: bool = True,
     ) -> None:
         """
         Initialize OSMPbfLoader.
@@ -49,15 +50,18 @@ class OSMPbfLoader(OSMLoader):
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
             download_source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
-                Can be ine of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
-                Defaults to "geofabrik".
+                Can be one of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
+                Defaults to "protomaps".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
-                `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files"
+                `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files".
+            switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
+                switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
         import_optional_dependencies(dependency_group="osm", modules=["osmium"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory
+        self.switch_to_geofabrik_on_error = switch_to_geofabrik_on_error
 
     def load(
         self,
@@ -105,7 +109,9 @@ class OSMPbfLoader(OSMLoader):
             downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
         else:
             downloaded_pbf_files = PbfFileDownloader(
-                source=self.download_source, download_directory=self.download_directory
+                download_source=self.download_source,
+                download_directory=self.download_directory,
+                switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
         merged_tags = self._merge_osm_tags_filter(tags)

@@ -63,7 +63,10 @@ ut = TestCase()
 )
 def test_geometry_preparing(test_polygon: BaseGeometry):
     """Test proper geometry preparing in `PbfFileDownloader`."""
-    downloader = PbfFileDownloader()
+    downloader = PbfFileDownloader(
+        download_source="protomaps",
+        switch_to_geofabrik_on_error=False,
+    )
     prepared_polygon = downloader._prepare_polygon_for_download(test_polygon)
 
     assert len(prepared_polygon.exterior.coords) <= 1000
@@ -85,7 +88,10 @@ def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourc
             index=gpd.pd.Index(name=REGIONS_INDEX, data=[1]),
             crs=WGS84_CRS,
         )
-        downloader = PbfFileDownloader(source=pbf_source)
+        downloader = PbfFileDownloader(
+            download_source=pbf_source,
+            switch_to_geofabrik_on_error=False,
+        )
         downloader.download_pbf_files_for_regions_gdf(regions_gdf)
 
 
@@ -148,7 +154,11 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
         index=gpd.pd.Index(name=REGIONS_INDEX, data=[1]),
         crs=WGS84_CRS,
     )
-    downloader = PbfFileDownloader(download_directory=Path(__file__).parent / "test_files")
+    downloader = PbfFileDownloader(
+        download_source="protomaps",
+        download_directory=Path(__file__).parent / "test_files",
+        switch_to_geofabrik_on_error=False,
+    )
     files = downloader.download_pbf_files_for_regions_gdf(regions_gdf)
     file_names = [path.name for path in files[1]]
     assert set(file_names) == set(test_file_names)
@@ -228,7 +238,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             None,
             HEX2VEC_FILTER,
             "geofabrik",
-            398,
+            397,
             12,
             [
                 "amenity",
@@ -287,7 +297,10 @@ def test_osm_pbf_loader(
     )
 
     loader = OSMPbfLoader(
-        pbf_file=pbf_file, download_directory=download_directory, download_source=pbf_source
+        pbf_file=pbf_file,
+        download_directory=download_directory,
+        download_source=pbf_source,
+        switch_to_geofabrik_on_error=False,
     )
     result = loader.load(area, tags=query)
 
