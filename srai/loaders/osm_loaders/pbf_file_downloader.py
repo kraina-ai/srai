@@ -1,10 +1,10 @@
 """
 PBF File Downloader.
 
-This module contains a downloader capable of downloading a PBF file from a free Protomaps service.
+This module contains a downloader capable of downloading a PBF files from multiple sources.
 """
-import hashlib
 import json
+import time
 import warnings
 from pathlib import Path
 from time import sleep
@@ -12,8 +12,8 @@ from typing import Any, Callable, Dict, Hashable, List, Literal, Sequence, Union
 
 import geopandas as gpd
 import requests
-import shapely.wkt as wktlib
 import topojson as tp
+from requests import HTTPError
 from shapely.geometry import Polygon, mapping
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from tqdm import tqdm
@@ -23,6 +23,7 @@ from srai.geometry import (
     buffer_geometry,
     flatten_geometry,
     flatten_geometry_series,
+    get_geometry_hash,
     remove_interiors,
 )
 from srai.loaders import download_file
@@ -31,6 +32,7 @@ from srai.loaders.osm_loaders.openstreetmap_extracts import (
     find_smallest_containing_geofabrik_extracts,
     find_smallest_containing_openstreetmap_fr_extracts,
 )
+from srai.loaders.osm_loaders.pbf_file_clipper import PbfFileClipper
 
 PbfSourceLiteral = Literal["geofabrik", "openstreetmap_fr", "protomaps"]
 PbfSourceExtractsFunctions: Dict[
@@ -62,6 +64,7 @@ class PbfFileDownloader:
 
     PROTOMAPS_API_START_URL = "https://app.protomaps.com/downloads/osm"
     PROTOMAPS_API_DOWNLOAD_URL = "https://app.protomaps.com/downloads/{}/download"
+    PROTOMAPS_MAX_WAIT_TIME_S = 300  # max 5 minutes for protomaps to generate an extract
 
     _PBAR_FORMAT = "[{}] Downloading pbf file #{} ({})"
 
@@ -87,26 +90,27 @@ class PbfFileDownloader:
     ]
 
     def __init__(
-        self, source: PbfSourceLiteral = "protomaps", download_directory: Union[str, Path] = "files"
+        self,
+        download_source: PbfSourceLiteral = "protomaps",
+        download_directory: Union[str, Path] = "files",
+        switch_to_geofabrik_on_error: bool = True,
     ) -> None:
         """
         Initialize PbfFileDownloader.
 
         Args:
-            source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
-                Can be ine of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
-                Defaults to "geofabrik".
+            download_source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
+                Can be one of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
+                Defaults to "protomaps".
             download_directory (Union[str, Path], optional): Directory where to save
                 the downloaded `*.osm.pbf` files. Defaults to "files".
+            switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
+                switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
-        self.source = source
+        self.download_source = download_source
         self.download_directory = download_directory
-
-        if self.source == "protomaps":
-            warnings.warn(
-                "Protomaps service is being deprecated. Download function might not work.",
-                stacklevel=1,
-            )
+        self.clipper = PbfFileClipper(working_directory=self.download_directory)
+        self.switch_to_geofabrik_on_error = switch_to_geofabrik_on_error
 
     def download_pbf_files_for_regions_gdf(
         self, regions_gdf: gpd.GeoDataFrame
@@ -137,31 +141,64 @@ class PbfFileDownloader:
         if non_polygon_types:
             raise ValueError(f"Provided geometries aren't Polygons (found: {non_polygon_types})")
 
-        if self.source == "protomaps":
-            regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
-        elif self.source in PbfSourceExtractsFunctions:
-            regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
-                regions_gdf
-            )
+        try:
+            if self.download_source == "protomaps":
+                regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
+            elif self.download_source in PbfSourceExtractsFunctions:
+                regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                    regions_gdf
+                )
+        except Exception as err:
+            if self.download_source != "geofabrik" and self.switch_to_geofabrik_on_error:
+                warnings.warn(
+                    f"Error occured ({err}). Auto-switching to 'geofabrik' download source.",
+                    stacklevel=1,
+                )
+                regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                    regions_gdf, override_to_geofabrik=True
+                )
+            else:
+                error_message = str(err)
+                if self.download_source != "geofabrik":
+                    error_message += (
+                        "\nPlease change the 'download_source' to"
+                        " 'geofabrik' or other availablesource:\n"
+                        " PbfDownloader(download_source='geofabrik', ...) or"
+                        " OsmPbfLoader(download_source='geofabrik', ...)."
+                    )
+                raise RuntimeError(error_message) from err
 
         return regions_mapping
 
     def _download_pbf_files_for_polygons_from_existing_extracts(
-        self, regions_gdf: gpd.GeoDataFrame
+        self, regions_gdf: gpd.GeoDataFrame, override_to_geofabrik: bool = False
     ) -> Dict[Hashable, Sequence[Path]]:
         regions_mapping: Dict[Hashable, Sequence[Path]] = {}
 
         unary_union_geometry = regions_gdf.geometry.unary_union
 
-        extract_function = PbfSourceExtractsFunctions[self.source]
+        if override_to_geofabrik:
+            extract_function = PbfSourceExtractsFunctions["geofabrik"]
+        else:
+            extract_function = PbfSourceExtractsFunctions[self.download_source]
         extracts = extract_function(unary_union_geometry)
+
+        downloaded_pbf_files = []
 
         for extract in extracts:
             pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
 
             download_file(url=extract.url, fname=pbf_file_path.as_posix(), force_download=False)
 
-            regions_mapping[extract.id] = [pbf_file_path]
+            downloaded_pbf_files.append(pbf_file_path)
+
+        polygons = flatten_geometry(unary_union_geometry)
+
+        for region_id, row in regions_gdf.iterrows():
+            polygons = flatten_geometry(row.geometry)
+            regions_mapping[region_id] = [
+                self.clipper.clip_pbf_file(polygon, downloaded_pbf_files) for polygon in polygons
+            ]
 
         return regions_mapping
 
@@ -204,7 +241,7 @@ class PbfFileDownloader:
         Returns:
             Path: Path to a downloaded `*.osm.pbf` file.
         """
-        geometry_hash = self._get_geometry_hash(polygon)
+        geometry_hash = get_geometry_hash(polygon)
         pbf_file_path = Path(self.download_directory).resolve() / f"{geometry_hash}.osm.pbf"
 
         if not pbf_file_path.exists():  # pragma: no cover
@@ -240,15 +277,18 @@ class PbfFileDownloader:
             try:
                 extraction_uuid = start_extract_result["uuid"]
                 status_check_url = start_extract_result["url"]
-            except KeyError:
-                warnings.warn(json.dumps(start_extract_result), stacklevel=2)
-                raise
+            except KeyError as err:
+                error_message = (
+                    f"Error from the 'Protomaps' service: {json.dumps(start_extract_result)}."
+                )
+                raise RuntimeError(error_message) from err
 
             with tqdm() as pbar:
                 status_response: Dict[str, Any] = {}
                 cells_total = 0
                 nodes_total = 0
                 elems_total = 0
+                start_time = time.time()
                 while not status_response.get("Complete", False):
                     sleep(0.5)
                     status_response = s.get(url=status_check_url).json()
@@ -284,10 +324,21 @@ class PbfFileDownloader:
 
                     pbar.refresh()
 
-            download_file(
-                url=self.PROTOMAPS_API_DOWNLOAD_URL.format(extraction_uuid),
-                fname=pbf_file_path.as_posix(),
-            )
+                    if (time.time() - start_time) > self.PROTOMAPS_MAX_WAIT_TIME_S:
+                        error_message = (
+                            "'Protomaps' service took too long to generate an extract"
+                            f" ({self.PROTOMAPS_MAX_WAIT_TIME_S}s)."
+                        )
+                        raise RuntimeError(error_message)
+
+            try:
+                download_file(
+                    url=self.PROTOMAPS_API_DOWNLOAD_URL.format(extraction_uuid),
+                    fname=pbf_file_path.as_posix(),
+                )
+            except HTTPError as err:
+                error_message = f"Error from the 'Protomaps' service: {err.response}."
+                raise RuntimeError(error_message) from err
 
         return pbf_file_path
 
@@ -343,10 +394,3 @@ class PbfFileDownloader:
             simplified_polygon = polygon.minimum_rotated_rectangle
 
         return simplified_polygon
-
-    def _get_geometry_hash(self, geometry: BaseGeometry) -> str:
-        """Generate SHA256 hash based on WKT representation of the polygon."""
-        wkt_string = wktlib.dumps(geometry)
-        h = hashlib.new("sha256")
-        h.update(wkt_string.encode())
-        return h.hexdigest()

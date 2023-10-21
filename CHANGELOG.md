@@ -9,17 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `PbfFileClipper` for cutting bigger `osm.pbf` files into smaller sizes for faster operations. Included clipping inside `PbfFileDownloader` for new bigger extracts sources. [#369](https://github.com/kraina-ai/srai/issues/369)
+
 ### Changed
 
 - Bumped `h3ronpy` library to `0.18.0` with added support for MacOS. Removed override with check for H3 operations if system is `darwin`. Changed internal API to use `ContainmentMode`.
 - Refactored `OSMLoader`'s `GroupedOsmTagsFilter` features grouping to be faster by refactoring pandas operations [#354](https://github.com/srai-lab/srai/issues/354)
 - Sped up `VoronoiRegionalizer` by removing redundant intersection operations and vectorizing ecdf2geodetic calculations [#351](https://github.com/kraina-ai/srai/issues/351)
 - Sped up `ContextualCountEmbedder` by removing iteration over dataframe rows and vectorizing operations to work at a whole `numpy` array at once [#359](https://github.com/kraina-ai/srai/issues/359)
-- Added Geofabrik and OpenStreetMap.fr PBF extracts download services. Replaced default Protomaps service with Geofabrik index for PbfDownloader [#158](https://github.com/kraina-ai/srai/issues/158) [#366](https://github.com/kraina-ai/srai/issues/366)
+- Added Geofabrik and OpenStreetMap.fr PBF extracts download services. Added automatic switch from default `protomaps` download service to `geofabrik` on error. [#158](https://github.com/kraina-ai/srai/issues/158) [#366](https://github.com/kraina-ai/srai/issues/366)
 
 ### Deprecated
-
-- Usage of Protomaps download service, since the Protomaps Downloads service is being stopped. Related to [#366](https://github.com/kraina-ai/srai/issues/366)
 
 ### Removed
 

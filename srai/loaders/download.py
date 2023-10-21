@@ -30,6 +30,7 @@ def download_file(
         headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
         stream=True,
     )
+    resp.raise_for_status()
     total = int(resp.headers.get("content-length", 0))
     with open(fname, "wb") as file, tqdm(
         desc=fname.split("/")[-1],
