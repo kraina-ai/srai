@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Added automatic features count clearing in `PbfFileHandler` after operation.
+- Added directory creation before saving OSM extracts index file.
+
 ### Security
 
 ## [0.4.0] - 2023-10-21
