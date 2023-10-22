@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Any, Iterable, List, Optional, Set, Union
 
 import geopandas as gpd
@@ -366,9 +367,10 @@ def _load_geofabrik_index() -> gpd.GeoDataFrame:
     gdf = gpd.GeoDataFrame.from_features(parsed_data["features"])
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "cache/geofabrik_index.csv"
-    )
+
+    save_path = "cache/geofabrik_index.csv"
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
     return gdf
 
 
@@ -386,9 +388,10 @@ def _load_openstreetmap_fr_index() -> gpd.GeoDataFrame:
     ).set_crs(WGS84_CRS)
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "cache/osm_fr_index.csv"
-    )
+
+    save_path = "cache/osm_fr_index.csv"
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
     return gdf
 
 
