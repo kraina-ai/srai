@@ -24,6 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.4.1] - 2023-10-23
+
+### Changed
+
+- Added more verbosity to the `AdministrativeBoundaryRegionalizer`.
+
+### Fixed
+
+- Added automatic features count clearing in `PbfFileHandler` after operation.
+- Added directory creation before saving OSM extracts index file.
+
 ## [0.4.0] - 2023-10-21
 
 ### Added
@@ -161,7 +172,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.4.0...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/srai-lab/srai/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/srai-lab/srai/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/srai-lab/srai/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/srai-lab/srai/compare/0.3.1...0.3.2
