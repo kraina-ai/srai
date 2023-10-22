@@ -202,7 +202,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
-        with tqdm(desc="Loading boundaries") as pbar:
+        with tqdm(desc="Loading boundaries: 0", total=len(all_geometries)) as pbar:
             for geometry in all_geometries:
                 if not geometry.covered_by(unary_geometry):
                     query = self._generate_query_for_single_geometry(geometry)
@@ -213,7 +213,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
                             parsed_region = self._parse_overpass_element(boundary)
                             generated_regions.append(parsed_region)
                             unary_geometry = union(unary_geometry, parsed_region[GEOMETRY_COLUMN])
-                            pbar.update(1)
+                            pbar.set_description(f"Loading boundaries: {len(generated_regions)}")
+                pbar.update(1)
 
         return generated_regions
 
