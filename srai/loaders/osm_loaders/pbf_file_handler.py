@@ -184,6 +184,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
     def _clear_cache(self) -> None:
         """Clear memory from accumulated features."""
         self.features_cache.clear()
+        self.features_count = None
 
     def _count_features(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"
