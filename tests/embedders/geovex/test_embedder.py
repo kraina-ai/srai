@@ -63,7 +63,7 @@ def test_embedder() -> None:
         regions_gdf = gpd.read_parquet(test_files_path / f"{name}_regions.parquet")
         features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
-        seed_everything(seed)
+        seed_everything(seed, workers=True)
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
@@ -79,7 +79,12 @@ def test_embedder() -> None:
             convolutional_layer_size=test_case["convolutional_layer_size"],  # type: ignore
         )
         result_df = embedder.fit_transform(
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, trainer_kwargs=TRAINER_KWARGS
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            trainer_kwargs=TRAINER_KWARGS,
+            learning_rate=0.001,
         )
         result_df.columns = result_df.columns.astype(str)
         print(result_df.head())

@@ -28,7 +28,7 @@ def generate_test_case(
     num_layers: int = 1,
 ) -> None:
     """Generate test case for GeoVexEmbedder."""
-    seed_everything(seed)
+    seed_everything(seed, workers=True)
 
     if tags is None:
         tags = HEX2VEC_FILTER
@@ -42,7 +42,7 @@ def generate_test_case(
     regions_gdf = gpd.GeoDataFrame(index=regions_indexes, geometry=geoms, crs=WGS84_CRS)
     regions_gdf.index.name = REGIONS_INDEX
 
-    regions_gdf = ring_buffer_h3_regions_gdf(regions_gdf, distance=model_radius)
+    regions_gdf = ring_buffer_h3_regions_gdf(regions_gdf, distance=model_radius).sort_index()
     buffered_geometry = regions_gdf.unary_union
 
     loader = OSMPbfLoader()
@@ -54,14 +54,12 @@ def generate_test_case(
     neighbourhood = H3Neighbourhood(regions_gdf)
 
     embedder = GeoVexEmbedder(
-        target_features=(
-            [f"{super_}_{sub}" for super_, subs in tags.items() for sub in subs]  # type: ignore
-        ),
-        neighbourhood=neighbourhood,
+        target_features=[f"{st}_{t}" for st in tags for t in tags[st]],  # type: ignore
         batch_size=10,
+        neighbourhood=neighbourhood,
         neighbourhood_radius=model_radius,
-        convolutional_layers=num_layers,
         embedding_size=EMBEDDING_SIZE,
+        convolutional_layers=num_layers,
         convolutional_layer_size=convolutional_layer_size,
     )
 
