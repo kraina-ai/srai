@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Any, Iterable, List, Optional, Set, Union
 
 import geopandas as gpd
@@ -272,8 +273,12 @@ def _filter_extracts(
                 _filter_extracts_for_single_geometry(sub_geometry, sorted_extracts_gdf)
             )
 
+    simplified_extracts_ids = _simplify_selected_extracts(
+        filtered_extracts_ids, sorted_extracts_gdf
+    )
+
     for _, extract_row in sorted_extracts_gdf[
-        sorted_extracts_gdf["id"].isin(filtered_extracts_ids)
+        sorted_extracts_gdf["id"].isin(simplified_extracts_ids)
     ].iterrows():
         extract = OpenStreetMapExtract(
             id=extract_row.id,
@@ -318,6 +323,35 @@ def _filter_extracts_for_single_geometry(
     return filtered_extracts_ids
 
 
+def _simplify_selected_extracts(
+    filtered_extracts_ids: Set[str], sorted_extracts_gdf: gpd.GeoDataFrame
+) -> Set[str]:
+    simplified_extracts_ids: Set[str] = filtered_extracts_ids.copy()
+
+    matching_extracts = sorted_extracts_gdf[sorted_extracts_gdf["id"].isin(simplified_extracts_ids)]
+
+    simplify_again = True
+    while simplify_again:
+        simplify_again = False
+        extract_to_remove = None
+        for extract_id in simplified_extracts_ids:
+            extract_geometry = (
+                matching_extracts[sorted_extracts_gdf["id"] == extract_id].iloc[0].geometry
+            )
+            other_geometries = matching_extracts[
+                sorted_extracts_gdf["id"] != extract_id
+            ].unary_union
+            if extract_geometry.covered_by(other_geometries):
+                extract_to_remove = extract_id
+                simplify_again = True
+                break
+
+        if extract_to_remove is not None:
+            simplified_extracts_ids.remove(extract_to_remove)
+
+    return simplified_extracts_ids
+
+
 def _load_geofabrik_index() -> gpd.GeoDataFrame:
     """
     Load available extracts from GeoFabrik download service.
@@ -333,9 +367,10 @@ def _load_geofabrik_index() -> gpd.GeoDataFrame:
     gdf = gpd.GeoDataFrame.from_features(parsed_data["features"])
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "geofabrik_index.csv"
-    )
+
+    save_path = "cache/geofabrik_index.csv"
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
     return gdf
 
 
@@ -353,9 +388,10 @@ def _load_openstreetmap_fr_index() -> gpd.GeoDataFrame:
     ).set_crs(WGS84_CRS)
     gdf["area"] = gdf.geometry.area
     gdf.sort_values(by="area", ignore_index=True, inplace=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(
-        "osm_fr_index.csv"
-    )
+
+    save_path = "cache/osm_fr_index.csv"
+    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
+    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
     return gdf
 
 

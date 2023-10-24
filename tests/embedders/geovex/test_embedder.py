@@ -1,4 +1,4 @@
-"""Hex2VecEmbedder tests."""
+"""GeoVexEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -41,7 +41,7 @@ def test_checking_encoder_sizes(
 
 
 def test_embedder_not_fitted() -> None:
-    """Test that Hex2VecEmbedder raises ModelNotFitException if not fitted."""
+    """Test that GeoVexEmbedder raises ModelNotFitException if not fitted."""
     embedder = GeoVexEmbedder(
         [f"{t}_{st}" for t in HEX2VEC_FILTER for st in HEX2VEC_FILTER[t]],  # type: ignore
         H3Neighbourhood(),
@@ -51,7 +51,7 @@ def test_embedder_not_fitted() -> None:
 
 
 def test_embedder() -> None:
-    """Test Hex2VecEmbedder on predefined test cases."""
+    """Test GeoVexEmbedder on predefined test cases."""
     test_files_path = Path(__file__).parent / "test_files"
     for test_case in PREDEFINED_TEST_CASES:
         name = test_case["test_case_name"]

@@ -30,7 +30,7 @@ except ImportError:
 
 
 class GeoVexEmbedder(CountEmbedder):
-    """Hex2Vec Embedder."""
+    """GeoVex Embedder."""
 
     def __init__(
         self,

@@ -1,4 +1,4 @@
-"""Test case generation for Hex2VecEmbedder."""
+"""Test case generation for GeoVexEmbedder."""
 from pathlib import Path
 from typing import Optional
 
@@ -34,11 +34,9 @@ def generate_test_case(
         tags = HEX2VEC_FILTER
 
     neighbourhood = H3Neighbourhood(include_center=True)
-    regions_indexes = neighbourhood.get_neighbours_up_to_distance(
-        root_region_index, region_gen_radius
+    regions_indexes = list(
+        neighbourhood.get_neighbours_up_to_distance(root_region_index, region_gen_radius)
     )
-    regions_indexes.add(root_region_index)
-    regions_indexes = list(regions_indexes)  # type: ignore
 
     geoms = cells_to_polygons([h3.str_to_int(r) for r in regions_indexes]).values
     regions_gdf = gpd.GeoDataFrame(index=regions_indexes, geometry=geoms, crs=WGS84_CRS)
@@ -87,3 +85,10 @@ def generate_test_case(
     features_gdf.to_parquet(output_path / f"{files_prefix}_features.parquet", compression="gzip")
     joint_gdf.to_parquet(output_path / f"{files_prefix}_joint.parquet")
     results_df.to_parquet(output_path / f"{files_prefix}_result.parquet")
+
+
+if __name__ == "__main__":
+    from constants import PREDEFINED_TEST_CASES
+
+    for test_case in PREDEFINED_TEST_CASES:
+        generate_test_case(**test_case)

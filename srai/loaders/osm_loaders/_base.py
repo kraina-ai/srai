@@ -44,9 +44,8 @@ def prepare_area_gdf_for_loader(
     elif isinstance(area, Iterable):
         # Create a GeoSeries with a list of geometries
         return prepare_area_gdf_for_loader(gpd.GeoSeries(area, crs=WGS84_CRS))
-    else:
-        # Wrap a single geometry with a list
-        return prepare_area_gdf_for_loader([area])
+    # Wrap a single geometry with a list
+    return prepare_area_gdf_for_loader([area])
 
 
 class OSMLoader(Loader, abc.ABC):

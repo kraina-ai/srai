@@ -10,4 +10,4 @@ https://kraina-ai.github.io/srai/
 for complete documentation.
 """
 
-__version__ = "0.3.3"
+__version__ = "0.4.1"

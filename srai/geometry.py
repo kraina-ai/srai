@@ -1,8 +1,10 @@
 """Utility geometry operations functions."""
+import hashlib
 from typing import List, Union
 
 import geopandas as gpd
 import pyproj
+import shapely.wkt as wktlib
 from functional import seq
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
@@ -116,3 +118,11 @@ def merge_disjointed_gdf_geometries(gdf: gpd.GeoDataFrame) -> MultiPolygon:
         MultiPolygon: Merged polygon
     """
     return merge_disjointed_polygons(list(gdf.geometry))
+
+
+def get_geometry_hash(geometry: BaseGeometry) -> str:
+    """Generate SHA256 hash based on WKT representation of the polygon."""
+    wkt_string = wktlib.dumps(geometry)
+    h = hashlib.new("sha256")
+    h.update(wkt_string.encode())
+    return h.hexdigest()
