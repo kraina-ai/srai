@@ -23,11 +23,8 @@ def empty_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def regions_data_df() -> pd.DataFrame:
     """Get example regions for testing."""
-    neighbourhood = H3Neighbourhood()
-    regions_indices = [ROOT_REGION]
-    regions_indices.extend(
-        list(neighbourhood.get_neighbours_up_to_distance(ROOT_REGION, RING_DISTANCE))
-    )
+    neighbourhood = H3Neighbourhood(include_center=True)
+    regions_indices = list(neighbourhood.get_neighbours_up_to_distance(ROOT_REGION, RING_DISTANCE))
     data_df = pd.DataFrame(
         list(range(len(regions_indices))), index=regions_indices, columns=["data"]
     )

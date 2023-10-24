@@ -19,10 +19,8 @@ from tests.embedders.geovex.constants import EMBEDDING_SIZE, TRAINER_KWARGS
 
 def generate_test_case(
     test_case_name: str,
-    geocoding_name: str,
     root_region_index: str,
     region_gen_radius: int,
-    h3_res: int,
     model_radius: int,
     seed: int,
     tags: Optional[OsmTagsFilter] = None,
@@ -35,7 +33,7 @@ def generate_test_case(
     if tags is None:
         tags = HEX2VEC_FILTER
 
-    neighbourhood = H3Neighbourhood()
+    neighbourhood = H3Neighbourhood(include_center=True)
     regions_indexes = neighbourhood.get_neighbours_up_to_distance(
         root_region_index, region_gen_radius
     )

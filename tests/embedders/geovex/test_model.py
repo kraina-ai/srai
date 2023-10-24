@@ -33,8 +33,15 @@ def test_layers_initialized_correctly(radius) -> None:
     k_dim = 512
     conv_layers = 3
     emb_size = 32
-    model = GeoVexModel(k_dim=256, radius=radius, conv_layers=conv_layers, emb_size=emb_size)
-    conv_sizes = [k_dim, *[256 * 2**i for i in range(conv_layers)]]
+    conv_layer_size = 256
+    model = GeoVexModel(
+        k_dim=k_dim,
+        radius=radius,
+        conv_layers=conv_layers,
+        emb_size=emb_size,
+        conv_layer_size=conv_layer_size,
+    )
+    conv_sizes = [k_dim, *[conv_layer_size * 2**i for i in range(conv_layers)]]
 
     block_counter = 1
     for i, layer in enumerate(model.encoder):
