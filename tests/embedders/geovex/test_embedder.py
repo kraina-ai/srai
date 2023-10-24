@@ -1,4 +1,5 @@
 """GeoVexEmbedder tests."""
+import os
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -64,6 +65,7 @@ def test_embedder() -> None:
         features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
         seed_everything(seed, workers=True)
+        os.environ["PYTHONHASHSEED"] = str(seed)
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [

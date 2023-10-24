@@ -1,4 +1,5 @@
 """Test case generation for GeoVexEmbedder."""
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +30,7 @@ def generate_test_case(
 ) -> None:
     """Generate test case for GeoVexEmbedder."""
     seed_everything(seed, workers=True)
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
     if tags is None:
         tags = HEX2VEC_FILTER

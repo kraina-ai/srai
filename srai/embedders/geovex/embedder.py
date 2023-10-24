@@ -77,7 +77,6 @@ class GeoVexEmbedder(CountEmbedder):
 
         self._neighbourhood = neighbourhood
         self._batch_size = batch_size
-        self._neighbourhood = neighbourhood
         self._dataset = dataset
 
         # save invalid h3s for later
