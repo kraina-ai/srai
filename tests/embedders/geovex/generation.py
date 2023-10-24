@@ -1,4 +1,4 @@
-"""Test case generation for Hex2VecEmbedder."""
+"""Test case generation for GeoVexEmbedder."""
 from pathlib import Path
 from typing import Optional
 

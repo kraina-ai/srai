@@ -1,4 +1,4 @@
-"""Tests for Hex2Vec model."""
+"""Tests for GeoVex model."""
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -16,7 +16,7 @@ from srai.embedders.geovex.model import GeoVexModel
     ],
 )
 def test_model_raises_with_incorrect_layer_sizes(radius: int, expectation: Any) -> None:
-    """Test if Hex2VecModel raises with incorrect layer_sizes."""
+    """Test if GeoVexModel raises with incorrect layer_sizes."""
     with expectation:
         GeoVexModel(
             k_dim=256,
@@ -29,7 +29,7 @@ def test_model_raises_with_incorrect_layer_sizes(radius: int, expectation: Any) 
     [4, 9],
 )
 def test_layers_initialized_correctly(radius) -> None:
-    """Test if Hex2VecModel layers are initialized correctly."""
+    """Test if GeoVexModel layers are initialized correctly."""
     k_dim = 512
     conv_layers = 3
     emb_size = 32
