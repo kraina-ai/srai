@@ -465,9 +465,7 @@ class GeoVexModel(Model):
             nn.BatchNorm2d(self.k_dim),
             nn.ReLU(),
             # have to add padding to preserve the input size
-            HexagonalConv2d(
-                self.k_dim, conv_sizes[0], kernel_size=3, stride=2, padding=int(padding)
-            ),
+            HexagonalConv2d(self.k_dim, conv_sizes[0], kernel_size=3, stride=2, padding=padding),
             nn.BatchNorm2d(conv_layer_size),
             nn.ReLU(),
             *(
