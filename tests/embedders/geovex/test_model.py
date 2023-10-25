@@ -1,12 +1,10 @@
 """Tests for GeoVex model."""
 import os
-import random
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Any, cast
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 import pytest
 import torch
@@ -78,17 +76,9 @@ def test_model_tensors() -> None:
         features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
 
-        # from https://github.com/pytorch/pytorch/issues/7068#issuecomment-484918113
         seed_everything(seed, workers=True)
         os.environ["PYTHONHASHSEED"] = str(seed)
         torch.use_deterministic_algorithms(True)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
-        np.random.seed(seed)  # Numpy module.  # noqa: NPY002
-        random.seed(seed)  # type: ignore
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
@@ -112,6 +102,12 @@ def test_model_tensors() -> None:
         for i, batch in enumerate(dataloader):
             expected_batch = torch.load(test_files_path / f"{name}_batch_{i}.pt")
             torch.testing.assert_close(batch, expected_batch, rtol=0, atol=0)
+
+            expected_encoder_forward_tensor = torch.load(
+                test_files_path / f"{name}_encoder_forward_{i}.pt"
+            )
+            encoder_forward_tensor = cast(GeoVexModel, embedder._model).encoder.forward(batch)
+            torch.testing.assert_close(encoder_forward_tensor, expected_encoder_forward_tensor)
 
             expected_forward_tensor = torch.load(test_files_path / f"{name}_forward_{i}.pt")
             forward_tensor = cast(GeoVexModel, embedder._model).forward(batch)

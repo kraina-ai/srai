@@ -148,6 +148,9 @@ def generate_test_case_batches(
     for i, batch in enumerate(dataloader):
         torch.save(batch, output_path / f"{files_prefix}_batch_{i}.pt")
 
+        encoder_forward_tensor = cast(GeoVexModel, embedder._model).encoder.forward(batch)
+        torch.save(encoder_forward_tensor, output_path / f"{files_prefix}_encoder_forward_{i}.pt")
+
         forward_tensor = cast(GeoVexModel, embedder._model).forward(batch)
         torch.save(forward_tensor, output_path / f"{files_prefix}_forward_{i}.pt")
 
