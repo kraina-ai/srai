@@ -8,6 +8,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
+import logging
 from typing import TYPE_CHECKING, Any, Generic, List, Set, Tuple, TypeVar
 
 import numpy as np
@@ -17,6 +18,8 @@ from tqdm import tqdm
 from srai._optional import import_optional_dependencies
 from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import H3Neighbourhood
+
+LOGGER = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -90,7 +93,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
             neighbors = neighbourhood.get_neighbours_up_to_distance(
                 h3_index, neighbor_k_ring, include_center=False, unchecked=True
             )
-            print(h3_index, neighbors)
+            LOGGER.info(f"{h3_index}: {neighbors}")
             # check if all the neighbors are in the dataset
             if len(neighbors.intersection(all_indices)) == len(neighbors):
                 # add the h3_index to the valid h3 indices, with the ring of neighbors
@@ -108,7 +111,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
             else:
                 # some of the neighbors are not in the dataset, add the h3_index to the invalid h3s
                 invalid_h3s.add(h3_index)
-        print(valid_h3s)
+        LOGGER.info(valid_h3s)
         return invalid_h3s, valid_h3s
 
     def __len__(self) -> int:
