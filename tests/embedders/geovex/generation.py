@@ -5,6 +5,7 @@ from typing import Optional
 
 import geopandas as gpd
 import h3
+import torch
 from h3ronpy.pandas.vector import cells_to_polygons
 from pytorch_lightning import seed_everything
 
@@ -31,6 +32,7 @@ def generate_test_case(
     """Generate test case for GeoVexEmbedder."""
     seed_everything(seed, workers=True)
     os.environ["PYTHONHASHSEED"] = str(seed)
+    torch.use_deterministic_algorithms(True)
 
     if tags is None:
         tags = HEX2VEC_FILTER

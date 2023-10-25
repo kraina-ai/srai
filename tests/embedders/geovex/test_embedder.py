@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Union
 import geopandas as gpd
 import pandas as pd
 import pytest
+import torch
 from pandas.testing import assert_frame_equal
 from pytorch_lightning import seed_everything
 
@@ -63,6 +64,7 @@ def test_embedder() -> None:
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
         seed_everything(seed, workers=True)
         os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.use_deterministic_algorithms(True)
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
