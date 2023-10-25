@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implemented `GeoVex` model as a `GeoVexEmbedder` by [@mschrader15](https://github.com/mschrader15)
+- Implemented `GeoVex` model as a `GeoVexEmbedder` implemented by [@mschrader15](https://github.com/mschrader15), proposed by [@ddonghi](https://github.com/ddonghi) & [@annemorvan](https://github.com/annemorvan)
 - Buffer geometries using `H3` cells by [@mschrader15](https://github.com/mschrader15)
 - Option for `OSMLoaders` to parse any Shapely geometry, not only `GeoDataFrames`.
 
