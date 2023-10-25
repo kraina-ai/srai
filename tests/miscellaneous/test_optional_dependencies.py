@@ -95,11 +95,17 @@ def _test_plotting() -> None:
 
 
 def _test_torch() -> None:
-    from srai.embedders import GTFS2VecEmbedder, Hex2VecEmbedder, Highway2VecEmbedder
+    from srai.embedders import (
+        GeoVexEmbedder,
+        GTFS2VecEmbedder,
+        Hex2VecEmbedder,
+        Highway2VecEmbedder,
+    )
 
     Highway2VecEmbedder()
     GTFS2VecEmbedder()
     Hex2VecEmbedder()
+    GeoVexEmbedder(["a"] * 256)
 
 
 def _test_osm() -> None:
