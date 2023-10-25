@@ -163,18 +163,8 @@ class GeoVexEmbedder(CountEmbedder):
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
         counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
-            regions_gdf,
-            features_gdf,
-            joint_gdf,
-            neighbourhood,
-            self._batch_size,
-            shuffle=False,
-            # regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
+            regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
         )
-        print(counts_df)
-        for i, record in enumerate(dataset):
-            print(i)
-            print(record[0])
 
         self._model = GeoVexModel(
             k_dim=len(counts_df.columns),

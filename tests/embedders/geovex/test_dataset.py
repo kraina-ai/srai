@@ -1,14 +1,20 @@
 """GeoVex HexagonalDataset tests."""
+import os
 from contextlib import nullcontext as does_not_raise
+from pathlib import Path
 from typing import Any
 
 import geopandas as gpd
 import pandas as pd
 import pytest
+import torch
+from lightning_fabric import seed_everything
 
 from srai.embedders.geovex.dataset import HexagonalDataset
+from srai.embedders.geovex.embedder import GeoVexEmbedder
 from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import AdjacencyNeighbourhood, H3Neighbourhood
+from tests.embedders.geovex.constants import EMBEDDING_SIZE, PREDEFINED_TEST_CASES
 
 ROOT_REGION = "891e205194bffff"
 RING_DISTANCE = 25
@@ -126,3 +132,41 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
         ]
     )
     assert np.all(ijs.transpose(1, 0, -1) == desired)
+
+
+def test_dataloader_batches() -> None:
+    """Test if dataloader batches are in correct order after seeding."""
+    test_files_path = Path(__file__).parent / "test_files"
+    for test_case in PREDEFINED_TEST_CASES:
+        name = test_case["test_case_name"]
+        seed = test_case["seed"]
+        radius: int = test_case["model_radius"]  # type: ignore
+        print(name, seed)
+
+        regions_gdf = gpd.read_parquet(test_files_path / f"{name}_regions.parquet")
+        features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
+        joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
+        seed_everything(seed, workers=True)
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        torch.use_deterministic_algorithms(True)
+
+        neighbourhood = H3Neighbourhood(regions_gdf)
+        target_features = [
+            f"{st}_{t}" for st in test_case["tags"] for t in test_case["tags"][st]  # type: ignore
+        ]
+        embedder = GeoVexEmbedder(
+            target_features=target_features,
+            batch_size=10,
+            neighbourhood_radius=radius,
+            embedding_size=EMBEDDING_SIZE,
+            convolutional_layers=test_case["num_layers"],  # type: ignore
+            convolutional_layer_size=test_case["convolutional_layer_size"],  # type: ignore
+        )
+
+        _, dataloader, _ = embedder._prepare_dataset(
+            regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
+        )
+
+        for i, batch in enumerate(dataloader):
+            expected_batch = torch.load(test_files_path / f"{name}_batch_{i}.pt")
+            torch.testing.assert_close(batch, expected_batch, rtol=0, atol=0)

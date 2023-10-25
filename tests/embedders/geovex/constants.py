@@ -21,4 +21,20 @@ PREDEFINED_TEST_CASES = [
         "convolutional_layer_size": 32,
         "num_layers": 2,
     },
+    {
+        "test_case_name": "AL_10",
+        "root_region_index": "8a44ed664c27fff",
+        "region_gen_radius": 3,
+        "model_radius": 3,
+        "seed": 5555,
+        "tags": {
+            t: HEX2VEC_FILTER[t]
+            for t in [
+                "building",
+                "amenity",
+            ]
+        },
+        "convolutional_layer_size": 32,
+        "num_layers": 2,
+    },
 ]
