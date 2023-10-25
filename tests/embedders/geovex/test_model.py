@@ -1,10 +1,12 @@
 """Tests for GeoVex model."""
 import os
+import random
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Any, cast
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import pytest
 import torch
@@ -75,9 +77,18 @@ def test_model_tensors() -> None:
         regions_gdf = gpd.read_parquet(test_files_path / f"{name}_regions.parquet")
         features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
+
+        # from https://github.com/pytorch/pytorch/issues/7068#issuecomment-484918113
         seed_everything(seed, workers=True)
         os.environ["PYTHONHASHSEED"] = str(seed)
         torch.use_deterministic_algorithms(True)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
+        np.random.seed(seed)  # Numpy module.  # noqa: NPY002
+        random.seed(seed)  # type: ignore
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
