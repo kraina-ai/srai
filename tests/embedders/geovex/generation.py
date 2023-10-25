@@ -1,7 +1,7 @@
 """Test case generation for GeoVexEmbedder."""
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import geopandas as gpd
 import h3
@@ -11,6 +11,7 @@ from pytorch_lightning import seed_everything
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.embedders.geovex.embedder import GeoVexEmbedder
+from srai.embedders.geovex.model import GeoVexModel
 from srai.h3 import ring_buffer_h3_regions_gdf
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
@@ -135,15 +136,23 @@ def generate_test_case_batches(
         convolutional_layer_size=convolutional_layer_size,
     )
 
-    _, dataloader, _ = embedder._prepare_dataset(
+    counts_df, dataloader, _ = embedder._prepare_dataset(
         regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
     )
+
+    embedder._prepare_model(counts_df, 0.001)
 
     output_path = Path(__file__).parent / "test_files"
     files_prefix = f"{test_case_name}"
 
     for i, batch in enumerate(dataloader):
         torch.save(batch, output_path / f"{files_prefix}_batch_{i}.pt")
+
+        forward_tensor = cast(GeoVexModel, embedder._model).forward(batch)
+        torch.save(forward_tensor, output_path / f"{files_prefix}_forward_{i}.pt")
+
+        loss_tensor = cast(GeoVexModel, embedder._model).training_step(batch, i)
+        torch.save(loss_tensor, output_path / f"{files_prefix}_loss_{i}.pt")
 
 
 if __name__ == "__main__":

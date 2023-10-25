@@ -166,6 +166,14 @@ class GeoVexEmbedder(CountEmbedder):
             regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
         )
 
+        self._prepare_model(counts_df, learning_rate)
+
+        trainer = pl.Trainer(**trainer_kwargs)
+        trainer.fit(self._model, dataloader)
+        self._is_fitted = True
+        self._dataset = dataset
+
+    def _prepare_model(self, counts_df: pd.DataFrame, learning_rate: float) -> None:
         self._model = GeoVexModel(
             k_dim=len(counts_df.columns),
             radius=self._r,
@@ -174,10 +182,6 @@ class GeoVexEmbedder(CountEmbedder):
             learning_rate=learning_rate,
             conv_layer_size=self._convolutional_layer_size,
         )
-        trainer = pl.Trainer(**trainer_kwargs)
-        trainer.fit(self._model, dataloader)
-        self._is_fitted = True
-        self._dataset = dataset
 
     def _prepare_dataset(
         self,
