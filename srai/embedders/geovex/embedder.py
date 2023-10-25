@@ -174,14 +174,15 @@ class GeoVexEmbedder(CountEmbedder):
         self._dataset = dataset
 
     def _prepare_model(self, counts_df: pd.DataFrame, learning_rate: float) -> None:
-        self._model = GeoVexModel(
-            k_dim=len(counts_df.columns),
-            radius=self._r,
-            conv_layers=self._convolutional_layers,
-            emb_size=self._embedding_size,
-            learning_rate=learning_rate,
-            conv_layer_size=self._convolutional_layer_size,
-        )
+        if self._model is None:
+            self._model = GeoVexModel(
+                k_dim=len(counts_df.columns),
+                radius=self._r,
+                conv_layers=self._convolutional_layers,
+                emb_size=self._embedding_size,
+                learning_rate=learning_rate,
+                conv_layer_size=self._convolutional_layer_size,
+            )
 
     def _prepare_dataset(
         self,

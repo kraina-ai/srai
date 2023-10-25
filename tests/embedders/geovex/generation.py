@@ -67,6 +67,15 @@ def generate_test_case(
         convolutional_layer_size=convolutional_layer_size,
     )
 
+    counts_df, _, _ = embedder._prepare_dataset(
+        regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
+    )
+
+    embedder._prepare_model(counts_df, 0.001)
+
+    for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        param.data.fill_(0.01)
+
     results_df = embedder.fit_transform(
         regions_gdf=regions_gdf,
         features_gdf=features_gdf,
@@ -141,6 +150,9 @@ def generate_test_case_batches(
     )
 
     embedder._prepare_model(counts_df, 0.001)
+
+    for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        param.data.fill_(0.01)
 
     output_path = Path(__file__).parent / "test_files"
     files_prefix = f"{test_case_name}"

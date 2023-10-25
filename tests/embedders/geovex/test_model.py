@@ -99,6 +99,9 @@ def test_model_tensors() -> None:
 
         embedder._prepare_model(counts_df, 0.001)
 
+        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+            param.data.fill_(0.01)
+
         for i, batch in enumerate(dataloader):
             expected_batch = torch.load(test_files_path / f"{name}_batch_{i}.pt")
             torch.testing.assert_close(batch, expected_batch, rtol=0, atol=0)

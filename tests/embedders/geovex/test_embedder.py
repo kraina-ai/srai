@@ -2,7 +2,7 @@
 import os
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
 
 import geopandas as gpd
 import pandas as pd
@@ -12,6 +12,7 @@ from pandas.testing import assert_frame_equal
 from pytorch_lightning import seed_everything
 
 from srai.embedders.geovex.embedder import GeoVexEmbedder
+from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods import H3Neighbourhood
@@ -78,6 +79,16 @@ def test_embedder() -> None:
             convolutional_layers=test_case["num_layers"],  # type: ignore
             convolutional_layer_size=test_case["convolutional_layer_size"],  # type: ignore
         )
+
+        counts_df, _, _ = embedder._prepare_dataset(
+            regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
+        )
+
+        embedder._prepare_model(counts_df, 0.001)
+
+        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+            param.data.fill_(0.01)
+
         result_df = embedder.fit_transform(
             regions_gdf,
             features_gdf,
