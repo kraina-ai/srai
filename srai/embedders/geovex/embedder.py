@@ -35,7 +35,6 @@ class GeoVexEmbedder(CountEmbedder):
     def __init__(
         self,
         target_features: List[str],
-        neighbourhood: H3Neighbourhood,
         batch_size: Optional[int] = 32,
         neighbourhood_radius: int = 4,
         convolutional_layers: int = 2,
@@ -49,8 +48,6 @@ class GeoVexEmbedder(CountEmbedder):
         Args:
             target_features (List[str]): The features that are to be used in the embedding.
                 Should be in "flat" format, i.e. "<super-tag>_<sub-tag>".
-            neighbourhood (H3Neighbourhood): The neighbourhood to use.
-                Should be intialized with the same regions.
             batch_size (int, optional): Batch size. Defaults to 32.
             convolutional_layers (int, optional): Number of convolutional layers. Defaults to 2.
             neighbourhood_radius (int, optional): Radius of the neighbourhood. Defaults to 4.
@@ -75,7 +72,6 @@ class GeoVexEmbedder(CountEmbedder):
         self._convolutional_layers = convolutional_layers
         self._convolutional_layer_size = convolutional_layer_size
 
-        self._neighbourhood = neighbourhood
         self._batch_size = batch_size
         self._dataset = dataset
 
@@ -137,7 +133,7 @@ class GeoVexEmbedder(CountEmbedder):
                 "Warning: Some regions were not able to be encoded, as they don't have"
                 f" r={self._r} neighbors."
             )
-        df = pd.DataFrame(np.concatenate(embeddings), index=dataset.get_ordered_index())
+        df = pd.DataFrame(np.concatenate(embeddings), index=dataset.get_valid_cells())
         df.index.name = REGIONS_INDEX
         return df
 
@@ -244,8 +240,6 @@ class GeoVexEmbedder(CountEmbedder):
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
 
     def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        # TODO: this is copy pasted from Hex2VecEmbedder, should be refactored
-        # to a common base class, util, or something
         if trainer_kwargs is None:
             trainer_kwargs = {}
         if "max_epochs" not in trainer_kwargs:

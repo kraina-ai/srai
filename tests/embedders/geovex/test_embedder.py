@@ -32,11 +32,9 @@ def test_checking_encoder_sizes(
     target_tags: Dict[str, List[str]] = target_features or HEX2VEC_FILTER  # type: ignore
     target_features = [f"{t}_{st}" for t in target_tags for st in HEX2VEC_FILTER[t]]  # type: ignore
 
-    neighbourhood = H3Neighbourhood()
     with expectation:
         GeoVexEmbedder(
             target_features=target_features,
-            neighbourhood=neighbourhood,
             convolutional_layer_size=conv_layer_size,
         )
 
@@ -45,7 +43,6 @@ def test_embedder_not_fitted() -> None:
     """Test that GeoVexEmbedder raises ModelNotFitException if not fitted."""
     embedder = GeoVexEmbedder(
         [f"{t}_{st}" for t in HEX2VEC_FILTER for st in HEX2VEC_FILTER[t]],  # type: ignore
-        H3Neighbourhood(),
     )
     with pytest.raises(ModelNotFitException):
         embedder.transform(gpd.GeoDataFrame(geometry=[]), gpd.GeoDataFrame(), gpd.GeoDataFrame())
@@ -74,7 +71,6 @@ def test_embedder() -> None:
         embedder = GeoVexEmbedder(
             target_features=target_features,
             batch_size=10,
-            neighbourhood=neighbourhood,
             neighbourhood_radius=radius,
             embedding_size=EMBEDDING_SIZE,
             convolutional_layers=test_case["num_layers"],  # type: ignore

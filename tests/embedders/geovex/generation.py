@@ -58,7 +58,6 @@ def generate_test_case(
     embedder = GeoVexEmbedder(
         target_features=[f"{st}_{t}" for st in tags for t in tags[st]],  # type: ignore
         batch_size=10,
-        neighbourhood=neighbourhood,
         neighbourhood_radius=model_radius,
         embedding_size=EMBEDDING_SIZE,
         convolutional_layers=num_layers,

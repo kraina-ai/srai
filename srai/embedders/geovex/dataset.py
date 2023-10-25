@@ -182,7 +182,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
                 f"neighbourhood has to be an H3Neighbourhood, but was {type(neighbourhood)}"
             )
 
-    def get_ordered_index(self) -> List[str]:
+    def get_valid_cells(self) -> List[str]:
         """
         Returns the list of valid h3 indices in the dataset.
 
