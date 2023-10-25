@@ -88,4 +88,4 @@ def test_embedder() -> None:
         print(result_df.head())
         print(expected.head())
         assert_frame_equal(result_df, expected, atol=1e-1)
-        raise UserWarning("Testing dataset content")
+        # raise UserWarning("Testing dataset content")
