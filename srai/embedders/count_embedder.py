@@ -3,37 +3,42 @@ Count Embedder.
 
 This module contains count embedder implementation.
 """
-from typing import List, Optional
+from typing import List, Optional, Set, Union, cast
 
 import geopandas as gpd
 import pandas as pd
 
+from srai._typing import is_expected_type
 from srai.embedders import Embedder
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 class CountEmbedder(Embedder):
     """Simple Embedder that counts occurences of feature values."""
 
     def __init__(
-        self, expected_output_features: Optional[List[str]] = None, count_subcategories: bool = True
+        self,
+        expected_output_features: Optional[
+            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+        ] = None,
+        count_subcategories: bool = True,
     ) -> None:
         """
         Init CountEmbedder.
 
         Args:
-            expected_output_features (List[str], optional): The features that are expected
-                to be found in the resulting embedding. If not None, the missing features are added
-                and filled with 0. The unexpected features are removed.
-                The resulting columns are sorted accordingly. Defaults to None.
+            expected_output_features
+                (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter], optional):
+                The features that are expected to be found in the resulting embedding.
+                If not None, the missing features are added and filled with 0.
+                The unexpected features are removed. The resulting columns are sorted accordingly.
+                Defaults to None.
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to True.
         """
-        self.expected_output_features: Optional[pd.Series] = (
-            None if expected_output_features is None else pd.Series(expected_output_features)
-        )
-
         self.count_subcategories = count_subcategories
+        self._parse_expected_output_features(expected_output_features)
 
     def transform(
         self,
@@ -92,6 +97,78 @@ class CountEmbedder(Embedder):
         region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
 
         return region_embedding_df
+
+    def _parse_expected_output_features(
+        self,
+        expected_output_features: Optional[Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]],
+    ) -> None:
+        expected_output_features_list = []
+
+        if is_expected_type(expected_output_features, OsmTagsFilter):
+            expected_output_features_list = self._parse_osm_tags_filter_to_expected_features(
+                cast(OsmTagsFilter, expected_output_features)
+            )
+        elif is_expected_type(expected_output_features, GroupedOsmTagsFilter):
+            expected_output_features_list = (
+                self._parse_grouped_osm_tags_filter_to_expected_features(
+                    cast(GroupedOsmTagsFilter, expected_output_features)
+                )
+            )
+        elif isinstance(expected_output_features, list):
+            expected_output_features_list = expected_output_features
+        elif expected_output_features is not None:
+            raise ValueError(
+                f"Wrong type of expected_output_features ({type(expected_output_features)})"
+            )
+
+        self.expected_output_features = (
+            pd.Series(expected_output_features_list) if expected_output_features_list else None
+        )
+
+    def _parse_osm_tags_filter_to_expected_features(self, osm_filter: OsmTagsFilter) -> List[str]:
+        expected_output_features: Set[str] = set()
+
+        if not self.count_subcategories:
+            expected_output_features.update(osm_filter.keys())
+        else:
+            for osm_tag_key, osm_tag_value in osm_filter.items():
+                if isinstance(osm_tag_value, bool) and osm_tag_value:
+                    raise ValueError(
+                        "Cannot parse bool OSM tag value to expected features list. "
+                        "Please use filter without boolean value."
+                    )
+                elif isinstance(osm_tag_value, str):
+                    expected_output_features.add(f"{osm_tag_key}_{osm_tag_value}")
+                elif isinstance(osm_tag_value, list):
+                    expected_output_features.update(
+                        f"{osm_tag_key}_{tag_value}" for tag_value in osm_tag_value
+                    )
+
+        return sorted(list(expected_output_features))
+
+    def _parse_grouped_osm_tags_filter_to_expected_features(
+        self, grouped_osm_filter: GroupedOsmTagsFilter
+    ) -> List[str]:
+        expected_output_features: Set[str] = set()
+
+        if not self.count_subcategories:
+            expected_output_features.update(grouped_osm_filter.keys())
+        else:
+            for group_name, osm_filter in grouped_osm_filter.items():
+                for osm_tag_key, osm_tag_value in osm_filter.items():
+                    if isinstance(osm_tag_value, bool) and osm_tag_value:
+                        raise ValueError(
+                            "Cannot parse bool OSM tag value to expected features list. "
+                            "Please use filter without boolean value."
+                        )
+                    elif isinstance(osm_tag_value, str):
+                        expected_output_features.add(f"{group_name}_{osm_tag_key}={osm_tag_value}")
+                    elif isinstance(osm_tag_value, list):
+                        expected_output_features.update(
+                            f"{group_name}_{osm_tag_key}={tag_value}" for tag_value in osm_tag_value
+                        )
+
+        return sorted(list(expected_output_features))
 
     def _maybe_filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
         """

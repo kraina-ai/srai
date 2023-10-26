@@ -6,7 +6,7 @@ This module contains embedder from GeoVex paper[1].
 References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
 
 import geopandas as gpd
 import numpy as np
@@ -18,6 +18,7 @@ from srai.embedders import CountEmbedder
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 
 T = TypeVar("T")
@@ -34,7 +35,7 @@ class GeoVexEmbedder(CountEmbedder):
 
     def __init__(
         self,
-        target_features: List[str],
+        target_features: Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter],
         batch_size: Optional[int] = 32,
         neighbourhood_radius: int = 4,
         convolutional_layers: int = 2,
@@ -45,8 +46,9 @@ class GeoVexEmbedder(CountEmbedder):
         Initialize GeoVex Embedder.
 
         Args:
-            target_features (List[str]): The features that are to be used in the embedding.
-                Should be in "flat" format, i.e. "<super-tag>_<sub-tag>".
+            target_features (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]): The features
+                that are to be used in the embedding. Should be in "flat" format,
+                i.e. "<super-tag>_<sub-tag>", or use OsmTagsFilter object.
             batch_size (int, optional): Batch size. Defaults to 32.
             convolutional_layers (int, optional): Number of convolutional layers. Defaults to 2.
             neighbourhood_radius (int, optional): Radius of the neighbourhood. Defaults to 4.
@@ -57,11 +59,11 @@ class GeoVexEmbedder(CountEmbedder):
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )
 
-        self._assert_feature_length(target_features, convolutional_layer_size)
-
         super().__init__(
             expected_output_features=target_features,
         )
+
+        self._assert_feature_length(self.expected_output_features, convolutional_layer_size)
 
         self._model: Optional[GeoVexModel] = None
         self._is_fitted = False
