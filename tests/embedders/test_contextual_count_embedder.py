@@ -9,6 +9,7 @@ from parametrization import Parametrization as P
 
 from srai.constants import REGIONS_INDEX
 from srai.embedders import ContextualCountEmbedder
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -204,6 +205,16 @@ def expected_feature_names() -> List[str]:
     """Get expected feature names for ContextualCountEmbedder."""
     expected_feature_names = ["amenity_parking", "leisure_park", "amenity_pub"]
     return expected_feature_names
+
+
+@pytest.fixture  # type: ignore
+def osm_tags_filter() -> OsmTagsFilter:
+    """Get osm tags filter for CountEmbedder."""
+    tags_filter: OsmTagsFilter = {
+        "amenity": ["parking", "pub"],
+        "leisure": "park",
+    }
+    return tags_filter
 
 
 @pytest.fixture  # type: ignore
@@ -582,6 +593,102 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     True,
     "expected_feature_names",
 )
+@P.case(  # type: ignore
+    "Squashed features, distance 0, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_0",
+    0,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 1, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_1",
+    1,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 2, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_1",
+    2,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 0, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_0",
+    0,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 1, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_1",
+    1,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 2, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_1",
+    2,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 0, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_0",
+    0,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 1, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_1",
+    1,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_2",
+    2,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 0, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_0",
+    0,
+    True,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 1, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_1",
+    1,
+    True,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_2",
+    2,
+    True,
+    True,
+    "osm_tags_filter",
+)
 def test_correct_embedding(
     expected_embedding_fixture: str,
     neighbourhood_distance: int,
@@ -612,7 +719,9 @@ def test_correct_embedding(
     )
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
+    assert_frame_equal(
+        embedding_df.sort_index(axis=1), expected_result_df.sort_index(axis=1), check_dtype=False
+    )
 
 
 def test_negative_nighbourhood_distance() -> None:
