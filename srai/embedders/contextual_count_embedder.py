@@ -8,7 +8,7 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
@@ -16,6 +16,7 @@ import numpy.typing as npt
 import pandas as pd
 
 from srai.embedders.count_embedder import CountEmbedder
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 
@@ -28,7 +29,9 @@ class ContextualCountEmbedder(CountEmbedder):
         neighbourhood: Neighbourhood[IndexType],
         neighbourhood_distance: int,
         concatenate_vectors: bool = False,
-        expected_output_features: Optional[List[str]] = None,
+        expected_output_features: Optional[
+            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+        ] = None,
         count_subcategories: bool = False,
     ) -> None:
         """
@@ -42,10 +45,12 @@ class ContextualCountEmbedder(CountEmbedder):
             concatenate_vectors (bool, optional): Whether to sum all neighbours into a single vector
                 with the same width as `CountEmbedder`, or to concatenate them to the wide format
                 and keep all neighbour levels separate. Defaults to False.
-            expected_output_features (List[str], optional): The features that are expected
-                to be found in the resulting embedding. If not None, the missing features are
-                added and filled with 0. The unexpected features are removed.
-                The resulting columns are sorted accordingly. Defaults to None.
+            expected_output_features
+                (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter], optional):
+                The features that are expected to be found in the resulting embedding.
+                If not None, the missing features are added and filled with 0.
+                The unexpected features are removed. The resulting columns are sorted accordingly.
+                Defaults to None.
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.

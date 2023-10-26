@@ -9,10 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implemented `GeoVex` model as a `GeoVexEmbedder` implemented by [@mschrader15](https://github.com/mschrader15), proposed by [@ddonghi](https://github.com/ddonghi) & [@annemorvan](https://github.com/annemorvan)
-- Buffer geometries using `H3` cells by [@mschrader15](https://github.com/mschrader15)
-- Option for `OSMLoaders` to parse any Shapely geometry, not only `GeoDataFrames`.
-
 ### Changed
 
 ### Deprecated
@@ -22,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [0.5.1] - 2023-10-27
+
+### Added
+
+- Option for `CountEmbedder` and every other descendant embedder to use `OsmTagsFilter` and `GroupedOsmTagsFilter` as input to `expected_output_features` parameter.
+
+### Changed
+
+- Modified `GEOFABRIK_LAYERS` definition to make more precise `building` tag values list by applying all accepted and popular tag values from `tagsinfo`.
 
 ## [0.5.0] - 2023-10-26
 
@@ -179,7 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.5.0...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.5.1...HEAD
+[0.5.1]: https://github.com/srai-lab/srai/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/srai-lab/srai/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/srai-lab/srai/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/srai-lab/srai/compare/0.3.3...0.4.0
