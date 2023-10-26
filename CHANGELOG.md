@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.5.0] - 2023-10-26
+
+### Added
+
+- `GeoVex` model as a `GeoVexEmbedder` implemented by [@mschrader15](https://github.com/mschrader15), proposed by [@ddonghi](https://github.com/ddonghi) & [@annemorvan](https://github.com/annemorvan)
+- Buffer geometries using `H3` cells by [@mschrader15](https://github.com/mschrader15)
+- Option for `OSMLoaders` to parse any Shapely geometry, not only `GeoDataFrames`.
+
 ## [0.4.1] - 2023-10-23
 
 ### Changed
@@ -171,7 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.4.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/srai-lab/srai/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/srai-lab/srai/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/srai-lab/srai/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/srai-lab/srai/compare/0.3.2...0.3.3
