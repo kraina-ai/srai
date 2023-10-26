@@ -31,7 +31,9 @@ except ImportError:
 T = TypeVar("T")
 
 # define a type for the dataset item
-CellInfo = Tuple[str, int, List[Tuple[int, Tuple[int, int]]]]
+Ij_Index = Tuple[int, int]
+Neighbors = List[Tuple[int, Ij_Index]]
+CellInfo = Tuple[str, int, Neighbors]
 
 
 class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
@@ -131,9 +133,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         _, target_idx, neighbors_idxs = self._valid_cells[index]
         return self._build_tensor(target_idx, neighbors_idxs)
 
-    def _build_tensor(
-        self, target_idx: int, neighbors_idxs: List[Tuple[int, Tuple[int, int]]]
-    ) -> "torch.Tensor":
+    def _build_tensor(self, target_idx: int, neighbors_idxs: Neighbors) -> "torch.Tensor":
         import torch
 
         # build the 3d tensor

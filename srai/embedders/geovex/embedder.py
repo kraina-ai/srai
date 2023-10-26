@@ -40,7 +40,6 @@ class GeoVexEmbedder(CountEmbedder):
         convolutional_layers: int = 2,
         embedding_size: int = 32,
         convolutional_layer_size: int = 256,
-        dataset: Optional[HexagonalDataset[T]] = None,
     ) -> None:
         """
         Initialize GeoVex Embedder.
@@ -53,7 +52,6 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood_radius (int, optional): Radius of the neighbourhood. Defaults to 4.
             embedding_size (int, optional): Size of the embedding. Defaults to 32.
             convolutional_layer_size (int, optional): Size of the first convolutional layer.
-            dataset (Optional[HexagonalDataset], optional): Dataset to use. Defaults to None.
         """
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
@@ -73,10 +71,10 @@ class GeoVexEmbedder(CountEmbedder):
         self._convolutional_layer_size = convolutional_layer_size
 
         self._batch_size = batch_size
-        self._dataset = dataset
 
         # save invalid h3s for later
         self._invalid_cells: List[str] = []
+        self._dataset: DataLoader = None
 
     @property
     def invalid_cells(self) -> List[str]:
