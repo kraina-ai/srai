@@ -125,7 +125,9 @@ class CountEmbedder(Embedder):
             pd.Series(expected_output_features_list) if expected_output_features_list else None
         )
 
-    def _parse_osm_tags_filter_to_expected_features(self, osm_filter: OsmTagsFilter) -> List[str]:
+    def _parse_osm_tags_filter_to_expected_features(
+        self, osm_filter: OsmTagsFilter, delimiter: str = "_"
+    ) -> List[str]:
         expected_output_features: Set[str] = set()
 
         if not self.count_subcategories:
@@ -138,10 +140,10 @@ class CountEmbedder(Embedder):
                         "Please use filter without boolean value."
                     )
                 elif isinstance(osm_tag_value, str):
-                    expected_output_features.add(f"{osm_tag_key}_{osm_tag_value}")
+                    expected_output_features.add(f"{osm_tag_key}{delimiter}{osm_tag_value}")
                 elif isinstance(osm_tag_value, list):
                     expected_output_features.update(
-                        f"{osm_tag_key}_{tag_value}" for tag_value in osm_tag_value
+                        f"{osm_tag_key}{delimiter}{tag_value}" for tag_value in osm_tag_value
                     )
 
         return sorted(list(expected_output_features))
@@ -155,18 +157,13 @@ class CountEmbedder(Embedder):
             expected_output_features.update(grouped_osm_filter.keys())
         else:
             for group_name, osm_filter in grouped_osm_filter.items():
-                for osm_tag_key, osm_tag_value in osm_filter.items():
-                    if isinstance(osm_tag_value, bool) and osm_tag_value:
-                        raise ValueError(
-                            "Cannot parse bool OSM tag value to expected features list. "
-                            "Please use filter without boolean value."
-                        )
-                    elif isinstance(osm_tag_value, str):
-                        expected_output_features.add(f"{group_name}_{osm_tag_key}={osm_tag_value}")
-                    elif isinstance(osm_tag_value, list):
-                        expected_output_features.update(
-                            f"{group_name}_{osm_tag_key}={tag_value}" for tag_value in osm_tag_value
-                        )
+                parsed_osm_tags_filter_features = self._parse_osm_tags_filter_to_expected_features(
+                    osm_filter, delimiter="="
+                )
+                expected_output_features.update(
+                    f"{group_name}_{parsed_osm_tags_filter_feature}"
+                    for parsed_osm_tags_filter_feature in parsed_osm_tags_filter_features
+                )
 
         return sorted(list(expected_output_features))
 
