@@ -24,11 +24,11 @@ from srai._optional import import_optional_dependencies
 from srai.constants import WGS84_CRS
 from srai.geometry import flatten_geometry
 
-OPENSTREETMAP_FR_POLYGONS_INDEX = "https://download.openstreetmap.fr/polygons"
-OPENSTREETMAP_FR_EXTRACTS_INDEX = "https://download.openstreetmap.fr/extracts"
+OPENSTREETMAP_FR_POLYGONS_INDEX_URL = "https://download.openstreetmap.fr/polygons"
+OPENSTREETMAP_FR_EXTRACTS_INDEX_URL = "https://download.openstreetmap.fr/extracts"
 OPENSTREETMAP_FR_INDEX_GDF: Optional[gpd.GeoDataFrame] = None
 
-GEOFABRIK_INDEX = "https://download.geofabrik.de/index-v1.json"
+GEOFABRIK_INDEX_URL = "https://download.geofabrik.de/index-v1.json"
 GEOFABRIK_INDEX_GDF: Optional[gpd.GeoDataFrame] = None
 
 
@@ -282,7 +282,7 @@ def _filter_extracts(
     ].iterrows():
         extract = OpenStreetMapExtract(
             id=extract_row.id,
-            url=extract_row["urls"]["pbf"],
+            url=extract_row["url"],
             geometry=extract_row.geometry,
         )
         filtered_extracts.append(extract)
@@ -359,18 +359,25 @@ def _load_geofabrik_index() -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Extracts index with metadata.
     """
-    result = requests.get(
-        GEOFABRIK_INDEX,
-        headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
-    )
-    parsed_data = json.loads(result.text)
-    gdf = gpd.GeoDataFrame.from_features(parsed_data["features"])
-    gdf["area"] = gdf.geometry.area
-    gdf.sort_values(by="area", ignore_index=True, inplace=True)
+    save_path = Path("cache/geofabrik_index.geojson")
 
-    save_path = "cache/geofabrik_index.csv"
-    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
+    if save_path.exists():
+        gdf = gpd.read_file(save_path)
+    else:
+        result = requests.get(
+            GEOFABRIK_INDEX_URL,
+            headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
+        )
+        parsed_data = json.loads(result.text)
+        gdf = gpd.GeoDataFrame.from_features(parsed_data["features"])
+        gdf["area"] = gdf.geometry.area
+        gdf.sort_values(by="area", ignore_index=True, inplace=True)
+        gdf["url"] = gdf["urls"].apply(lambda d: d["pbf"])
+        gdf = gdf[["id", "name", "geometry", "url"]]
+
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        gdf.to_file(save_path, driver="GeoJSON")
+
     return gdf
 
 
@@ -381,17 +388,22 @@ def _load_openstreetmap_fr_index() -> gpd.GeoDataFrame:
     Returns:
         gpd.GeoDataFrame: Extracts index with metadata.
     """
-    with tqdm() as pbar:
-        extracts = _iterate_openstreetmap_fr_index("osm_fr", "/", True, pbar)
-    gdf = gpd.GeoDataFrame(
-        data=[asdict(extract) for extract in extracts], geometry="geometry"
-    ).set_crs(WGS84_CRS)
-    gdf["area"] = gdf.geometry.area
-    gdf.sort_values(by="area", ignore_index=True, inplace=True)
+    save_path = Path("cache/osm_fr_index.geojson")
 
-    save_path = "cache/osm_fr_index.csv"
-    Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-    gdf[[col for col in gdf.columns if col != "geometry" and col != "urls"]].to_csv(save_path)
+    if save_path.exists():
+        gdf = gpd.read_file(save_path)
+    else:
+        with tqdm() as pbar:
+            extracts = _iterate_openstreetmap_fr_index("osm_fr", "/", True, pbar)
+        gdf = gpd.GeoDataFrame(
+            data=[asdict(extract) for extract in extracts], geometry="geometry"
+        ).set_crs(WGS84_CRS)
+        gdf["area"] = gdf.geometry.area
+        gdf.sort_values(by="area", ignore_index=True, inplace=True)
+
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        gdf.to_file(save_path, driver="GeoJSON")
+
     return gdf
 
 
@@ -417,7 +429,7 @@ def _iterate_openstreetmap_fr_index(
     pbar.set_description_str(id_prefix)
     extracts = []
     result = requests.get(
-        f"{OPENSTREETMAP_FR_EXTRACTS_INDEX}{directory_url}",
+        f"{OPENSTREETMAP_FR_EXTRACTS_INDEX_URL}{directory_url}",
         headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
     )
     soup = BeautifulSoup(result.text, "html.parser")
@@ -432,7 +444,7 @@ def _iterate_openstreetmap_fr_index(
             extracts.append(
                 OpenStreetMapExtract(
                     id=f"{id_prefix}_{name}",
-                    url=f"{OPENSTREETMAP_FR_EXTRACTS_INDEX}{directory_url}{link['href']}",
+                    url=f"{OPENSTREETMAP_FR_EXTRACTS_INDEX_URL}{directory_url}{link['href']}",
                     geometry=polygon,
                 )
             )
@@ -465,7 +477,7 @@ def _parse_polygon_file(polygon_url: str) -> Optional[MultiPolygon]:
             Empty if request returns 404 not found.
     """
     result = requests.get(
-        f"{OPENSTREETMAP_FR_POLYGONS_INDEX}/{polygon_url}",
+        f"{OPENSTREETMAP_FR_POLYGONS_INDEX_URL}/{polygon_url}",
         headers={"User-Agent": "SRAI Python package (https://github.com/kraina-ai/srai)"},
     )
     if result.status_code == 404:
