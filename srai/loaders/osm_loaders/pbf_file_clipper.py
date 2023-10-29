@@ -83,7 +83,7 @@ class PbfFileClipper:
         if Path(final_osm_path).exists():
             return Path(final_osm_path)
 
-        with tempfile.TemporaryDirectory() as tmp_dir_name:
+        with tempfile.TemporaryDirectory(dir=self.working_directory) as tmp_dir_name:
             tmp_dir_path = Path(tmp_dir_name)
 
             final_osm_path_alphanumeric_safe = (
