@@ -373,7 +373,7 @@ def _load_geofabrik_index() -> gpd.GeoDataFrame:
         gdf["area"] = gdf.geometry.area
         gdf.sort_values(by="area", ignore_index=True, inplace=True)
         gdf["url"] = gdf["urls"].apply(lambda d: d["pbf"])
-        gdf = gdf[["id", "name", "geometry", "url"]]
+        gdf = gdf[["id", "name", "geometry", "area", "url"]]
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
         gdf.to_file(save_path, driver="GeoJSON")
