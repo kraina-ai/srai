@@ -14,7 +14,7 @@ from srai.loaders.osm_loaders.filters import get_popular_tags
 @pytest.fixture  # type: ignore
 def popular_filter_api_data() -> Dict[str, Any]:
     """Load example taginfo API response data from file."""
-    with (Path(__file__).parent / "popular_filter_example.json").open("rt") as f:
+    with (Path(__file__).parent / "popular_filter_example.json").open("rt", encoding="utf-8") as f:
         res: Dict[str, Any] = json.load(f)
         return res
 
