@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.5.2] - 2023-10-29
+
+### Added
+
+- Geofabrik and OSM Fr index caching and reading from cache to avoid reloading.
+- Tests for Windows OS.
+
+### Changed
+
+- `PbfFileClipper` temporary files operations moved to working directory.
+
 ## [0.5.1] - 2023-10-27
 
 ### Added
@@ -185,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.5.1...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.5.2...HEAD
+[0.5.2]: https://github.com/srai-lab/srai/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/srai-lab/srai/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/srai-lab/srai/compare/0.4.1...0.5.0
 [0.4.1]: https://github.com/srai-lab/srai/compare/0.4.0...0.4.1
