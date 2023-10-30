@@ -111,7 +111,7 @@ jobs:
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
-        run: mike deploy --remote origin-srai-docs --ignore --push dev
+        run: mike deploy --remote origin-srai-docs --rebase --push dev
 
   deploy-docs:
     name: Deploy 📦 documentation 📄 to Github Pages 🌐
