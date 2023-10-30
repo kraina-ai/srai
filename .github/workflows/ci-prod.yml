@@ -31,7 +31,7 @@ jobs:
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
 
   generate-docs:
-    name: Generate latest library 📦 documentation 📄
+    name: Generate latest library 📚 documentation 📄
     needs: [run-tests]
     runs-on: ubuntu-latest
     permissions:
@@ -97,7 +97,7 @@ jobs:
         run: mike deploy --remote origin-srai-docs --ignore --push --update-aliases ${{github.ref_name}} latest
 
   deploy-docs:
-    name: Deploy 📦 documentation 📄 to Github Pages 🌐
+    name: Deploy documentation 📄 to Github Pages 🌐
     needs: [generate-docs]
     runs-on: ubuntu-latest
     permissions:
@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          repository: 'https://github.com/kraina-ai/srai-docs'
+          repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
