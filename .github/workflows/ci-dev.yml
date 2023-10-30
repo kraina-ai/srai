@@ -105,7 +105,7 @@ jobs:
             with open(file_name, "w") as f:
                 f.write(data)
       - name: Create remote for srai-docs repository
-        run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
+        run: git remote add origin-srai-docs https://kraina-ai:${{ secrets.DOCS_PAT }}@github.com/kraina-ai/srai-docs
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
