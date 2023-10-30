@@ -82,10 +82,10 @@ jobs:
         run: |
           pdm build -v -d dist
           pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
-      - name: Configure Git user
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+      # - name: Configure Git user
+      #   run: |
+      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
+      #     git config --local user.name "github-actions[bot]"
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
