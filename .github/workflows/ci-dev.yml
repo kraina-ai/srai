@@ -58,6 +58,8 @@ jobs:
       MKDOCS_DEV: true
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.DOCS_PAT }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -82,10 +84,10 @@ jobs:
         run: |
           pdm build -v -d dist
           pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
-      # - name: Configure Git user
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
@@ -105,7 +107,7 @@ jobs:
             with open(file_name, "w") as f:
                 f.write(data)
       - name: Create remote for srai-docs repository
-        run: git remote add origin-srai-docs https://${{ secrets.DOCS_PAT }}@github.com/kraina-ai/srai-docs
+        run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
@@ -124,6 +126,7 @@ jobs:
         with:
           repository: 'https://github.com/kraina-ai/srai-docs'
           ref: 'gh-pages'
+          token: ${{ secrets.DOCS_PAT }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
