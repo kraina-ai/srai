@@ -3,10 +3,11 @@ Plotly wrapper.
 
 This module contains functions for quick plotting of analysed gdfs using Plotly library.
 """
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
@@ -17,6 +18,69 @@ from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 
 import_optional_dependencies(dependency_group="plotting", modules=["plotly"])
+
+
+def plot_numeric_data(
+    regions_gdf: gpd.GeoDataFrame,
+    data_column: str,
+    data_df: Optional[Union[gpd.GeoDataFrame, pd.DataFrame]] = None,
+    colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
+    return_plot: bool = False,
+    mapbox_style: str = "open-street-map",
+    mapbox_accesstoken: Optional[str] = None,
+    renderer: Optional[str] = None,
+    zoom: Optional[float] = None,
+    height: Optional[float] = None,
+    width: Optional[float] = None,
+) -> Optional[go.Figure]:
+    """
+    Plot numeric data on a map using Plotly library.
+
+    For more info about parameters, check https://plotly.com/python/mapbox-layers/.
+
+    Args:
+        regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
+        data_column (str): Column name with numeric data to plot.
+        data_df (Optional[Union[gpd.GeoDataFrame, pd.DataFrame]], optional): Data to plot.
+            If `None`, only regions will be plotted. Defaults to None.
+        colormap (Union[str, List[str]], optional): Colormap to use for plotting.
+            Can be a string with a name of a Plotly colormap, or a list of colours.
+            Defaults to px.colors.sequential.Sunsetdark.
+        return_plot (bool, optional): Flag whether to return the Figure object or not.
+            If `True`, the plot won't be displayed automatically. Defaults to False.
+        mapbox_style (str, optional): Map style background. Defaults to "open-street-map".
+        mapbox_accesstoken (str, optional): Access token required for mapbox based map backgrounds.
+            Defaults to None.
+        renderer (str, optional): Name of renderer used for displaying the figure.
+            For all descriptions, look here: https://plotly.com/python/renderers/.
+            Defaults to None.
+        zoom (float, optional): Map zoom. If not filled, will be approximated based on
+            the bounding box of regions. Defaults to None.
+        height (float, optional): Height of the plot. Defaults to None.
+        width (float, optional): Width of the plot. Defaults to None.
+    """
+    regions_gdf_copy = regions_gdf.copy()
+    regions_gdf_copy[REGIONS_INDEX] = regions_gdf_copy.index
+
+    if data_df is not None:
+        regions_gdf_copy = regions_gdf_copy.merge(data_df[[data_column]], on=REGIONS_INDEX)
+
+    return _plot_regions(
+        regions_gdf=regions_gdf_copy,
+        hover_column_name=data_column,
+        color_feature_column=data_column,
+        hover_data=[],
+        show_legend=False,
+        return_plot=return_plot,
+        mapbox_style=mapbox_style,
+        mapbox_accesstoken=mapbox_accesstoken,
+        renderer=renderer,
+        zoom=zoom,
+        height=height,
+        width=width,
+        color_continuous_scale=colormap,
+        traces_kwargs=dict(marker_line_width=0),
+    )
 
 
 def plot_regions(
@@ -349,5 +413,4 @@ def _calculate_mapbox_zoom(
     """
     minx, miny, maxx, maxy = regions_gdf.geometry.total_bounds
     max_bound = max(abs(maxx - minx), abs(maxy - miny)) * 111
-    zoom = float(12.5 - np.log(max_bound))
-    return zoom
+    return float(14.5 - np.log(max_bound)) if max_bound < 40 else float(12.5 - np.log(max_bound))
