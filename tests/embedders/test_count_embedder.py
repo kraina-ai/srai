@@ -1,6 +1,7 @@
 """CountEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any, List, Union
+from unittest import TestCase
 
 import pandas as pd
 import pytest
@@ -8,9 +9,12 @@ from pandas.testing import assert_frame_equal
 
 from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 if TYPE_CHECKING:  # pragma: no cover
     import geopandas as gpd
+
+ut = TestCase()
 
 
 @pytest.fixture  # type: ignore
@@ -49,6 +53,16 @@ def expected_feature_names() -> List[str]:
     """Get expected feature names for CountEmbedder."""
     expected_feature_names = ["amenity_parking", "leisure_park", "amenity_pub"]
     return expected_feature_names
+
+
+@pytest.fixture  # type: ignore
+def osm_tags_filter() -> OsmTagsFilter:
+    """Get osm tags filter for CountEmbedder."""
+    tags_filter: OsmTagsFilter = {
+        "amenity": ["parking", "pub"],
+        "leisure": "park",
+    }
+    return tags_filter
 
 
 @pytest.fixture  # type: ignore
@@ -118,6 +132,22 @@ def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
             True,
             "expected_feature_names",
         ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "expected_embedding_df",
+            False,
+            "osm_tags_filter",
+        ),
+        (
+            "gdf_regions",
+            "gdf_features",
+            "gdf_joint",
+            "specified_subcategories_features_expected_embedding_df",
+            True,
+            "osm_tags_filter",
+        ),
     ],
 )
 def test_correct_embedding(
@@ -138,14 +168,19 @@ def test_correct_embedding(
     embedder = CountEmbedder(
         expected_output_features=expected_output_features, count_subcategories=count_subcategories
     )
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
     embedding_df = embedder.transform(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
     )
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
+    print(expected_embedding_fixture)
+    print(expected_result_df)
+    print(embedding_df)
+    assert_frame_equal(
+        embedding_df.sort_index(axis=1), expected_result_df.sort_index(axis=1), check_dtype=False
+    )
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -196,9 +231,9 @@ def test_empty(
         else request.getfixturevalue(expected_features_fixture)
     )
     embedder = CountEmbedder(expected_output_features)
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
@@ -263,3 +298,119 @@ def test_incorrect_indexes(
         CountEmbedder().transform(
             regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
         )
+
+
+@pytest.mark.parametrize(  # type: ignore
+    "osm_tags_filter,count_subcategories,expected_output_features,expectation",
+    [
+        (
+            {"amenity": True},
+            True,
+            None,
+            pytest.raises(ValueError),
+        ),
+        (
+            {"amenity": True},
+            False,
+            ["amenity"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": "pub"},
+            True,
+            ["amenity_pub"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": ["pub", "parking"]},
+            True,
+            ["amenity_pub", "amenity_parking"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": "pub"},
+            False,
+            ["amenity"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": ["pub", "parking"]},
+            False,
+            ["amenity"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": ["pub", "parking"], "leisure": ["park"]},
+            True,
+            ["amenity_pub", "amenity_parking", "leisure_park"],
+            does_not_raise(),
+        ),
+        (
+            {"amenity": ["pub", "parking"], "leisure": ["park"]},
+            False,
+            ["amenity", "leisure"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": True}},
+            True,
+            None,
+            pytest.raises(ValueError),
+        ),
+        (
+            {"group": {"amenity": True}},
+            False,
+            ["group"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": "pub"}},
+            True,
+            ["group_amenity=pub"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": ["pub", "parking"]}},
+            True,
+            ["group_amenity=pub", "group_amenity=parking"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": "pub"}},
+            False,
+            ["group"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": ["pub", "parking"]}},
+            False,
+            ["group"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": ["pub", "parking"], "leisure": ["park"]}},
+            True,
+            ["group_amenity=pub", "group_amenity=parking", "group_leisure=park"],
+            does_not_raise(),
+        ),
+        (
+            {"group": {"amenity": ["pub", "parking"], "leisure": ["park"]}},
+            False,
+            ["group"],
+            does_not_raise(),
+        ),
+    ],
+)
+def test_osm_tags_filter_parsing(
+    osm_tags_filter: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+    count_subcategories: bool,
+    expected_output_features: str,
+    expectation: Any,
+) -> None:
+    """Test is properly parses osm tags filter."""
+    with expectation:
+        embedder = CountEmbedder(
+            expected_output_features=osm_tags_filter, count_subcategories=count_subcategories
+        )
+
+        ut.assertCountEqual(embedder.expected_output_features, expected_output_features)

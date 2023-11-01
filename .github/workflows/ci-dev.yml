@@ -45,16 +45,18 @@ jobs:
         run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
 
   generate-docs:
-    name: Publish dev library 📦 documentation 📄 to Github Pages 🌐
+    name: Generate latest library 📚 documentation 📄
     needs: [run-tests]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
       MKDOCS_DEV: true
     steps:
       - uses: actions/checkout@v3
-      - name: Fetch gh-pages branch
-        run: git fetch origin gh-pages --depth=1
+        with:
+          token: ${{ secrets.DOCS_PAT }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -101,5 +103,32 @@ jobs:
                 data = f.read().replace('{current_year}', time.strftime("%Y"))
             with open(file_name, "w") as f:
                 f.write(data)
+      - name: Create remote for srai-docs repository
+        run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
+      - name: Fetch gh-pages branch
+        run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
-        run: mike deploy --push dev
+        run: mike deploy --remote origin-srai-docs --rebase --push dev
+
+  deploy-docs:
+    name: Deploy documentation 📄 to Github Pages 🌐
+    needs: [generate-docs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: 'kraina-ai/srai-docs'
+          ref: 'gh-pages'
+          token: ${{ secrets.DOCS_PAT }}
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # Upload entire repository
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

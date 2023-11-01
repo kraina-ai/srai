@@ -11,10 +11,10 @@ import plotly.express as px
 import plotly.graph_objs as go
 from shapely.geometry import Point
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
-from srai.utils._optional import import_optional_dependencies
 
 import_optional_dependencies(dependency_group="plotting", modules=["plotly"])
 

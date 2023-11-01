@@ -9,6 +9,7 @@ from parametrization import Parametrization as P
 
 from srai.constants import REGIONS_INDEX
 from srai.embedders import ContextualCountEmbedder
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -204,6 +205,16 @@ def expected_feature_names() -> List[str]:
     """Get expected feature names for ContextualCountEmbedder."""
     expected_feature_names = ["amenity_parking", "leisure_park", "amenity_pub"]
     return expected_feature_names
+
+
+@pytest.fixture  # type: ignore
+def osm_tags_filter() -> OsmTagsFilter:
+    """Get osm tags filter for CountEmbedder."""
+    tags_filter: OsmTagsFilter = {
+        "amenity": ["parking", "pub"],
+        "leisure": "park",
+    }
+    return tags_filter
 
 
 @pytest.fixture  # type: ignore
@@ -582,6 +593,102 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     True,
     "expected_feature_names",
 )
+@P.case(  # type: ignore
+    "Squashed features, distance 0, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_0",
+    0,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 1, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_1",
+    1,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 2, without subcategories, specified osm tags filter",
+    "expected_embedding_df_squashed_distance_1",
+    2,
+    False,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 0, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_0",
+    0,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 1, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_1",
+    1,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Squashed features, distance 2, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_squashed_distance_1",
+    2,
+    False,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 0, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_0",
+    0,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 1, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_1",
+    1,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, specified osm tags filter",
+    "expected_embedding_df_concatenated_distance_2",
+    2,
+    True,
+    False,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 0, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_0",
+    0,
+    True,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 1, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_1",
+    1,
+    True,
+    True,
+    "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, specified osm tags filter",
+    "specified_features_expected_subcategories_embedding_df_concatenated_distance_2",
+    2,
+    True,
+    True,
+    "osm_tags_filter",
+)
 def test_correct_embedding(
     expected_embedding_fixture: str,
     neighbourhood_distance: int,
@@ -596,9 +703,9 @@ def test_correct_embedding(
         if expected_features_fixture is None
         else request.getfixturevalue(expected_features_fixture)
     )
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_regions")
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_features")
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue("gdf_joint")
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue("gdf_regions")
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue("gdf_features")
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue("gdf_joint")
 
     embedder = ContextualCountEmbedder(
         neighbourhood=H3Neighbourhood(),
@@ -612,7 +719,9 @@ def test_correct_embedding(
     )
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
-    assert_frame_equal(embedding_df, expected_result_df, check_dtype=False)
+    assert_frame_equal(
+        embedding_df.sort_index(axis=1), expected_result_df.sort_index(axis=1), check_dtype=False
+    )
 
 
 def test_negative_nighbourhood_distance() -> None:
@@ -681,9 +790,9 @@ def test_empty(
         count_subcategories=count_subcategories,
         concatenate_vectors=concatenate_features,
     )
-    gdf_regions: "gpd.GeoDataFrame" = request.getfixturevalue(regions_fixture)
-    gdf_features: "gpd.GeoDataFrame" = request.getfixturevalue(features_fixture)
-    gdf_joint: "gpd.GeoDataFrame" = request.getfixturevalue(joint_fixture)
+    gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
@@ -752,9 +861,9 @@ def test_incorrect_indexes(
     request: Any,
 ) -> None:
     """Test if cannot embed with incorrect dataframe indexes."""
-    regions_gdf = request.getfixturevalue(regions_fixture)
-    features_gdf = request.getfixturevalue(features_fixture)
-    joint_gdf = request.getfixturevalue(joint_fixture)
+    regions_gdf: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
+    features_gdf: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
+    joint_gdf: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
         ContextualCountEmbedder(

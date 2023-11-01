@@ -14,12 +14,13 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from srai._optional import import_optional_dependencies
 from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
 from srai.exceptions import ModelNotFitException
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
-from srai.utils._optional import import_optional_dependencies
 
 T = TypeVar("T")
 
@@ -32,19 +33,24 @@ class Hex2VecEmbedder(CountEmbedder):
     def __init__(
         self,
         encoder_sizes: Optional[List[int]] = None,
-        expected_output_features: Optional[List[str]] = None,
+        expected_output_features: Optional[
+            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+        ] = None,
     ) -> None:
         """
         Initialize Hex2VecEmbedder.
 
         Args:
-            encoder_sizes (Optional[List[int]], optional): Sizes of the encoder layers.
+            encoder_sizes (List[int], optional): Sizes of the encoder layers.
                 The input layer size shouldn't be included - it's inferred from the data.
                 The last element is the embedding size. Defaults to [150, 75, 50].
-            expected_output_features (Optional[List[str]], optional): List of expected output
-                features. Defaults to None.
+            expected_output_features
+                (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter], optional):
+                List of expected output features. Defaults to None.
         """
-        super().__init__(expected_output_features)
+        super().__init__(
+            expected_output_features=expected_output_features, count_subcategories=True
+        )
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
         )

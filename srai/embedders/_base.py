@@ -13,7 +13,7 @@ try:  # pragma: no cover
     from pytorch_lightning import LightningModule
 
 except ImportError:
-    from srai.utils._pytorch_stubs import LightningModule
+    from srai.embedders._pytorch_stubs import LightningModule
 
 
 class Model(LightningModule):  # type: ignore

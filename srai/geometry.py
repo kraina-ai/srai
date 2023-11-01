@@ -1,12 +1,23 @@
 """Utility geometry operations functions."""
-from typing import List
+import hashlib
+from typing import List, Union
 
 import geopandas as gpd
 import pyproj
+import shapely.wkt as wktlib
 from functional import seq
-from shapely.geometry import Polygon
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
+
+__all__ = [
+    "flatten_geometry_series",
+    "flatten_geometry",
+    "remove_interiors",
+    "buffer_geometry",
+    "merge_disjointed_polygons",
+    "merge_disjointed_gdf_geometries",
+]
 
 
 def flatten_geometry_series(geometry_series: gpd.GeoSeries) -> List[BaseGeometry]:
@@ -71,3 +82,47 @@ def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
     bufferred_projected_geometry = projected_geometry.buffer(meters)
 
     return shapely_transform(aeqd_to_wgs84, bufferred_projected_geometry)
+
+
+def merge_disjointed_polygons(polygons: List[Union[Polygon, MultiPolygon]]) -> MultiPolygon:
+    """
+    Merges all polygons into a single MultiPolygon.
+
+    Input polygons are expected to be disjointed.
+
+    Args:
+        polygons (List[Union[Polygon, MultiPolygon]]): List of polygons to merge
+
+    Returns:
+        MultiPolygon: Merged polygon
+    """
+    single_polygons = []
+    for geom in polygons:
+        if isinstance(geom, Polygon):
+            single_polygons.append(geom)
+        else:
+            single_polygons.extend(geom.geoms)
+    return MultiPolygon(single_polygons)
+
+
+def merge_disjointed_gdf_geometries(gdf: gpd.GeoDataFrame) -> MultiPolygon:
+    """
+    Merges geometries from a GeoDataFrame into a single MultiPolygon.
+
+    Input geometries are expected to be disjointed.
+
+    Args:
+        gdf (gpd.GeoDataFrame): GeoDataFrame with geometries to merge.
+
+    Returns:
+        MultiPolygon: Merged polygon
+    """
+    return merge_disjointed_polygons(list(gdf.geometry))
+
+
+def get_geometry_hash(geometry: BaseGeometry) -> str:
+    """Generate SHA256 hash based on WKT representation of the polygon."""
+    wkt_string = wktlib.dumps(geometry)
+    h = hashlib.new("sha256")
+    h.update(wkt_string.encode())
+    return h.hexdigest()

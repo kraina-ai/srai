@@ -5,15 +5,17 @@ This module implements downloading tiles from given OSM tile server.
 """
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Union
 from urllib.parse import urljoin
 
 import geopandas as gpd
 import pandas as pd
 import requests
+from shapely.geometry.base import BaseGeometry
 
+from srai._optional import import_optional_dependencies
+from srai.loaders.osm_loaders._base import prepare_area_gdf_for_loader
 from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
-from srai.utils._optional import import_optional_dependencies
 
 from .osm_tile_data_collector import (
     DataCollector,
@@ -92,18 +94,20 @@ class OSMTileLoader:
 
     def load(
         self,
-        area: gpd.GeoDataFrame,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
     ) -> gpd.GeoDataFrame:
         """
         Return all tiles of region.
 
         Args:
-            area (gpd.GeoDataFrame): Area for which to download objects.
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
 
         Returns:
             gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
         """
-        regions = self.regionalizer.transform(gdf=area)
+        area_wgs84 = prepare_area_gdf_for_loader(area)
+        regions = self.regionalizer.transform(gdf=area_wgs84)
         regions["tile"] = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
         return regions
 

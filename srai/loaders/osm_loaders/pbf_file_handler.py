@@ -16,7 +16,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX, WGS84_CRS
-from srai.loaders.osm_loaders.filters._typing import OsmTagsFilter
+from srai.loaders.osm_loaders.filters import OsmTagsFilter
 
 if TYPE_CHECKING:
     import os
@@ -184,6 +184,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
     def _clear_cache(self) -> None:
         """Clear memory from accumulated features."""
         self.features_cache.clear()
+        self.features_count = None
 
     def _count_features(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], region_id: str = "OSM"

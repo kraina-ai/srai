@@ -13,7 +13,7 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-from srai.utils import geocode_to_region_gdf
+from srai.regionalizers import geocode_to_region_gdf
 from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
 
 
@@ -64,3 +64,12 @@ def generate_test_case(
     features_gdf.to_parquet(output_path / f"{files_prefix}_features.parquet")
     joint_gdf.to_parquet(output_path / f"{files_prefix}_joint.parquet")
     results_df.to_parquet(output_path / f"{files_prefix}_result.parquet")
+
+
+if __name__ == "__main__":
+    path = Path(__file__)
+
+    from constants import PREDEFINED_TEST_CASES
+
+    for test_case in PREDEFINED_TEST_CASES:
+        generate_test_case(**test_case)

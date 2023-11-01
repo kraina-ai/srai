@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from srai.constants import REGIONS_INDEX
+from srai._optional import import_optional_dependencies
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
-from srai.utils._optional import import_optional_dependencies
 
 import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
 
@@ -67,26 +67,27 @@ def plot_regions(
 
 def plot_numeric_data(
     regions_gdf: gpd.GeoDataFrame,
-    embedding_df: Union[pd.DataFrame, gpd.GeoDataFrame],
     data_column: str,
-    tiles_style: str = "OpenStreetMap",
+    embedding_df: Optional[Union[pd.DataFrame, gpd.GeoDataFrame]] = None,
+    tiles_style: str = "CartoDB positron",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
     map: Optional[folium.Map] = None,
     show_borders: bool = False,
+    opacity: float = 0.8,
 ) -> folium.Map:
     """
     Plot numerical data within regions shapes using Folium library.
 
     Args:
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
-        embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame]): Region indexes and numerical data
-            to plot.
+        embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame], optional): Region indexes and numerical
+            data to plot. If not provided, will use regions_gdf.
         data_column (str): Name of the column used to colour the regions.
         tiles_style (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
-            Defaults to "OpenStreetMap".
+            Defaults to "CartoDB positron".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
@@ -95,11 +96,15 @@ def plot_numeric_data(
             Defaults to None.
         show_borders (bool, optional): Whether to show borders between regions or not.
             Defaults to False.
+        opacity (float, optional): Opacity of coloured regions.
 
     Returns:
         folium.Map: Generated map.
     """
-    regions_gdf_copy = regions_gdf.copy()
+    if embedding_df is None:
+        embedding_df = regions_gdf
+
+    regions_gdf_copy = regions_gdf[[GEOMETRY_COLUMN]].copy()
     regions_gdf_copy = regions_gdf_copy.merge(embedding_df[[data_column]], on=REGIONS_INDEX)
 
     if not isinstance(colormap, str):
@@ -122,7 +127,7 @@ def plot_numeric_data(
         legend=True,
         cmap=colormap,
         categorical=False,
-        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
+        style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=opacity),
         m=map,
     )
 

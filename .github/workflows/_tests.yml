@@ -6,12 +6,15 @@ jobs:
     name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         include:
           - os: macos-latest
-            python-version: "3.10"
+            python-version: "3.11"
+          - os: windows-latest
+            python-version: "3.11"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}

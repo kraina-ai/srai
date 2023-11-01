@@ -4,17 +4,19 @@ OSM Online Loader.
 This module contains loader capable of loading OpenStreetMap features from Overpass.
 """
 from itertools import product
-from typing import List, Tuple, Union
+from typing import Iterable, List, Tuple, Union
 
 import geopandas as gpd
 import pandas as pd
 from functional import seq
+from packaging import version
+from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters._typing import GroupedOsmTagsFilter, OsmTagsFilter
-from srai.utils._optional import import_optional_dependencies
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 class OSMOnlineLoader(OSMLoader):
@@ -44,7 +46,7 @@ class OSMOnlineLoader(OSMLoader):
 
     def load(
         self,
-        area: gpd.GeoDataFrame,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
@@ -57,7 +59,8 @@ class OSMOnlineLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (gpd.GeoDataFrame): Area for which to download objects.
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -73,24 +76,29 @@ class OSMOnlineLoader(OSMLoader):
         """
         import osmnx as ox
 
-        area_wgs84 = area.to_crs(crs=WGS84_CRS)
+        area_wgs84 = self._prepare_area_gdf(area)
 
         merged_tags = self._merge_osm_tags_filter(tags)
 
         _tags = self._flatten_tags(merged_tags)
 
         total_tags_num = len(_tags)
-        total_queries = len(area) * total_tags_num
+        total_queries = len(area_wgs84) * total_tags_num
 
         key_value_name_max_len = self._get_max_key_value_name_len(_tags)
         desc_max_len = key_value_name_max_len + len(self._PBAR_FORMAT.format("", ""))
 
         results = []
 
+        osmnx_new_api = version.parse(ox.__version__) >= version.parse("1.5.0")
+        osmnx_download_function = (
+            ox.features_from_polygon if osmnx_new_api else ox.geometries_from_polygon
+        )
+
         pbar = tqdm(product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries)
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            geometries = ox.geometries_from_polygon(polygon, {key: value})
+            geometries = osmnx_download_function(polygon, {key: value})
             if not geometries.empty:
                 results.append(geometries[[GEOMETRY_COLUMN, key]])
 

@@ -59,7 +59,11 @@ class H3Neighbourhood(Neighbourhood[str]):
         return self.get_neighbours_up_to_distance(index, 1, include_center)
 
     def get_neighbours_up_to_distance(
-        self, index: str, distance: int, include_center: Optional[bool] = None
+        self,
+        index: str,
+        distance: int,
+        include_center: Optional[bool] = None,
+        unchecked: bool = False,
     ) -> Set[str]:
         """
         Get the neighbours of an H3 region up to a certain distance.
@@ -68,7 +72,8 @@ class H3Neighbourhood(Neighbourhood[str]):
             index (str): H3 index of the region.
             distance (int): Distance to the neighbours.
             include_center (Optional[bool]): Whether to include the region itself in the neighbours.
-            If None, the value set in __init__ is used. Defaults to None.
+                If None, the value set in __init__ is used. Defaults to None.
+            unchecked (bool): Whether to check if the neighbours are in the available indices.
 
         Returns:
             Set[str]: Indexes of the neighbours up to the given distance.
@@ -80,6 +85,8 @@ class H3Neighbourhood(Neighbourhood[str]):
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=False, include_center_override=include_center
         )
+        if unchecked:
+            return neighbours
         return self._select_available(neighbours)
 
     def get_neighbours_at_distance(

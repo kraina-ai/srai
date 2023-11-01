@@ -14,10 +14,10 @@ import shapely.geometry as shpg
 from functional import seq
 from tqdm.auto import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
 from srai.loaders import Loader
-from srai.utils._optional import import_optional_dependencies
 
 from . import constants
 

@@ -1,7 +1,7 @@
 """Constants for hex2vec tests."""
 
 ENCODER_SIZES = [32, 16]
-TRAINER_KWARGS = {"max_epochs": 1}
+TRAINER_KWARGS = {"max_epochs": 1, "accelerator": "cpu", "deterministic": True}
 
 PREDEFINED_TEST_CASES = [
     {

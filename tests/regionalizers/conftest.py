@@ -1,4 +1,6 @@
-"""Conftest for Regionalizers."""
+"""Fixtures for Regionalizers."""
+
+from typing import List
 
 import geopandas as gpd
 import pytest
@@ -97,19 +99,23 @@ def gdf_multipolygon() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_earth_poles() -> gpd.GeoDataFrame:
+def earth_poles() -> List[geometry.Point]:
+    """Get 6 Earth poles."""
+    return [
+        geometry.Point(0, 0),
+        geometry.Point(90, 0),
+        geometry.Point(180, 0),
+        geometry.Point(-90, 0),
+        geometry.Point(0, 90),
+        geometry.Point(0, -90),
+    ]
+
+
+@pytest.fixture  # type: ignore
+def gdf_earth_poles(earth_poles) -> gpd.GeoDataFrame:
     """Get GeoDataFrame with 6 Earth poles."""
     return gpd.GeoDataFrame(
-        {
-            GEOMETRY_COLUMN: [
-                geometry.Point(0, 0),
-                geometry.Point(90, 0),
-                geometry.Point(180, 0),
-                geometry.Point(-90, 0),
-                geometry.Point(0, 90),
-                geometry.Point(0, -90),
-            ]
-        },
+        {GEOMETRY_COLUMN: earth_poles},
         index=[1, 2, 3, 4, 5, 6],
         crs=WGS84_CRS,
     )

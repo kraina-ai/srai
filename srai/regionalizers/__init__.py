@@ -9,6 +9,7 @@ based ones (e.g. administrative boundaries).
 
 from ._base import Regionalizer
 from .administrative_boundary_regionalizer import AdministrativeBoundaryRegionalizer
+from .geocode import geocode_to_region_gdf
 from .h3_regionalizer import H3Regionalizer
 from .s2_regionalizer import S2Regionalizer
 from .slippy_map_regionalizer import SlippyMapRegionalizer
@@ -21,4 +22,5 @@ __all__ = [
     "S2Regionalizer",
     "VoronoiRegionalizer",
     "SlippyMapRegionalizer",
+    "geocode_to_region_gdf",
 ]

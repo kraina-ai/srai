@@ -15,10 +15,9 @@ References:
 
 
 import geopandas as gpd
-import h3
-from h3ronpy.arrow.vector import cells_to_wkb_polygons, wkb_to_cells
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+from srai.h3 import h3_to_geoseries, shapely_geometry_to_h3
 from srai.regionalizers import Regionalizer
 
 
@@ -71,15 +70,18 @@ class H3Regionalizer(Regionalizer):
 
         gdf_exploded = self._explode_multipolygons(gdf_wgs84)
 
-        h3_indexes = wkb_to_cells(
-            gdf_exploded[GEOMETRY_COLUMN].to_wkb(),
-            resolution=self.resolution,
-            all_intersecting=self.buffer,
-            flatten=True,
-        ).unique()
+        h3_indexes = list(
+            set(
+                shapely_geometry_to_h3(
+                    gdf_exploded[GEOMETRY_COLUMN],
+                    h3_resolution=self.resolution,
+                    buffer=self.buffer,
+                )
+            )
+        )
         gdf_h3 = gpd.GeoDataFrame(
-            data={REGIONS_INDEX: [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]},
-            geometry=gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_indexes)),
+            data={REGIONS_INDEX: h3_indexes},
+            geometry=h3_to_geoseries(h3_indexes),
             crs=WGS84_CRS,
         ).set_index(REGIONS_INDEX)
 

@@ -21,6 +21,10 @@ The following optional dependencies can be installed to enable additional functi
 * `srai[plotting]` - dependencies to plot graphs and maps
 * `srai[torch]` - dependencies to use torch-based embedders
 
+## Tutorial
+
+For a full tutorial on `srai` and geospatial data in general visit the [srai-tutorial](https://github.com/kraina-ai/srai-tutorial) repository. It contains easy to follow jupyter notebooks concentrating on every part of the library. Additionally, there is [a recording](https://www.youtube.com/watch?v=JlyPh_AdQ8E) available from the EuroScipy 2023 conference covering that material.
+
 ## Usage
 
 Please see the [examples](../examples) directory for examples of how to use `srai`.

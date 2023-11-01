@@ -7,8 +7,8 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import box
 
+from srai._optional import ImportErrorHandle, import_optional_dependency
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.utils._optional import ImportErrorHandle, import_optional_dependency
 
 
 @pytest.fixture  # type: ignore
@@ -18,8 +18,10 @@ def optional_packages() -> List[str]:
         "osmium",
         "osmnx",
         "overpass",
+        "beautifulsoup4",
         "pymap3d",
         "haversine",
+        "scipy",
         "spherical_geometry",
         "gtfs_kit",
         "folium",
@@ -93,11 +95,17 @@ def _test_plotting() -> None:
 
 
 def _test_torch() -> None:
-    from srai.embedders import GTFS2VecEmbedder, Hex2VecEmbedder, Highway2VecEmbedder
+    from srai.embedders import (
+        GeoVexEmbedder,
+        GTFS2VecEmbedder,
+        Hex2VecEmbedder,
+        Highway2VecEmbedder,
+    )
 
     Highway2VecEmbedder()
     GTFS2VecEmbedder()
     Hex2VecEmbedder()
+    GeoVexEmbedder(["a"] * 256)
 
 
 def _test_osm() -> None:

@@ -1,13 +1,12 @@
 [project]
 name = "srai"
-version = "0.2.0"
+version = "0.5.2"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
-    { name = "SRAI Lab", email = "spatialrepresentationsforai@gmail.com" },
-    { name = "Piotr Gramacki" },
-    { name = "Kacper Leśniara" },
-    { name = "Kamil Raczycki" },
-    { name = "Szymon Woźniak" },
+    { name = "Piotr Gramacki", email = "pgramacki@kraina.ai" },
+    { name = "Kacper Leśniara", email = "klesniara@kraina.ai" },
+    { name = "Kamil Raczycki", email = "kraczycki@kraina.ai" },
+    { name = "Szymon Woźniak", email = "swozniak@kraina.ai" },
 ]
 # pdm add <library>
 dependencies = [
@@ -19,14 +18,13 @@ dependencies = [
     "geoparquet",
     "pyfunctional",
     "rtree",
-    "scipy",
     "pyarrow",
     "topojson",
     "tqdm",
     "s2",
     "typeguard",
     "requests",
-    "h3ronpy",
+    "h3ronpy>=0.18.0",
 ]
 requires-python = ">=3.8"
 readme = "README.md"
@@ -49,10 +47,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://srai-lab.github.io/srai"
-Repository = "https://github.com/srai-lab/srai"
-Documentation = "https://srai-lab.github.io/srai"
-Changelog = "https://github.com/srai-lab/srai/blob/main/CHANGELOG.md"
+Homepage = "https://kraina-ai.github.io/srai"
+Repository = "https://github.com/kraina-ai/srai"
+Documentation = "https://kraina-ai.github.io/srai"
+Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 # Make sure to edit test_optional_dependencies.py:
@@ -65,9 +63,10 @@ osm = [
     "osmnx",
     "overpass",
     "pillow",
+    "beautifulsoup4",
 ]
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d", "haversine", "spherical-geometry"]
+voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
@@ -185,7 +184,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.2.0"
+current_version = "0.5.2"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 commit = true

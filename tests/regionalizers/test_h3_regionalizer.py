@@ -7,6 +7,7 @@ import pytest
 
 from srai.constants import GEOMETRY_COLUMN
 from srai.regionalizers import H3Regionalizer
+from srai.regionalizers.geocode import geocode_to_region_gdf
 
 if TYPE_CHECKING:
     import geopandas as gpd
@@ -66,3 +67,13 @@ def test_transform(
 
         ut.assertCountEqual(first=gdf_h3.index.to_list(), second=h3_indexes)
         assert GEOMETRY_COLUMN in gdf_h3
+
+
+def test_wroclaw_edge_case() -> None:
+    """Test edge case from H3Neighbourhood example error."""
+    gdf_wro = geocode_to_region_gdf("Wrocław, PL")
+    regions_gdf = H3Regionalizer(8).transform(gdf_wro)
+
+    edge_region_id = "881e2050bdfffff"
+
+    assert edge_region_id in regions_gdf.index, "Edge cell is not in the regions."
