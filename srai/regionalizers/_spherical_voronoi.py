@@ -7,11 +7,12 @@ library.
 
 import hashlib
 import warnings
+from collections.abc import Hashable
 from contextlib import suppress
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Dict, Hashable, List, Optional, Set, Tuple, Union, cast
+from typing import Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np
@@ -35,14 +36,14 @@ from tqdm.contrib.concurrent import process_map
 
 from srai.constants import WGS84_CRS
 
-SPHERE_PARTS: List[SphericalPolygon] = []
-SPHERE_PARTS_BOUNDING_BOXES: List[Polygon] = []
+SPHERE_PARTS: list[SphericalPolygon] = []
+SPHERE_PARTS_BOUNDING_BOXES: list[Polygon] = []
 
 SCIPY_THRESHOLD = 1e-8
 
 
 VertexHash = bytes
-EdgeHash = Tuple[VertexHash, VertexHash]
+EdgeHash = tuple[VertexHash, VertexHash]
 
 
 def _generate_sphere_parts() -> None:
@@ -71,11 +72,11 @@ def _generate_sphere_parts() -> None:
 
 
 def generate_voronoi_regions(
-    seeds: Union[gpd.GeoDataFrame, List[Point]],
+    seeds: Union[gpd.GeoDataFrame, list[Point]],
     max_meters_between_points: int = 10_000,
     num_of_multiprocessing_workers: int = -1,
     multiprocessing_activation_threshold: Optional[int] = None,
-) -> List[MultiPolygon]:
+) -> list[MultiPolygon]:
     """
     Generate Thessien polygons for a given list of seeds.
 
@@ -174,10 +175,10 @@ def generate_voronoi_regions(
 
     # identify all edges
 
-    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]] = {}
-    hashed_edges: Set[EdgeHash] = set()
+    hashed_vertices: dict[VertexHash, npt.NDArray[np.float32]] = {}
+    hashed_edges: set[EdgeHash] = set()
 
-    regions_parts: Dict[int, List[Tuple[int, List[EdgeHash]]]] = {}
+    regions_parts: dict[int, list[tuple[int, list[EdgeHash]]]] = {}
 
     for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
         if region_id not in regions_parts:
@@ -219,7 +220,7 @@ def generate_voronoi_regions(
 
     # interpolate unique ones
 
-    interpolated_edges: Dict[EdgeHash, List[Tuple[float, float]]]
+    interpolated_edges: dict[EdgeHash, list[tuple[float, float]]]
 
     interpolate_polygon_edge_func = partial(
         _interpolate_polygon_edge,
@@ -250,14 +251,14 @@ def generate_voronoi_regions(
 
     # use interpolated edges to map spherical polygons into regions
 
-    generated_regions: List[MultiPolygon] = []
+    generated_regions: list[MultiPolygon] = []
     _generate_sphere_parts()
 
     for region_id in tqdm(region_ids, desc="Generating polygons"):
-        multi_polygon_parts: List[Polygon] = []
+        multi_polygon_parts: list[Polygon] = []
 
         for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
-            polygon_points: List[Tuple[float, float]] = []
+            polygon_points: list[tuple[float, float]] = []
 
             for edge_start, edge_end in region_polygon_edges:
                 if (edge_start, edge_end) in interpolated_edges:
@@ -320,11 +321,11 @@ def _parse_multiprocessing_activation_threshold(
     return multiprocessing_activation_threshold
 
 
-def _generate_seeds(gdf: gpd.GeoDataFrame) -> Tuple[List[Point], List[Hashable]]:
+def _generate_seeds(gdf: gpd.GeoDataFrame) -> tuple[list[Point], list[Hashable]]:
     """Transform GeoDataFrame into list of Points with index."""
     seeds_wgs84 = gdf.to_crs(crs=WGS84_CRS)
-    region_ids: List[Hashable] = []
-    seeds: List[Point] = []
+    region_ids: list[Hashable] = []
+    seeds: list[Point] = []
 
     for index, row in seeds_wgs84.iterrows():
         candidate_point = row.geometry.centroid
@@ -335,21 +336,21 @@ def _generate_seeds(gdf: gpd.GeoDataFrame) -> Tuple[List[Point], List[Hashable]]
     return seeds, region_ids
 
 
-def _get_duplicated_seeds_ids(seeds: List[Point], region_ids: List[Hashable]) -> List[Hashable]:
+def _get_duplicated_seeds_ids(seeds: list[Point], region_ids: list[Hashable]) -> list[Hashable]:
     """Return all seeds ids that overlap with another using quick sjoin operation."""
     gdf = gpd.GeoDataFrame(data={"geometry": seeds}, index=region_ids, crs=WGS84_CRS)
     duplicated_seeds = gdf.sjoin(gdf).index.value_counts().loc[lambda x: x > 1]
-    duplicated_seeds_ids: List[Hashable] = duplicated_seeds.index.to_list()
+    duplicated_seeds_ids: list[Hashable] = duplicated_seeds.index.to_list()
     return duplicated_seeds_ids
 
 
-def _check_if_in_bounds(seeds: List[Point]) -> bool:
+def _check_if_in_bounds(seeds: list[Point]) -> bool:
     """Check if all seeds are within bounds."""
     wgs84_earth_bbox = (box(minx=-180, miny=-90, maxx=180, maxy=90),)
     return all(point.covered_by(wgs84_earth_bbox) for point in seeds)
 
 
-def _map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, float, float]:
+def _map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> tuple[float, float, float]:
     """
     Wrapper for a geodetic2ecef function from pymap3d library.
 
@@ -368,7 +369,7 @@ def _map_to_geocentric(lon: float, lat: float, ell: Ellipsoid) -> Tuple[float, f
 def _generate_spherical_polygons_parts(
     region_id: int,
     sv: SphericalVoronoi,
-) -> List[Tuple[int, int, npt.NDArray[np.float32]]]:
+) -> list[tuple[int, int, npt.NDArray[np.float32]]]:
     """
     Generate spherical polygon intersections with sphere parts.
 
@@ -423,10 +424,10 @@ def _generate_spherical_polygons_parts(
 
 def _interpolate_polygon_edge(
     hashed_edge: EdgeHash,
-    hashed_vertices: Dict[VertexHash, npt.NDArray[np.float32]],
+    hashed_vertices: dict[VertexHash, npt.NDArray[np.float32]],
     ell: Ellipsoid,
     max_meters_between_points: int,
-) -> List[Tuple[float, float]]:
+) -> list[tuple[float, float]]:
     """
     Interpolates spherical polygon arc edge to the latitude and longitude.
 
@@ -463,11 +464,11 @@ def _interpolate_polygon_edge(
 
 
 def _interpolate_edge(
-    start_point: Tuple[float, float, float],
-    end_point: Tuple[float, float, float],
-    step_ticks: List[float],
+    start_point: tuple[float, float, float],
+    end_point: tuple[float, float, float],
+    step_ticks: list[float],
     ell: Ellipsoid,
-) -> List[Tuple[float, float]]:
+) -> list[tuple[float, float]]:
     """
     Generates latitude and longitude positions for an arc on the sphere.
 
@@ -496,11 +497,11 @@ def _interpolate_edge(
 
 
 def _fix_edge(
-    edge_points: List[Tuple[float, float]],
-    bbox_bounds: Tuple[float, float, float, float],
+    edge_points: list[tuple[float, float]],
+    bbox_bounds: tuple[float, float, float, float],
     prev_lon: Optional[float] = None,
     prev_lat: Optional[float] = None,
-) -> List[Tuple[float, float]]:
+) -> list[tuple[float, float]]:
     """
     Fixes points laying on the edge between sphere parts.
 
@@ -515,7 +516,7 @@ def _fix_edge(
     Returns:
         List[Tuple[float, float]]: Fixed edge points.
     """
-    fixed_edge_points: List[Tuple[float, float]] = []
+    fixed_edge_points: list[tuple[float, float]] = []
 
     if prev_lon is not None and prev_lat is not None:
         fixed_edge_points.append((prev_lon, prev_lat))
@@ -541,7 +542,7 @@ def _map_from_geocentric(
     y: npt.NDArray[np.float32],
     z: npt.NDArray[np.float32],
     ell: Ellipsoid,
-) -> Tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
+) -> tuple[npt.NDArray[np.float32], npt.NDArray[np.float32]]:
     """
     Wrapper for a ecef2geodetic function from pymap3d library.
 
@@ -708,8 +709,8 @@ def ecef2geodetic_vectorized(
 def _fix_lat_lon(
     lon: float,
     lat: float,
-    bbox: Tuple[float, float, float, float],
-) -> Tuple[float, float]:
+    bbox: tuple[float, float, float, float],
+) -> tuple[float, float]:
     """
     Fix point signs and rounding.
 

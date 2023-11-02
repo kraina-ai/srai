@@ -3,7 +3,7 @@ Count Embedder.
 
 This module contains count embedder implementation.
 """
-from typing import List, Optional, Set, Union, cast
+from typing import Optional, Union, cast
 
 import geopandas as gpd
 import pandas as pd
@@ -19,7 +19,7 @@ class CountEmbedder(Embedder):
     def __init__(
         self,
         expected_output_features: Optional[
-            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+            Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
         count_subcategories: bool = True,
     ) -> None:
@@ -100,7 +100,7 @@ class CountEmbedder(Embedder):
 
     def _parse_expected_output_features(
         self,
-        expected_output_features: Optional[Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]],
+        expected_output_features: Optional[Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]],
     ) -> None:
         expected_output_features_list = []
 
@@ -127,8 +127,8 @@ class CountEmbedder(Embedder):
 
     def _parse_osm_tags_filter_to_expected_features(
         self, osm_filter: OsmTagsFilter, delimiter: str = "_"
-    ) -> List[str]:
-        expected_output_features: Set[str] = set()
+    ) -> list[str]:
+        expected_output_features: set[str] = set()
 
         if not self.count_subcategories:
             expected_output_features.update(osm_filter.keys())
@@ -150,8 +150,8 @@ class CountEmbedder(Embedder):
 
     def _parse_grouped_osm_tags_filter_to_expected_features(
         self, grouped_osm_filter: GroupedOsmTagsFilter
-    ) -> List[str]:
-        expected_output_features: Set[str] = set()
+    ) -> list[str]:
+        expected_output_features: set[str] = set()
 
         if not self.count_subcategories:
             expected_output_features.update(grouped_osm_filter.keys())

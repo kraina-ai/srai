@@ -8,7 +8,8 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from typing import Iterator, List, Optional, Tuple, Union
+from collections.abc import Iterator
+from typing import Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -30,7 +31,7 @@ class ContextualCountEmbedder(CountEmbedder):
         neighbourhood_distance: int,
         concatenate_vectors: bool = False,
         expected_output_features: Optional[
-            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+            Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
         count_subcategories: bool = False,
     ) -> None:
@@ -171,7 +172,7 @@ class ContextualCountEmbedder(CountEmbedder):
 
     def _get_averaged_values_for_distances(
         self, counts_df: pd.DataFrame
-    ) -> Iterator[Tuple[int, npt.NDArray[np.float32]]]:
+    ) -> Iterator[tuple[int, npt.NDArray[np.float32]]]:
         """
         Generate averaged values for neighbours at given distances.
 

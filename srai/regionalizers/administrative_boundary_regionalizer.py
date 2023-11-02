@@ -7,7 +7,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import topojson as tp
@@ -194,10 +194,10 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
     def _generate_regions_from_all_geometries(
         self, gdf_wgs84: gpd.GeoDataFrame
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Query and optimize downloading data from Overpass."""
         elements_ids = set()
-        generated_regions: List[Dict[str, Any]] = []
+        generated_regions: list[dict[str, Any]] = []
         unary_geometry = GeometryCollection()
 
         all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
@@ -218,7 +218,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         return generated_regions
 
-    def _query_overpass(self, query: str) -> List[Dict[str, Any]]:
+    def _query_overpass(self, query: str) -> list[dict[str, Any]]:
         """
         Query Overpass and catch exceptions.
 
@@ -252,7 +252,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
                 else:
                     query_result = json.loads(query_file_path.read_text())
 
-                elements: List[Dict[str, Any]] = query_result["elements"]
+                elements: list[dict[str, Any]] = query_result["elements"]
                 return elements
             except (MultipleRequestsError, ServerLoadError):
                 time.sleep(60)
@@ -283,7 +283,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
             )
         return query
 
-    def _parse_overpass_element(self, element: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_overpass_element(self, element: dict[str, Any]) -> dict[str, Any]:
         """Parse single Overpass Element and return a region."""
         element_tags = element.get("tags", {})
         region_id = None

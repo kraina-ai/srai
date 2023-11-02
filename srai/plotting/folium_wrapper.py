@@ -5,7 +5,7 @@ This module contains functions for quick plotting of analysed gdfs using Geopand
 function.
 """
 from itertools import cycle, islice
-from typing import List, Optional, Set, Union
+from typing import Optional, Union
 
 import branca.colormap as cm
 import folium
@@ -27,7 +27,7 @@ def plot_regions(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
-    colormap: Union[str, List[str]] = px.colors.qualitative.Bold,
+    colormap: Union[str, list[str]] = px.colors.qualitative.Bold,
     map: Optional[folium.Map] = None,
     show_borders: bool = True,
 ) -> folium.Map:
@@ -72,7 +72,7 @@ def plot_numeric_data(
     tiles_style: str = "CartoDB positron",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
-    colormap: Union[str, List[str]] = px.colors.sequential.Sunsetdark,
+    colormap: Union[str, list[str]] = px.colors.sequential.Sunsetdark,
     map: Optional[folium.Map] = None,
     show_borders: bool = False,
     opacity: float = 0.8,
@@ -135,7 +135,7 @@ def plot_numeric_data(
 def plot_neighbours(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
-    neighbours_ids: Set[IndexType],
+    neighbours_ids: set[IndexType],
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
@@ -195,7 +195,7 @@ def plot_all_neighbourhood(
     tiles_style: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
-    colormap: Union[str, List[str]] = px.colors.sequential.Agsunset_r,
+    colormap: Union[str, list[str]] = px.colors.sequential.Agsunset_r,
     map: Optional[folium.Map] = None,
     show_borders: bool = True,
 ) -> folium.Map:
@@ -263,8 +263,8 @@ def plot_all_neighbourhood(
     )
 
 
-def _resample_plotly_colormap(colormap: List[str], steps: int) -> List[str]:
-    resampled_colormap: List[str] = px.colors.sample_colorscale(
+def _resample_plotly_colormap(colormap: list[str], steps: int) -> list[str]:
+    resampled_colormap: list[str] = px.colors.sample_colorscale(
         colormap, np.linspace(0, 1, num=steps)
     )
     return resampled_colormap
@@ -272,15 +272,15 @@ def _resample_plotly_colormap(colormap: List[str], steps: int) -> List[str]:
 
 def _generate_colormap(
     distance: int,
-    colormap: List[str],
+    colormap: list[str],
     selected_color: str = "rgb(242, 242, 242)",
     other_color: str = "rgb(153, 153, 153)",
-) -> List[str]:
+) -> list[str]:
     return [selected_color, *islice(cycle(colormap), None, distance - 1), other_color]
 
 
 def _generate_linear_colormap(
-    colormap: List[str], min_value: float, max_value: float
+    colormap: list[str], min_value: float, max_value: float
 ) -> cm.LinearColormap:
     values, _ = px.colors.convert_colors_to_same_type(colormap, colortype="tuple")
     return cm.LinearColormap(values, vmin=min_value, vmax=max_value)

@@ -10,7 +10,7 @@ References:
 """
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 import geopandas as gpd
 from functional import seq
@@ -95,7 +95,7 @@ class S2Regionalizer(Regionalizer):
 
         return cells_gdf
 
-    def _geojson_to_cells(self, geo_json: Dict[str, Any], res: int) -> Sequence:
+    def _geojson_to_cells(self, geo_json: dict[str, Any], res: int) -> Sequence:
         raw_cells = s2.polyfill(geo_json, res, with_id=True, geo_json_conformant=True)
         cells: Sequence = seq(raw_cells).map(lambda c: (c["id"], Polygon(c[GEOMETRY_COLUMN])))
 
