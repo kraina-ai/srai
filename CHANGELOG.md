@@ -206,7 +206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.5.2...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/srai-lab/srai/compare/0.5.2...0.6.0
 [0.5.2]: https://github.com/srai-lab/srai/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/srai-lab/srai/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/srai-lab/srai/compare/0.4.1...0.5.0
