@@ -55,13 +55,15 @@ class SlippyMapRegionalizer(Regionalizer):
         values = (
             seq(gdf_exploded[GEOMETRY_COLUMN])
             .map(self._to_cells)
-            .flat_map(lambda x: x)
+            .flatten()
             .map(
-                lambda item: {
-                    **item,
-                    REGIONS_INDEX: f"{item['x']}_{item['y']}_{self.zoom}",
-                    "z": self.zoom,
-                }
+                lambda item: (
+                    item
+                    | {
+                        REGIONS_INDEX: f"{item['x']}_{item['y']}_{self.zoom}",
+                        "z": self.zoom,
+                    }
+                )
             )
             .to_list()
         )
