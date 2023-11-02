@@ -7,7 +7,7 @@ References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
 from itertools import product
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import geopandas as gpd
 import numpy as np
@@ -55,13 +55,15 @@ class SlippyMapRegionalizer(Regionalizer):
         values = (
             seq(gdf_exploded[GEOMETRY_COLUMN])
             .map(self._to_cells)
-            .flat_map(lambda x: x)
+            .flatten()
             .map(
-                lambda item: {
-                    **item,
-                    REGIONS_INDEX: f"{item['x']}_{item['y']}_{self.zoom}",
-                    "z": self.zoom,
-                }
+                lambda item: (
+                    item
+                    | {
+                        REGIONS_INDEX: f"{item['x']}_{item['y']}_{self.zoom}",
+                        "z": self.zoom,
+                    }
+                )
             )
             .to_list()
         )
@@ -71,7 +73,7 @@ class SlippyMapRegionalizer(Regionalizer):
         )
         return gdf.drop_duplicates()
 
-    def _to_cells(self, polygon: shpg.Polygon) -> List[Dict[str, Any]]:
+    def _to_cells(self, polygon: shpg.Polygon) -> list[dict[str, Any]]:
         gdf_bounds = polygon.bounds
         x_start, y_start = self._coordinates_to_x_y(gdf_bounds[1], gdf_bounds[0])
         x_end, y_end = self._coordinates_to_x_y(gdf_bounds[3], gdf_bounds[2])
@@ -99,7 +101,7 @@ class SlippyMapRegionalizer(Regionalizer):
         intersects: bool = tile.intersects(area)
         return not intersects
 
-    def _coordinates_to_x_y(self, latitude: float, longitude: float) -> Tuple[int, int]:
+    def _coordinates_to_x_y(self, latitude: float, longitude: float) -> tuple[int, int]:
         """
         Convert latitude and longitude into x and y values using `self.zoom`.
 
@@ -111,7 +113,7 @@ class SlippyMapRegionalizer(Regionalizer):
         y_tile = int((1 - np.arcsinh(np.tan(lat_radian)) / np.pi) / 2 * n_rows)
         return x_tile, y_tile
 
-    def _x_y_to_coordinates(self, x: int, y: int) -> Tuple[float, float]:
+    def _x_y_to_coordinates(self, x: int, y: int) -> tuple[float, float]:
         """
         Convert x and y values into latitude and longitude using `self.zoom`.
 

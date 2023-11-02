@@ -3,7 +3,7 @@ H3 neighbourhood.
 
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
-from typing import Optional, Set
+from typing import Optional
 
 import geopandas as gpd
 import h3
@@ -40,11 +40,11 @@ class H3Neighbourhood(Neighbourhood[str]):
             unless overridden in the function call.
         """
         super().__init__(include_center)
-        self._available_indices: Optional[Set[str]] = None
+        self._available_indices: Optional[set[str]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 
-    def get_neighbours(self, index: str, include_center: Optional[bool] = None) -> Set[str]:
+    def get_neighbours(self, index: str, include_center: Optional[bool] = None) -> set[str]:
         """
         Get the direct neighbours of an H3 region using its index.
 
@@ -64,7 +64,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         distance: int,
         include_center: Optional[bool] = None,
         unchecked: bool = False,
-    ) -> Set[str]:
+    ) -> set[str]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
@@ -81,7 +81,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: Set[str] = h3.grid_disk(index, distance)
+        neighbours: set[str] = h3.grid_disk(index, distance)
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=False, include_center_override=include_center
         )
@@ -91,7 +91,7 @@ class H3Neighbourhood(Neighbourhood[str]):
 
     def get_neighbours_at_distance(
         self, index: str, distance: int, include_center: Optional[bool] = None
-    ) -> Set[str]:
+    ) -> set[str]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
@@ -107,13 +107,13 @@ class H3Neighbourhood(Neighbourhood[str]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: Set[str] = h3.grid_ring(index, distance)
+        neighbours: set[str] = h3.grid_ring(index, distance)
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=True, include_center_override=include_center
         )
         return self._select_available(neighbours)
 
-    def _select_available(self, indices: Set[str]) -> Set[str]:
+    def _select_available(self, indices: set[str]) -> set[str]:
         if self._available_indices is None:
             return indices
         return indices.intersection(self._available_indices)

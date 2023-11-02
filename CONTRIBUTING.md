@@ -12,7 +12,7 @@ To make changes to srai's code base, you need to fork and then clone the GitHub 
 
 For first setup of the project locally, the following commands have to be executed.
 
-0. Make sure you have installed at least version **3.8+** of Python.
+0. Make sure you have installed at least version **3.9+** of Python.
 
 1. Install [PDM](https://pdm.fming.dev/latest) (only if not already installed)
 
@@ -24,7 +24,7 @@ For first setup of the project locally, the following commands have to be execut
 
     ```sh
     # Optional if you want to create venv in a specific version. More info: https://pdm.fming.dev/latest/usage/venv/#create-a-virtualenv-yourself
-    pdm venv create 3.8 # or any higher version of Python
+    pdm venv create 3.9 # or any higher version of Python
 
     pdm install -G:all
     ```
@@ -52,7 +52,7 @@ For testing, [tox](https://tox.wiki/en/latest/) is used to allow testing on mult
 To test code locally before committing, run:
 
 ```sh
-tox -e python3.8 # put your python version here
+tox -e python3.9 # put your python version here
 ```
 
 <!-- ### Pre-commit hooks
@@ -82,7 +82,7 @@ Docstrings should be written following the [google convention](https://gist.gith
 
 ### Python conventions
 
-All Python code must be written **compatible with Python 3.8+**.
+All Python code must be written **compatible with Python 3.9+**.
 
 <!-- ## Adding tests -->
 

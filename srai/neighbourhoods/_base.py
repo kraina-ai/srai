@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from queue import Queue
-from typing import Dict, Generic, Optional, Set, Tuple, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from functional import seq
 
@@ -39,7 +39,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
     @abstractmethod
     def get_neighbours(
         self, index: IndexType, include_center: Optional[bool] = None
-    ) -> Set[IndexType]:
+    ) -> set[IndexType]:
         """
         Get the direct neighbours of a region using its index.
 
@@ -55,7 +55,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
     def get_neighbours_up_to_distance(
         self, index: IndexType, distance: int, include_center: Optional[bool] = None
-    ) -> Set[IndexType]:
+    ) -> set[IndexType]:
         """
         Get the neighbours of a region up to a certain distance.
 
@@ -70,7 +70,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
-        neighbours: Set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
+        neighbours: set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=False, include_center_override=include_center
         )
@@ -78,7 +78,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
     def get_neighbours_at_distance(
         self, index: IndexType, distance: int, include_center: Optional[bool] = None
-    ) -> Set[IndexType]:
+    ) -> set[IndexType]:
         """
         Get the neighbours of a region at a certain distance.
 
@@ -93,7 +93,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours_up_to_distance = self._get_neighbours_with_distances(index, distance)
-        neighbours_at_distance: Set[IndexType] = (
+        neighbours_at_distance: set[IndexType] = (
             seq(neighbours_up_to_distance)
             .filter(lambda x: x[1] == distance)
             .map(lambda x: x[0])
@@ -110,9 +110,9 @@ class Neighbourhood(ABC, Generic[IndexType]):
 
     def _get_neighbours_with_distances(
         self, index: IndexType, distance: int
-    ) -> Set[Tuple[IndexType, int]]:
-        visited_indexes: Dict[IndexType, int] = {}
-        to_visit: Queue[Tuple[IndexType, int]] = Queue()
+    ) -> set[tuple[IndexType, int]]:
+        visited_indexes: dict[IndexType, int] = {}
+        to_visit: Queue[tuple[IndexType, int]] = Queue()
 
         to_visit.put((index, 0))
         while not to_visit.empty():
@@ -133,10 +133,10 @@ class Neighbourhood(ABC, Generic[IndexType]):
         self,
         index: IndexType,
         distance: int,
-        neighbours: Set[IndexType],
+        neighbours: set[IndexType],
         at_distance: bool,
         include_center_override: Optional[bool],
-    ) -> Set[IndexType]:
+    ) -> set[IndexType]:
         if include_center_override is None:
             include_center = self.include_center
         else:

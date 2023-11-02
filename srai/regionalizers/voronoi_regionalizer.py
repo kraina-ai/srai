@@ -4,7 +4,8 @@ Voronoi Regionalizer.
 This module contains voronoi regionalizer implementation.
 """
 
-from typing import Hashable, List, Optional, Union
+from collections.abc import Hashable
+from typing import Optional, Union
 
 import geopandas as gpd
 from shapely.geometry import Point, box
@@ -30,7 +31,7 @@ class VoronoiRegionalizer(Regionalizer):
 
     def __init__(
         self,
-        seeds: Union[gpd.GeoDataFrame, List[Point]],
+        seeds: Union[gpd.GeoDataFrame, list[Point]],
         max_meters_between_points: int = 10_000,
         num_of_multiprocessing_workers: int = -1,
         multiprocessing_activation_threshold: Optional[int] = None,
@@ -65,8 +66,8 @@ class VoronoiRegionalizer(Regionalizer):
             dependency_group="voronoi",
             modules=["haversine", "pymap3d", "scipy", "spherical_geometry"],
         )
-        self.region_ids: List[Hashable] = []
-        self.seeds: List[Point] = []
+        self.region_ids: list[Hashable] = []
+        self.seeds: list[Point] = []
 
         if isinstance(seeds, gpd.GeoDataFrame):
             self._parse_geodataframe_seeds(seeds_gdf=seeds)
@@ -135,11 +136,11 @@ class VoronoiRegionalizer(Regionalizer):
                 self.region_ids.append(index)
                 self.seeds.append(candidate_point)
 
-    def _get_duplicated_seeds_ids(self) -> List[Hashable]:
+    def _get_duplicated_seeds_ids(self) -> list[Hashable]:
         """Return all seeds ids that overlap with another using quick sjoin operation."""
         gdf = gpd.GeoDataFrame(
             data={GEOMETRY_COLUMN: self.seeds}, index=self.region_ids, crs=WGS84_CRS
         )
         duplicated_seeds = gdf.sjoin(gdf).index.value_counts().loc[lambda x: x > 1]
-        duplicated_seeds_ids: List[Hashable] = duplicated_seeds.index.to_list()
+        duplicated_seeds_ids: list[Hashable] = duplicated_seeds.index.to_list()
         return duplicated_seeds_ids

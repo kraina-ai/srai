@@ -5,7 +5,7 @@ This module contains geoparquet loader implementation.
 """
 
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import geopandas as gpd
 
@@ -28,7 +28,7 @@ class GeoparquetLoader(Loader):
         self,
         file_path: Union[Path, str],
         index_column: Optional[str] = None,
-        columns: Optional[List[str]] = None,
+        columns: Optional[list[str]] = None,
         area: Optional[gpd.GeoDataFrame] = None,
     ) -> gpd.GeoDataFrame:
         """

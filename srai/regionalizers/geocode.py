@@ -1,5 +1,5 @@
 """Utility function for geocoding a name to `regions_gdf`."""
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import geopandas as gpd
 
@@ -8,7 +8,7 @@ from srai.constants import REGIONS_INDEX
 
 
 def geocode_to_region_gdf(
-    query: Union[str, List[str], Dict[str, Any]], by_osmid: bool = False
+    query: Union[str, list[str], dict[str, Any]], by_osmid: bool = False
 ) -> gpd.GeoDataFrame:
     """
     Geocode a query to the `regions_gdf` unified format.

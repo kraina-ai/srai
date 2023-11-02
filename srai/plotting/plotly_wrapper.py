@@ -3,7 +3,7 @@ Plotly wrapper.
 
 This module contains functions for quick plotting of analysed gdfs using Plotly library.
 """
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import geopandas as gpd
 import numpy as np
@@ -76,7 +76,7 @@ def plot_regions(
 def plot_neighbours(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
-    neighbours_ids: Set[IndexType],
+    neighbours_ids: set[IndexType],
     return_plot: bool = False,
     mapbox_style: str = "open-street-map",
     mapbox_accesstoken: Optional[str] = None,
@@ -222,7 +222,7 @@ def plot_all_neighbourhood(
 def _plot_regions(
     regions_gdf: gpd.GeoDataFrame,
     hover_column_name: str,
-    hover_data: List[str],
+    hover_data: list[str],
     color_feature_column: Optional[str] = None,
     show_legend: bool = False,
     return_plot: bool = False,
@@ -233,8 +233,8 @@ def _plot_regions(
     zoom: Optional[float] = None,
     height: Optional[float] = None,
     width: Optional[float] = None,
-    layout_kwargs: Optional[Dict[str, Any]] = None,
-    traces_kwargs: Optional[Dict[str, Any]] = None,
+    layout_kwargs: Optional[dict[str, Any]] = None,
+    traces_kwargs: Optional[dict[str, Any]] = None,
     **choropleth_mapbox_kwargs: Any,
 ) -> Optional[go.Figure]:
     """

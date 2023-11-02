@@ -4,7 +4,8 @@ Adjacency neighbourhood.
 This module contains the AdjacencyNeighbourhood class, that allows to get the neighbours of any
 region based on its borders.
 """
-from typing import Dict, Hashable, Optional, Set
+from collections.abc import Hashable
+from typing import Optional
 
 import geopandas as gpd
 
@@ -40,7 +41,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         if GEOMETRY_COLUMN not in regions_gdf.columns:
             raise ValueError("Regions must have a geometry column.")
         self.regions_gdf = regions_gdf
-        self.lookup: Dict[Hashable, Set[Hashable]] = {}
+        self.lookup: dict[Hashable, set[Hashable]] = {}
 
     def generate_neighbourhoods(self) -> None:
         """Generate the lookup table for all regions."""
@@ -50,7 +51,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
 
     def get_neighbours(
         self, index: Hashable, include_center: Optional[bool] = None
-    ) -> Set[Hashable]:
+    ) -> set[Hashable]:
         """
         Get the direct neighbours of any region using its index.
 
@@ -74,7 +75,7 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         )
         return neighbours
 
-    def _get_adjacent_neighbours(self, index: Hashable) -> Set[Hashable]:
+    def _get_adjacent_neighbours(self, index: Hashable) -> set[Hashable]:
         """
         Get the direct neighbours of a region using `touches` [1] operator from the Shapely library.
 
