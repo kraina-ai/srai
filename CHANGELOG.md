@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.6.0] - 2023-11-02
+
+### Changed
+
+- update code to use Python 3.9 syntax.
+
+### Removed
+
+- Support for Python 3.8.
+
 ## [0.5.2] - 2023-10-29
 
 ### Added
