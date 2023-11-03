@@ -96,7 +96,7 @@ jobs:
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish latest documentation
-        run: mike deploy --remote origin-srai-docs --ignore --push --update-aliases ${{github.ref_name}} latest
+        run: mike deploy --remote origin-srai-docs --rebase --push --update-aliases ${{github.ref_name}} latest
 
   deploy-docs:
     name: Deploy documentation 📄 to Github Pages 🌐
