@@ -5,12 +5,12 @@ This module contains a clipper capable of clipping a PBF file to a smaller size 
 osmosis CLI tools.
 """
 import os
+import platform
 import shutil
 import stat
 import tempfile
 import zipfile
 from pathlib import Path
-from sys import platform
 from typing import Sequence, Union
 
 import numpy as np
@@ -31,8 +31,8 @@ class PbfFileClipper:
     Class will automatically download those CLI tools and execute them from Python code.
 
     This clipper uses two tools to clip a PBF file for a given region:
-     - Osmconvert [2] - used on Linux systems
-     - Osmosis [3] - used on OS X and Windows systems
+     - Osmconvert [2] - used on Linux and Windows systems
+     - Osmosis [3] - used on OS X systems (requires Java preinstalled on the machine)
 
     References:
         1. https://wiki.openstreetmap.org/wiki/PBF_Format
@@ -49,10 +49,14 @@ class PbfFileClipper:
                 the parsed `*.osm.pbf` files. Defaults to "files".
         """
         self.working_directory = Path(working_directory)
+        self.platform = platform.system()
 
         # Tools for clipping OSM files into smaller regions
         # osmconvert is faster, but works on Linux
         self.OSMCONVERT_PATH = (self.working_directory / "osmconvert_tool/osmconvert").as_posix()
+        self.OSMCONVERT_EXE_PATH = (
+            self.working_directory / "osmconvert_tool/osmconvert.exe"
+        ).as_posix()
         # osmosis is slower, but also works on Mac OS
         self.OSMOSIS_DIRECTORY_PATH = (self.working_directory / "osmosis_tool").as_posix()
         self.OSMOSIS_EXECUTABLE_PATH = (
@@ -95,12 +99,12 @@ class PbfFileClipper:
             # create poly file
             self._generate_poly_file(geometry, poly_path)
 
-            if platform in ("linux", "linux2"):
+            if self.platform in ("Linux", "Windows"):
                 download_function = self._download_osmconvert_tool
                 tmp_file_extension = "o5m"
                 clip_function = self._clip_pbf_with_osmconvert
                 merge_function = self._merge_pbfs_with_osmconvert
-            elif platform in ("darwin", "win32"):
+            elif self.platform == "Darwin":
                 download_function = self._download_osmosis_tool
                 tmp_file_extension = "osm.pbf"
                 clip_function = self._clip_pbf_with_osmosis
@@ -187,10 +191,18 @@ class PbfFileClipper:
         f.close()
 
     def _download_osmconvert_tool(self) -> None:
-        file_path = Path(self.OSMCONVERT_PATH)
+        file_path = (
+            Path(self.OSMCONVERT_PATH)
+            if self.platform == "Linux"
+            else Path(self.OSMCONVERT_EXE_PATH)
+        )
         if not file_path.exists():
-            tool_url = "http://m.m.i24.cc/osmconvert64"
-            download_file(tool_url, self.OSMCONVERT_PATH)
+            tool_url = (
+                "http://m.m.i24.cc/osmconvert64"
+                if self.platform == "Linux"
+                else "http://m.m.i24.cc/osmconvert64.exe"
+            )
+            download_file(tool_url, str(file_path))
 
             # make it executable
             file_path.chmod(file_path.stat().st_mode | stat.S_IEXEC)
@@ -219,7 +231,7 @@ class PbfFileClipper:
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
         os.system(
             "{}  {} -B={} --complete-ways --complete-multipolygons -t={} -o={}".format(
-                self.OSMCONVERT_PATH,
+                self.OSMCONVERT_PATH if self.platform == "Linux" else self.OSMCONVERT_EXE_PATH,
                 source_pbf_path,
                 poly_file_path,
                 Path(output_pbf_path).parent.as_posix(),
@@ -243,7 +255,10 @@ class PbfFileClipper:
     def _merge_pbfs_with_osmconvert(self, pbf_paths: Sequence[str], output_pbf_path: str) -> None:
         Path(output_pbf_path).parent.mkdir(parents=True, exist_ok=True)
         joined_files = " ".join(pbf_paths)
-        command = f"{self.OSMCONVERT_PATH} {joined_files} -o={output_pbf_path}"
+        osmconvert_path = (
+            self.OSMCONVERT_PATH if self.platform == "Linux" else self.OSMCONVERT_EXE_PATH
+        )
+        command = f"{osmconvert_path} {joined_files} -o={output_pbf_path}"
         os.system(command)
 
     # osmosis --rb file1.pbf --rb file2.pbf --rb file3.pbf --merge --merge --wb merged.pbf
