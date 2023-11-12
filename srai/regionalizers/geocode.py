@@ -1,4 +1,5 @@
 """Utility function for geocoding a name to `regions_gdf`."""
+
 from typing import Any, Union
 
 import geopandas as gpd
@@ -27,6 +28,30 @@ def geocode_to_region_gdf(
 
     References:
         1. https://osmnx.readthedocs.io/en/stable/osmnx.html#osmnx.geocoder.geocode_to_gdf
+
+    Examples:
+        Download geometry for a city
+        >>> from srai.regionalizers import geocode_to_region_gdf
+        >>> geocode_to_region_gdf("Wrocław, PL")
+                                                          geometry
+        region_id
+        Wrocław, Lower Silesian Voivodeship, Poland  POLYGON ((...
+
+        Download geometries for multiple cities
+
+        >>> geocode_to_region_gdf(["New York City", "Washington, DC"])
+                                                                    geometry
+        region_id
+        New York, United States                          MULTIPOLYGON (((...
+        Washington, District of Columbia, United States  POLYGON ((...
+
+        Use OSM relation IDs to get geometries.
+
+        >>> geocode_to_region_gdf(["R175342", "R5750005"], by_osmid=True)
+                                                                 geometry
+        region_id
+        Greater London, England, United Kingdom             POLYGON ((...
+        Sydney, Council of the City of Sydney, New Sout...  POLYGON ((...
     """
     import_optional_dependencies(
         dependency_group="osm",

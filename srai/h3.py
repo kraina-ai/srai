@@ -18,6 +18,9 @@ __all__ = [
     "h3_to_geoseries",
     "h3_to_shapely_geometry",
     "get_local_ij_index",
+    "ring_buffer_h3_indexes",
+    "ring_buffer_geometry",
+    "ring_buffer_h3_regions_gdf",
 ]
 
 

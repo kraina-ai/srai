@@ -1,0 +1,140 @@
+{{ log.debug("Rendering " + class.path) }}
+
+<div class="doc doc-object doc-class">
+{% with obj = class, html_id = class.path %}
+
+  {% if root %}
+    {% set show_full_path = config.show_root_full_path %}
+    {% set root_members = True %}
+  {% elif root_members %}
+    {% set show_full_path = config.show_root_members_full_path or config.show_object_full_path %}
+    {% set root_members = False %}
+  {% else %}
+    {% set show_full_path = config.show_object_full_path %}
+  {% endif %}
+
+  {% set class_name = class.path if show_full_path else class.name %}
+
+  {% set heading_classes = "doc doc-heading" if config.separate_signature else "doc doc-heading-code" %}
+
+  {% if not root or config.show_root_heading %}
+
+    {% filter heading(heading_level,
+        role="class",
+        id=html_id,
+        class=heading_classes,
+        toc_label=class.name) %}
+
+      {% block heading scoped %}
+        {% if config.separate_signature %}
+          <span class="doc doc-object-name doc-class-name">{{ class_name }}</span>
+        {% elif config.merge_init_into_class and "__init__" in class.all_members %}
+          {% with function = class.all_members["__init__"] %}
+            {%+ filter format_signature(function, config.line_length, crossrefs=config.signature_crossrefs) %}
+              {{ class_name }}
+            {% endfilter %}
+          {% endwith %}
+        {% else %}
+          {{ class_name|highlight(language="python", linenums=False) }}
+        {% endif %}
+      {% endblock heading %}
+
+      {% block labels scoped %}
+        {% with labels = class.labels %}
+          {% include "labels.html" with context %}
+        {% endwith %}
+      {% endblock labels %}
+
+    {% endfilter %}
+
+    {% block signature scoped %}
+      {% if config.separate_signature and config.merge_init_into_class %}
+        {% if "__init__" in class.all_members %}
+          {% with function = class.all_members["__init__"] %}
+            {% filter format_signature(function, config.line_length, crossrefs=config.signature_crossrefs) %}
+              {{ class.name }}
+            {% endfilter %}
+          {% endwith %}
+        {% endif %}
+      {% endif %}
+    {% endblock signature %}
+
+  {% else %}
+    {% if config.show_root_toc_entry %}
+      {% filter heading(heading_level,
+          role="class",
+          id=html_id,
+          toc_label=class.name,
+          hidden=True) %}
+      {% endfilter %}
+    {% endif %}
+    {% set heading_level = heading_level - 1 %}
+  {% endif %}
+
+  <div class="doc doc-contents {% if root %}first{% endif %}">
+    {% block contents scoped %}
+      {% block bases scoped %}
+        {% if config.show_bases and class.bases %}
+          <p class="doc doc-class-bases">
+            Bases: {% for expression in class.bases -%}
+              <code>{% include "expression.html" with context %}</code>{% if not loop.last %}, {% endif %}
+            {% endfor -%}
+          </p>
+        {% endif %}
+      {% endblock bases %}
+
+      {% block docstring scoped %}
+        {% with docstring_sections = class.docstring.parsed %}
+          {% include "docstring.html" with context %}
+        {% endwith %}
+        {% if config.merge_init_into_class %}
+          {% if "__init__" in class.all_members and class.all_members["__init__"].has_docstring %}
+            {% with docstring_sections = class.all_members["__init__"].docstring.parsed %}
+              {% include "docstring.html" with context %}
+            {% endwith %}
+          {% endif %}
+        {% endif %}
+      {% endblock docstring %}
+
+      {% block source scoped %}
+        {% if config.show_source %}
+          {% if config.merge_init_into_class %}
+            {% if "__init__" in class.all_members and class.all_members["__init__"].source %}
+              {% with init = class.all_members["__init__"] %}
+                <details class="quote">
+                  <summary>Source code in <code>
+                    {%- if init.relative_filepath.is_absolute() -%}
+                      {{ init.relative_package_filepath }}
+                    {%- else -%}
+                      {{ init.relative_filepath }}
+                    {%- endif -%}
+                  </code></summary>
+                  {{ init.source|highlight(language="python", linestart=init.lineno, linenums=True) }}
+                </details>
+              {% endwith %}
+            {% endif %}
+          {% elif class.source %}
+            <details class="quote">
+              <summary>Source code in <code>
+                {%- if class.relative_filepath.is_absolute() -%}
+                  {{ class.relative_package_filepath }}
+                {%- else -%}
+                  {{ class.relative_filepath }}
+                {%- endif -%}
+              </code></summary>
+              {{ class.source|highlight(language="python", linestart=class.lineno, linenums=True) }}
+            </details>
+          {% endif %}
+        {% endif %}
+      {% endblock source %}
+
+      {% block children scoped %}
+        {% set root = False %}
+        {% set heading_level = heading_level + 1 %}
+        {% include "children.html" with context %}
+      {% endblock children %}
+    {% endblock contents %}
+  </div>
+
+{% endwith %}
+</div>

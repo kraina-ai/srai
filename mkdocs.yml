@@ -89,12 +89,13 @@ extra:
     provider: mike
 
 extra_css:
+  - assets/css/docstrings.css
   - assets/css/font.css
   - assets/css/palette.css
   - assets/css/jupyter.css
 
 copyright: >
-  Copyright &copy; 2022 - {current_year} Kraina AI –
+  Copyright &copy; 2022 - 2023 Kraina AI –
   <a href="#__consent">Change cookie settings</a>
 
 plugins:
@@ -108,6 +109,7 @@ plugins:
         - docs/gen_ref_pages.py
   - search
   - mkdocstrings:
+      custom_templates: docs/templates
       handlers:
         python:
           paths: [srai]
@@ -116,8 +118,15 @@ plugins:
             show_root_heading: false
             show_root_toc_entry: false
             docstring_section_style: "spacy"
-            separate_signature: true
-            show_signature_annotations: true
+            show_signature_annotations: false
+            members_order: "source"
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            inherited_members: true
+            show_root_full_path: true
+            show_root_members_full_path: false
+            show_object_full_path: false
   - mkdocs-jupyter:
       include: ["*.ipynb"]
       ignore_h1_titles: true
