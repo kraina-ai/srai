@@ -19,11 +19,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.6.1] - 2023-11-12
+
+### Added
+
+- Start writing examples in docstrings.
+
+### Changed
+
+- Change documentation rendering style.
+
+### Fixed
+
+- Expose functions in `h3` module.
+
 ## [0.6.0] - 2023-11-02
 
 ### Changed
 
-- update code to use Python 3.9 syntax.
+- Update code to use Python 3.9 syntax.
 
 ### Removed
 
@@ -206,7 +220,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.6.0...HEAD
+[unreleased]: https://github.com/srai-lab/srai/compare/0.6.1...HEAD
+[0.6.1]: https://github.com/srai-lab/srai/compare/0.6.0...0.6.1
 [0.6.0]: https://github.com/srai-lab/srai/compare/0.5.2...0.6.0
 [0.5.2]: https://github.com/srai-lab/srai/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/srai-lab/srai/compare/0.5.0...0.5.1
