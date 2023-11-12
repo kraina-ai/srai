@@ -1,0 +1,94 @@
+{{ log.debug("Rendering " + function.path) }}
+
+{% import "language.html" as lang with context %}
+
+<div class="doc doc-object doc-function">
+{% with obj = function, html_id = function.path %}
+
+  {% if root %}
+    {% set show_full_path = config.show_root_full_path %}
+    {% set root_members = True %}
+  {% elif root_members %}
+    {% set show_full_path = config.show_root_members_full_path or config.show_object_full_path %}
+    {% set root_members = False %}
+  {% else %}
+    {% set show_full_path = config.show_object_full_path %}
+  {% endif %}
+
+  {% set function_name = function.path if show_full_path else function.name %}
+
+  {% set heading_classes = "doc doc-heading" if config.separate_signature else "doc doc-heading-code" %}
+
+  {% if not root or config.show_root_heading %}
+
+    {% filter heading(heading_level,
+        role="function",
+        id=html_id,
+        class=heading_classes,
+        toc_label=function.name ~ "()") %}
+
+      {% block heading scoped %}
+        {% if config.separate_signature %}
+          <span class="doc doc-object-name doc-function-name">{{ function_name }}</span>
+        {% else %}
+          {%+ filter format_signature(function, config.line_length, crossrefs=config.signature_crossrefs) %}
+            {{ function_name }}
+          {% endfilter %}
+        {% endif %}
+      {% endblock heading %}
+
+      {% block labels scoped %}
+        {% with labels = function.labels %}
+          {% include "labels.html" with context %}
+        {% endwith %}
+      {% endblock labels %}
+
+    {% endfilter %}
+
+    {% block signature scoped %}
+      {% if config.separate_signature %}
+        {% filter format_signature(function, config.line_length, crossrefs=config.signature_crossrefs) %}
+          {{ function.name }}
+        {% endfilter %}
+      {% endif %}
+    {% endblock signature %}
+
+  {% else %}
+    {% if config.show_root_toc_entry %}
+      {% filter heading(heading_level,
+          role="function",
+          id=html_id,
+          toc_label=function.name,
+          hidden=True) %}
+      {% endfilter %}
+    {% endif %}
+    {% set heading_level = heading_level - 1 %}
+  {% endif %}
+
+  <div class="doc doc-contents {% if root %}first{% endif %}">
+    {% block contents scoped %}
+      {% block docstring scoped %}
+        {% with docstring_sections = function.docstring.parsed %}
+          {% include "docstring.html" with context %}
+        {% endwith %}
+      {% endblock docstring %}
+
+      {% block source scoped %}
+        {% if config.show_source and function.source %}
+          <details class="quote">
+            <summary>{{ lang.t("Source code in") }} <code>
+              {%- if function.relative_filepath.is_absolute() -%}
+                {{ function.relative_package_filepath }}
+              {%- else -%}
+                {{ function.relative_filepath }}
+              {%- endif -%}
+            </code></summary>
+            {{ function.source|highlight(language="python", linestart=function.lineno, linenums=True) }}
+          </details>
+        {% endif %}
+      {% endblock source %}
+    {% endblock contents %}
+  </div>
+
+{% endwith %}
+</div>

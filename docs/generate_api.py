@@ -1,4 +1,5 @@
 """Utility function for automatic api documentation generation."""
+
 import ast
 from pathlib import Path
 from typing import Any, List, Tuple, cast
@@ -44,7 +45,9 @@ def write_file(file_path: Path) -> None:
             identifier = ".".join(parts)
             print(f"[Class] Adding {identifier} to API")
             with mkdocs_gen_files.open(dst_path.with_suffix(".md"), "w") as dst:
-                dst.write(f"::: {identifier}")
+                dst.write(f"::: {identifier}\n")
+                dst.write("    options:\n")
+                dst.write("      show_root_heading: true\n")
 
             nav[parts[1:]] = Path(*dst_path.parts[1:]).as_posix()
             module_nav[imported_class] = Path(*dst_path.parts[2:]).as_posix()
@@ -70,8 +73,10 @@ def write_file(file_path: Path) -> None:
                 parts = [*list(operational_path.parts)[:-1], imported_function]
                 identifier = ".".join(parts)
                 print(f"[Function] Adding {identifier} to API")
-                dst.write(f"### `{imported_function}`\n")
                 dst.write(f"::: {identifier}\n")
+                dst.write("    options:\n")
+                dst.write("      show_root_heading: true\n")
+                dst.write("      show_root_toc_entry: false\n")
 
                 nav[parts[1:]] = Path(*dst_path.parts[1:], f"#{imported_function}").as_posix()
 
