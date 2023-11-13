@@ -1,22 +1,26 @@
-.doc-heading-code {
+.doc-class > .doc-heading-code,
+.doc-function > .doc-heading-code {
   font-size: 1rem !important;
   margin-top: -1em !important;
   display: flex;
 }
 
-.doc-heading-code .highlight {
+.doc-class > .doc-heading-code .highlight,
+.doc-function > .doc-heading-code .highlight {
   flex-grow: 1;
 }
 
-.doc-heading-code a {
+.doc-class > .doc-heading-code a,
+.doc-function > .doc-heading-code a {
   margin-top: auto;
   margin-bottom: auto;
 }
 
-.doc-labels {
+.doc-class > .doc-labels,
+.doc-function > .doc-labels {
   margin-top: -1.2rem;
   display: block;
-  font-size: 1.2em
+  font-size: 1.2em;
 }
 
 /* Indentation. */
