@@ -7,9 +7,9 @@ bump:
 	bumpver update --patch
 
 docs:
-	mkdocs serve --livereload
+	mkdocs serve --livereload -w srai
 
 test:
 	pytest -n auto
 
-.PHONY: docs
+.PHONY: install bump docs test
