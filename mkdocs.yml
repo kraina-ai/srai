@@ -118,7 +118,9 @@ plugins:
             show_root_heading: false
             show_root_toc_entry: false
             docstring_section_style: "spacy"
+            show_signature: true
             show_signature_annotations: false
+            line_length: 60
             members_order: "source"
             docstring_options:
               ignore_init_summary: true
@@ -139,6 +141,8 @@ plugins:
 markdown_extensions:
   - attr_list
   - md_in_html
+  - toc:
+      permalink: true
   - pymdownx.magiclink
   - pymdownx.highlight:
       anchor_linenums: true

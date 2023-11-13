@@ -1,5 +1,22 @@
 .doc-heading-code {
   font-size: 1rem !important;
+  margin-top: -1em !important;
+  display: flex;
+}
+
+.doc-heading-code .highlight {
+  flex-grow: 1;
+}
+
+.doc-heading-code a {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.doc-labels {
+  margin-top: -1.2rem;
+  display: block;
+  font-size: 1.2em
 }
 
 /* Indentation. */
