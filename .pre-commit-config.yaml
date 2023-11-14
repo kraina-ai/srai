@@ -28,7 +28,7 @@ repos:
       - id: mypy
         additional_dependencies: ['types-requests']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.8.0
+    rev: 2.10.1
     hooks:
       - id: pdm-lock-check
       - id: pdm-export

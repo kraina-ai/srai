@@ -63,6 +63,7 @@ osm = [
     "overpass",
     "pillow",
     "beautifulsoup4",
+    "duckdb>=0.9.2",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
@@ -126,12 +127,12 @@ post_install = "pre-commit install"
 
 [tool.black]
 line-length = 100
-target-version = ["py38", "py39", "py310", "py311"]
+target-version = ["py39", "py310", "py311"]
 preview = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py38"
+target-version = "py39"
 select = [
     "E",
     "W",   # pycodestyle
