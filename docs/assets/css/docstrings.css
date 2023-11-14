@@ -50,3 +50,13 @@ a.external:hover::after,
 a.autorefs-external:hover::after {
   background-color: var(--md-accent-fg-color);
 }
+
+table.highlighttable td.linenos,
+span.linenos,
+div.highlight span.gp {
+  user-select: none;
+  -webkit-user-select: text;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
