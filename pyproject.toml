@@ -1,6 +1,6 @@
 [project]
 name = "srai"
-version = "0.6.3"
+version = "0.6.1"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
     { name = "Piotr Gramacki", email = "pgramacki@kraina.ai" },
@@ -183,7 +183,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.6.3"
+current_version = "0.6.1"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 commit = true
