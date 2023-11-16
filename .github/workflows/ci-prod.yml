@@ -1,8 +1,7 @@
 name: "Build & publish - PROD"
 on:
-  push:
-    tags:
-      - "**"
+  release:
+    types: [released]
 
 jobs:
   run-tests:

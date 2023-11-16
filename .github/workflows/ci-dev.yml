@@ -9,6 +9,35 @@ jobs:
     name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
 
+  github-release:
+    if: ${{ contains(github.event.head_commit.message, 'bump version') }}
+    name: Create a GitHub release
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Configure Git user
+        run: |
+          git config --local user.name "Kraina CI/CD"
+          git config --local user.email "cicd@kraina.ai"
+      - name: Extract release notes
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@v1
+      - name: Extract version
+        id: extract-version
+        uses: winterjung/split@v2
+        with:
+          msg: ${{ github.event.head_commit.message }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+          tag_name: ${{ steps.extract-version.outputs._5 }}
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
+
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to TestPyPI
     needs: [run-tests]

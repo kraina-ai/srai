@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2023-MM-DD
+## [Unreleased]
+
+## [0.6.3] - 2023-11-16
+
+## [0.6.2] - 2023-11-16
 
 ### Added
+
+- CI release via GitHub Actions
 
 ### Changed
 
@@ -135,7 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Refactored H3Regionalizer to be faster using [h3ronpy](https://github.com/nmandery/h3ronpy) library [#311](https://github.com/srai-lab/srai/issues/311)
 - BREAKING! Renamed NetworkType to OSMNetworkType and made it importable directly from `srai.loaders` [#227](https://github.com/srai-lab/srai/issues/227)
-- BREAKING! Renamed osm_filter_type and grouped_osm_filter_type into OsmTagsFilter and GroupedOsmTagsFilter [#261](https://github.com/srai-lab/srai/issues/261)
+- BREAKING! Renamed osm\_filter\_type and grouped\_osm\_filter\_type into OsmTagsFilter and GroupedOsmTagsFilter [#261](https://github.com/srai-lab/srai/issues/261)
 - Removed osmnx dependency version cap [#303](https://github.com/srai-lab/srai/issues/303)
 - BREAKING! Removed `utils` module [#128](https://github.com/srai-lab/srai/issues/128)
   - `srai.utils._optional` moved to `srai._optional`
@@ -220,18 +226,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[unreleased]: https://github.com/srai-lab/srai/compare/0.6.1...HEAD
-[0.6.1]: https://github.com/srai-lab/srai/compare/0.6.0...0.6.1
-[0.6.0]: https://github.com/srai-lab/srai/compare/0.5.2...0.6.0
-[0.5.2]: https://github.com/srai-lab/srai/compare/0.5.1...0.5.2
-[0.5.1]: https://github.com/srai-lab/srai/compare/0.5.0...0.5.1
-[0.5.0]: https://github.com/srai-lab/srai/compare/0.4.1...0.5.0
-[0.4.1]: https://github.com/srai-lab/srai/compare/0.4.0...0.4.1
-[0.4.0]: https://github.com/srai-lab/srai/compare/0.3.3...0.4.0
-[0.3.3]: https://github.com/srai-lab/srai/compare/0.3.2...0.3.3
-[0.3.2]: https://github.com/srai-lab/srai/compare/0.3.1...0.3.2
-[0.3.1]: https://github.com/srai-lab/srai/compare/0.3.0...0.3.1
-[0.3.0]: https://github.com/srai-lab/srai/compare/0.2.0...0.3.0
-[0.2.0]: https://github.com/srai-lab/srai/compare/0.1.1...0.2.0
-[0.1.1]: https://github.com/srai-lab/srai/compare/0.0.1...0.1.1
-[0.0.1]: https://github.com/srai-lab/srai/compare/687500b...0.0.1
+[Unreleased]: https://github.com/kraina-ai/srai-sandbox/compare/0.6.3...HEAD
+
+[0.6.3]: https://github.com/kraina-ai/srai-sandbox/compare/0.6.2...0.6.3
+
+[0.6.2]: https://github.com/kraina-ai/srai-sandbox/compare/0.6.1...0.6.2
+
+[0.6.1]: https://github.com/kraina-ai/srai-sandbox/compare/0.6.0...0.6.1
+
+[0.6.0]: https://github.com/kraina-ai/srai-sandbox/compare/0.5.2...0.6.0
+
+[0.5.2]: https://github.com/kraina-ai/srai-sandbox/compare/0.5.1...0.5.2
+
+[0.5.1]: https://github.com/kraina-ai/srai-sandbox/compare/0.5.0...0.5.1
+
+[0.5.0]: https://github.com/kraina-ai/srai-sandbox/compare/0.4.1...0.5.0
+
+[0.4.1]: https://github.com/kraina-ai/srai-sandbox/compare/0.4.0...0.4.1
+
+[0.4.0]: https://github.com/kraina-ai/srai-sandbox/compare/0.3.3...0.4.0
+
+[0.3.3]: https://github.com/kraina-ai/srai-sandbox/compare/0.3.2...0.3.3
+
+[0.3.2]: https://github.com/kraina-ai/srai-sandbox/compare/0.3.1...0.3.2
+
+[0.3.1]: https://github.com/kraina-ai/srai-sandbox/compare/0.3.0...0.3.1
+
+[0.3.0]: https://github.com/kraina-ai/srai-sandbox/compare/0.2.0...0.3.0
+
+[0.2.0]: https://github.com/kraina-ai/srai-sandbox/compare/0.1.1...0.2.0
+
+[0.1.1]: https://github.com/kraina-ai/srai-sandbox/compare/0.0.1...0.1.1
+
+[0.0.1]: https://github.com/kraina-ai/srai-sandbox/releases/tag/0.0.1
