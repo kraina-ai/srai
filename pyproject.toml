@@ -64,6 +64,7 @@ osm = [
     "pillow",
     "beautifulsoup4",
     "duckdb>=0.9.2",
+    "geoarrow-pyarrow @ git+https://github.com/geoarrow/geoarrow-python.git#subdirectory=geoarrow-pyarrow",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
