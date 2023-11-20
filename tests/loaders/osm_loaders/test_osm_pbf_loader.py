@@ -1,6 +1,7 @@
 """Tests for OSMPbfLoader."""
+
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 from unittest import TestCase
 
 import geopandas as gpd
@@ -147,7 +148,7 @@ def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourc
         ),
     ],
 )
-def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str]):
+def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str]):
     """Test proper files downloading in `PbfFileDownloader`."""
     regions_gdf = gpd.GeoDataFrame(
         geometry=[test_polygon],
@@ -171,7 +172,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str])
             "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
             None,
             678,
-            274,
+            275,
         ),
         (
             "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
@@ -205,8 +206,13 @@ def test_pbf_handler(
     features_gdf = handler.get_features_gdf(
         file_paths=[Path(__file__).parent / "test_files" / test_file_name]
     )
-    assert len(features_gdf) == expected_result_length
-    assert len(features_gdf.columns) == expected_features_columns_length + 1
+    assert (
+        len(features_gdf) == expected_result_length
+    ), f"Mismatched result length ({len(features_gdf)}, {expected_result_length})"
+    assert len(features_gdf.columns) == expected_features_columns_length + 1, (
+        f"Mismatched columns length ({len(features_gdf.columns)},"
+        f" {expected_features_columns_length + 1})"
+    )
 
 
 def test_pbf_handler_geometry_filtering():  # type: ignore
@@ -280,13 +286,13 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
     ],
 )
 def test_osm_pbf_loader(
-    test_geometries: List[BaseGeometry],
+    test_geometries: list[BaseGeometry],
     pbf_file: Path,
     query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     pbf_source: PbfSourceLiteral,
     expected_result_length: int,
     expected_features_columns_length: int,
-    expected_features_columns_names: List[str],
+    expected_features_columns_names: list[str],
 ):
     """Test `OSMPbfLoader.load()`."""
     download_directory = Path(__file__).parent / "test_files"
@@ -310,4 +316,8 @@ def test_osm_pbf_loader(
     assert (
         len(result.columns) == expected_features_columns_length + 1
     ), f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
-    ut.assertCountEqual(result.columns, expected_features_columns_names + [GEOMETRY_COLUMN])
+    ut.assertCountEqual(
+        result.columns,
+        expected_features_columns_names + [GEOMETRY_COLUMN],
+        "Mismatched columns names.",
+    )

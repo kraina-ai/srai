@@ -83,7 +83,7 @@ class PbfFileHandler:
         self.working_directory.mkdir(parents=True, exist_ok=True)
 
     def get_features_gdf(
-        self, file_paths: Sequence[Union[str, "os.PathLike[str]"]]
+        self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], ignore_cache: bool = False
     ) -> gpd.GeoDataFrame:
         """
         Get features GeoDataFrame from a list of PBF files.
@@ -96,8 +96,8 @@ class PbfFileHandler:
         Args:
             file_paths (Sequence[Union[str, os.PathLike[str]]]): List of paths to `*.osm.pbf`
                 files to be parsed.
-            region_id (str, optional): Region name to be set in progress bar.
-                Defaults to "OSM".
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
 
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with OSM features.
@@ -110,7 +110,7 @@ class PbfFileHandler:
             parsed_geoparquet_files = []
             for path_no, path in enumerate(file_paths):
                 self.path_no = path_no + 1
-                parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name)
+                parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name, ignore_cache)
                 parsed_geoparquet_files.append(parsed_geoparquet_file)
 
         parquet_tables = [
@@ -133,10 +133,15 @@ class PbfFileHandler:
             self.connection.install_extension(extension_name)
             self.connection.load_extension(extension_name)
 
-    def _parse_pbf_file(self, pbf_path: Union[str, "os.PathLike[str]"], tmp_dir_name: str) -> Path:
+    def _parse_pbf_file(
+        self,
+        pbf_path: Union[str, "os.PathLike[str]"],
+        tmp_dir_name: str,
+        ignore_cache: bool = False,
+    ) -> Path:
         result_file_name = self._generate_geoparquet_result_file_name(pbf_path)
         result_file_path = Path(self.working_directory) / result_file_name
-        if not result_file_path.exists():
+        if not result_file_path.exists() or ignore_cache:
             elements = self.connection.sql(f"SELECT * FROM ST_READOSM('{Path(pbf_path)}');")
             filtered_elements_ids = self._prefilter_elements_ids(elements, tmp_dir_name)
 
@@ -249,7 +254,7 @@ class PbfFileHandler:
             sql_query=f"""
             SELECT DISTINCT id FROM nodes n
             SEMI JOIN ({nodes_intersecting.sql_query()}) ni ON n.id = ni.id
-            WHERE {sql_filter}
+            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
             """,
             file_path=Path(tmp_dir_name) / "nodes_filtered.parquet",
         )
@@ -334,7 +339,7 @@ class PbfFileHandler:
             sql_query=f"""
             SELECT DISTINCT id FROM ways w
             SEMI JOIN ({ways_intersecting.sql_query()}) wi ON w.id = wi.id
-            WHERE {sql_filter}
+            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
             """,
             file_path=Path(tmp_dir_name) / "ways_filtered.parquet",
         )
@@ -435,7 +440,7 @@ class PbfFileHandler:
             sql_query=f"""
             SELECT DISTINCT id FROM relations r
             SEMI JOIN ({relations_intersecting.sql_query()}) ri ON r.id = ri.id
-            WHERE {sql_filter}
+            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
             """,
             file_path=Path(tmp_dir_name) / "relations_filtered.parquet",
         )
@@ -522,22 +527,25 @@ class PbfFileHandler:
                 elif isinstance(filter_tag_value, str):
                     escaped_value = self._escape(filter_tag_value)
                     filter_clauses.append(
-                        f"(list_extract(map_extract(tags, '{filter_tag_key}'), 1) ="
-                        f" '{escaped_value}')"
+                        f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) ="
+                        f" '{escaped_value}'"
                     )
                 elif isinstance(filter_tag_value, list) and filter_tag_value:
                     values_list = [f"'{self._escape(value)}'" for value in filter_tag_value]
                     filter_clauses.append(
-                        f"list_has_any(map_extract(tags, '{filter_tag_key}'),"
-                        f" [{', '.join(values_list)}])"
+                        f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) IN"
+                        f" ({', '.join(values_list)})"
                     )
 
         return " OR ".join(filter_clauses)
 
-    def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> str:
+    def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> list[str]:
         """Prepare features filter clauses based on tags filter."""
-        osm_tag_keys = set()
+        # osm_tag_keys = set()
+        osm_tag_keys_select_clauses = []
+
         if not self.filter_tags:
+            osm_tag_keys = set()
             for elements in [
                 parsed_data.nodes,
                 parsed_data.ways,
@@ -548,13 +556,38 @@ class PbfFileHandler:
                     FROM ({elements.sql_query()})
                 """).fetchall()]
                 osm_tag_keys.update(found_tag_keys)
+            osm_tag_keys_select_clauses = [
+                f"list_extract(map_extract(tags, '{osm_tag_key}'), 1) as \"{osm_tag_key}\""
+                for osm_tag_key in sorted(list(osm_tag_keys))
+            ]
+        # TODO: elif keep other tags
         else:
-            osm_tag_keys.update(self.filter_tags.keys())
-
-        osm_tag_keys_select_clauses = [
-            f"list_extract(map_extract(tags, '{osm_tag_key}'), 1) as \"{osm_tag_key}\""
-            for osm_tag_key in sorted(list(osm_tag_keys))
-        ]
+            for filter_tag_key, filter_tag_value in self.filter_tags.items():
+                if isinstance(filter_tag_value, bool) and filter_tag_value:
+                    osm_tag_keys_select_clauses.append(
+                        f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) as"
+                        f' "{filter_tag_key}"'
+                    )
+                elif isinstance(filter_tag_value, str):
+                    escaped_value = self._escape(filter_tag_value)
+                    osm_tag_keys_select_clauses.append(f"""
+                        CASE WHEN list_extract(
+                            map_extract(tags, '{filter_tag_key}'), 1
+                        ) = '{escaped_value}'
+                        THEN '{escaped_value}'
+                        ELSE NULL
+                        END as "{filter_tag_key}"
+                    """)
+                elif isinstance(filter_tag_value, list) and filter_tag_value:
+                    values_list = [f"'{self._escape(value)}'" for value in filter_tag_value]
+                    osm_tag_keys_select_clauses.append(f"""
+                        CASE WHEN list_extract(
+                            map_extract(tags, '{filter_tag_key}'), 1
+                        ) IN ({', '.join(values_list)})
+                        THEN list_extract(map_extract(tags, '{filter_tag_key}'), 1)
+                        ELSE NULL
+                        END as "{filter_tag_key}"
+                    """)
 
         if len(osm_tag_keys_select_clauses) > 100:
             warnings.warn(
@@ -565,7 +598,7 @@ class PbfFileHandler:
                 stacklevel=1,
             )
 
-        return ", ".join(osm_tag_keys_select_clauses)
+        return osm_tag_keys_select_clauses
 
     def _concatenate_results_to_geoparquet(
         self, parsed_data: ParsedOSMFeatures, tmp_dir_name: str, save_file_path: Path
@@ -573,29 +606,37 @@ class PbfFileHandler:
         import geoarrow.pyarrow as ga
         from geoarrow.pyarrow import io
 
-        select_clause = self._generate_osm_tags_sql_select(parsed_data)
+        select_clauses = [*self._generate_osm_tags_sql_select(parsed_data), "geometry"]
         nodes_result_parquet = Path(tmp_dir_name) / "nodes_full.parquet"
         ways_result_parquet = Path(tmp_dir_name) / "ways_full.parquet"
         relations_result_parquet = Path(tmp_dir_name) / "relations_full.parquet"
+
+        node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
+        print(self.connection.sql(f"""
+                SELECT {', '.join(node_select_clauses)}
+                FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
+            """).sql_query())
         self._save_parquet_file_with_geometry(
             self.connection.sql(f"""
-            SELECT 'node/' || id as feature_id, {select_clause}, geometry
-            FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
-        """),
+                SELECT {', '.join(node_select_clauses)}
+                FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
+            """),
             nodes_result_parquet,
         )
+        way_select_clauses = ["'way/' || id as feature_id", *select_clauses]
         self._save_parquet_file_with_geometry(
             self.connection.sql(f"""
-            SELECT 'way/' || id as feature_id, {select_clause}, geometry
-            FROM ({parsed_data.ways.sql_query()}) w
-        """),
+                SELECT {', '.join(way_select_clauses)}
+                FROM ({parsed_data.ways.sql_query()}) w
+            """),
             ways_result_parquet,
         )
+        relation_select_clauses = ["'relation/' || id as feature_id", *select_clauses]
         self._save_parquet_file_with_geometry(
             self.connection.sql(f"""
-            SELECT 'relation/' || id as feature_id, {select_clause}, geometry
-            FROM ({parsed_data.relations.sql_query()}) r
-        """),
+                SELECT {', '.join(relation_select_clauses)}
+                FROM ({parsed_data.relations.sql_query()}) r
+            """),
             relations_result_parquet,
         )
         print("concatenating results")
@@ -609,16 +650,37 @@ class PbfFileHandler:
             ]
         ]
         joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
-        valid_geometry_column = ga.as_geoarrow(
-            ga.to_geopandas(
-                ga.with_crs(joined_parquet_table.column("geometry_wkb"), WGS84_CRS)
-            ).make_valid()
-        )
+
+        is_empty = joined_parquet_table.num_rows == 0
+
+        if not is_empty:
+            valid_geometry_column = ga.as_geoarrow(
+                ga.to_geopandas(
+                    ga.with_crs(joined_parquet_table.column("geometry_wkb"), WGS84_CRS)
+                ).make_valid()
+            )
+        else:
+            valid_geometry_column = ga.as_wkb(gpd.GeoSeries([], crs=WGS84_CRS))
         joined_parquet_table = joined_parquet_table.append_column(
             GEOMETRY_COLUMN, valid_geometry_column
         )
         joined_parquet_table = joined_parquet_table.drop("geometry_wkb")
-        print(joined_parquet_table)
+
+        empty_columns = []
+        for column_name in joined_parquet_table.column_names:
+            if column_name in [FEATURES_INDEX, GEOMETRY_COLUMN]:
+                continue
+            if (
+                is_empty
+                or pa.compute.all(
+                    pa.compute.is_null(joined_parquet_table.column(column_name))
+                ).as_py()
+            ):
+                empty_columns.append(column_name)
+
+        if empty_columns:
+            joined_parquet_table = joined_parquet_table.drop(empty_columns)
+
         io.write_geoparquet_table(
             joined_parquet_table, save_file_path, primary_geometry_column=GEOMETRY_COLUMN
         )
