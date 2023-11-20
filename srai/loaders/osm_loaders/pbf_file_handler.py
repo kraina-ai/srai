@@ -102,24 +102,26 @@ class PbfFileHandler:
         Returns:
             gpd.GeoDataFrame: GeoDataFrame with OSM features.
         """
+        import geoarrow.pyarrow as ga
+        from geoarrow.pyarrow import io
+
         with tempfile.TemporaryDirectory(dir=self.working_directory) as tmp_dir_name:
             self._set_up_duckdb_connection(tmp_dir_name)
-            parsed_parquet_files = []
+            parsed_geoparquet_files = []
             for path_no, path in enumerate(file_paths):
                 self.path_no = path_no + 1
-                parsed_parquet_file = self._parse_pbf_file(path, tmp_dir_name)
-                parsed_parquet_files.append(parsed_parquet_file)
+                parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name)
+                parsed_geoparquet_files.append(parsed_geoparquet_file)
 
         parquet_tables = [
-            pq.read_table(parsed_parquet_file) for parsed_parquet_file in parsed_parquet_files
+            io.read_geoparquet_table(parsed_parquet_file)
+            for parsed_parquet_file in parsed_geoparquet_files
         ]
         joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
-        df_parquet = joined_parquet_table.to_pandas()
         gdf_parquet = gpd.GeoDataFrame(
-            data=df_parquet[[column for column in df_parquet.columns if column != "geometry_wkb"]],
-            geometry=gpd.GeoSeries.from_wkb(df_parquet["geometry_wkb"], crs=WGS84_CRS),
+            data=joined_parquet_table.drop(GEOMETRY_COLUMN).to_pandas(),
+            geometry=ga.to_geopandas(joined_parquet_table.column(GEOMETRY_COLUMN)),
         ).set_index(FEATURES_INDEX)
-        gdf_parquet[GEOMETRY_COLUMN] = gdf_parquet.make_valid()
 
         return gdf_parquet
 
@@ -132,17 +134,11 @@ class PbfFileHandler:
             self.connection.load_extension(extension_name)
 
     def _parse_pbf_file(self, pbf_path: Union[str, "os.PathLike[str]"], tmp_dir_name: str) -> Path:
-        result_file_name = self._generate_parquet_result_file_name(pbf_path)
+        result_file_name = self._generate_geoparquet_result_file_name(pbf_path)
         result_file_path = Path(self.working_directory) / result_file_name
-        print(result_file_path)
         if not result_file_path.exists():
             elements = self.connection.sql(f"SELECT * FROM ST_READOSM('{Path(pbf_path)}');")
             filtered_elements_ids = self._prefilter_elements_ids(elements, tmp_dir_name)
-            # print(filtered_elements_ids.nodes_required.count("id").fetchone()[0])
-            # print(filtered_elements_ids.nodes_filtered.count("id").fetchone()[0])
-            # print(filtered_elements_ids.ways_required.count("id").fetchone()[0])
-            # print(filtered_elements_ids.ways_filtered.count("id").fetchone()[0])
-            # print(filtered_elements_ids.relations_filtered.count("id").fetchone()[0])
 
             nodes_with_geometry = self._parse_nodes(elements, filtered_elements_ids, tmp_dir_name)
             ways_with_linestrings_geometry = self._parse_ways_to_linestrings(
@@ -154,13 +150,8 @@ class PbfFileHandler:
             relations_with_geometry = self._parse_relations(
                 elements, ways_with_linestrings_geometry, filtered_elements_ids, tmp_dir_name
             )
-            # print(relations_with_geometry)
 
-            # print(nodes_with_geometry.count("id").fetchone()[0])
-            # print(ways_with_proper_geometry.count("id").fetchone()[0])
-            # print(relations_with_geometry.count("id").fetchone()[0])
-
-            self._concatenate_results_to_parquet(
+            self._concatenate_results_to_geoparquet(
                 PbfFileHandler.ParsedOSMFeatures(
                     nodes=nodes_with_geometry,
                     ways=ways_with_proper_geometry,
@@ -170,16 +161,6 @@ class PbfFileHandler:
                 save_file_path=result_file_path,
             )
 
-        # df = self.connection.sql(f"""
-        #     WITH rwg AS ({relations_with_geometry.sql_query()})
-        #     SELECT
-        #         *
-        #     FROM
-        #         ({filtered_elements_ids.relations_filtered.sql_query()}) fr
-        #     ANTI JOIN rwg ON fr.id = rwg.id
-        # """).to_df()
-
-        # return Path("xd")
         return result_file_path
 
     def _sql_to_parquet_file(self, sql_query: str, file_path: Path) -> "duckdb.DuckDBPyRelation":
@@ -586,9 +567,12 @@ class PbfFileHandler:
 
         return ", ".join(osm_tag_keys_select_clauses)
 
-    def _concatenate_results_to_parquet(
+    def _concatenate_results_to_geoparquet(
         self, parsed_data: ParsedOSMFeatures, tmp_dir_name: str, save_file_path: Path
     ) -> None:
+        import geoarrow.pyarrow as ga
+        from geoarrow.pyarrow import io
+
         select_clause = self._generate_osm_tags_sql_select(parsed_data)
         nodes_result_parquet = Path(tmp_dir_name) / "nodes_full.parquet"
         ways_result_parquet = Path(tmp_dir_name) / "ways_full.parquet"
@@ -596,7 +580,7 @@ class PbfFileHandler:
         self._save_parquet_file_with_geometry(
             self.connection.sql(f"""
             SELECT 'node/' || id as feature_id, {select_clause}, geometry
-            FROM ({parsed_data.nodes.sql_query()}) n
+            FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
         """),
             nodes_result_parquet,
         )
@@ -614,38 +598,32 @@ class PbfFileHandler:
         """),
             relations_result_parquet,
         )
-        # concatenated_results = self.connection.sql(f"""
-        #     SELECT 'node/' || id as feature_id, {select_clause}, geometry
-        #     FROM ({parsed_data.nodes.sql_query()}) nodes
-        #     UNION
-        #     SELECT 'way/' || id as feature_id, {select_clause}, geometry
-        #     FROM ({parsed_data.ways.sql_query()}) nodes
-        #     UNION
-        #     SELECT 'relation/' || id as feature_id, {select_clause}, geometry
-        #     FROM ({parsed_data.relations.sql_query()}) nodes
-        # """)
-        # print(concatenated_results.sql_query())
         print("concatenating results")
 
-        schema = pq.ParquetFile(nodes_result_parquet).schema_arrow
-        with pq.ParquetWriter(save_file_path, schema=schema) as writer:
-            for file_name in [nodes_result_parquet, ways_result_parquet, relations_result_parquet]:
-                writer.write_table(pq.read_table(file_name, schema=schema))
+        parquet_tables = [
+            pq.read_table(parsed_parquet_file)
+            for parsed_parquet_file in [
+                nodes_result_parquet,
+                ways_result_parquet,
+                relations_result_parquet,
+            ]
+        ]
+        joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
+        valid_geometry_column = ga.as_geoarrow(
+            ga.to_geopandas(
+                ga.with_crs(joined_parquet_table.column("geometry_wkb"), WGS84_CRS)
+            ).make_valid()
+        )
+        joined_parquet_table = joined_parquet_table.append_column(
+            GEOMETRY_COLUMN, valid_geometry_column
+        )
+        joined_parquet_table = joined_parquet_table.drop("geometry_wkb")
+        print(joined_parquet_table)
+        io.write_geoparquet_table(
+            joined_parquet_table, save_file_path, primary_geometry_column=GEOMETRY_COLUMN
+        )
 
-        # save to geoparquet after parsing parquet
-
-        # parquet_tables = [
-        #     pq.read_table(parsed_parquet_file) for parsed_parquet_file in parsed_parquet_files
-        # ]
-        # joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
-        # df_parquet = joined_parquet_table.to_pandas()
-        # gdf_parquet = gpd.GeoDataFrame(
-        #     data=df_parquet[[column for column in df_parquet.columns if column != "geometry_wkb"]],
-        #     geometry=gpd.GeoSeries.from_wkb(df_parquet["geometry_wkb"], crs=WGS84_CRS),
-        # ).set_index(FEATURES_INDEX)
-        # gdf_parquet[GEOMETRY_COLUMN] = gdf_parquet.make_valid()
-
-    def _generate_parquet_result_file_name(
+    def _generate_geoparquet_result_file_name(
         self, pbf_file_path: Union[str, "os.PathLike[str]"]
     ) -> str:
         pbf_file_name = Path(pbf_file_path).name.removesuffix(".osm.pbf")
@@ -661,7 +639,7 @@ class PbfFileHandler:
             clipping_geometry_hash_part = get_geometry_hash(self.region_geometry)
 
         result_file_name = (
-            f"{pbf_file_name}_{osm_filter_tags_hash_part}_{clipping_geometry_hash_part}.parquet"
+            f"{pbf_file_name}_{osm_filter_tags_hash_part}_{clipping_geometry_hash_part}.geoparquet"
         )
         return result_file_name
 
