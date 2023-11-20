@@ -1,6 +1,6 @@
 """H3 shapely conversion tests."""
 
-from typing import Any, Callable, List
+from typing import Any, Callable
 from unittest import TestCase
 
 import geopandas as gpd
@@ -22,7 +22,7 @@ def _gdf_to_geoseries(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoSeries:
     return gdf_fixture[GEOMETRY_COLUMN]
 
 
-def _gdf_to_geometry_list(gdf_fixture: gpd.GeoDataFrame) -> List[BaseGeometry]:
+def _gdf_to_geometry_list(gdf_fixture: gpd.GeoDataFrame) -> list[BaseGeometry]:
     return list(gdf_fixture[GEOMETRY_COLUMN])
 
 

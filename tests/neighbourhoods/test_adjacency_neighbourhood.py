@@ -1,5 +1,4 @@
 """Tests for AdjacencyNeighbourhood."""
-from typing import Set
 
 import geopandas as gpd
 import pytest
@@ -202,8 +201,8 @@ def test_generate_all_neighbourhoods_squares_regions(
 def test_adjacency_lazy_loading_at_distance(
     index: str,
     distance: int,
-    expected: Set[str],
-    expected_include_center: Set[str],
+    expected: set[str],
+    expected_include_center: set[str],
     rounded_regions_fixture: gpd.GeoDataFrame,
 ) -> None:
     """Test checks `get_neighbours_at_distance` function with rounded regions."""
@@ -280,8 +279,8 @@ def test_adjacency_lazy_loading_at_distance(
 def test_adjacency_lazy_loading_up_to_distance(
     index: str,
     distance: int,
-    expected: Set[str],
-    expected_include_center: Set[str],
+    expected: set[str],
+    expected_include_center: set[str],
     rounded_regions_fixture: gpd.GeoDataFrame,
 ) -> None:
     """Test checks `get_neighbours_up_to_distance` function with rounded regions."""

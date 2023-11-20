@@ -8,7 +8,7 @@ References:
 """
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -81,8 +81,8 @@ class Highway2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
-        dataloader_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit the model to the data.
@@ -131,8 +131,8 @@ class Highway2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
-        dataloader_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit the model to the data and return the embeddings.
@@ -160,7 +160,7 @@ class Highway2VecEmbedder(Embedder):
         if not self._is_fitted or self._model is None:
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
 
-    def _save(self, path: Union[Path, str], embedder_config: Dict[str, Any]) -> None:
+    def _save(self, path: Union[Path, str], embedder_config: dict[str, Any]) -> None:
         if isinstance(path, str):
             path = Path(path)
 
@@ -188,7 +188,7 @@ class Highway2VecEmbedder(Embedder):
         self._save(path, embedder_config)
 
     @classmethod
-    def _load(cls, path: Union[Path, str], model_module: Type[ModelT]) -> "Highway2VecEmbedder":
+    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "Highway2VecEmbedder":
         if isinstance(path, str):
             path = Path(path)
 

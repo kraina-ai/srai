@@ -1,6 +1,5 @@
 """Constants for OSMWayLoader."""
 
-from typing import Dict, List
 
 import numpy as np
 
@@ -13,7 +12,7 @@ METADATA_COLUMNS = ["from", "to", "key", "osmid", "name", "reversed", "length", 
 OSMNX_TIMEOUT: int = 180
 """The timeout interval in seconds for HTTP requests."""
 
-OSMNX_WAY_KEYS: List[str] = [
+OSMNX_WAY_KEYS: list[str] = [
     "bridge",
     "tunnel",
     "oneway",
@@ -38,7 +37,7 @@ OSMNX_WAY_KEYS: List[str] = [
 """Extended OSMnx way tags."""
 
 
-OSM_WAY_TAGS: Dict[str, List[str]] = {
+OSM_WAY_TAGS: dict[str, list[str]] = {
     "oneway": ["False", "True"],
     "lanes": list(map(str, range(1, 21))),
     "highway": [

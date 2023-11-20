@@ -1,5 +1,5 @@
 """Tests for LookupNeighbourhood."""
-from typing import Any, Dict, Optional, Set, TypeVar
+from typing import Any, Optional, TypeVar
 
 import pytest
 
@@ -11,7 +11,7 @@ T = TypeVar("T")
 class LookupNeighbourhood(Neighbourhood[T]):
     """LookupNeighbourhood."""
 
-    def __init__(self, lookup: Dict[T, Set[T]], include_center: bool = False) -> None:
+    def __init__(self, lookup: dict[T, set[T]], include_center: bool = False) -> None:
         """
         LookupNeighbourhood constructor.
 
@@ -22,7 +22,7 @@ class LookupNeighbourhood(Neighbourhood[T]):
         super().__init__(include_center)
         self.lookup = lookup
 
-    def get_neighbours(self, index: T, include_center: Optional[bool] = None) -> Set[T]:
+    def get_neighbours(self, index: T, include_center: Optional[bool] = None) -> set[T]:
         """
         Get neighbours for region at index.
 
@@ -38,7 +38,7 @@ class LookupNeighbourhood(Neighbourhood[T]):
 
 
 @pytest.fixture  # type: ignore
-def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
+def grid_3_by_3_neighbourhood() -> dict[int, set[int]]:
     """
     Get grid neighbourhood.
 
@@ -67,7 +67,7 @@ def grid_3_by_3_neighbourhood() -> Dict[int, Set[int]]:
 
 
 @pytest.fixture  # type: ignore
-def grid_3_by_3_irrregular_neighbourhood() -> Dict[int, Set[int]]:
+def grid_3_by_3_irrregular_neighbourhood() -> dict[int, set[int]]:
     """
     Get irregular grid neighbourhood.
 
@@ -112,7 +112,7 @@ def grid_3_by_3_irrregular_neighbourhood() -> Dict[int, Set[int]]:
 def test_get_neighbours(
     neighbourhood_fixture: str,
     index: str,
-    expected: Set[str],
+    expected: set[str],
     request: Any,
 ) -> None:
     """Test get_neighbours with overriding include_center."""
@@ -178,8 +178,8 @@ def test_get_neighbours_at_distance(
     neighbourhood_fixture: str,
     index: str,
     distance: int,
-    expected: Set[str],
-    expected_with_include_center: Set[str],
+    expected: set[str],
+    expected_with_include_center: set[str],
     request: Any,
 ) -> None:
     """Test neighbours at distance."""
@@ -238,7 +238,7 @@ def test_get_neighbours_at_distance(
     ],
 )
 def test_get_neighbours_up_to_distance(
-    neighbourhood_fixture: str, index: str, distance: int, expected: Set[str], request: Any
+    neighbourhood_fixture: str, index: str, distance: int, expected: set[str], request: Any
 ) -> None:
     """Test neighbours up to a distance."""
     neighbourhood_data = request.getfixturevalue(neighbourhood_fixture)

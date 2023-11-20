@@ -1,7 +1,7 @@
 """Optional dependencies tests."""
 import sys
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List
+from typing import Any
 
 import geopandas as gpd
 import pytest
@@ -12,7 +12,7 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
-def optional_packages() -> List[str]:
+def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
         "osmium",
@@ -45,7 +45,7 @@ class PackageDiscarder:
 
     def __init__(self) -> None:
         """Init mock class."""
-        self.pkgnames: List[str] = []
+        self.pkgnames: list[str] = []
 
     def find_spec(self, fullname, path, target=None) -> None:  # type: ignore
         """Throws ImportError if matching module."""

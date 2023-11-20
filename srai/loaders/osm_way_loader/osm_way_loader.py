@@ -5,7 +5,7 @@ This module contains osm loader implementation for ways based on OSMnx.
 """
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -60,7 +60,7 @@ class OSMWayLoader(Loader):
         preprocess: bool = True,
         wide: bool = True,
         metadata: bool = False,
-        osm_way_tags: Dict[str, List[str]] = constants.OSM_WAY_TAGS,
+        osm_way_tags: dict[str, list[str]] = constants.OSM_WAY_TAGS,
     ) -> None:
         """
         Init OSMWayLoader.
@@ -94,7 +94,7 @@ class OSMWayLoader(Loader):
             .to_list()
         )
 
-    def load(self, area: gpd.GeoDataFrame) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    def load(self, area: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Load road infrastructure for a given GeoDataFrame.
 
@@ -139,7 +139,7 @@ class OSMWayLoader(Loader):
 
         return gdf_nodes_raw, gdf_edges
 
-    def _graph_from_gdf(self, gdf: gpd.GeoDataFrame) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    def _graph_from_gdf(self, gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Obtain the raw road infrastructure data from OSM.
 
@@ -178,7 +178,7 @@ class OSMWayLoader(Loader):
 
     def _try_graph_from_polygon(
         self, polygon: Union[shpg.Polygon, shpg.MultiPolygon]
-    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Try obtaining the raw road infrastructure data from OSM for a single polygon using `osmnx`.
 
@@ -200,7 +200,7 @@ class OSMWayLoader(Loader):
 
     def _graph_from_polygon(
         self, polygon: Union[shpg.Polygon, shpg.MultiPolygon]
-    ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Obtain the raw road infrastructure data from OSM for a single polygon.
 

@@ -1,6 +1,6 @@
 """Tests for Hex2Vec model."""
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List
+from typing import Any
 
 import pytest
 
@@ -16,7 +16,7 @@ from srai.embedders.hex2vec.model import Hex2VecModel
         ([15, 10, 5], does_not_raise()),
     ],
 )
-def test_model_raises_with_incorrect_layer_sizes(layer_sizes: List[int], expectation: Any) -> None:
+def test_model_raises_with_incorrect_layer_sizes(layer_sizes: list[int], expectation: Any) -> None:
     """Test if Hex2VecModel raises with incorrect layer_sizes."""
     with expectation:
         Hex2VecModel(layer_sizes=layer_sizes)

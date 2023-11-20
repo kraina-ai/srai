@@ -3,9 +3,10 @@ OSM tile loader.
 
 This module implements downloading tiles from given OSM tile server.
 """
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import urljoin
 
 import geopandas as gpd

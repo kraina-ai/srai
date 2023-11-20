@@ -3,8 +3,9 @@ OSM Online Loader.
 
 This module contains loader capable of loading OpenStreetMap features from Overpass.
 """
+from collections.abc import Iterable
 from itertools import product
-from typing import Iterable, List, Tuple, Union
+from typing import Union
 
 import geopandas as gpd
 import pandas as pd
@@ -107,8 +108,8 @@ class OSMOnlineLoader(OSMLoader):
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
-    def _flatten_tags(self, tags: OsmTagsFilter) -> List[Tuple[str, Union[str, bool]]]:
-        tags_flat: List[Tuple[str, Union[str, bool]]] = (
+    def _flatten_tags(self, tags: OsmTagsFilter) -> list[tuple[str, Union[str, bool]]]:
+        tags_flat: list[tuple[str, Union[str, bool]]] = (
             seq(tags.items())
             .starmap(lambda k, v: product([k], v if isinstance(v, list) else [v]))
             .flatten()
@@ -116,14 +117,14 @@ class OSMOnlineLoader(OSMLoader):
         )
         return tags_flat
 
-    def _get_max_key_value_name_len(self, tags: List[Tuple[str, Union[str, bool]]]) -> int:
+    def _get_max_key_value_name_len(self, tags: list[tuple[str, Union[str, bool]]]) -> int:
         max_key_val_name_len: int = seq(tags).starmap(lambda k, v: len(k + str(v))).max()
         return max_key_val_name_len
 
     def _get_pbar_desc(self, key: str, val: Union[str, bool], max_desc_len: int) -> str:
         return self._PBAR_FORMAT.format(key, val).ljust(max_desc_len)
 
-    def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
+    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
         if not gdfs:
             return self._get_empty_result()
         elif len(gdfs) == 1:
