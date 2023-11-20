@@ -4,19 +4,21 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd
-import pandas as pd
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
+
+if TYPE_CHECKING:
+    import os
 
 
 class OSMPbfLoader(OSMLoader):
@@ -106,9 +108,9 @@ class OSMPbfLoader(OSMLoader):
 
         area_wgs84 = self._prepare_area_gdf(area)
 
-        downloaded_pbf_files: Mapping[Hashable, Sequence[Union[str, Path]]]
+        downloaded_pbf_files: Sequence[Union[str, os.PathLike[str]]]
         if self.pbf_file is not None:
-            downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
+            downloaded_pbf_files = [self.pbf_file]
         else:
             downloaded_pbf_files = PbfFileDownloader(
                 download_source=self.download_source,
@@ -120,13 +122,11 @@ class OSMPbfLoader(OSMLoader):
 
         pbf_handler = PbfFileHandler(tags=merged_tags)
 
-        results = []
-        for _, pbf_files in downloaded_pbf_files.items():
-            features_gdf = pbf_handler.get_features_gdf(file_paths=pbf_files)
-            matching_features_ids = features_gdf.sjoin(area_wgs84).index
-            results.append(features_gdf.loc[matching_features_ids])
+        features_gdf = pbf_handler.get_features_gdf(file_paths=downloaded_pbf_files)
+        matching_features_ids = features_gdf.sjoin(area_wgs84).index
+        features_gdf = features_gdf.loc[matching_features_ids]
 
-        result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
+        result_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
             column
@@ -136,16 +136,3 @@ class OSMPbfLoader(OSMLoader):
         result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
-
-    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-        if not gdfs:
-            return self._get_empty_result()
-        elif len(gdfs) == 1:
-            gdf = gdfs[0]
-        else:
-            gdf = pd.concat(gdfs)
-
-        return gdf[~gdf.index.duplicated(keep="first")]
-
-    def _get_empty_result(self) -> gpd.GeoDataFrame:
-        return gpd.GeoDataFrame(index=pd.Index(name=FEATURES_INDEX), crs=WGS84_CRS, geometry=[])

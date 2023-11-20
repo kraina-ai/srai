@@ -3,12 +3,14 @@ PBF File Downloader.
 
 This module contains a downloader capable of downloading a PBF files from multiple sources.
 """
+
 import json
 import time
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
 from time import sleep
-from typing import Any, Callable, Dict, Hashable, List, Literal, Sequence, Union
+from typing import Any, Callable, Literal, Union
 
 import geopandas as gpd
 import requests
@@ -32,12 +34,11 @@ from srai.loaders.osm_loaders.openstreetmap_extracts import (
     find_smallest_containing_geofabrik_extracts,
     find_smallest_containing_openstreetmap_fr_extracts,
 )
-from srai.loaders.osm_loaders.pbf_file_clipper import PbfFileClipper
 
 PbfSourceLiteral = Literal["geofabrik", "openstreetmap_fr", "protomaps"]
-PbfSourceExtractsFunctions: Dict[
+PbfSourceExtractsFunctions: dict[
     PbfSourceLiteral,
-    Callable[[Union[BaseGeometry, BaseMultipartGeometry]], List[OpenStreetMapExtract]],
+    Callable[[Union[BaseGeometry, BaseMultipartGeometry]], list[OpenStreetMapExtract]],
 ] = {
     "geofabrik": find_smallest_containing_geofabrik_extracts,
     "openstreetmap_fr": find_smallest_containing_openstreetmap_fr_extracts,
@@ -109,12 +110,9 @@ class PbfFileDownloader:
         """
         self.download_source = download_source
         self.download_directory = download_directory
-        self.clipper = PbfFileClipper(working_directory=self.download_directory)
         self.switch_to_geofabrik_on_error = switch_to_geofabrik_on_error
 
-    def download_pbf_files_for_regions_gdf(
-        self, regions_gdf: gpd.GeoDataFrame
-    ) -> Dict[Hashable, Sequence[Path]]:
+    def download_pbf_files_for_regions_gdf(self, regions_gdf: gpd.GeoDataFrame) -> Sequence[Path]:
         """
         Download PBF files for regions GeoDataFrame.
 
@@ -128,10 +126,9 @@ class PbfFileDownloader:
             ValueError: If provided geometries aren't shapely.geometry.Polygons.
 
         Returns:
-            Dict[Hashable, Sequence[Path]]: List of Paths to downloaded PBF files per
-                each region_id.
+            Sequence[Path]: List of Paths to downloaded PBF files.
         """
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+        downloaded_pbf_files: Sequence[Path] = []
 
         non_polygon_types = set(
             type(geometry)
@@ -143,9 +140,11 @@ class PbfFileDownloader:
 
         try:
             if self.download_source == "protomaps":
-                regions_mapping = self._download_pbf_files_for_polygons_from_protomaps(regions_gdf)
+                downloaded_pbf_files = self._download_pbf_files_for_polygons_from_protomaps(
+                    regions_gdf
+                )
             elif self.download_source in PbfSourceExtractsFunctions:
-                regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                downloaded_pbf_files = self._download_pbf_files_for_polygons_from_existing_extracts(
                     regions_gdf
                 )
         except Exception as err:
@@ -154,7 +153,7 @@ class PbfFileDownloader:
                     f"Error occured ({err}). Auto-switching to 'geofabrik' download source.",
                     stacklevel=1,
                 )
-                regions_mapping = self._download_pbf_files_for_polygons_from_existing_extracts(
+                downloaded_pbf_files = self._download_pbf_files_for_polygons_from_existing_extracts(
                     regions_gdf, override_to_geofabrik=True
                 )
             else:
@@ -168,12 +167,12 @@ class PbfFileDownloader:
                     )
                 raise RuntimeError(error_message) from err
 
-        return regions_mapping
+        return downloaded_pbf_files
 
     def _download_pbf_files_for_polygons_from_existing_extracts(
         self, regions_gdf: gpd.GeoDataFrame, override_to_geofabrik: bool = False
-    ) -> Dict[Hashable, Sequence[Path]]:
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+    ) -> Sequence[Path]:
+        downloaded_pbf_files: list[Path] = []
 
         unary_union_geometry = regions_gdf.geometry.unary_union
 
@@ -183,8 +182,6 @@ class PbfFileDownloader:
             extract_function = PbfSourceExtractsFunctions[self.download_source]
         extracts = extract_function(unary_union_geometry)
 
-        downloaded_pbf_files = []
-
         for extract in extracts:
             pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
 
@@ -192,31 +189,23 @@ class PbfFileDownloader:
 
             downloaded_pbf_files.append(pbf_file_path)
 
-        polygons = flatten_geometry(unary_union_geometry)
-
-        for region_id, row in regions_gdf.iterrows():
-            polygons = flatten_geometry(row.geometry)
-            regions_mapping[region_id] = [
-                self.clipper.clip_pbf_file(polygon, downloaded_pbf_files) for polygon in polygons
-            ]
-
-        return regions_mapping
+        return downloaded_pbf_files
 
     def _download_pbf_files_for_polygons_from_protomaps(
         self, regions_gdf: gpd.GeoDataFrame
-    ) -> Dict[Hashable, Sequence[Path]]:
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+    ) -> Sequence[Path]:
+        downloaded_pbf_files: list[Path] = []
 
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
-            regions_mapping[region_id] = [
+            downloaded_pbf_files.extend(
                 self._download_pbf_file_for_polygon_from_protomaps(
                     polygon, region_id, polygon_id + 1
                 )
                 for polygon_id, polygon in enumerate(polygons)
-            ]
+            )
 
-        return regions_mapping
+        return downloaded_pbf_files
 
     def _download_pbf_file_for_polygon_from_protomaps(
         self, polygon: Polygon, region_id: str = "OSM", polygon_id: int = 1
@@ -284,7 +273,7 @@ class PbfFileDownloader:
                 raise RuntimeError(error_message) from err
 
             with tqdm() as pbar:
-                status_response: Dict[str, Any] = {}
+                status_response: dict[str, Any] = {}
                 cells_total = 0
                 nodes_total = 0
                 elems_total = 0
