@@ -7,7 +7,7 @@ As defined in Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, NamedTuple, Set, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -84,24 +84,24 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
 
         self._anchor_df_locs_lookup: np.ndarray
         self._positive_df_locs_lookup: np.ndarray
-        self._excluded_from_negatives: Dict[int, Set[int]] = {}
+        self._excluded_from_negatives: dict[int, set[int]] = {}
 
-        self._region_index_to_df_loc: Dict[T, int] = {
+        self._region_index_to_df_loc: dict[T, int] = {
             region_index: i for i, region_index in enumerate(data.index)
         }
-        self._df_loc_to_region_index: Dict[int, T] = {
+        self._df_loc_to_region_index: dict[int, T] = {
             i: region_index for region_index, i in self._region_index_to_df_loc.items()
         }
 
         self._build_lookup_tables(data, neighbourhood)
 
     def _build_lookup_tables(self, data: pd.DataFrame, neighbourhood: Neighbourhood[T]) -> None:
-        anchor_df_locs_lookup: List[int] = []
-        positive_df_locs_lookup: List[int] = []
+        anchor_df_locs_lookup: list[int] = []
+        positive_df_locs_lookup: list[int] = []
 
         for region_df_loc, region_index in tqdm(enumerate(data.index), total=len(data)):
             region_direct_neighbours = neighbourhood.get_neighbours(region_index)
-            neighbours_df_locs: Set[int] = {
+            neighbours_df_locs: set[int] = {
                 self._region_index_to_df_loc[neighbour_index]
                 for neighbour_index in region_direct_neighbours
             }

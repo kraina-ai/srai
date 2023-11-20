@@ -1,5 +1,5 @@
 """Tests for neigbourhoods with regions."""
-from typing import Any, Set
+from typing import Any
 
 import geopandas as gpd
 import pytest
@@ -115,8 +115,8 @@ def two_rings_regions_some_missing() -> gpd.GeoDataFrame:
 )
 def test_get_neighbours_with_regions_gdf(
     regions_gdf_fixture: str,
-    expected: Set[str],
-    expected_with_include_center: Set[str],
+    expected: set[str],
+    expected_with_include_center: set[str],
     request: Any,
 ) -> None:
     """Test get_neighbours of H3Neighbourhood with a specified regions GeoDataFrame."""
@@ -202,7 +202,7 @@ def test_get_neighbours_with_regions_gdf(
     ],
 )
 def test_get_neighbours_up_to_distance_with_regions_gdf(
-    distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
+    distance: int, expected: set[str], expected_with_include_center: set[str], request: Any
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood with a specified regions."""
     center_region = "862bac507ffffff"
@@ -279,7 +279,7 @@ def test_get_neighbours_up_to_distance_with_regions_gdf(
     ],
 )
 def test_get_neighbours_at_distance_with_regions_gdf(
-    distance: int, expected: Set[str], expected_with_include_center: Set[str], request: Any
+    distance: int, expected: set[str], expected_with_include_center: set[str], request: Any
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood with a specified regions GeoDataFrame."""
     center_region = "862bac507ffffff"

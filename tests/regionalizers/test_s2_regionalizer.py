@@ -1,6 +1,6 @@
 """Tests for H3Regionalizer."""
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from unittest import TestCase
 
 import pytest
@@ -16,7 +16,7 @@ S2_RESOLUTION = 7
 
 
 @pytest.fixture  # type: ignore
-def expected_s2_indexes() -> List[str]:
+def expected_s2_indexes() -> list[str]:
     """Get expected s2 indexes."""
     return [
         "0555c",
@@ -53,7 +53,7 @@ def test_transform(
 ) -> None:
     """Test transform of H3Regionalizer."""
     gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
-    s2_indexes: List[str] = request.getfixturevalue(expected_s2_indexes_fixture)
+    s2_indexes: list[str] = request.getfixturevalue(expected_s2_indexes_fixture)
     with expectation:
         gdf_s2 = S2Regionalizer(resolution).transform(gdf)
 

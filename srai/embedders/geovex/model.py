@@ -7,7 +7,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 import math
-from typing import TYPE_CHECKING, Callable, List, Tuple
+from typing import TYPE_CHECKING, Callable
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
@@ -42,7 +42,7 @@ def get_radius(i: int, j: int) -> int:
     return cube_distance(origin, target)
 
 
-def cube_distance(a: Tuple[int, int, int], b: Tuple[int, int, int]) -> int:
+def cube_distance(a: tuple[int, int, int], b: tuple[int, int, int]) -> int:
     """
     Calculates the maximum distance between two points in a cube.
 
@@ -54,7 +54,7 @@ def cube_distance(a: Tuple[int, int, int], b: Tuple[int, int, int]) -> int:
     return max(abs(vec[0]), abs(vec[1]), abs(vec[2]))
 
 
-def cube_subtract(a: Tuple[int, int, int], b: Tuple[int, int, int]) -> Tuple[int, int, int]:
+def cube_subtract(a: tuple[int, int, int], b: tuple[int, int, int]) -> tuple[int, int, int]:
     """
     Subtracts the coordinates of two 3D points and returns the resulting tuple.
 
@@ -81,7 +81,7 @@ def get_shape(r: int) -> int:
     return 2 * r + 2
 
 
-def build_mask_funcs(R: int) -> Tuple[Callable[[int, int], float], ...]:
+def build_mask_funcs(R: int) -> tuple[Callable[[int, int], float], ...]:
     """
     Build the mask functions for the loss function. These functions depend on the radius of the
     hexagonal region. They weight the loss function to give more importance to the center of the
@@ -314,7 +314,7 @@ class HexagonalConvTranspose2d(HexagonalConv2d):
 class Reshape(nn.Module):  # type: ignore
     """Reshape layer."""
 
-    def __init__(self, shape: Tuple[int, ...]):
+    def __init__(self, shape: tuple[int, ...]):
         """
         Initialize the Reshape layer.
 
@@ -359,7 +359,7 @@ class GeoVeXZIP(nn.Module):  # type: ignore
         self.pi = nn.Linear(in_dim, out_dim)
         self.lambda_ = nn.Linear(in_dim, out_dim)
 
-    def forward(self, x: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
+    def forward(self, x: "torch.Tensor") -> tuple["torch.Tensor", "torch.Tensor"]:
         """
         Forward pass of the GeoVeXZIP layer.
 
@@ -514,7 +514,7 @@ class GeoVexModel(Model):
 
         self._loss = GeoVeXLoss(self.R)
 
-    def forward(self, x: "torch.Tensor") -> Tuple["torch.Tensor", "torch.Tensor"]:
+    def forward(self, x: "torch.Tensor") -> tuple["torch.Tensor", "torch.Tensor"]:
         """
         Forward pass of the GeoVeX model.
 
@@ -525,10 +525,10 @@ class GeoVexModel(Model):
         Returns:
             torch.Tensor: The output tensor.
         """
-        res: Tuple[torch.Tensor, torch.Tensor] = self.decoder(self.encoder(x))
+        res: tuple[torch.Tensor, torch.Tensor] = self.decoder(self.encoder(x))
         return res[0], res[1]
 
-    def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
+    def training_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         # sourcery skip: class-extract-method
         """
         Perform a training step. This is called by PyTorch Lightning.
@@ -546,7 +546,7 @@ class GeoVexModel(Model):
         self.log("train_loss", loss, on_step=True, on_epoch=True)
         return loss
 
-    def validation_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
+    def validation_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
         Perform a validation step. This is called by PyTorch Lightning.
 
@@ -561,7 +561,7 @@ class GeoVexModel(Model):
         self.log("validation_loss", loss, on_step=True, on_epoch=True)
         return loss
 
-    def configure_optimizers(self) -> List["torch.optim.Optimizer"]:
+    def configure_optimizers(self) -> list["torch.optim.Optimizer"]:
         """
         Configure the optimizers. This is called by PyTorch Lightning.
 

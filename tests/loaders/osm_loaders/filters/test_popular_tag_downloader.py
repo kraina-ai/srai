@@ -2,7 +2,7 @@
 import json
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import requests_mock as r_mock
@@ -12,15 +12,15 @@ from srai.loaders.osm_loaders.filters import get_popular_tags
 
 
 @pytest.fixture  # type: ignore
-def popular_filter_api_data() -> Dict[str, Any]:
+def popular_filter_api_data() -> dict[str, Any]:
     """Load example taginfo API response data from file."""
     with (Path(__file__).parent / "popular_filter_example.json").open("rt", encoding="utf-8") as f:
-        res: Dict[str, Any] = json.load(f)
+        res: dict[str, Any] = json.load(f)
         return res
 
 
 @pytest.fixture  # type: ignore
-def expected_result_all() -> Dict[str, List[str]]:
+def expected_result_all() -> dict[str, list[str]]:
     """Get expected results for whole api data."""
     return {
         "natural": ["wood"],
@@ -37,7 +37,7 @@ def expected_result_all() -> Dict[str, List[str]]:
 
 
 @pytest.fixture  # type: ignore
-def expected_in_wiki_only() -> Dict[str, List[str]]:
+def expected_in_wiki_only() -> dict[str, list[str]]:
     """Get expected results when using `in_wiki_only=True`."""
     return {
         "natural": ["wood"],
@@ -49,7 +49,7 @@ def expected_in_wiki_only() -> Dict[str, List[str]]:
 
 
 @pytest.fixture  # type: ignore
-def expected_result_min_count_8m() -> Dict[str, List[str]]:
+def expected_result_min_count_8m() -> dict[str, list[str]]:
     """Get expected results when using `min_count=8_000_000`."""
     return {
         "natural": ["wood"],
@@ -58,7 +58,7 @@ def expected_result_min_count_8m() -> Dict[str, List[str]]:
 
 
 @pytest.fixture  # type: ignore
-def expected_result_min_fraction() -> Dict[str, List[str]]:
+def expected_result_min_fraction() -> dict[str, list[str]]:
     """Get expected results when using `min_fraction=0.001`."""
     return {
         "natural": ["wood"],

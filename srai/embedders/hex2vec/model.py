@@ -6,7 +6,7 @@ This module contains the embedding model from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
@@ -24,7 +24,7 @@ class Hex2VecModel(Model):
     of features) per region and outputs dense embeddings.
     """
 
-    def __init__(self, layer_sizes: List[int], learning_rate: float = 0.001):
+    def __init__(self, layer_sizes: list[int], learning_rate: float = 0.001):
         """
         Initialize Hex2VecModel.
 
@@ -50,7 +50,7 @@ class Hex2VecModel(Model):
         if len(layer_sizes) < 2:
             raise ValueError("layer_sizes must contain at least 2 elements")
 
-        def create_layers(sizes: List[Tuple[int, int]]) -> nn.Sequential:
+        def create_layers(sizes: list[tuple[int, int]]) -> nn.Sequential:
             layers = []
             for i, (input_size, output_size) in enumerate(sizes):
                 linear = nn.Linear(input_size, output_size)
@@ -109,7 +109,7 @@ class Hex2VecModel(Model):
         score = torch.mul(X_anchor_em, X_context_em).sum(dim=1)
         return score
 
-    def training_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
+    def training_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
         Perform one training step.
 
@@ -146,7 +146,7 @@ class Hex2VecModel(Model):
         self.log("train_f1", f_score, on_step=True, on_epoch=True)
         return loss
 
-    def validation_step(self, batch: List["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
+    def validation_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
         Perform one validation step.
 

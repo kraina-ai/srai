@@ -8,7 +8,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
-from typing import TYPE_CHECKING, Any, Generic, List, Set, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -31,9 +31,9 @@ except ImportError:
 T = TypeVar("T")
 
 # define a type for the dataset item
-Ij_Index = Tuple[int, int]
-Neighbors = List[Tuple[int, Ij_Index]]
-CellInfo = Tuple[str, int, Neighbors]
+Ij_Index = tuple[int, int]
+Neighbors = list[tuple[int, Ij_Index]]
+CellInfo = tuple[str, int, Neighbors]
 
 
 class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
@@ -70,7 +70,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         # number of columns in the dataset
         self._N: int = data.shape[1]
         # store the list of valid h3 indices (have all the neighbors in the dataset)
-        self._valid_cells: List[CellInfo] = []
+        self._valid_cells: list[CellInfo] = []
         # store the data as a torch tensor
         self._data_torch = torch.Tensor(data.to_numpy(dtype=np.float32))
         # iterate over the data and build the valid h3 indices
@@ -83,8 +83,8 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         data: pd.DataFrame,
         neighbourhood: H3Neighbourhood,
         neighbor_k_ring: int,
-        all_indices: Set[str],
-    ) -> Tuple[Set[str], List[CellInfo]]:
+        all_indices: set[str],
+    ) -> tuple[set[str], list[CellInfo]]:
         invalid_h3s = set()
         valid_h3s = []
 
@@ -177,7 +177,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
                 f"neighbourhood has to be an H3Neighbourhood, but was {type(neighbourhood)}"
             )
 
-    def get_valid_cells(self) -> List[str]:
+    def get_valid_cells(self) -> list[str]:
         """
         Returns the list of valid h3 indices in the dataset.
 
@@ -186,7 +186,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         """
         return [h3_index for h3_index, _, _ in self._valid_cells]
 
-    def get_invalid_cells(self) -> List[str]:
+    def get_invalid_cells(self) -> list[str]:
         """
         Returns the list of invalid h3 indices in the dataset.
 
