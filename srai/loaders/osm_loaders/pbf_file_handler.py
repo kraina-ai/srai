@@ -214,22 +214,12 @@ class PbfFileHandler:
             WHERE kind = 'node'
             AND lat IS NOT NULL AND lon IS NOT NULL
         """).to_view("nodes", replace=True)
-        # print(
-        #     "nodes - view",
-        #     self.connection.sql("SELECT DISTINCT id FROM nodes").count("id").fetchone(),
-        # )
         nodes_valid = self._sql_to_parquet_file(
             sql_query="""
             SELECT DISTINCT id FROM nodes
             """,
             file_path=Path(tmp_dir_name) / "nodes_valid.parquet",
         )
-        # print(
-        #     "nodes_valid",
-        #     self.connection.sql(f"SELECT DISTINCT id FROM ({nodes_valid.sql_query()}) nodes_valid")
-        #     .count("id")
-        #     .fetchone(),
-        # )
         # NODES - INTERSECTING (NI)
         # - select all from NV which intersect given geometry filter
         nodes_intersecting = self._sql_to_parquet_file(
@@ -240,14 +230,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "nodes_intersecting.parquet",
         )
-        # print(
-        #     "nodes_intersecting",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({nodes_intersecting.sql_query()}) nodes_intersecting"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
         # NODES - FILTERED (NF)
         # - select all from NI with tags filter
         nodes_filtered = self._sql_to_parquet_file(
@@ -258,14 +240,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "nodes_filtered.parquet",
         )
-        # print(
-        #     "nodes_filtered",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({nodes_filtered.sql_query()}) nodes_filtered"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
 
         # WAYS - VALID (WV)
         # - select all with kind = 'way'
@@ -277,7 +251,6 @@ class PbfFileHandler:
             FROM ({elements.sql_query()}) w
             WHERE kind = 'way' AND len(refs) >= 2
         """).to_view("ways", replace=True)
-        # print("ways", self.connection.sql("SELECT DISTINCT id FROM ways").count("id").fetchone())
         unnested_way_refs = self._sql_to_parquet_file(
             sql_query="""
             SELECT w.id, UNNEST(refs) as ref
@@ -285,14 +258,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "unnested_way_refs.parquet",
         )
-        # print(
-        #     "unnested_way_refs",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({unnested_way_refs.sql_query()}) unnested_way_refs"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
         ways_valid = self._sql_to_parquet_file(
             sql_query=f"""
             WITH total_way_refs AS (
@@ -312,12 +277,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "ways_valid.parquet",
         )
-        # print(
-        #     "ways_valid",
-        #     self.connection.sql(f"SELECT DISTINCT id FROM ({ways_valid.sql_query()}) ways_valid")
-        #     .count("id")
-        #     .fetchone(),
-        # )
         # WAYS - INTERSECTING (WI)
         # - select all from WV with joining any from NV on ref
         ways_intersecting = self._sql_to_parquet_file(
@@ -329,10 +288,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "ways_intersecting.parquet",
         )
-        # print(
-        #     "ways_intersecting",
-        #     self.connection.sql("SELECT DISTINCT id FROM ways_intersecting").count("id").fetchone(),
-        # )
         # WAYS - FILTERED (WF)
         # - select all from WI with tags filter
         ways_filtered = self._sql_to_parquet_file(
@@ -343,14 +298,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "ways_filtered.parquet",
         )
-        # print(
-        #     "ways_filtered",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({ways_filtered.sql_query()}) ways_filtered"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
 
         # RELATIONS - VALID (RV)
         # - select all with kind = 'relation'
@@ -365,10 +312,6 @@ class PbfFileHandler:
             AND list_contains(map_keys(tags), 'type')
             AND list_has_any(map_extract(tags, 'type'), ['boundary', 'multipolygon'])
         """).to_view("relations", replace=True)
-        # print(
-        #     "relations",
-        #     self.connection.sql("SELECT DISTINCT id FROM relations").count("id").fetchone(),
-        # )
         filtered_relation_refs = self._sql_to_parquet_file(
             sql_query="""
             WITH unnested_relation_refs AS (
@@ -381,15 +324,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "filtered_relation_refs.parquet",
         )
-        # print(
-        #     "filtered_relation_refs",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({filtered_relation_refs.sql_query()})"
-        #         " filtered_relation_refs"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
         relations_valid = self._sql_to_parquet_file(
             sql_query=f"""
             WITH total_relation_refs AS (
@@ -409,14 +343,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "relations_valid.parquet",
         )
-        # print(
-        #     "relations_valid",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({relations_valid.sql_query()}) relations_valid"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
         # RELATIONS - INTERSECTING (RI)
         # - select all from RW with joining any from RV on ref
         relations_intersecting = self._sql_to_parquet_file(
@@ -428,12 +354,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "relations_intersecting.parquet",
         )
-        # print(
-        #     "relations_intersecting",
-        #     self.connection.sql("SELECT DISTINCT id FROM relations_intersecting")
-        #     .count("id")
-        #     .fetchone(),
-        # )
         # RELATIONS - FILTERED (RF)
         # - select all from RI with tags filter
         relations_filtered = self._sql_to_parquet_file(
@@ -444,14 +364,6 @@ class PbfFileHandler:
             """,
             file_path=Path(tmp_dir_name) / "relations_filtered.parquet",
         )
-        # print(
-        #     "relations_filtered",
-        #     self.connection.sql(
-        #         f"SELECT DISTINCT id FROM ({relations_filtered.sql_query()}) relations_filtered"
-        #     )
-        #     .count("id")
-        #     .fetchone(),
-        # )
 
         # GET ALL RELATIONS IDS
         # - filtered - all IDs from RF
@@ -541,7 +453,6 @@ class PbfFileHandler:
 
     def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> list[str]:
         """Prepare features filter clauses based on tags filter."""
-        # osm_tag_keys = set()
         osm_tag_keys_select_clauses = []
 
         if not self.filter_tags:
@@ -612,10 +523,6 @@ class PbfFileHandler:
         relations_result_parquet = Path(tmp_dir_name) / "relations_full.parquet"
 
         node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
-        print(self.connection.sql(f"""
-                SELECT {', '.join(node_select_clauses)}
-                FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
-            """).sql_query())
         self._save_parquet_file_with_geometry(
             self.connection.sql(f"""
                 SELECT {', '.join(node_select_clauses)}
@@ -639,7 +546,6 @@ class PbfFileHandler:
             """),
             relations_result_parquet,
         )
-        print("concatenating results")
 
         parquet_tables = [
             pq.read_table(parsed_parquet_file)
@@ -722,7 +628,6 @@ class PbfFileHandler:
             LEFT JOIN ({filtered_osm_ids.nodes_filtered.sql_query()}) fn ON n.id = fn.id
             WHERE kind = 'node'
         """)
-        # print(nodes_with_geometry.sql_query())
         nodes_parquet = self._save_parquet_file_with_geometry(
             elements=nodes_with_geometry, file_path=Path(tmp_dir_name) / "nodes.parquet"
         )
@@ -769,7 +674,6 @@ class PbfFileHandler:
             JOIN ways w ON w.id = w_g.id
             LEFT JOIN ({filtered_osm_ids.ways_filtered.sql_query()}) fw ON w.id = fw.id
         """)
-        # print(ways_with_geometry.sql_query())
         ways_parquet = self._save_parquet_file_with_geometry(
             elements=ways_with_geometry, file_path=Path(tmp_dir_name) / "ways_linestring.parquet"
         )
@@ -850,7 +754,6 @@ class PbfFileHandler:
             WHERE
                 is_filtered
             """)
-        # print(ways_with_geometry.sql_query())
         ways_parquet = self._save_parquet_file_with_geometry(
             elements=ways_with_geometry, file_path=Path(tmp_dir_name) / "ways_proper.parquet"
         )
@@ -863,99 +766,6 @@ class PbfFileHandler:
         filtered_osm_ids: FilteredOSMIds,
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        # print(self.connection.sql(f"""
-        #     WITH relations AS (
-        #         SELECT *
-        #         FROM ({elements.sql_query()}) r
-        #         SEMI JOIN ({filtered_osm_ids.relations_filtered.sql_query()}) fr ON r.id = fr.id
-        #         WHERE kind = 'relation'
-        #         and id = 16048460
-        #     ),
-        #     unnested_relations AS (
-        #         SELECT
-        #             r.id,
-        #             r.ref_type,
-        #             COALESCE(r.ref_role, 'outer') ref_role,
-        #             r.ref,
-        #             w.geometry
-        #         FROM (
-        #             -- Filter ways
-        #             SELECT
-        #                 *
-        #             FROM (
-        #                 -- Unnest relations
-        #                 SELECT
-        #                     r.id,
-        #                     r.tags,
-        #                     UNNEST(refs) as ref,
-        #                     UNNEST(ref_types) as ref_type,
-        #                     UNNEST(ref_roles) as ref_role,
-        #                     UNNEST(range(length(refs))) as idx,
-        #                 FROM relations r
-        #             )
-        #             WHERE ref_type = 'way'
-        #         ) r
-        #         JOIN ({ways.sql_query()}) w
-        #         ON w.id = r.ref
-        #         ORDER BY r.id, r.idx
-        #     ),
-        #     relations_with_geometries AS (
-        #         SELECT id, ref_role, geom geometry
-        #         FROM (
-        #             -- Collect geometry
-        #             SELECT
-        #                 id,
-        #                 ref_role,
-        #                 UNNEST(ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true),
-        #             FROM unnested_relations
-        #             GROUP BY id, ref_role
-        #         )
-        #         WHERE ST_NPoints(geom) >= 4
-        #     ),
-        #     valid_relations AS (
-        #         SELECT id, is_valid
-        #         FROM (
-        #             SELECT
-        #                 id, bool_and(ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))) is_valid
-        #             FROM relations_with_geometries
-        #             GROUP BY id
-        #         )
-        #         WHERE is_valid = true
-        #     ),
-        #     unioned_geometries AS (
-        #         SELECT id, ref_role, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-        #         FROM relations_with_geometries
-        #         SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-        #         GROUP BY id, ref_role
-        #     ),
-        #     final_geometries AS (
-        #         SELECT
-        #             outers.id,
-        #             CASE WHEN inners.id IS NOT NULL THEN
-        #                 ST_Difference(outers.geometry, inners.geometry)
-        #             ELSE
-        #                 outers.geometry
-        #             END AS geometry
-        #         FROM (
-        #             SELECT * FROM
-        #             unioned_geometries
-        #             WHERE ref_role = 'outer'
-        #         ) outers
-        #         LEFT JOIN (
-        #             SELECT * FROM
-        #             unioned_geometries
-        #             WHERE ref_role = 'inner'
-        #         ) inners
-        #         ON outers.id = inners.id
-        #     )
-        #     SELECT * EXCLUDE(geometry), ST_NPoints(geometry) points FROM relations_with_geometries
-        #     ORDER BY ST_NPoints(geometry)
-        #     LIMIT 100
-        #     --SELECT r.id, r.tags, r_g.geometry
-        #     --FROM final_geometries r_g
-        #     --JOIN relations r
-        #     --ON r.id = r_g.id
-        # """).fetchall())
         relations_with_geometry = self.connection.sql(f"""
             WITH relations AS (
                 SELECT *
