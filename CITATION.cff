@@ -15,9 +15,8 @@ authors:
   orcid: "https://orcid.org/0000-0002-2047-1649"
 title: "SRAI: Spatial Representations for Artificial Intelligence"
 version: 0.6.1
-doi: 10.1145/3615886.3627740
-date-released: 2023-11-13
-url: "https://arxiv.org/abs/2310.13098"
+date-released: 2022-11-23
+url: "https://kraina-ai.github.io/srai/"
 repository-code: "https://github.com/kraina-ai/srai"
 licence: Apache-2.0
 keywords:
@@ -29,3 +28,37 @@ keywords:
 - spatial
 - geospatial
 - spatial-analysis
+doi: 10.1145/3615886.3627740
+preferred-citation:
+  type: conference-paper
+  title: "SRAI: Towards Standardization of Geospatial AI"
+  authors:
+  - family-names: "Gramacki"
+    given-names: "Piotr"
+    orcid: "https://orcid.org/0000-0002-4587-5586"
+  - family-names: "Leśniara"
+    given-names: "Kacper"
+    orcid: "https://orcid.org/0000-0003-0875-4301"
+  - family-names: "Raczycki"
+    given-names: "Kamil"
+    orcid: "https://orcid.org/0000-0002-3715-4869"
+  - family-names: "Woźniak"
+    given-names: "Szymon"
+    orcid: "https://orcid.org/0000-0002-2047-1649"
+  - family-names: "Przymus"
+    given-names: "Marcin"
+    orcid: "https://orcid.org/0009-0004-7741-8541"
+  - family-names: "Szymański"
+    given-names: "Piotr"
+    orcid: "https://orcid.org/0000-0002-7733-3239"
+  collection-title: "Proceedings of the 6th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery""
+  collection-type: proceedings
+  month: 11
+  year: 2023
+  publisher:
+    name: "Association for Computing Machinery"
+  url: "https://dl.acm.org/doi/10.1145/3615886.3627740"
+  identifiers:
+    - type: other
+      value: "arXiv:2310.13098"
+      description: "The arXiv preprint of the paper"
