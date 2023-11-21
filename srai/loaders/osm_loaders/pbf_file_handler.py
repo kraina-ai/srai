@@ -81,6 +81,7 @@ class PbfFileHandler:
         self.region_geometry = region_geometry
         self.working_directory = Path(working_directory)
         self.working_directory.mkdir(parents=True, exist_ok=True)
+        self.connection: "duckdb.DuckDBPyConnection" = None
 
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], ignore_cache: bool = False
@@ -106,12 +107,17 @@ class PbfFileHandler:
         from geoarrow.pyarrow import io
 
         with tempfile.TemporaryDirectory(dir=self.working_directory) as tmp_dir_name:
-            self._set_up_duckdb_connection(tmp_dir_name)
-            parsed_geoparquet_files = []
-            for path_no, path in enumerate(file_paths):
-                self.path_no = path_no + 1
-                parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name, ignore_cache)
-                parsed_geoparquet_files.append(parsed_geoparquet_file)
+            try:
+                self._set_up_duckdb_connection(tmp_dir_name)
+                parsed_geoparquet_files = []
+                for path_no, path in enumerate(file_paths):
+                    self.path_no = path_no + 1
+                    parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name, ignore_cache)
+                    parsed_geoparquet_files.append(parsed_geoparquet_file)
+            except Exception:
+                if self.connection is not None:
+                    self.connection.close()
+                    self.connection = None
 
         parquet_tables = [
             io.read_geoparquet_table(parsed_parquet_file)
