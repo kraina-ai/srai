@@ -161,7 +161,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
         switch_to_geofabrik_on_error=False,
     )
     files = downloader.download_pbf_files_for_regions_gdf(regions_gdf)
-    file_names = [path.name for path in files[1]]
+    file_names = [path.name for path in files]
     assert set(file_names) == set(test_file_names)
 
 
@@ -244,7 +244,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             None,
             HEX2VEC_FILTER,
             "geofabrik",
-            397,
+            398,
             12,
             [
                 "amenity",
