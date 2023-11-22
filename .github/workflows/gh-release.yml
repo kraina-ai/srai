@@ -1,24 +1,25 @@
 name: "GitHub release"
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [Test - DEV]
+    types:
+      - completed
 
 jobs:
-  run-tests:
-    name: "Run tests job"
-    uses: ./.github/workflows/_tests.yml
-
   github-release:
-    if: ${{ contains(github.event.head_commit.message, format('chore(CI/CD){0} bump version', ':')) }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Create a GitHub release
-    needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Get last commit message
+        id: get-last-commit-message
+        run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> "$GITHUB_OUTPUT"
+      - name: Check commit message for release info
+        run: ${{ contains(steps.get-last-commit-message.outputs.COMMIT_MESSAGE, format('chore(CI/CD){0} bump version', ':')) }}
       - name: Configure Git user
         run: |
           git config --local user.name "Kraina CI/CD"
@@ -30,7 +31,7 @@ jobs:
         id: extract-version
         uses: winterjung/split@v2
         with:
-          msg: ${{ github.event.head_commit.message }}
+          msg: ${{ steps.get-last-commit-message.outputs.COMMIT_MESSAGE }}
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
