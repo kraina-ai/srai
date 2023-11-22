@@ -53,9 +53,8 @@ a.autorefs-external:hover::after {
 
 table.highlighttable td.linenos,
 span.linenos,
-div.highlight span.gp {
+.highlight .gp, .highlight .go {
   user-select: none;
-  -webkit-user-select: text;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
