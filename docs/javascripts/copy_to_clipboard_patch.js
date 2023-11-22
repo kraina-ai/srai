@@ -6,18 +6,17 @@ const SELECTABILITY_PROPERTIES = [
 ];
 
 document$.subscribe(function () {
-    fixCopyOnlyUserSelectable();
+    makeButtonsCopySelectableOnly();
 })
 
-function fixCopyOnlyUserSelectable() {
+function makeButtonsCopySelectableOnly() {
     const buttonsToFix = document.querySelectorAll(".highlight button.md-clipboard");
     buttonsToFix.forEach((button) => {
-        const content = extractUserSelectable(button.dataset.clipboardTarget);
-        button.dataset.clipboardText = content;
+        button.dataset.clipboardText = extractText(button.dataset.clipboardTarget);
     });
 }
 
-function extractUserSelectable(selector) {
+function extractText(selector) {
     const element = document.querySelector(selector);
     return Array.from(element.childNodes)
         .filter(child => includeInOutput(child))
