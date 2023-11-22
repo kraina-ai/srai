@@ -5,6 +5,9 @@ on:
     types:
       - completed
 
+permissions:
+  actions: 'write'
+
 jobs:
   github-release:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -18,8 +21,11 @@ jobs:
       - name: Get last commit message
         id: get-last-commit-message
         run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> "$GITHUB_OUTPUT"
-      - name: Check commit message for release info
-        run: ${{ contains(steps.get-last-commit-message.outputs.COMMIT_MESSAGE, format('chore(CI/CD){0} bump version', ':')) }}
+      - name: Cancel run if not a release commit
+        run: |
+          (${{ contains(steps.get-last-commit-message.outputs.COMMIT_MESSAGE, format('chore(CI/CD){0} bump version', ':')) }} &&
+          gh run cancel ${{ github.run_id }} &&
+          gh run watch ${{ github.run_id }}) || true
       - name: Configure Git user
         run: |
           git config --local user.name "Kraina CI/CD"
