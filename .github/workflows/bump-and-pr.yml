@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - uses: pdm-project/setup-pdm@v3
-        name: Setup PDM (Python 3.11)
+        name: Setup PDM
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           architecture: x64
@@ -67,3 +67,6 @@ jobs:
           base: main
           body: ${{ steps.changelog.outputs.release-notes }}
           token: ${{ secrets.CICD_PAT_TOKEN }}
+          author: Kraina CI/CD <cicd@kraina.ai>
+          committer: Kraina CI/CD <cicd@kraina.ai>
+          commit-message: "docs: update Changelog.md"
