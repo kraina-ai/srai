@@ -23,6 +23,7 @@ jobs:
         run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> "$GITHUB_OUTPUT"
       - name: Cancel run if not a release commit
         run: |
+          # done this way instead of "exit 1" to avoid having a failed run in the logs
           IS_RELEASE_COMMIT=${{ contains(steps.get-last-commit-message.outputs.COMMIT_MESSAGE, format('chore(CI/CD){0} bump version', ':')) }}
           if ! $IS_RELEASE_COMMIT; then
             gh run cancel ${{ github.run_id }}
