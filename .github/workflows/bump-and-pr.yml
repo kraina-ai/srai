@@ -69,4 +69,4 @@ jobs:
           token: ${{ secrets.CICD_PAT_TOKEN }}
           author: Kraina CI/CD <cicd@kraina.ai>
           committer: Kraina CI/CD <cicd@kraina.ai>
-          commit-message: "docs: update Changelog.md"
+          commit-message: "docs: update CHANGELOG.md"
