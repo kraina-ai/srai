@@ -188,7 +188,7 @@ class PbfFileDownloader:
         for extract in extracts:
             pbf_file_path = Path(self.download_directory).resolve() / f"{extract.id}.osm.pbf"
 
-            download_file(url=extract.url, fname=pbf_file_path.as_posix(), force_download=False)
+            download_file(url=extract.url, filename=pbf_file_path, force_download=False)
 
             downloaded_pbf_files.append(pbf_file_path)
 
@@ -334,7 +334,7 @@ class PbfFileDownloader:
             try:
                 download_file(
                     url=self.PROTOMAPS_API_DOWNLOAD_URL.format(extraction_uuid),
-                    fname=pbf_file_path.as_posix(),
+                    filename=pbf_file_path,
                 )
             except HTTPError as err:
                 error_message = f"Error from the 'Protomaps' service: {err.response}."

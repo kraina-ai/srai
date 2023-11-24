@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Downloader for GTFS files from [The Mobility Database](https://database.mobilitydata.org/)
+
 ### Changed
 
 ### Deprecated

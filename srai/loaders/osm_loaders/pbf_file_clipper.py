@@ -190,13 +190,13 @@ class PbfFileClipper:
         file_path = Path(self.OSMCONVERT_PATH)
         if not file_path.exists():
             tool_url = "http://m.m.i24.cc/osmconvert64"
-            download_file(tool_url, self.OSMCONVERT_PATH)
+            download_file(tool_url, file_path)
 
             # make it executable
             file_path.chmod(file_path.stat().st_mode | stat.S_IEXEC)
 
     def _download_osmosis_tool(self) -> None:
-        zip_path = (Path(self.OSMOSIS_DIRECTORY_PATH) / "osmosis.zip").as_posix()
+        zip_path = Path(self.OSMOSIS_DIRECTORY_PATH) / "osmosis.zip"
         file_path = Path(self.OSMOSIS_EXECUTABLE_PATH)
         if not file_path.exists():
             tool_url = "https://github.com/openstreetmap/osmosis/releases/download/0.48.3/osmosis-0.48.3.zip"

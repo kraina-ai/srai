@@ -2790,9 +2790,9 @@ files = [
 
 [[package]]
 name = "osmnx"
-version = "1.4.0"
+version = "1.5.1"
 requires_python = ">=3.8"
-summary = "Retrieve, model, analyze, and visualize OpenStreetMap street networks and other spatial data"
+summary = "Download, model, analyze, and visualize street networks and other geospatial features from OpenStreetMap"
 dependencies = [
     "geopandas>=0.12",
     "networkx>=2.5",
