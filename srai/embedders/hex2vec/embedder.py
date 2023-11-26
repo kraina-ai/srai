@@ -98,6 +98,10 @@ class Hex2VecEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: Neighbourhood[T],
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_neighbourhood: Optional[Neighbourhood[T]] = None,
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
@@ -112,6 +116,14 @@ class Hex2VecEmbedder(CountEmbedder):
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
             neighbourhood (Neighbourhood[T]): The neighbourhood to use.
                 Should be intialized with the same regions.
+            val_regions_gdf (Optional[gpd.GeoDataFrame], optional): Validation region indexes and
+                geometries. Defaults to None.
+            val_features_gdf (Optional[gpd.GeoDataFrame], optional): Validation feature indexes,
+                geometries and feature values. Defaults to None.
+            val_joint_gdf (Optional[gpd.GeoDataFrame], optional): Validation joiner result with
+                region-feature multi-index. Defaults to None.
+            val_neighbourhood (Optional[Neighbourhood[T]], optional): Validation neighbourhood.
+                Defaults to None.
             negative_sample_k_distance (int, optional): When sampling negative samples,
                 sample from a distance > k. Defaults to 2.
             batch_size (int, optional): Batch size. Defaults to 32.
@@ -139,11 +151,26 @@ class Hex2VecEmbedder(CountEmbedder):
         self._model = Hex2VecModel(
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
         )
-        dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        train_dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+        if (
+            val_regions_gdf is not None
+            and val_features_gdf is not None
+            and val_joint_gdf is not None
+            and val_neighbourhood is not None
+        ):
+            val_counts_df = self._get_raw_counts(val_regions_gdf, val_features_gdf, val_joint_gdf)
+            val_dataset = NeighbourDataset(
+                val_counts_df, val_neighbourhood, negative_sample_k_distance
+            )
+            val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        else:
+            val_dataloader = None
 
         trainer = pl.Trainer(**trainer_kwargs)
-        trainer.fit(self._model, dataloader)
+
+        trainer.fit(self._model, train_dataloader, val_dataloader)
         self._is_fitted = True
 
     def fit_transform(
@@ -152,6 +179,10 @@ class Hex2VecEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: Neighbourhood[T],
+        val_regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_features_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_joint_gdf: Optional[gpd.GeoDataFrame] = None,
+        val_neighbourhood: Optional[Neighbourhood[T]] = None,
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
@@ -166,6 +197,14 @@ class Hex2VecEmbedder(CountEmbedder):
             joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
             neighbourhood (Neighbourhood[T]): The neighbourhood to use.
                 Should be intialized with the same regions.
+            val_regions_gdf (Optional[gpd.GeoDataFrame], optional): Validation region indexes and
+                geometries. Defaults to None.
+            val_features_gdf (Optional[gpd.GeoDataFrame], optional): Validation feature indexes,
+                geometries and feature values. Defaults to None.
+            val_joint_gdf (Optional[gpd.GeoDataFrame], optional): Validation joiner result with
+                region-feature multi-index. Defaults to None.
+            val_neighbourhood (Optional[Neighbourhood[T]], optional): Validation neighbourhood.
+                Defaults to None.
             negative_sample_k_distance (int, optional): When sampling negative samples,
                 sample from a distance > k. Defaults to 2.
             batch_size (int, optional): Batch size. Defaults to 32.
@@ -187,6 +226,10 @@ class Hex2VecEmbedder(CountEmbedder):
             features_gdf,
             joint_gdf,
             neighbourhood,
+            val_regions_gdf,
+            val_features_gdf,
+            val_joint_gdf,
+            val_neighbourhood,
             negative_sample_k_distance,
             batch_size,
             learning_rate,
