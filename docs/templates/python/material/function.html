@@ -37,13 +37,13 @@
         {% endif %}
       {% endblock heading %}
 
-      {% block labels scoped %}
-        {% with labels = function.labels %}
-          {% include "labels.html" with context %}
-        {% endwith %}
-      {% endblock labels %}
-
     {% endfilter %}
+
+    {% block labels scoped %}
+      {% with labels = function.labels %}
+        {% include "labels.html" with context %}
+      {% endwith %}
+    {% endblock labels %}
 
     {% block signature scoped %}
       {% if config.separate_signature %}
