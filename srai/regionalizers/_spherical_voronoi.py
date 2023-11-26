@@ -155,7 +155,7 @@ def generate_voronoi_regions(
     )
 
     if activate_multiprocessing:
-        spherical_polygons_parts = [
+        spherical_polygons_parts = [  # noqa: FURB179
             polygon_part_tuple
             for polygon_part_tuples in process_map(
                 generate_spherical_polygons_parts_func,

@@ -299,6 +299,7 @@ Some of the methods implemented in `srai` have been published in scientific jour
 2. Piotr Gramacki, Szymon Woźniak, and Piotr Szymański. 2021. Gtfs2vec: Learning GTFS Embeddings for comparing Public Transport Offer in Microregions. In Proceedings of the 1st ACM SIGSPATIAL International Workshop on Searching and Mining Large Collections of Geospatial Data (GeoSearch'21). Association for Computing Machinery, New York, NY, USA, 5–12. [paper](https://doi.org/10.1145/3486640.3491392), [arXiv](https://arxiv.org/abs/2111.00960)
 3. Kamil Raczycki and Piotr Szymański. 2021. Transfer learning approach to bicycle-sharing systems' station location planning using OpenStreetMap data. In Proceedings of the 4th ACM SIGSPATIAL International Workshop on Advances in Resilient and Intelligent Cities (ARIC '21). Association for Computing Machinery, New York, NY, USA, 1–12. [paper](https://doi.org/10.1145/3486626.3493434), [arXiv](https://arxiv.org/abs/2111.00990)
 4. Kacper Leśniara and Piotr Szymański. 2022. Highway2vec: representing OpenStreetMap microregions with respect to their road network characteristics. In Proceedings of the 5th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '22). Association for Computing Machinery, New York, NY, USA, 18–29. [paper](https://doi.org/10.1145/3557918.3565865), [arXiv](https://arxiv.org/abs/2304.13865)
+5. Daniele Donghi and Anne Morvan. 2023. GeoVeX: Geospatial Vectors with Hexagonal Convolutional Autoencoders. In Proceedings of the 6th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '23). Association for Computing Machinery, New York, NY, USA, 3–13. [paper](https://doi.org/10.1145/3615886.3627750)
 
 ## Acknowledgements
 
@@ -306,7 +307,27 @@ We would like to thank Piotr Szymański PhD \([@niedakh](https://twitter.com/nie
 
 ## Citation
 
-TBD
+If you wish to cite the SRAI library, please use our [paper](https://arxiv.org/abs/2310.13098)
+
+```bibtex
+@inproceedings{
+  Gramacki_SRAI_Towards_Standardization_2023,
+  author = {
+    Gramacki, Piotr and
+    Leśniara, Kacper and
+    Raczycki, Kamil and
+    Woźniak, Szymon and
+    Przymus, Marcin and
+    Szymański, Piotr
+  },
+  booktitle = {Proceedings of the 6th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery},
+  month = nov,
+  publisher = {Association for Computing Machinery},
+  title = {{SRAI: Towards Standardization of Geospatial AI}},
+  url = {https://dl.acm.org/doi/10.1145/3615886.3627740},
+  year = {2023}
+}
+```
 
 ## License
 
