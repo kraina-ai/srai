@@ -185,7 +185,7 @@ wrap-one-line = true
 [tool.bumpver]
 current_version = "0.6.1"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
-commit_message = "chore: bump version {old_version} -> {new_version}"
+commit_message = "chore(CI/CD): bump version {old_version} -> {new_version}"
 commit = true
 tag = false
 push = false

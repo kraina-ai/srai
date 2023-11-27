@@ -1,0 +1,72 @@
+name: "Bump ⬆️ library version and create PR"
+on:
+  workflow_dispatch:
+    inputs:
+      bumpType:
+        description: "Bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  PYTHON_VERSION: 3.11
+
+jobs:
+  bump-n-pr:
+    name: Bump ⬆️ and create a Pull Request with a new library version (${{ inputs.bumpType }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Configure Git user
+        run: |
+          git config --local user.name "Kraina CI/CD"
+          git config --local user.email "cicd@kraina.ai"
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: pdm-project/setup-pdm@v3
+        name: Setup PDM
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: x64
+      - name: Install dependencies
+        run: pdm install -d -G dev --skip=post_install
+      - name: Bump changelog version
+        id: changelog
+        uses: release-flow/keep-a-changelog-action@v2
+        with:
+          command: bump
+          version: ${{ inputs.bumpType }}
+          tag-prefix: ""
+          keep-unreleased-section: True
+      - name: Run bumpver
+        run: |
+          pdm run bumpver update --allow-dirty --${{ inputs.bumpType }} -vvv
+      - name: Get commit message
+        id: commit_message
+        run: |
+          echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> $GITHUB_OUTPUT
+      - name: Get new version
+        id: new_version
+        run: |
+          pdm run bumpver show -n -e | grep CURRENT_VERSION >> $GITHUB_OUTPUT
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: ${{ steps.commit_message.outputs.COMMIT_MESSAGE }}
+          branch: ${{ format('release/{0}', steps.new_version.outputs.CURRENT_VERSION) }}
+          labels: release
+          base: main
+          body: ${{ steps.changelog.outputs.release-notes }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+          author: Kraina CI/CD <cicd@kraina.ai>
+          committer: Kraina CI/CD <cicd@kraina.ai>
+          commit-message: "docs: update CHANGELOG.md"
