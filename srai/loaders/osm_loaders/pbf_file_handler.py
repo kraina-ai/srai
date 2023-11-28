@@ -813,6 +813,8 @@ class PbfFileHandler:
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
         total_required_ways = osm_parquet_files.ways_required_ids.count("id").fetchone()[0]
+
+        print(total_required_ways)
         groups = floor(total_required_ways / self.rows_per_bucket)
         grouped_required_ways_ids_path = Path(tmp_dir_name) / "ways_required_ids_grouped"
         self.connection.sql(f"""
