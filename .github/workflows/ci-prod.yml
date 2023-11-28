@@ -1,8 +1,7 @@
 name: "Build & publish - PROD"
 on:
-  push:
-    tags:
-      - "**"
+  release:
+    types: [released]
 
 jobs:
   run-tests:
@@ -64,7 +63,7 @@ jobs:
       - name: Install dependencies
         run: pip install --no-deps -r requirements.txt
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat
+        run: pip install jupyter nbconvert nbformat black
       - name: Install srai
         run: |
           pdm build -v -d dist

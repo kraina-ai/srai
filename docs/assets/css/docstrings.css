@@ -1,5 +1,26 @@
-.doc-heading-code {
+.doc-class > .doc-heading-code,
+.doc-function > .doc-heading-code {
   font-size: 1rem !important;
+  margin-top: -1em !important;
+  display: flex;
+}
+
+.doc-class > .doc-heading-code .highlight,
+.doc-function > .doc-heading-code .highlight {
+  flex-grow: 1;
+}
+
+.doc-class > .doc-heading-code a,
+.doc-function > .doc-heading-code a {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.doc-class > .doc-labels,
+.doc-function > .doc-labels {
+  margin-top: -1.2rem;
+  display: block;
+  font-size: 1.2em;
 }
 
 /* Indentation. */
@@ -28,4 +49,13 @@ a.autorefs-external::after {
 a.external:hover::after,
 a.autorefs-external:hover::after {
   background-color: var(--md-accent-fg-color);
+}
+
+table.highlighttable td.linenos,
+span.linenos,
+.highlight .gp, .highlight .go {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }

@@ -39,13 +39,13 @@
         {% endif %}
       {% endblock heading %}
 
-      {% block labels scoped %}
-        {% with labels = class.labels %}
-          {% include "labels.html" with context %}
-        {% endwith %}
-      {% endblock labels %}
-
     {% endfilter %}
+
+    {% block labels scoped %}
+      {% with labels = class.labels %}
+        {% include "labels.html" with context %}
+      {% endwith %}
+    {% endblock labels %}
 
     {% block signature scoped %}
       {% if config.separate_signature and config.merge_init_into_class %}
