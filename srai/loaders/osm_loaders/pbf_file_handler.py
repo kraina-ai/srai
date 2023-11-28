@@ -38,7 +38,16 @@ class PbfFileHandler:
     """
     PbfFileHandler.
 
-    PBF(Protocolbuffer Binary Format)[1] file handler is a ...
+    PBF(Protocolbuffer Binary Format)[1] file handler is a dedicated `*.osm.pbf` files reader
+    based on DuckDB[2] and its spatial extension[3].
+
+    Handler can filter out OSM features based on tags filter and geometry filter
+    to limit the result.
+
+    References:
+        1. https://wiki.openstreetmap.org/wiki/PBF_Format
+        2. https://duckdb.org/
+        3. https://github.com/duckdb/duckdb_spatial
     """
 
     class ConvertedOSMParquetFiles(NamedTuple):
@@ -74,7 +83,7 @@ class PbfFileHandler:
         Initialize PbfFileHandler.
 
         Args:
-            tags_filter (osm_tags_type, optional): A dictionary
+            tags_filter (OsmTagsFilter, optional): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,

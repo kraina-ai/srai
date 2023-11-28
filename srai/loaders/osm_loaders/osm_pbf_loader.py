@@ -38,7 +38,7 @@ class OSMPbfLoader(OSMLoader):
         1. https://www.openstreetmap.org/
         2. https://wiki.openstreetmap.org/wiki/PBF_Format
         3. https://duckdb.org/
-        3. https://github.com/duckdb/duckdb_spatial
+        4. https://github.com/duckdb/duckdb_spatial
     """
 
     def __init__(
