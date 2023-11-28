@@ -823,7 +823,6 @@ class PbfFileHandler:
             self.connection.table("x").to_parquet(empty_file_path)
             return self.connection.read_parquet(empty_file_path)
 
-        print(total_required_ways)
         groups = floor(total_required_ways / self.rows_per_bucket)
         grouped_required_ways_ids_path = Path(tmp_dir_name) / "ways_required_ids_grouped"
         self.connection.sql(f"""
@@ -837,8 +836,6 @@ class PbfFileHandler:
             ) TO '{grouped_required_ways_ids_path}'
             (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
         """)
-
-        print([pth for pth in grouped_required_ways_ids_path.iterdir()])
 
         for group in range(groups + 1):
             current_required_ways_ids_group_path = grouped_required_ways_ids_path / f"group={group}"
