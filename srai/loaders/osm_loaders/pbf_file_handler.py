@@ -52,7 +52,7 @@ class PbfFileHandler:
     """
 
     class ConvertedOSMParquetFiles(NamedTuple):
-        """List of parquet files read from original OSM.PBF file."""
+        """List of parquet files read from the `*.osm.pbf` file."""
 
         nodes_valid_with_tags: "duckdb.DuckDBPyRelation"
         nodes_required_ids: "duckdb.DuckDBPyRelation"
@@ -68,7 +68,7 @@ class PbfFileHandler:
         relations_filtered_ids: "duckdb.DuckDBPyRelation"
 
     class ParsedOSMFeatures(NamedTuple):
-        """Final list of parsed elements from OSM."""
+        """Final list of parsed features from the `*.osm.pbf` file."""
 
         nodes: "duckdb.DuckDBPyRelation"
         ways: "duckdb.DuckDBPyRelation"
