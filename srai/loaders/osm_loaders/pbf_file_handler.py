@@ -357,7 +357,7 @@ class PbfFileHandler:
             ways_intersecting_ids = self._sql_to_parquet_file(
                 sql_query=f"""
                 SELECT DISTINCT uwr.id
-                FROM unnested_way_refs uwr
+                FROM ({ways_with_unnested_nodes_refs.sql_query()}) uwr
                 SEMI JOIN ({ways_valid_ids.sql_query()}) wv ON uwr.id = wv.id
                 SEMI JOIN ({nodes_intersecting_ids.sql_query()}) n ON n.id = uwr.ref
                 """,
