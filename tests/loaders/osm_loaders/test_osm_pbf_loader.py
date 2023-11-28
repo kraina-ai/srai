@@ -204,7 +204,7 @@ def test_pbf_handler(
     """Test proper files loading in `PbfFileHandler`."""
     handler = PbfFileHandler(tags=query)
     features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / test_file_name]
+        file_paths=[Path(__file__).parent / "test_files" / test_file_name], ignore_cache=True
     )
     assert (
         len(features_gdf) == expected_result_length
@@ -222,7 +222,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
         tags=HEX2VEC_FILTER, region_geometry=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     )
     features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / file_name]
+        file_paths=[Path(__file__).parent / "test_files" / file_name], ignore_cache=True
     )
     assert len(features_gdf) == 0
 

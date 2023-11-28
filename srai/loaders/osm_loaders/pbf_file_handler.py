@@ -814,6 +814,15 @@ class PbfFileHandler:
     ) -> "duckdb.DuckDBPyRelation":
         total_required_ways = osm_parquet_files.ways_required_ids.count("id").fetchone()[0]
 
+        required_ways_with_linestrings_path = Path(tmp_dir_name) / "required_ways_with_linestrings"
+        required_ways_with_linestrings_path.mkdir(parents=True, exist_ok=True)
+
+        if total_required_ways == 0:
+            empty_file_path = str(required_ways_with_linestrings_path / "empty.parquet")
+            self.connection.sql("CREATE OR REPLACE TABLE x(id STRING, linestring LINESTRING_2D);")
+            self.connection.table("x").to_parquet(empty_file_path)
+            return self.connection.read_parquet(empty_file_path)
+
         print(total_required_ways)
         groups = floor(total_required_ways / self.rows_per_bucket)
         grouped_required_ways_ids_path = Path(tmp_dir_name) / "ways_required_ids_grouped"
@@ -830,9 +839,6 @@ class PbfFileHandler:
         """)
 
         print([pth for pth in grouped_required_ways_ids_path.iterdir()])
-
-        required_ways_with_linestrings_path = Path(tmp_dir_name) / "required_ways_with_linestrings"
-        required_ways_with_linestrings_path.mkdir(parents=True, exist_ok=True)
 
         for group in range(groups + 1):
             current_required_ways_ids_group_path = grouped_required_ways_ids_path / f"group={group}"
