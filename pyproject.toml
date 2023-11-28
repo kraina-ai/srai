@@ -58,7 +58,6 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 # pdm add -G osm <library>
 osm = [
-    "osmium",
     "osmnx",
     "overpass",
     "pillow",

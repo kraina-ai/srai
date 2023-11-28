@@ -13,6 +13,7 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import (
     BASE_OSM_GROUPS_FILTER,
+    GEOFABRIK_LAYERS,
     HEX2VEC_FILTER,
     GroupedOsmTagsFilter,
     OsmTagsFilter,
@@ -193,6 +194,18 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
             0,
             0,
         ),
+        (
+            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
+            GEOFABRIK_LAYERS,
+            433,
+            22,
+        ),
+        (
+            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
+            GEOFABRIK_LAYERS,
+            0,
+            0,
+        ),
     ],
 )
 def test_pbf_handler(
@@ -202,7 +215,7 @@ def test_pbf_handler(
     expected_features_columns_length: int,
 ):
     """Test proper files loading in `PbfFileHandler`."""
-    handler = PbfFileHandler(tags=query)
+    handler = PbfFileHandler(tags_filter=query)
     features_gdf = handler.get_features_gdf(
         file_paths=[Path(__file__).parent / "test_files" / test_file_name], ignore_cache=True
     )
@@ -219,7 +232,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
     """Test proper spatial data filtering in `PbfFileHandler`."""
     file_name = "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"
     handler = PbfFileHandler(
-        tags=HEX2VEC_FILTER, region_geometry=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
+        tags_filter=HEX2VEC_FILTER, geometry_filter=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     )
     features_gdf = handler.get_features_gdf(
         file_paths=[Path(__file__).parent / "test_files" / file_name], ignore_cache=True
@@ -244,7 +257,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
             None,
             HEX2VEC_FILTER,
             "geofabrik",
-            398,
+            397,
             12,
             [
                 "amenity",
@@ -259,6 +272,48 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
                 "sport",
                 "tourism",
                 "water",
+            ],
+        ),
+        (
+            [
+                Polygon(
+                    [
+                        (7.416769421059001, 43.7346112362936),
+                        (7.416769421059001, 43.730681304758946),
+                        (7.4218262821731, 43.730681304758946),
+                        (7.4218262821731, 43.7346112362936),
+                    ]
+                )
+            ],
+            None,
+            GEOFABRIK_LAYERS,
+            "geofabrik",
+            949,
+            23,
+            [
+                "accommodation",
+                "buildings",
+                "catering",
+                "education",
+                "fuel_parking",
+                "health",
+                "highway_links",
+                "landuse",
+                "leisure",
+                "major_roads",
+                "minor_roads",
+                "miscpoi",
+                "money",
+                "natural",
+                "paths_unsuitable_for_cars",
+                "public",
+                "shopping",
+                "tourism",
+                "traffic",
+                "transport",
+                "very_small_roads",
+                "water",
+                "water_traffic",
             ],
         ),
         (

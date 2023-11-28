@@ -1,4 +1,5 @@
 """Module contains a dedicated type alias for OSM tags filter."""
+
 from typing import Union, cast
 
 from srai._typing import is_expected_type
@@ -6,6 +7,34 @@ from srai._typing import is_expected_type
 OsmTagsFilter = dict[str, Union[list[str], str, bool]]
 
 GroupedOsmTagsFilter = dict[str, OsmTagsFilter]
+
+
+def merge_osm_tags_filter(tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]) -> OsmTagsFilter:
+    """
+    Merge OSM tags filter into `osm_tags_type` type.
+
+    Optionally merges `GroupedOsmTagsFilter` into `OsmTagsFilter` to allow loaders to load all
+    defined groups during single operation.
+
+    Args:
+        tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter definition.
+
+    Raises:
+        AttributeError: When provided tags don't match both
+            `OsmTagsFilter` or `GroupedOsmTagsFilter`.
+
+    Returns:
+        osm_tags_type: Merged filters.
+    """
+    if is_expected_type(tags, OsmTagsFilter):
+        return cast(OsmTagsFilter, tags)
+    elif is_expected_type(tags, GroupedOsmTagsFilter):
+        return merge_grouped_osm_tags_filter(cast(GroupedOsmTagsFilter, tags))
+
+    raise AttributeError(
+        "Provided tags don't match required type definitions"
+        " (OsmTagsFilter or GroupedOsmTagsFilter)."
+    )
 
 
 def merge_grouped_osm_tags_filter(grouped_filter: GroupedOsmTagsFilter) -> OsmTagsFilter:

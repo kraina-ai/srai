@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:1d85027ce2e463c4ec9d0e27b65ef27c17d18b812a160dc79afc97da4aaa484a"
+content_hash = "sha256:104f054e0d20d8de62a226dc505e89cc59988043cb22e35d1fcd40a08cfb57dc"
 
 [[package]]
 name = "aiohttp"
@@ -2718,27 +2718,6 @@ dependencies = [
 files = [
     {file = "nvidia_nvtx_cu11-11.7.91-py3-none-manylinux1_x86_64.whl", hash = "sha256:b22c64eee426a62fc00952b507d6d29cf62b4c9df7a480fcc417e540e05fd5ac"},
     {file = "nvidia_nvtx_cu11-11.7.91-py3-none-win_amd64.whl", hash = "sha256:dfd7fcb2a91742513027d63a26b757f38dd8b07fecac282c4d132a9d373ff064"},
-]
-
-[[package]]
-name = "osmium"
-version = "3.6.0"
-requires_python = ">=3.6"
-summary = "Python bindings for libosmium, the data processing library for OSM data"
-dependencies = [
-    "requests",
-]
-files = [
-    {file = "osmium-3.6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0520d39797c17030c11427213421237aa17f327b076c5367dd2721e856a8aab7"},
-    {file = "osmium-3.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e46615d9761f49ae86b7f891c1e00a7e010b85622d17d956029299407b86b0cb"},
-    {file = "osmium-3.6.0-cp310-cp310-win_amd64.whl", hash = "sha256:ae26ef88d386ba57eece0b577d61d58f70688f04f4366265001fe63f0d0da1ac"},
-    {file = "osmium-3.6.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:844a614a39435ab6d20ae136feda9b57acd15f062b8177321ec3343610d12dd7"},
-    {file = "osmium-3.6.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:184bb9dc6938db2e0f08cf4f33fd1d1d35fa106c9a71bb5f060967110d701bf3"},
-    {file = "osmium-3.6.0-cp311-cp311-win_amd64.whl", hash = "sha256:6ecd7f036bf89e69e67aa1f8ed4fa1b5997307c7586a17e793b250cdcb8e7a0f"},
-    {file = "osmium-3.6.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:11e7a930cc7ac7afedd6d77d267b1899942a0236ff4351e1ba1f9f228789dee1"},
-    {file = "osmium-3.6.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb99685d18f08e766ba8d971a7f93a3bfb2829b917996591a7cfec053c2711b3"},
-    {file = "osmium-3.6.0-cp39-cp39-win_amd64.whl", hash = "sha256:360bf9b30ed995e3d3e359eada5c3690c850eb1453a699c739a2f45a5d8c4ee4"},
-    {file = "osmium-3.6.0.tar.gz", hash = "sha256:c7b4becb5f13aa82421b269e583bee4d14b56a2c490b334d44ec954cb480a289"},
 ]
 
 [[package]]

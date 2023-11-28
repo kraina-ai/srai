@@ -13,11 +13,7 @@ from tqdm import tqdm
 from srai._typing import is_expected_type
 from srai.constants import WGS84_CRS
 from srai.loaders import Loader
-from srai.loaders.osm_loaders.filters import (
-    GroupedOsmTagsFilter,
-    OsmTagsFilter,
-    merge_grouped_osm_tags_filter,
-)
+from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 def prepare_area_gdf_for_loader(
@@ -77,35 +73,6 @@ class OSMLoader(Loader, abc.ABC):
         self, area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]
     ) -> gpd.GeoDataFrame:
         return prepare_area_gdf_for_loader(area)
-
-    def _merge_osm_tags_filter(
-        self, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
-    ) -> OsmTagsFilter:
-        """
-        Merge OSM tags filter into `osm_tags_type` type.
-
-        Optionally merges `GroupedOsmTagsFilter` into `OsmTagsFilter` to allow loaders to load all
-        defined groups during single operation.
-
-        Args:
-            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter definition.
-
-        Raises:
-            AttributeError: When provided tags don't match both
-                `OsmTagsFilter` or `GroupedOsmTagsFilter`.
-
-        Returns:
-            osm_tags_type: Merged filters.
-        """
-        if is_expected_type(tags, OsmTagsFilter):
-            return cast(OsmTagsFilter, tags)
-        elif is_expected_type(tags, GroupedOsmTagsFilter):
-            return merge_grouped_osm_tags_filter(cast(GroupedOsmTagsFilter, tags))
-
-        raise AttributeError(
-            "Provided tags don't match required type definitions"
-            " (OsmTagsFilter or GroupedOsmTagsFilter)."
-        )
 
     def _parse_features_gdf_to_groups(
         self, features_gdf: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]

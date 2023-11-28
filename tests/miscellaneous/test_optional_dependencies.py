@@ -1,4 +1,5 @@
 """Optional dependencies tests."""
+
 import sys
 from contextlib import nullcontext as does_not_raise
 from typing import Any
@@ -15,7 +16,8 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
-        "osmium",
+        "duckdb",
+        "geoarrow-pyarrow",
         "osmnx",
         "overpass",
         "beautifulsoup4",

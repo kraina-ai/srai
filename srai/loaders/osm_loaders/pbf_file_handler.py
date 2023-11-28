@@ -19,9 +19,14 @@ import pyarrow.parquet as pq
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
+from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.geometry import get_geometry_hash
-from srai.loaders.osm_loaders.filters import OsmTagsFilter
+from srai.loaders.osm_loaders.filters import (
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+    merge_osm_tags_filter,
+)
 
 if TYPE_CHECKING:
     import os
@@ -61,15 +66,15 @@ class PbfFileHandler:
 
     def __init__(
         self,
-        tags: Optional[OsmTagsFilter] = None,
-        region_geometry: Optional[BaseGeometry] = None,
+        tags_filter: Optional[Union[OsmTagsFilter, GroupedOsmTagsFilter]] = None,
+        geometry_filter: Optional[BaseGeometry] = None,
         working_directory: Union[str, Path] = "files",
     ) -> None:
         """
         Initialize PbfFileHandler.
 
         Args:
-            tags (osm_tags_type, optional): A dictionary
+            tags_filter (osm_tags_type, optional): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
                 The values should either be `True` for retrieving all objects with the tag,
@@ -79,14 +84,15 @@ class PbfFileHandler:
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
                 If `None`, handler will allow all of the tags to be parsed. Defaults to `None`.
-            region_geometry (BaseGeometry, optional): Region which can be used to filter only
+            geometry_filter (BaseGeometry, optional): Region which can be used to filter only
                 intersecting OSM objects. Defaults to None.
             working_directory (Union[str, Path], optional): Directory where to save
                 the parsed `*.parquet` files. Defaults to "files".
         """
         import_optional_dependencies(dependency_group="osm", modules=["duckdb"])
-        self.filter_tags = tags
-        self.region_geometry = region_geometry
+        self.tags_filter = tags_filter
+        self.merged_tags_filter = merge_osm_tags_filter(tags_filter) if tags_filter else None
+        self.geometry_filter = geometry_filter
         self.working_directory = Path(working_directory)
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self.connection: duckdb.DuckDBPyConnection = None
@@ -115,19 +121,10 @@ class PbfFileHandler:
         import geoarrow.pyarrow as ga
         from geoarrow.pyarrow import io
 
-        with tempfile.TemporaryDirectory(dir=self.working_directory.resolve()) as tmp_dir_name:
-            try:
-                self._set_up_duckdb_connection(tmp_dir_name)
-                parsed_geoparquet_files = []
-                for path_no, path in enumerate(file_paths):
-                    self.path_no = path_no + 1
-                    parsed_geoparquet_file = self._parse_pbf_file(path, tmp_dir_name, ignore_cache)
-                    parsed_geoparquet_files.append(parsed_geoparquet_file)
-            except Exception:
-                if self.connection is not None:
-                    self.connection.close()
-                    self.connection = None
-                raise
+        parsed_geoparquet_files = []
+        for file_path in file_paths:
+            parsed_geoparquet_file = self.convert_pbf_to_gpq(file_path, ignore_cache=ignore_cache)
+            parsed_geoparquet_files.append(parsed_geoparquet_file)
 
         parquet_tables = [
             io.read_geoparquet_table(parsed_parquet_file)
@@ -140,6 +137,41 @@ class PbfFileHandler:
         ).set_index(FEATURES_INDEX)
 
         return gdf_parquet
+
+    def convert_pbf_to_gpq(
+        self,
+        pbf_path: Union[str, "os.PathLike[str]"],
+        result_file_path: Optional[Union[str, "os.PathLike[str]"]] = None,
+        ignore_cache: bool = False,
+    ) -> Path:
+        """
+        Convert PBF file to GeoParquet file.
+
+        Args:
+            pbf_path (Union[str, os.PathLike[str]]): _description_
+            result_file_path (Union[str, os.PathLike[str]], optional): Where to save
+                the geoparquet file. If not provided, will be generated based on hashes
+                from provided tags filter and geometry filter. Defaults to None.
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
+
+        Returns:
+            Path: Path to the generated GeoParquet file.
+        """
+        with tempfile.TemporaryDirectory(dir=self.working_directory.resolve()) as tmp_dir_name:
+            try:
+                self._set_up_duckdb_connection(tmp_dir_name)
+                result_file_path = result_file_path or self._generate_geoparquet_result_file_path(
+                    pbf_path
+                )
+                parsed_geoparquet_file = self._parse_pbf_file(
+                    pbf_path, tmp_dir_name, Path(result_file_path), ignore_cache
+                )
+                return parsed_geoparquet_file
+            finally:
+                if self.connection is not None:
+                    self.connection.close()
+                    self.connection = None
 
     def _set_up_duckdb_connection(self, tmp_dir_name: str) -> None:
         import duckdb
@@ -162,10 +194,9 @@ class PbfFileHandler:
         self,
         pbf_path: Union[str, "os.PathLike[str]"],
         tmp_dir_name: str,
+        result_file_path: Path,
         ignore_cache: bool = False,
     ) -> Path:
-        result_file_name = self._generate_geoparquet_result_file_name(pbf_path)
-        result_file_path = Path(self.working_directory) / result_file_name
         if not result_file_path.exists() or ignore_cache:
             elements = self.connection.sql(f"SELECT * FROM ST_READOSM('{Path(pbf_path)}');")
             converted_osm_parquet_files = self._prefilter_elements_ids(elements, tmp_dir_name)
@@ -200,58 +231,31 @@ class PbfFileHandler:
 
         return result_file_path
 
-    def _sql_to_parquet_file(self, sql_query: str, file_path: Path) -> "duckdb.DuckDBPyRelation":
-        relation = self.connection.sql(sql_query)
-        return self._save_parquet_file(relation, file_path)
+    def _generate_geoparquet_result_file_path(
+        self, pbf_file_path: Union[str, "os.PathLike[str]"]
+    ) -> Path:
+        pbf_file_name = Path(pbf_file_path).name.removesuffix(".osm.pbf")
 
-    def _calculate_unique_ids_to_parquet(
-        self, file_path: Path, result_path: Optional[Path] = None
-    ) -> "duckdb.DuckDBPyRelation":
-        if result_path is None:
-            result_path = file_path / "distinct"
+        osm_filter_tags_hash_part = "nofilter"
+        if self.tags_filter is not None:
+            h = hashlib.new("sha256")
+            h.update(json.dumps(self.tags_filter).encode())
+            osm_filter_tags_hash_part = h.hexdigest()
 
-        self.connection.sql(f"""
-            COPY (
-                SELECT id FROM read_parquet('{file_path}/**') GROUP BY id
-            ) TO '{result_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
-        """)
+        clipping_geometry_hash_part = "noclip"
+        if self.geometry_filter is not None:
+            clipping_geometry_hash_part = get_geometry_hash(self.geometry_filter)
 
-        return self.connection.sql(f"""
-            SELECT * FROM read_parquet('{result_path}/**')
-        """)
-
-    def _save_parquet_file(
-        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
-    ) -> "duckdb.DuckDBPyRelation":
-        self.connection.sql(f"""
-            COPY (
-                SELECT * FROM ({relation.sql_query()})
-            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
-        """)
-        return self.connection.sql(f"""
-            SELECT * FROM read_parquet('{file_path}/**')
-        """)
-
-    def _save_parquet_file_with_geometry(
-        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
-    ) -> "duckdb.DuckDBPyRelation":
-        self.connection.sql(f"""
-            COPY (
-                SELECT
-                    * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
-                FROM ({relation.sql_query()})
-            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
-        """)
-        return self.connection.sql(f"""
-            SELECT * EXCLUDE (geometry_wkb), ST_GeomFromWKB(geometry_wkb) geometry
-            FROM read_parquet('{file_path}/**')
-        """)
+        result_file_name = (
+            f"{pbf_file_name}_{osm_filter_tags_hash_part}_{clipping_geometry_hash_part}.geoparquet"
+        )
+        return Path(self.working_directory) / result_file_name
 
     def _prefilter_elements_ids(
         self, elements: "duckdb.DuckDBPyRelation", tmp_dir_name: str
     ) -> ConvertedOSMParquetFiles:
         sql_filter = self._generate_osm_tags_sql_filter()
-        is_intersecting = self.region_geometry is not None
+        is_intersecting = self.geometry_filter is not None
 
         nodes_prepared_ids_path = Path(tmp_dir_name) / "nodes_prepared_ids"
         nodes_prepared_ids_path.mkdir(parents=True, exist_ok=True)
@@ -276,7 +280,7 @@ class PbfFileHandler:
         # NODES - FILTERED (NF)
         # - select all from NI with tags filter
         if is_intersecting:
-            wkt = cast(BaseGeometry, self.region_geometry).wkt
+            wkt = cast(BaseGeometry, self.geometry_filter).wkt
             intersection_filter = f"ST_Intersects(ST_Point(lon, lat), ST_GeomFromText('{wkt}'))"
             nodes_intersecting_ids = self._sql_to_parquet_file(
                 sql_query=f"""
@@ -519,28 +523,24 @@ class PbfFileHandler:
             relations_filtered_ids=relations_filtered_ids,
         )
 
-    def _escape(self, value: str) -> str:
-        """Escape value for SQL query."""
-        return value.replace("'", "''")
-
     def _generate_osm_tags_sql_filter(self) -> str:
         """Prepare features filter clauses based on tags filter."""
         filter_clauses = ["(1=1)"]
 
-        if self.filter_tags:
+        if self.merged_tags_filter:
             filter_clauses.clear()
 
-            for filter_tag_key, filter_tag_value in self.filter_tags.items():
+            for filter_tag_key, filter_tag_value in self.merged_tags_filter.items():
                 if isinstance(filter_tag_value, bool) and filter_tag_value:
                     filter_clauses.append(f"(list_contains(map_keys(tags), '{filter_tag_key}'))")
                 elif isinstance(filter_tag_value, str):
-                    escaped_value = self._escape(filter_tag_value)
+                    escaped_value = self._sql_escape(filter_tag_value)
                     filter_clauses.append(
                         f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) ="
                         f" '{escaped_value}'"
                     )
                 elif isinstance(filter_tag_value, list) and filter_tag_value:
-                    values_list = [f"'{self._escape(value)}'" for value in filter_tag_value]
+                    values_list = [f"'{self._sql_escape(value)}'" for value in filter_tag_value]
                     filter_clauses.append(
                         f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) IN"
                         f" ({', '.join(values_list)})"
@@ -548,226 +548,41 @@ class PbfFileHandler:
 
         return " OR ".join(filter_clauses)
 
-    def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> list[str]:
-        """Prepare features filter clauses based on tags filter."""
-        osm_tag_keys_select_clauses = []
+    def _sql_escape(self, value: str) -> str:
+        """Escape value for SQL query."""
+        return value.replace("'", "''")
 
-        if not self.filter_tags:
-            osm_tag_keys = set()
-            for elements in (
-                parsed_data.nodes,
-                parsed_data.ways,
-                parsed_data.relations,
-            ):
-                found_tag_keys = [row[0] for row in self.connection.sql(f"""
-                    SELECT DISTINCT UNNEST(map_keys(tags)) tag_key
-                    FROM ({elements.sql_query()})
-                """).fetchall()]
-                osm_tag_keys.update(found_tag_keys)
-            osm_tag_keys_select_clauses = [
-                f"list_extract(map_extract(tags, '{osm_tag_key}'), 1) as \"{osm_tag_key}\""
-                for osm_tag_key in sorted(list(osm_tag_keys))
-            ]
-        # TODO: elif keep other tags
-        else:
-            for filter_tag_key, filter_tag_value in self.filter_tags.items():
-                if isinstance(filter_tag_value, bool) and filter_tag_value:
-                    osm_tag_keys_select_clauses.append(
-                        f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) as"
-                        f' "{filter_tag_key}"'
-                    )
-                elif isinstance(filter_tag_value, str):
-                    escaped_value = self._escape(filter_tag_value)
-                    osm_tag_keys_select_clauses.append(f"""
-                        CASE WHEN list_extract(
-                            map_extract(tags, '{filter_tag_key}'), 1
-                        ) = '{escaped_value}'
-                        THEN '{escaped_value}'
-                        ELSE NULL
-                        END as "{filter_tag_key}"
-                    """)
-                elif isinstance(filter_tag_value, list) and filter_tag_value:
-                    values_list = [f"'{self._escape(value)}'" for value in filter_tag_value]
-                    osm_tag_keys_select_clauses.append(f"""
-                        CASE WHEN list_extract(
-                            map_extract(tags, '{filter_tag_key}'), 1
-                        ) IN ({', '.join(values_list)})
-                        THEN list_extract(map_extract(tags, '{filter_tag_key}'), 1)
-                        ELSE NULL
-                        END as "{filter_tag_key}"
-                    """)
+    def _sql_to_parquet_file(self, sql_query: str, file_path: Path) -> "duckdb.DuckDBPyRelation":
+        relation = self.connection.sql(sql_query)
+        return self._save_parquet_file(relation, file_path)
 
-        if len(osm_tag_keys_select_clauses) > 100:
-            warnings.warn(
-                "Select clause contains more than 100 columns"
-                f" (found {len(osm_tag_keys_select_clauses)} columns)."
-                " Query might fail with insufficient memory resources."
-                " Consider applying more restrictive OsmTagsFilter for parsing.",
-                stacklevel=1,
-            )
-
-        return osm_tag_keys_select_clauses
-
-    def _concatenate_results_to_geoparquet(
-        self, parsed_data: ParsedOSMFeatures, tmp_dir_name: str, save_file_path: Path
-    ) -> None:
-        import geoarrow.pyarrow as ga
-        from geoarrow.pyarrow import io
-
-        select_clauses = [*self._generate_osm_tags_sql_select(parsed_data), "geometry"]
-
-        node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
-        way_select_clauses = ["'way/' || id as feature_id", *select_clauses]
-        relation_select_clauses = ["'relation/' || id as feature_id", *select_clauses]
-        valid_elements_full_relation = self.connection.sql(f"""
-            SELECT * FROM (
-                SELECT {', '.join(node_select_clauses)}
-                FROM ({parsed_data.nodes.sql_query()}) n
-                UNION ALL
-                SELECT {', '.join(way_select_clauses)}
-                FROM ({parsed_data.ways.sql_query()}) w
-                UNION ALL
-                SELECT {', '.join(relation_select_clauses)}
-                FROM ({parsed_data.relations.sql_query()}) r
-            )
-            WHERE ST_IsValid(geometry)
+    def _save_parquet_file(
+        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
+    ) -> "duckdb.DuckDBPyRelation":
+        self.connection.sql(f"""
+            COPY (
+                SELECT * FROM ({relation.sql_query()})
+            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
+        """)
+        return self.connection.sql(f"""
+            SELECT * FROM read_parquet('{file_path}/**')
         """)
 
-        valid_elements_parquet_path = Path(tmp_dir_name) / "osm_valid_elements"
-        valid_elements_parquet_relation = self._save_parquet_file_with_geometry(
-            valid_elements_full_relation,
-            valid_elements_parquet_path,
-        )
+    def _calculate_unique_ids_to_parquet(
+        self, file_path: Path, result_path: Optional[Path] = None
+    ) -> "duckdb.DuckDBPyRelation":
+        if result_path is None:
+            result_path = file_path / "distinct"
 
-        valid_elements_parquet_table = pq.read_table(valid_elements_parquet_path)
-
-        is_empty = valid_elements_parquet_table.num_rows == 0
-
-        if not is_empty:
-            geometry_column = ga.as_wkb(
-                ga.with_crs(valid_elements_parquet_table.column("geometry_wkb"), WGS84_CRS)
-            )
-        else:
-            geometry_column = ga.as_wkb(gpd.GeoSeries([], crs=WGS84_CRS))
-
-        valid_elements_parquet_table = valid_elements_parquet_table.append_column(
-            GEOMETRY_COLUMN, geometry_column
-        )
-        valid_elements_parquet_table = valid_elements_parquet_table.drop("geometry_wkb")
-
-        parquet_tables = [valid_elements_parquet_table]
-
-        invalid_elements_full_relation = self.connection.sql(f"""
-            SELECT * FROM (
-                SELECT {', '.join(node_select_clauses)}
-                FROM ({parsed_data.nodes.sql_query()}) n
-                UNION ALL
-                SELECT {', '.join(way_select_clauses)}
-                FROM ({parsed_data.ways.sql_query()}) w
-                UNION ALL
-                SELECT {', '.join(relation_select_clauses)}
-                FROM ({parsed_data.relations.sql_query()}) r
-            ) a
-            ANTI JOIN ({valid_elements_parquet_relation.sql_query()}) b
-            ON a.feature_id = b.feature_id
+        self.connection.sql(f"""
+            COPY (
+                SELECT id FROM read_parquet('{file_path}/**') GROUP BY id
+            ) TO '{result_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
         """)
 
-        total_nodes = parsed_data.nodes.count("id").fetchone()[0]
-        total_ways = parsed_data.ways.count("id").fetchone()[0]
-        total_relations = parsed_data.relations.count("id").fetchone()[0]
-        total_elements = total_nodes + total_ways + total_relations
-
-        valid_elements = valid_elements_parquet_relation.count("feature_id").fetchone()[0]
-
-        invalid_elements = total_elements - valid_elements
-
-        if invalid_elements > 0:
-            groups = floor(invalid_elements / self.rows_per_bucket)
-            grouped_invalid_elements_result_parquet = (
-                Path(tmp_dir_name) / "osm_invalid_elements_grouped"
-            )
-            self.connection.sql(f"""
-                COPY (
-                    SELECT
-                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb,
-                        floor(
-                            row_number() OVER (ORDER BY feature_id) / {self.rows_per_bucket}
-                        )::INTEGER as "group",
-                    FROM ({invalid_elements_full_relation.sql_query()})
-                ) TO '{grouped_invalid_elements_result_parquet}'
-                (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
-            """)
-
-            for group in range(groups + 1):
-                current_invalid_elements_group_path = (
-                    grouped_invalid_elements_result_parquet / f"group={group}"
-                )
-                current_invalid_elements_group_table = pq.read_table(
-                    current_invalid_elements_group_path
-                ).drop("group")
-                valid_geometry_column = ga.as_wkb(
-                    ga.as_geoarrow(
-                        ga.to_geopandas(
-                            ga.with_crs(
-                                current_invalid_elements_group_table.column("geometry_wkb"),
-                                WGS84_CRS,
-                            )
-                        ).make_valid()
-                    )
-                )
-
-                current_invalid_elements_group_table = (
-                    current_invalid_elements_group_table.append_column(
-                        GEOMETRY_COLUMN, valid_geometry_column
-                    )
-                )
-                current_invalid_elements_group_table = current_invalid_elements_group_table.drop(
-                    "geometry_wkb"
-                )
-                parquet_tables.append(current_invalid_elements_group_table)
-
-        joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
-
-        is_empty = joined_parquet_table.num_rows == 0
-
-        empty_columns = []
-        for column_name in joined_parquet_table.column_names:
-            if column_name in (FEATURES_INDEX, GEOMETRY_COLUMN):
-                continue
-            if (
-                is_empty
-                or pa.compute.all(
-                    pa.compute.is_null(joined_parquet_table.column(column_name))
-                ).as_py()
-            ):
-                empty_columns.append(column_name)
-
-        if empty_columns:
-            joined_parquet_table = joined_parquet_table.drop(empty_columns)
-
-        io.write_geoparquet_table(
-            joined_parquet_table, save_file_path, primary_geometry_column=GEOMETRY_COLUMN
-        )
-
-    def _generate_geoparquet_result_file_name(
-        self, pbf_file_path: Union[str, "os.PathLike[str]"]
-    ) -> str:
-        pbf_file_name = Path(pbf_file_path).name.removesuffix(".osm.pbf")
-
-        osm_filter_tags_hash_part = "nofilter"
-        if self.filter_tags is not None:
-            h = hashlib.new("sha256")
-            h.update(json.dumps(self.filter_tags).encode())
-            osm_filter_tags_hash_part = h.hexdigest()
-
-        clipping_geometry_hash_part = "noclip"
-        if self.region_geometry is not None:
-            clipping_geometry_hash_part = get_geometry_hash(self.region_geometry)
-
-        result_file_name = (
-            f"{pbf_file_name}_{osm_filter_tags_hash_part}_{clipping_geometry_hash_part}.geoparquet"
-        )
-        return result_file_name
+        return self.connection.sql(f"""
+            SELECT * FROM read_parquet('{result_path}/**')
+        """)
 
     def _get_filtered_nodes_with_geometry(
         self,
@@ -1067,3 +882,270 @@ class PbfFileHandler:
             file_path=Path(tmp_dir_name) / "filtered_relations_with_geometry",
         )
         return relations_parquet
+
+    def _save_parquet_file_with_geometry(
+        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
+    ) -> "duckdb.DuckDBPyRelation":
+        self.connection.sql(f"""
+            COPY (
+                SELECT
+                    * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
+                FROM ({relation.sql_query()})
+            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
+        """)
+        return self.connection.sql(f"""
+            SELECT * EXCLUDE (geometry_wkb), ST_GeomFromWKB(geometry_wkb) geometry
+            FROM read_parquet('{file_path}/**')
+        """)
+
+    def _concatenate_results_to_geoparquet(
+        self, parsed_data: ParsedOSMFeatures, tmp_dir_name: str, save_file_path: Path
+    ) -> None:
+        import geoarrow.pyarrow as ga
+        from geoarrow.pyarrow import io
+
+        select_clauses = [*self._generate_osm_tags_sql_select(parsed_data), "geometry"]
+
+        node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
+        way_select_clauses = ["'way/' || id as feature_id", *select_clauses]
+        relation_select_clauses = ["'relation/' || id as feature_id", *select_clauses]
+
+        unioned_features = self.connection.sql(f"""
+            SELECT {', '.join(node_select_clauses)}
+            FROM ({parsed_data.nodes.sql_query()}) n
+            UNION ALL
+            SELECT {', '.join(way_select_clauses)}
+            FROM ({parsed_data.ways.sql_query()}) w
+            UNION ALL
+            SELECT {', '.join(relation_select_clauses)}
+            FROM ({parsed_data.relations.sql_query()}) r
+        """)
+
+        grouped_features = self._parse_features_relation_to_groups(unioned_features)
+
+        valid_features_full_relation = self.connection.sql(f"""
+            SELECT * FROM ({grouped_features.sql_query()})
+            WHERE ST_IsValid(geometry)
+        """)
+
+        valid_features_parquet_path = Path(tmp_dir_name) / "osm_valid_elements"
+        valid_features_parquet_relation = self._save_parquet_file_with_geometry(
+            valid_features_full_relation,
+            valid_features_parquet_path,
+        )
+
+        valid_features_parquet_table = pq.read_table(valid_features_parquet_path)
+
+        is_empty = valid_features_parquet_table.num_rows == 0
+
+        if not is_empty:
+            geometry_column = ga.as_wkb(
+                ga.with_crs(valid_features_parquet_table.column("geometry_wkb"), WGS84_CRS)
+            )
+        else:
+            geometry_column = ga.as_wkb(gpd.GeoSeries([], crs=WGS84_CRS))
+
+        valid_features_parquet_table = valid_features_parquet_table.append_column(
+            GEOMETRY_COLUMN, geometry_column
+        )
+        valid_features_parquet_table = valid_features_parquet_table.drop("geometry_wkb")
+
+        parquet_tables = [valid_features_parquet_table]
+
+        invalid_features_full_relation = self.connection.sql(f"""
+            SELECT * FROM ({grouped_features.sql_query()}) a
+            ANTI JOIN ({valid_features_parquet_relation.sql_query()}) b
+            ON a.feature_id = b.feature_id
+        """)
+
+        total_nodes = parsed_data.nodes.count("id").fetchone()[0]
+        total_ways = parsed_data.ways.count("id").fetchone()[0]
+        total_relations = parsed_data.relations.count("id").fetchone()[0]
+        total_features = total_nodes + total_ways + total_relations
+
+        valid_features = valid_features_parquet_relation.count("feature_id").fetchone()[0]
+
+        invalid_features = total_features - valid_features
+
+        if invalid_features > 0:
+            groups = floor(invalid_features / self.rows_per_bucket)
+            grouped_invalid_features_result_parquet = (
+                Path(tmp_dir_name) / "osm_invalid_elements_grouped"
+            )
+            self.connection.sql(f"""
+                COPY (
+                    SELECT
+                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb,
+                        floor(
+                            row_number() OVER (ORDER BY feature_id) / {self.rows_per_bucket}
+                        )::INTEGER as "group",
+                    FROM ({invalid_features_full_relation.sql_query()})
+                ) TO '{grouped_invalid_features_result_parquet}'
+                (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
+            """)
+
+            for group in range(groups + 1):
+                current_invalid_features_group_path = (
+                    grouped_invalid_features_result_parquet / f"group={group}"
+                )
+                current_invalid_features_group_table = pq.read_table(
+                    current_invalid_features_group_path
+                ).drop("group")
+                valid_geometry_column = ga.as_wkb(
+                    ga.as_geoarrow(
+                        ga.to_geopandas(
+                            ga.with_crs(
+                                current_invalid_features_group_table.column("geometry_wkb"),
+                                WGS84_CRS,
+                            )
+                        ).make_valid()
+                    )
+                )
+
+                current_invalid_features_group_table = (
+                    current_invalid_features_group_table.append_column(
+                        GEOMETRY_COLUMN, valid_geometry_column
+                    )
+                )
+                current_invalid_features_group_table = current_invalid_features_group_table.drop(
+                    "geometry_wkb"
+                )
+                parquet_tables.append(current_invalid_features_group_table)
+
+        joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
+
+        is_empty = joined_parquet_table.num_rows == 0
+
+        empty_columns = []
+        for column_name in joined_parquet_table.column_names:
+            if column_name in (FEATURES_INDEX, GEOMETRY_COLUMN):
+                continue
+            if (
+                is_empty
+                or pa.compute.all(
+                    pa.compute.is_null(joined_parquet_table.column(column_name))
+                ).as_py()
+            ):
+                empty_columns.append(column_name)
+
+        if empty_columns:
+            joined_parquet_table = joined_parquet_table.drop(empty_columns)
+
+        io.write_geoparquet_table(
+            joined_parquet_table, save_file_path, primary_geometry_column=GEOMETRY_COLUMN
+        )
+
+    def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> list[str]:
+        """Prepare features filter clauses based on tags filter."""
+        osm_tag_keys_select_clauses = []
+
+        if not self.merged_tags_filter:
+            osm_tag_keys = set()
+            for elements in (
+                parsed_data.nodes,
+                parsed_data.ways,
+                parsed_data.relations,
+            ):
+                found_tag_keys = [row[0] for row in self.connection.sql(f"""
+                    SELECT DISTINCT UNNEST(map_keys(tags)) tag_key
+                    FROM ({elements.sql_query()})
+                """).fetchall()]
+                osm_tag_keys.update(found_tag_keys)
+            osm_tag_keys_select_clauses = [
+                f"list_extract(map_extract(tags, '{osm_tag_key}'), 1) as \"{osm_tag_key}\""
+                for osm_tag_key in sorted(list(osm_tag_keys))
+            ]
+        # TODO: elif keep other tags
+        else:
+            for filter_tag_key, filter_tag_value in self.merged_tags_filter.items():
+                if isinstance(filter_tag_value, bool) and filter_tag_value:
+                    osm_tag_keys_select_clauses.append(
+                        f"list_extract(map_extract(tags, '{filter_tag_key}'), 1) as"
+                        f' "{filter_tag_key}"'
+                    )
+                elif isinstance(filter_tag_value, str):
+                    escaped_value = self._sql_escape(filter_tag_value)
+                    osm_tag_keys_select_clauses.append(f"""
+                        CASE WHEN list_extract(
+                            map_extract(tags, '{filter_tag_key}'), 1
+                        ) = '{escaped_value}'
+                        THEN '{escaped_value}'
+                        ELSE NULL
+                        END as "{filter_tag_key}"
+                    """)
+                elif isinstance(filter_tag_value, list) and filter_tag_value:
+                    values_list = [f"'{self._sql_escape(value)}'" for value in filter_tag_value]
+                    osm_tag_keys_select_clauses.append(f"""
+                        CASE WHEN list_extract(
+                            map_extract(tags, '{filter_tag_key}'), 1
+                        ) IN ({', '.join(values_list)})
+                        THEN list_extract(map_extract(tags, '{filter_tag_key}'), 1)
+                        ELSE NULL
+                        END as "{filter_tag_key}"
+                    """)
+
+        if len(osm_tag_keys_select_clauses) > 100:
+            warnings.warn(
+                "Select clause contains more than 100 columns"
+                f" (found {len(osm_tag_keys_select_clauses)} columns)."
+                " Query might fail with insufficient memory resources."
+                " Consider applying more restrictive OsmTagsFilter for parsing.",
+                stacklevel=1,
+            )
+
+        return osm_tag_keys_select_clauses
+
+    def _parse_features_relation_to_groups(
+        self,
+        features_relation: "duckdb.DuckDBPyRelation",
+    ) -> "duckdb.DuckDBPyRelation":
+        """
+        Optionally group raw OSM features into groups defined in `GroupedOsmTagsFilter`.
+
+        Creates new features based on definition from `GroupedOsmTagsFilter`.
+        Returns transformed DuckDB relation with columns based on group names from the filter.
+        Values are built by concatenation of matching tag key and value with
+        an equal sign (eg. amenity=parking). Since many tags can match a definition
+        of a single group, a first match is used as a feature value.
+
+        Args:
+            features_relation (duckdb.DuckDBPyRelation): Generated features from the loader.
+
+        Returns:
+            duckdb.DuckDBPyRelation: Parsed features_relation.
+        """
+        if self.tags_filter and is_expected_type(self.tags_filter, GroupedOsmTagsFilter):
+            grouped_tags_filter = cast(GroupedOsmTagsFilter, self.tags_filter)
+
+            case_clauses = []
+            for group_name in sorted(grouped_tags_filter.keys()):
+                osm_filter = grouped_tags_filter[group_name]
+                case_when_clauses = []
+                for osm_tag_key, osm_tag_value in osm_filter.items():
+                    if isinstance(osm_tag_value, bool) and osm_tag_value:
+                        case_when_clauses.append(
+                            f"WHEN \"{osm_tag_key}\" IS NOT NULL THEN '{osm_tag_key}=' ||"
+                            f' "{osm_tag_key}"'
+                        )
+                    elif isinstance(osm_tag_value, str):
+                        escaped_value = self._sql_escape(osm_tag_value)
+                        case_when_clauses.append(
+                            f"WHEN \"{osm_tag_key}\" = '{escaped_value}' THEN '{osm_tag_key}=' ||"
+                            f' "{osm_tag_key}"'
+                        )
+                    elif isinstance(osm_tag_value, list) and osm_tag_value:
+                        values_list = [f"'{self._sql_escape(value)}'" for value in osm_tag_value]
+                        case_when_clauses.append(
+                            f"WHEN \"{osm_tag_key}\" IN ({', '.join(values_list)}) THEN"
+                            f" '{osm_tag_key}=' || \"{osm_tag_key}\""
+                        )
+                case_clause = f'CASE {" ".join(case_when_clauses)} END AS "{group_name}"'
+                case_clauses.append(case_clause)
+
+            joined_case_clauses = ", ".join(case_clauses)
+            features_relation = self.connection.sql(f"""
+                SELECT feature_id, {joined_case_clauses}, geometry
+                FROM ({features_relation.sql_query()})
+            """)
+
+        return features_relation

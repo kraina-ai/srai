@@ -29,14 +29,16 @@ class OSMPbfLoader(OSMLoader):
     capable of loading OSM features from a PBF file. It filters features based on OSM tags[3]
     in form of key:value pairs, that are used by OSM users to give meaning to geometries.
 
-    This loader uses `pyosmium`[3] library capable of parsing an `*.osm.pbf` file.
+    This loader uses `duckdb`[3] engine with `spatial`[4] extension
+    capable of parsing an `*.osm.pbf` file.
 
     Additionally, it can download a pbf file extract for a given area using different sources.
 
     References:
         1. https://www.openstreetmap.org/
         2. https://wiki.openstreetmap.org/wiki/PBF_Format
-        3. https://osmcode.org/pyosmium/
+        3. https://duckdb.org/
+        3. https://github.com/duckdb/duckdb_spatial
     """
 
     def __init__(
@@ -61,7 +63,7 @@ class OSMPbfLoader(OSMLoader):
             switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
                 switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
-        import_optional_dependencies(dependency_group="osm", modules=["osmium"])
+        import_optional_dependencies(dependency_group="osm", modules=["duckdb", "geoarrow-pyarrow"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory
@@ -118,14 +120,9 @@ class OSMPbfLoader(OSMLoader):
                 switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
-        merged_tags = self._merge_osm_tags_filter(tags)
-
-        pbf_handler = PbfFileHandler(tags=merged_tags)
+        pbf_handler = PbfFileHandler(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
 
         features_gdf = pbf_handler.get_features_gdf(file_paths=downloaded_pbf_files)
-        matching_features_ids = features_gdf.sjoin(area_wgs84).index
-        features_gdf = features_gdf.loc[matching_features_ids]
-
         result_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
@@ -135,4 +132,4 @@ class OSMPbfLoader(OSMLoader):
         ]
         result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
-        return self._parse_features_gdf_to_groups(result_gdf, tags)
+        return result_gdf
