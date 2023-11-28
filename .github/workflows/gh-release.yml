@@ -1,0 +1,51 @@
+name: "GitHub release"
+on:
+  workflow_run:
+    workflows: [Test - DEV]
+    types:
+      - completed
+
+permissions:
+  actions: 'write'
+
+jobs:
+  github-release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Create a GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Get last commit message
+        id: get-last-commit-message
+        run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> "$GITHUB_OUTPUT"
+      - name: Cancel run if not a release commit
+        run: |
+          # done this way instead of "exit 1" to avoid having a failed run in the logs
+          IS_RELEASE_COMMIT=${{ contains(steps.get-last-commit-message.outputs.COMMIT_MESSAGE, format('chore(CI/CD){0} bump version', ':')) }}
+          if ! $IS_RELEASE_COMMIT; then
+            gh run cancel ${{ github.run_id }}
+            gh run watch ${{ github.run_id }}
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Configure Git user
+        run: |
+          git config --local user.name "Kraina CI/CD"
+          git config --local user.email "cicd@kraina.ai"
+      - name: Extract release notes
+        id: extract-release-notes
+        uses: ffurrer2/extract-release-notes@v1
+      - name: Extract version
+        id: extract-version
+        uses: winterjung/split@v2
+        with:
+          msg: ${{ steps.get-last-commit-message.outputs.COMMIT_MESSAGE }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+          tag_name: ${{ steps.extract-version.outputs._5 }}
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}

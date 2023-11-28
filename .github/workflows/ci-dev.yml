@@ -1,17 +1,14 @@
 name: "Build & publish - DEV"
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [Test - DEV]
+    types:
+      - completed
 
 jobs:
-  run-tests:
-    name: "Run tests job"
-    uses: ./.github/workflows/_tests.yml
-
   build-n-publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Build and publish Python 🐍 distributions 📦 to TestPyPI
-    needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -45,8 +42,8 @@ jobs:
         run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
 
   generate-docs:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Generate latest library 📚 documentation 📄
-    needs: [run-tests]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -76,7 +73,7 @@ jobs:
       - name: Install dependencies
         run: pip install --no-deps -r requirements.txt
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat
+        run: pip install jupyter nbconvert nbformat black
       - name: Install srai
         run: |
           pdm build -v -d dist
