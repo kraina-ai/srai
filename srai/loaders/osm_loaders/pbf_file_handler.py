@@ -9,8 +9,9 @@ import json
 import tempfile
 import warnings
 from collections.abc import Sequence
+from math import floor
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 import geopandas as gpd
 import pyarrow as pa
@@ -35,17 +36,24 @@ class PbfFileHandler:
     PBF(Protocolbuffer Binary Format)[1] file handler is a ...
     """
 
-    class FilteredOSMIds(NamedTuple):
-        """"""
+    class ConvertedOSMParquetFiles(NamedTuple):
+        """List of parquet files read from original OSM.PBF file."""
 
-        nodes_required: "duckdb.DuckDBPyRelation"
-        nodes_filtered: "duckdb.DuckDBPyRelation"
-        ways_required: "duckdb.DuckDBPyRelation"
-        ways_filtered: "duckdb.DuckDBPyRelation"
-        relations_filtered: "duckdb.DuckDBPyRelation"
+        nodes_valid_with_tags: "duckdb.DuckDBPyRelation"
+        nodes_required_ids: "duckdb.DuckDBPyRelation"
+        nodes_filtered_ids: "duckdb.DuckDBPyRelation"
+
+        ways_all_with_tags: "duckdb.DuckDBPyRelation"
+        ways_with_unnested_nodes_refs: "duckdb.DuckDBPyRelation"
+        ways_required_ids: "duckdb.DuckDBPyRelation"
+        ways_filtered_ids: "duckdb.DuckDBPyRelation"
+
+        relations_all_with_tags: "duckdb.DuckDBPyRelation"
+        relations_with_unnested_way_refs: "duckdb.DuckDBPyRelation"
+        relations_filtered_ids: "duckdb.DuckDBPyRelation"
 
     class ParsedOSMFeatures(NamedTuple):
-        """"""
+        """Final list of parsed elements from OSM."""
 
         nodes: "duckdb.DuckDBPyRelation"
         ways: "duckdb.DuckDBPyRelation"
@@ -81,7 +89,8 @@ class PbfFileHandler:
         self.region_geometry = region_geometry
         self.working_directory = Path(working_directory)
         self.working_directory.mkdir(parents=True, exist_ok=True)
-        self.connection: "duckdb.DuckDBPyConnection" = None
+        self.connection: duckdb.DuckDBPyConnection = None
+        self.rows_per_bucket = 1_000_000
 
     def get_features_gdf(
         self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], ignore_cache: bool = False
@@ -106,7 +115,7 @@ class PbfFileHandler:
         import geoarrow.pyarrow as ga
         from geoarrow.pyarrow import io
 
-        with tempfile.TemporaryDirectory(dir=self.working_directory) as tmp_dir_name:
+        with tempfile.TemporaryDirectory(dir=self.working_directory.resolve()) as tmp_dir_name:
             try:
                 self._set_up_duckdb_connection(tmp_dir_name)
                 parsed_geoparquet_files = []
@@ -118,6 +127,7 @@ class PbfFileHandler:
                 if self.connection is not None:
                     self.connection.close()
                     self.connection = None
+                raise
 
         parquet_tables = [
             io.read_geoparquet_table(parsed_parquet_file)
@@ -139,6 +149,15 @@ class PbfFileHandler:
             self.connection.install_extension(extension_name)
             self.connection.load_extension(extension_name)
 
+        self.connection.sql("""
+            CREATE OR REPLACE MACRO linestring_to_linestring_wkt(ls) AS
+            'LINESTRING (' || array_to_string([pt.x || ' ' || pt.y for pt in ls], ', ') || ')';
+        """)
+        self.connection.sql("""
+            CREATE OR REPLACE MACRO linestring_to_polygon_wkt(ls) AS
+            'POLYGON ((' || array_to_string([pt.x || ' ' || pt.y for pt in ls], ', ') || '))';
+        """)
+
     def _parse_pbf_file(
         self,
         pbf_path: Union[str, "os.PathLike[str]"],
@@ -149,24 +168,31 @@ class PbfFileHandler:
         result_file_path = Path(self.working_directory) / result_file_name
         if not result_file_path.exists() or ignore_cache:
             elements = self.connection.sql(f"SELECT * FROM ST_READOSM('{Path(pbf_path)}');")
-            filtered_elements_ids = self._prefilter_elements_ids(elements, tmp_dir_name)
+            converted_osm_parquet_files = self._prefilter_elements_ids(elements, tmp_dir_name)
 
-            nodes_with_geometry = self._parse_nodes(elements, filtered_elements_ids, tmp_dir_name)
-            ways_with_linestrings_geometry = self._parse_ways_to_linestrings(
-                elements, nodes_with_geometry, filtered_elements_ids, tmp_dir_name
+            filtered_nodes_with_geometry = self._get_filtered_nodes_with_geometry(
+                converted_osm_parquet_files, tmp_dir_name
             )
-            ways_with_proper_geometry = self._parse_ways_to_proper_geometry(
-                ways_with_linestrings_geometry, tmp_dir_name
+            required_nodes_with_structs = self._get_required_nodes_with_structs(
+                converted_osm_parquet_files, tmp_dir_name
             )
-            relations_with_geometry = self._parse_relations(
-                elements, ways_with_linestrings_geometry, filtered_elements_ids, tmp_dir_name
+
+            required_ways_with_linestrings = self._get_required_ways_with_linestrings(
+                converted_osm_parquet_files, required_nodes_with_structs, tmp_dir_name
+            )
+            filtered_ways_with_proper_geometry = self._get_filtered_ways_with_proper_geometry(
+                converted_osm_parquet_files, required_ways_with_linestrings, tmp_dir_name
+            )
+
+            filtered_relations_with_geometry = self._get_filtered_relations_with_geometry(
+                converted_osm_parquet_files, required_ways_with_linestrings, tmp_dir_name
             )
 
             self._concatenate_results_to_geoparquet(
                 PbfFileHandler.ParsedOSMFeatures(
-                    nodes=nodes_with_geometry,
-                    ways=ways_with_proper_geometry,
-                    relations=relations_with_geometry,
+                    nodes=filtered_nodes_with_geometry,
+                    ways=filtered_ways_with_proper_geometry,
+                    relations=filtered_relations_with_geometry,
                 ),
                 tmp_dir_name=tmp_dir_name,
                 save_file_path=result_file_path,
@@ -178,73 +204,107 @@ class PbfFileHandler:
         relation = self.connection.sql(sql_query)
         return self._save_parquet_file(relation, file_path)
 
+    def _calculate_unique_ids_to_parquet(
+        self, file_path: Path, result_path: Optional[Path] = None
+    ) -> "duckdb.DuckDBPyRelation":
+        if result_path is None:
+            result_path = file_path / "distinct"
+
+        self.connection.sql(f"""
+            COPY (
+                SELECT id FROM read_parquet('{file_path}/**') GROUP BY id
+            ) TO '{result_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
+        """)
+
+        return self.connection.sql(f"""
+            SELECT * FROM read_parquet('{result_path}/**')
+        """)
+
     def _save_parquet_file(
         self, relation: "duckdb.DuckDBPyRelation", file_path: Path
     ) -> "duckdb.DuckDBPyRelation":
         self.connection.sql(f"""
             COPY (
                 SELECT * FROM ({relation.sql_query()})
-            ) TO '{file_path}' (FORMAT 'parquet')
+            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
         """)
         return self.connection.sql(f"""
-            SELECT * FROM read_parquet('{file_path}')
+            SELECT * FROM read_parquet('{file_path}/**')
         """)
 
     def _save_parquet_file_with_geometry(
-        self, elements: "duckdb.DuckDBPyRelation", file_path: Path
+        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
     ) -> "duckdb.DuckDBPyRelation":
         self.connection.sql(f"""
             COPY (
-                SELECT * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb FROM ({elements.sql_query()})
-            ) TO '{file_path}' (FORMAT 'parquet')
+                SELECT
+                    * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
+                FROM ({relation.sql_query()})
+            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
         """)
         return self.connection.sql(f"""
             SELECT * EXCLUDE (geometry_wkb), ST_GeomFromWKB(geometry_wkb) geometry
-            FROM read_parquet('{file_path}')
+            FROM read_parquet('{file_path}/**')
         """)
 
     def _prefilter_elements_ids(
         self, elements: "duckdb.DuckDBPyRelation", tmp_dir_name: str
-    ) -> FilteredOSMIds:
+    ) -> ConvertedOSMParquetFiles:
         sql_filter = self._generate_osm_tags_sql_filter()
-        intersection_filter = (
-            f"ST_Intersects(ST_Point(lon, lat), ST_GeomFromText('{self.region_geometry.wkt}'))"
-            if self.region_geometry is not None
-            else "true"
-        )
+        is_intersecting = self.region_geometry is not None
+
+        nodes_prepared_ids_path = Path(tmp_dir_name) / "nodes_prepared_ids"
+        nodes_prepared_ids_path.mkdir(parents=True, exist_ok=True)
+
+        ways_prepared_ids_path = Path(tmp_dir_name) / "ways_prepared_ids"
+        ways_prepared_ids_path.mkdir(parents=True, exist_ok=True)
+
         # NODES - VALID (NV)
         # - select all with kind = 'node'
         # - select all with lat and lon not empty
-        self.connection.sql(f"""
-            SELECT * FROM ({elements.sql_query()}) w
+        nodes_valid_with_tags = self._sql_to_parquet_file(
+            sql_query=f"""
+            SELECT id, tags, lon, lat
+            FROM ({elements.sql_query()})
             WHERE kind = 'node'
             AND lat IS NOT NULL AND lon IS NOT NULL
-        """).to_view("nodes", replace=True)
-        nodes_valid = self._sql_to_parquet_file(
-            sql_query="""
-            SELECT DISTINCT id FROM nodes
             """,
-            file_path=Path(tmp_dir_name) / "nodes_valid.parquet",
+            file_path=Path(tmp_dir_name) / "nodes_valid_with_tags",
         )
         # NODES - INTERSECTING (NI)
         # - select all from NV which intersect given geometry filter
-        nodes_intersecting = self._sql_to_parquet_file(
-            sql_query=f"""
-            SELECT DISTINCT id FROM nodes n
-            SEMI JOIN ({nodes_valid.sql_query()}) nv ON n.id = nv.id
-            WHERE {intersection_filter} = true
-            """,
-            file_path=Path(tmp_dir_name) / "nodes_intersecting.parquet",
-        )
         # NODES - FILTERED (NF)
         # - select all from NI with tags filter
-        nodes_filtered = self._sql_to_parquet_file(
-            sql_query=f"""
-            SELECT DISTINCT id FROM nodes n
-            SEMI JOIN ({nodes_intersecting.sql_query()}) ni ON n.id = ni.id
-            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
-            """,
-            file_path=Path(tmp_dir_name) / "nodes_filtered.parquet",
+        if is_intersecting:
+            wkt = cast(BaseGeometry, self.region_geometry).wkt
+            intersection_filter = f"ST_Intersects(ST_Point(lon, lat), ST_GeomFromText('{wkt}'))"
+            nodes_intersecting_ids = self._sql_to_parquet_file(
+                sql_query=f"""
+                SELECT DISTINCT id FROM ({nodes_valid_with_tags.sql_query()}) n
+                WHERE {intersection_filter} = true
+                """,
+                file_path=Path(tmp_dir_name) / "nodes_intersecting_ids",
+            )
+            self._sql_to_parquet_file(
+                sql_query=f"""
+                SELECT id FROM ({nodes_valid_with_tags.sql_query()}) n
+                SEMI JOIN ({nodes_intersecting_ids.sql_query()}) ni ON n.id = ni.id
+                WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
+                """,
+                file_path=Path(tmp_dir_name) / "nodes_filtered_non_distinct_ids",
+            )
+        else:
+            nodes_intersecting_ids = nodes_valid_with_tags
+            self._sql_to_parquet_file(
+                sql_query=f"""
+                SELECT id FROM ({nodes_valid_with_tags.sql_query()}) n
+                WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
+                """,
+                file_path=Path(tmp_dir_name) / "nodes_filtered_non_distinct_ids",
+            )
+        nodes_filtered_ids = self._calculate_unique_ids_to_parquet(
+            Path(tmp_dir_name) / "nodes_filtered_non_distinct_ids",
+            Path(tmp_dir_name) / "nodes_filtered_ids",
         )
 
         # WAYS - VALID (WV)
@@ -257,52 +317,67 @@ class PbfFileHandler:
             FROM ({elements.sql_query()}) w
             WHERE kind = 'way' AND len(refs) >= 2
         """).to_view("ways", replace=True)
-        unnested_way_refs = self._sql_to_parquet_file(
+        ways_all_with_tags = self._sql_to_parquet_file(
             sql_query="""
-            SELECT w.id, UNNEST(refs) as ref
+            SELECT id, tags
+            FROM ways w
+            WHERE tags IS NOT NULL AND cardinality(tags) > 0
+            """,
+            file_path=Path(tmp_dir_name) / "ways_all_with_tags",
+        )
+        ways_with_unnested_nodes_refs = self._sql_to_parquet_file(
+            sql_query="""
+            SELECT w.id, UNNEST(refs) as ref, UNNEST(range(length(refs))) as ref_idx
             FROM ways w
             """,
-            file_path=Path(tmp_dir_name) / "unnested_way_refs.parquet",
+            file_path=Path(tmp_dir_name) / "ways_with_unnested_nodes_refs",
         )
-        ways_valid = self._sql_to_parquet_file(
+        ways_valid_ids = self._sql_to_parquet_file(
             sql_query=f"""
-            WITH total_way_refs AS (
+            WITH total_ways_with_nodes_refs AS (
                 SELECT id, ref
-                FROM ({unnested_way_refs.sql_query()}) unnested_way_refs
+                FROM ({ways_with_unnested_nodes_refs.sql_query()})
             ),
-            unmatched_way_refs AS (
+            unmatched_ways_with_nodes_refs AS (
                 SELECT id, ref
-                FROM ({unnested_way_refs.sql_query()}) w
-                ANTI JOIN ({nodes_valid.sql_query()}) nv ON nv.id = w.ref
+                FROM ({ways_with_unnested_nodes_refs.sql_query()}) w
+                ANTI JOIN ({nodes_valid_with_tags.sql_query()}) nv ON nv.id = w.ref
             )
             SELECT DISTINCT id
-            FROM total_way_refs
+            FROM total_ways_with_nodes_refs
             EXCEPT
             SELECT DISTINCT id
-            FROM unmatched_way_refs
+            FROM unmatched_ways_with_nodes_refs
             """,
-            file_path=Path(tmp_dir_name) / "ways_valid.parquet",
+            file_path=Path(tmp_dir_name) / "ways_valid_ids",
         )
         # WAYS - INTERSECTING (WI)
         # - select all from WV with joining any from NV on ref
-        ways_intersecting = self._sql_to_parquet_file(
-            sql_query=f"""
-            SELECT DISTINCT uwr.id
-            FROM unnested_way_refs uwr
-            SEMI JOIN ({ways_valid.sql_query()}) wv ON uwr.id = wv.id
-            SEMI JOIN ({nodes_intersecting.sql_query()}) n ON n.id = uwr.ref
-            """,
-            file_path=Path(tmp_dir_name) / "ways_intersecting.parquet",
-        )
+        if is_intersecting:
+            ways_intersecting_ids = self._sql_to_parquet_file(
+                sql_query=f"""
+                SELECT DISTINCT uwr.id
+                FROM unnested_way_refs uwr
+                SEMI JOIN ({ways_valid_ids.sql_query()}) wv ON uwr.id = wv.id
+                SEMI JOIN ({nodes_intersecting_ids.sql_query()}) n ON n.id = uwr.ref
+                """,
+                file_path=Path(tmp_dir_name) / "ways_intersecting_ids",
+            )
+        else:
+            ways_intersecting_ids = ways_valid_ids
         # WAYS - FILTERED (WF)
         # - select all from WI with tags filter
-        ways_filtered = self._sql_to_parquet_file(
+        self._sql_to_parquet_file(
             sql_query=f"""
-            SELECT DISTINCT id FROM ways w
-            SEMI JOIN ({ways_intersecting.sql_query()}) wi ON w.id = wi.id
-            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
+            SELECT id FROM ({ways_all_with_tags.sql_query()}) w
+            SEMI JOIN ({ways_intersecting_ids.sql_query()}) wi ON w.id = wi.id
+            WHERE {sql_filter}
             """,
-            file_path=Path(tmp_dir_name) / "ways_filtered.parquet",
+            file_path=Path(tmp_dir_name) / "ways_filtered_non_distinct_ids",
+        )
+        ways_filtered_ids = self._calculate_unique_ids_to_parquet(
+            Path(tmp_dir_name) / "ways_filtered_non_distinct_ids",
+            ways_prepared_ids_path / "filtered",
         )
 
         # RELATIONS - VALID (RV)
@@ -318,28 +393,41 @@ class PbfFileHandler:
             AND list_contains(map_keys(tags), 'type')
             AND list_has_any(map_extract(tags, 'type'), ['boundary', 'multipolygon'])
         """).to_view("relations", replace=True)
-        filtered_relation_refs = self._sql_to_parquet_file(
+        relations_all_with_tags = self._sql_to_parquet_file(
+            sql_query="""
+            SELECT id, tags
+            FROM relations r
+            WHERE tags IS NOT NULL AND cardinality(tags) > 0
+            """,
+            file_path=Path(tmp_dir_name) / "relations_all_with_tags",
+        )
+        relations_with_unnested_way_refs = self._sql_to_parquet_file(
             sql_query="""
             WITH unnested_relation_refs AS (
-                SELECT r.id, UNNEST(refs) as ref, UNNEST(ref_types) as ref_type,
+                SELECT
+                    r.id,
+                    UNNEST(refs) as ref,
+                    UNNEST(ref_types) as ref_type,
+                    UNNEST(ref_roles) as ref_role,
+                    UNNEST(range(length(refs))) as ref_idx
                 FROM relations r
             )
-            SELECT id, ref
+            SELECT id, ref, ref_role, ref_idx
             FROM unnested_relation_refs
             WHERE ref_type = 'way'
             """,
-            file_path=Path(tmp_dir_name) / "filtered_relation_refs.parquet",
+            file_path=Path(tmp_dir_name) / "relations_with_unnested_way_refs",
         )
-        relations_valid = self._sql_to_parquet_file(
+        relations_valid_ids = self._sql_to_parquet_file(
             sql_query=f"""
             WITH total_relation_refs AS (
                 SELECT id, ref
-                FROM ({filtered_relation_refs.sql_query()}) frr
+                FROM ({relations_with_unnested_way_refs.sql_query()}) frr
             ),
             unmatched_relation_refs AS (
                 SELECT id, ref
-                FROM ({filtered_relation_refs.sql_query()}) r
-                ANTI JOIN ({ways_valid.sql_query()}) wv ON wv.id = r.ref
+                FROM ({relations_with_unnested_way_refs.sql_query()}) r
+                ANTI JOIN ({ways_valid_ids.sql_query()}) wv ON wv.id = r.ref
             )
             SELECT DISTINCT id
             FROM total_relation_refs
@@ -347,85 +435,88 @@ class PbfFileHandler:
             SELECT DISTINCT id
             FROM unmatched_relation_refs
             """,
-            file_path=Path(tmp_dir_name) / "relations_valid.parquet",
+            file_path=Path(tmp_dir_name) / "relations_valid_ids",
         )
         # RELATIONS - INTERSECTING (RI)
         # - select all from RW with joining any from RV on ref
-        relations_intersecting = self._sql_to_parquet_file(
-            sql_query=f"""
-            SELECT DISTINCT frr.id
-            FROM ({filtered_relation_refs.sql_query()}) frr
-            SEMI JOIN ({relations_valid.sql_query()}) rv ON frr.id = rv.id
-            SEMI JOIN ({ways_intersecting.sql_query()}) wi ON wi.id = frr.ref
-            """,
-            file_path=Path(tmp_dir_name) / "relations_intersecting.parquet",
-        )
+        if is_intersecting:
+            relations_intersecting_ids = self._sql_to_parquet_file(
+                sql_query=f"""
+                SELECT frr.id
+                FROM ({relations_with_unnested_way_refs.sql_query()}) frr
+                SEMI JOIN ({relations_valid_ids.sql_query()}) rv ON frr.id = rv.id
+                SEMI JOIN ({ways_intersecting_ids.sql_query()}) wi ON wi.id = frr.ref
+                """,
+                file_path=Path(tmp_dir_name) / "relations_intersecting_ids",
+            )
+        else:
+            relations_intersecting_ids = relations_valid_ids
         # RELATIONS - FILTERED (RF)
         # - select all from RI with tags filter
-        relations_filtered = self._sql_to_parquet_file(
+        relations_ids_path = Path(tmp_dir_name) / "relations_ids"
+        relations_ids_path.mkdir(parents=True, exist_ok=True)
+        self._sql_to_parquet_file(
             sql_query=f"""
-            SELECT DISTINCT id FROM relations r
-            SEMI JOIN ({relations_intersecting.sql_query()}) ri ON r.id = ri.id
-            WHERE tags IS NOT NULL AND cardinality(tags) > 0 AND ({sql_filter})
+            SELECT id FROM ({relations_all_with_tags.sql_query()}) r
+            SEMI JOIN ({relations_intersecting_ids.sql_query()}) ri ON r.id = ri.id
+            WHERE {sql_filter}
             """,
-            file_path=Path(tmp_dir_name) / "relations_filtered.parquet",
+            file_path=relations_ids_path / "filtered",
+        )
+        relations_filtered_ids = self._calculate_unique_ids_to_parquet(
+            relations_ids_path / "filtered", Path(tmp_dir_name) / "relations_filtered_ids"
         )
 
-        # GET ALL RELATIONS IDS
-        # - filtered - all IDs from RF
-        filtered_relations_ids = self._sql_to_parquet_file(
-            sql_query=f"SELECT DISTINCT id FROM ({relations_filtered.sql_query()}) rf",
-            file_path=Path(tmp_dir_name) / "filtered_relations_ids.parquet",
-        )
-
-        # GET ALL WAYS IDS
+        # WAYS - REQUIRED (WR)
         # - required - all IDs from WF
         #   + all needed to construct relations from RF
-        # - filtered - all IDs from WF
-        required_ways_ids = self._sql_to_parquet_file(
+        self._sql_to_parquet_file(
             sql_query=f"""
-            SELECT DISTINCT ref as id
-            FROM ({filtered_relation_refs.sql_query()}) frr
-            SEMI JOIN ({filtered_relations_ids.sql_query()}) fri ON fri.id = frr.id
-            UNION
-            SELECT DISTINCT id FROM ({ways_filtered.sql_query()}) wf
+            SELECT ref as id
+            FROM ({relations_with_unnested_way_refs.sql_query()}) frr
+            SEMI JOIN ({relations_filtered_ids.sql_query()}) fri ON fri.id = frr.id
             """,
-            file_path=Path(tmp_dir_name) / "required_ways_ids.parquet",
+            file_path=ways_prepared_ids_path / "required_by_relations",
         )
-        filtered_ways_ids = self._sql_to_parquet_file(
-            sql_query=f"SELECT DISTINCT id FROM ({ways_filtered.sql_query()}) wf",
-            file_path=Path(tmp_dir_name) / "filtered_ways_ids.parquet",
+        ways_required_ids = self._calculate_unique_ids_to_parquet(
+            ways_prepared_ids_path, Path(tmp_dir_name) / "ways_required_ids"
         )
 
-        # GET ALL NODES IDS
+        # NODES - REQUIRED (WR)
         # - required - all IDs from NF
-        #   + all needed to construct ways from WF and relations from RF
-        # - filtered - all IDs from NF
-        required_nodes_ids = self._sql_to_parquet_file(
+        #   + all needed to construct ways from WR
+        #   + and needed to construct ways from WF
+        self._sql_to_parquet_file(
             sql_query=f"""
-            SELECT DISTINCT ref as id
-            FROM ({unnested_way_refs.sql_query()}) uwr
-            SEMI JOIN ({required_ways_ids.sql_query()}) rwi ON rwi.id = uwr.id
-            UNION
-            SELECT DISTINCT ref as id
-            FROM ({unnested_way_refs.sql_query()}) uwr
-            SEMI JOIN ({filtered_ways_ids.sql_query()}) fwi ON fwi.id = uwr.id
-            UNION
-            SELECT DISTINCT id FROM ({nodes_filtered.sql_query()}) nf
+            SELECT ref as id
+            FROM ({ways_with_unnested_nodes_refs.sql_query()}) uwr
+            SEMI JOIN ({ways_required_ids.sql_query()}) rwi ON rwi.id = uwr.id
             """,
-            file_path=Path(tmp_dir_name) / "required_nodes_ids.parquet",
+            file_path=nodes_prepared_ids_path / "required_by_relations",
         )
-        filtered_nodes_ids = self._sql_to_parquet_file(
-            sql_query=f"SELECT DISTINCT id FROM ({nodes_filtered.sql_query()}) nf",
-            file_path=Path(tmp_dir_name) / "filtered_nodes_ids.parquet",
+        self._sql_to_parquet_file(
+            sql_query=f"""
+            SELECT ref as id
+            FROM ({ways_with_unnested_nodes_refs.sql_query()}) uwr
+            SEMI JOIN ({ways_filtered_ids.sql_query()}) fwi ON fwi.id = uwr.id
+            """,
+            file_path=nodes_prepared_ids_path / "required_by_ways",
+        )
+        nodes_required_ids = self._calculate_unique_ids_to_parquet(
+            nodes_prepared_ids_path, Path(tmp_dir_name) / "nodes_required_ids"
         )
 
-        return PbfFileHandler.FilteredOSMIds(
-            nodes_required=required_nodes_ids,
-            nodes_filtered=filtered_nodes_ids,
-            ways_required=required_ways_ids,
-            ways_filtered=filtered_ways_ids,
-            relations_filtered=filtered_relations_ids,
+        return PbfFileHandler.ConvertedOSMParquetFiles(
+            nodes_valid_with_tags=nodes_valid_with_tags,
+            nodes_required_ids=nodes_required_ids,
+            nodes_filtered_ids=nodes_filtered_ids,
+            ways_all_with_tags=ways_all_with_tags,
+            ways_with_unnested_nodes_refs=ways_with_unnested_nodes_refs,
+            ways_required_ids=ways_required_ids,
+            ways_filtered_ids=ways_filtered_ids,
+            relations_all_with_tags=relations_all_with_tags,
+            relations_with_unnested_way_refs=relations_with_unnested_way_refs,
+            relations_filtered_ids=relations_filtered_ids,
         )
 
     def _escape(self, value: str) -> str:
@@ -524,59 +615,120 @@ class PbfFileHandler:
         from geoarrow.pyarrow import io
 
         select_clauses = [*self._generate_osm_tags_sql_select(parsed_data), "geometry"]
-        nodes_result_parquet = Path(tmp_dir_name) / "nodes_full.parquet"
-        ways_result_parquet = Path(tmp_dir_name) / "ways_full.parquet"
-        relations_result_parquet = Path(tmp_dir_name) / "relations_full.parquet"
 
         node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
-        self._save_parquet_file_with_geometry(
-            self.connection.sql(f"""
-                SELECT {', '.join(node_select_clauses)}
-                FROM ({parsed_data.nodes.sql_query()}) n WHERE is_filtered
-            """),
-            nodes_result_parquet,
-        )
         way_select_clauses = ["'way/' || id as feature_id", *select_clauses]
-        self._save_parquet_file_with_geometry(
-            self.connection.sql(f"""
+        relation_select_clauses = ["'relation/' || id as feature_id", *select_clauses]
+        valid_elements_full_relation = self.connection.sql(f"""
+            SELECT * FROM (
+                SELECT {', '.join(node_select_clauses)}
+                FROM ({parsed_data.nodes.sql_query()}) n
+                UNION ALL
                 SELECT {', '.join(way_select_clauses)}
                 FROM ({parsed_data.ways.sql_query()}) w
-            """),
-            ways_result_parquet,
-        )
-        relation_select_clauses = ["'relation/' || id as feature_id", *select_clauses]
-        self._save_parquet_file_with_geometry(
-            self.connection.sql(f"""
+                UNION ALL
                 SELECT {', '.join(relation_select_clauses)}
                 FROM ({parsed_data.relations.sql_query()}) r
-            """),
-            relations_result_parquet,
+            )
+            WHERE ST_IsValid(geometry)
+        """)
+
+        valid_elements_parquet_path = Path(tmp_dir_name) / "osm_valid_elements"
+        valid_elements_parquet_relation = self._save_parquet_file_with_geometry(
+            valid_elements_full_relation,
+            valid_elements_parquet_path,
         )
 
-        parquet_tables = [
-            pq.read_table(parsed_parquet_file)
-            for parsed_parquet_file in [
-                nodes_result_parquet,
-                ways_result_parquet,
-                relations_result_parquet,
-            ]
-        ]
+        valid_elements_parquet_table = pq.read_table(valid_elements_parquet_path)
+
+        is_empty = valid_elements_parquet_table.num_rows == 0
+
+        if not is_empty:
+            geometry_column = ga.as_wkb(
+                ga.with_crs(valid_elements_parquet_table.column("geometry_wkb"), WGS84_CRS)
+            )
+        else:
+            geometry_column = ga.as_wkb(gpd.GeoSeries([], crs=WGS84_CRS))
+
+        valid_elements_parquet_table = valid_elements_parquet_table.append_column(
+            GEOMETRY_COLUMN, geometry_column
+        )
+        valid_elements_parquet_table = valid_elements_parquet_table.drop("geometry_wkb")
+
+        parquet_tables = [valid_elements_parquet_table]
+
+        invalid_elements_full_relation = self.connection.sql(f"""
+            SELECT * FROM (
+                SELECT {', '.join(node_select_clauses)}
+                FROM ({parsed_data.nodes.sql_query()}) n
+                UNION ALL
+                SELECT {', '.join(way_select_clauses)}
+                FROM ({parsed_data.ways.sql_query()}) w
+                UNION ALL
+                SELECT {', '.join(relation_select_clauses)}
+                FROM ({parsed_data.relations.sql_query()}) r
+            ) a
+            ANTI JOIN ({valid_elements_parquet_relation.sql_query()}) b
+            ON a.feature_id = b.feature_id
+        """)
+
+        total_nodes = parsed_data.nodes.count("id").fetchone()[0]
+        total_ways = parsed_data.ways.count("id").fetchone()[0]
+        total_relations = parsed_data.relations.count("id").fetchone()[0]
+        total_elements = total_nodes + total_ways + total_relations
+
+        valid_elements = valid_elements_parquet_relation.count("feature_id").fetchone()[0]
+
+        invalid_elements = total_elements - valid_elements
+
+        if invalid_elements > 0:
+            groups = floor(invalid_elements / self.rows_per_bucket)
+            grouped_invalid_elements_result_parquet = (
+                Path(tmp_dir_name) / "osm_invalid_elements_grouped"
+            )
+            self.connection.sql(f"""
+                COPY (
+                    SELECT
+                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb,
+                        floor(
+                            row_number() OVER (ORDER BY feature_id) / {self.rows_per_bucket}
+                        )::INTEGER as "group",
+                    FROM ({invalid_elements_full_relation.sql_query()})
+                ) TO '{grouped_invalid_elements_result_parquet}'
+                (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
+            """)
+
+            for group in range(groups + 1):
+                current_invalid_elements_group_path = (
+                    grouped_invalid_elements_result_parquet / f"group={group}"
+                )
+                current_invalid_elements_group_table = pq.read_table(
+                    current_invalid_elements_group_path
+                ).drop("group")
+                valid_geometry_column = ga.as_wkb(
+                    ga.as_geoarrow(
+                        ga.to_geopandas(
+                            ga.with_crs(
+                                current_invalid_elements_group_table.column("geometry_wkb"),
+                                WGS84_CRS,
+                            )
+                        ).make_valid()
+                    )
+                )
+
+                current_invalid_elements_group_table = (
+                    current_invalid_elements_group_table.append_column(
+                        GEOMETRY_COLUMN, valid_geometry_column
+                    )
+                )
+                current_invalid_elements_group_table = current_invalid_elements_group_table.drop(
+                    "geometry_wkb"
+                )
+                parquet_tables.append(current_invalid_elements_group_table)
+
         joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
 
         is_empty = joined_parquet_table.num_rows == 0
-
-        if not is_empty:
-            valid_geometry_column = ga.as_geoarrow(
-                ga.to_geopandas(
-                    ga.with_crs(joined_parquet_table.column("geometry_wkb"), WGS84_CRS)
-                ).make_valid()
-            )
-        else:
-            valid_geometry_column = ga.as_wkb(gpd.GeoSeries([], crs=WGS84_CRS))
-        joined_parquet_table = joined_parquet_table.append_column(
-            GEOMETRY_COLUMN, valid_geometry_column
-        )
-        joined_parquet_table = joined_parquet_table.drop("geometry_wkb")
 
         empty_columns = []
         for column_name in joined_parquet_table.column_names:
@@ -617,196 +769,232 @@ class PbfFileHandler:
         )
         return result_file_name
 
-    def _parse_nodes(
+    def _get_filtered_nodes_with_geometry(
         self,
-        elements: "duckdb.DuckDBPyRelation",
-        filtered_osm_ids: FilteredOSMIds,
+        osm_parquet_files: ConvertedOSMParquetFiles,
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
         nodes_with_geometry = self.connection.sql(f"""
             SELECT
                 n.id,
                 n.tags,
-                fn.id IS NOT NULL AS is_filtered,
                 ST_Point(n.lon, n.lat) geometry
-            FROM ({elements.sql_query()}) n
-            SEMI JOIN ({filtered_osm_ids.nodes_required.sql_query()}) rn ON n.id = rn.id
-            LEFT JOIN ({filtered_osm_ids.nodes_filtered.sql_query()}) fn ON n.id = fn.id
-            WHERE kind = 'node'
+            FROM ({osm_parquet_files.nodes_valid_with_tags.sql_query()}) n
+            SEMI JOIN ({osm_parquet_files.nodes_filtered_ids.sql_query()}) fn ON n.id = fn.id
         """)
         nodes_parquet = self._save_parquet_file_with_geometry(
-            elements=nodes_with_geometry, file_path=Path(tmp_dir_name) / "nodes.parquet"
+            relation=nodes_with_geometry,
+            file_path=Path(tmp_dir_name) / "filtered_nodes_with_geometry",
         )
         return nodes_parquet
 
-    def _parse_ways_to_linestrings(
+    def _get_required_nodes_with_structs(
         self,
-        elements: "duckdb.DuckDBPyRelation",
-        nodes: "duckdb.DuckDBPyRelation",
-        filtered_osm_ids: FilteredOSMIds,
+        osm_parquet_files: ConvertedOSMParquetFiles,
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        ways_with_geometry = self.connection.sql(f"""
-            WITH ways AS (
+        nodes_with_structs = self.connection.sql(f"""
+            SELECT
+                n.id,
+                struct_pack(x := lon, y := lat)::POINT_2D point
+            FROM ({osm_parquet_files.nodes_valid_with_tags.sql_query()}) n
+            SEMI JOIN ({osm_parquet_files.nodes_required_ids.sql_query()}) rn ON n.id = rn.id
+        """)
+        nodes_parquet = self._save_parquet_file(
+            relation=nodes_with_structs,
+            file_path=Path(tmp_dir_name) / "required_nodes_with_points",
+        )
+        return nodes_parquet
+
+    def _get_required_ways_with_linestrings(
+        self,
+        osm_parquet_files: ConvertedOSMParquetFiles,
+        required_nodes_with_structs: "duckdb.DuckDBPyRelation",
+        tmp_dir_name: str,
+    ) -> "duckdb.DuckDBPyRelation":
+        total_required_ways = osm_parquet_files.ways_required_ids.count("id").fetchone()[0]
+        groups = floor(total_required_ways / self.rows_per_bucket)
+        grouped_required_ways_ids_path = Path(tmp_dir_name) / "ways_required_ids_grouped"
+        self.connection.sql(f"""
+            COPY (
                 SELECT
-                    *
-                FROM ({elements.sql_query()}) w
-                SEMI JOIN ({filtered_osm_ids.ways_required.sql_query()}) rw ON w.id = rw.id
-                WHERE kind = 'way'
-            ),
-            ways_with_geometry AS (
-                SELECT id, ST_MakeLine(list(geometry)) geometry
+                    *,
+                    floor(
+                        row_number() OVER (ORDER BY id) / {self.rows_per_bucket}
+                    )::INTEGER as "group",
+                FROM ({osm_parquet_files.ways_required_ids.sql_query()})
+            ) TO '{grouped_required_ways_ids_path}'
+            (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
+        """)
+
+        required_ways_with_linestrings_path = Path(tmp_dir_name) / "required_ways_with_linestrings"
+        required_ways_with_linestrings_path.mkdir(parents=True, exist_ok=True)
+
+        for group in range(groups + 1):
+            current_required_ways_ids_group_path = grouped_required_ways_ids_path / f"group={group}"
+            current_required_ways_ids_group_relation = self.connection.sql(f"""
+                SELECT * FROM read_parquet('{current_required_ways_ids_group_path}/**')
+            """)
+
+            ways_with_linestrings = self.connection.sql(f"""
+                SELECT id, list(point)::LINESTRING_2D linestring
                 FROM (
                     -- Join nodes
-                    SELECT w.*, n.geometry
-                    FROM (
-                        -- Unnest ways
-                        SELECT
-                            w.id,
-                            UNNEST(refs) as ref,
-                            UNNEST(range(length(refs))) as idx,
-                        FROM ways w
-                    ) w
-                    JOIN ({nodes.sql_query()}) n
+                    SELECT w.id, n.point
+                    FROM ({osm_parquet_files.ways_with_unnested_nodes_refs.sql_query()}) w
+                    SEMI JOIN ({current_required_ways_ids_group_relation.sql_query()}) rw
+                    ON w.id = rw.id
+                    JOIN ({required_nodes_with_structs.sql_query()}) n
                     ON n.id = w.ref
-                    ORDER BY w.id, w.idx
+                    ORDER BY w.id, w.ref_idx
                 )
                 GROUP BY id
+            """)
+            self._save_parquet_file(
+                relation=ways_with_linestrings,
+                file_path=required_ways_with_linestrings_path / f"group={group}",
             )
-            SELECT
-                w_g.id, w.tags, w_g.geometry,
-                fw.id IS NOT NULL AS is_filtered
-            FROM ways_with_geometry w_g
-            JOIN ways w ON w.id = w_g.id
-            LEFT JOIN ({filtered_osm_ids.ways_filtered.sql_query()}) fw ON w.id = fw.id
+
+        ways_parquet = self.connection.sql(f"""
+            SELECT * FROM read_parquet('{required_ways_with_linestrings_path}/**')
         """)
-        ways_parquet = self._save_parquet_file_with_geometry(
-            elements=ways_with_geometry, file_path=Path(tmp_dir_name) / "ways_linestring.parquet"
-        )
         return ways_parquet
 
-    def _parse_ways_to_proper_geometry(
+    def _get_filtered_ways_with_proper_geometry(
         self,
-        ways: "duckdb.DuckDBPyRelation",
+        osm_parquet_files: ConvertedOSMParquetFiles,
+        required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        ways_with_geometry = self.connection.sql(f"""
-            SELECT
-                id,
-                tags,
-                -- Filter below is based on `_is_closed_way_a_polygon` function from OSMnx
-                -- Filter values taken from https://wiki.openstreetmap.org/wiki/Overpass_turbo/Polygon_Features
-                CASE WHEN
-                    -- if first and last nodes are the same
-                    ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))
-                    -- if the element doesn't have any tags leave it as a Linestring
-                    AND tags IS NOT NULL
-                    -- if the element is specifically tagged 'area':'no' -> LineString
-                    AND NOT (
-                        list_contains(map_keys(tags), 'area')
-                        AND list_extract(map_extract(tags, 'area'), 1) = 'no'
-                    )
-                    AND (
-                        -- if all features with that key should be polygons -> Polygon
-                        list_has_any(map_keys(tags), [
-                            'amenity', 'area', 'area:highway', 'boundary',
-                            'building', 'building:part', 'craft', 'golf',
-                            'historic', 'indoor', 'landuse', 'leisure',
-                            'military', 'office', 'place', 'public_transport',
-                            'ruins', 'shop', 'tourism'
-                        ])
-                        -- if the value for that key in the element is in the passlist -> Polygon
-                        OR (
-                            list_contains(map_keys(tags), 'barrier')
-                            AND list_has_any(map_extract(tags, 'barrier'), ['city_wall', 'ditch', 'hedge', 'retaining_wall', 'spikes'])
+        ways_with_proper_geometry = self.connection.sql(f"""
+            WITH required_ways_with_linestrings AS (
+                SELECT
+                    w.id,
+                    w.tags,
+                    w_l.linestring,
+                    -- Filter below is based on `_is_closed_way_a_polygon` function from OSMnx
+                    -- Filter values taken from https://wiki.openstreetmap.org/wiki/Overpass_turbo/Polygon_Features
+                    (
+                        -- if first and last nodes are the same
+                        ST_Equals(linestring[1]::POINT_2D, linestring[-1]::POINT_2D)
+                        -- if the element doesn't have any tags leave it as a Linestring
+                        AND tags IS NOT NULL
+                        -- if the element is specifically tagged 'area':'no' -> LineString
+                        AND NOT (
+                            list_contains(map_keys(tags), 'area')
+                            AND list_extract(map_extract(tags, 'area'), 1) = 'no'
                         )
-                        OR (
-                            list_contains(map_keys(tags), 'highway')
-                            AND list_has_any(map_extract(tags, 'highway'), ['services', 'rest_area', 'escape', 'elevator'])
+                        AND (
+                            -- if all features with that key should be polygons -> Polygon
+                            list_has_any(map_keys(tags), [
+                                'amenity', 'area', 'area:highway', 'boundary',
+                                'building', 'building:part', 'craft', 'golf',
+                                'historic', 'indoor', 'landuse', 'leisure',
+                                'military', 'office', 'place', 'public_transport',
+                                'ruins', 'shop', 'tourism'
+                            ])
+                            -- if the value for that key in the element
+                            -- is in the passlist -> Polygon
+                            OR (
+                                list_contains(map_keys(tags), 'barrier')
+                                AND list_has_any(
+                                    map_extract(tags, 'barrier'),
+                                    ['city_wall', 'ditch', 'hedge', 'retaining_wall', 'spikes']
+                                )
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'highway')
+                                AND list_has_any(
+                                    map_extract(tags, 'highway'),
+                                    ['services', 'rest_area', 'escape', 'elevator']
+                                )
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'power')
+                                AND list_has_any(
+                                    map_extract(tags, 'power'),
+                                    ['plant', 'substation', 'generator', 'transformer']
+                                )
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'railway')
+                                AND list_has_any(
+                                    map_extract(tags, 'railway'),
+                                    ['station', 'turntable', 'roundhouse', 'platform']
+                                )
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'waterway')
+                                AND list_has_any(
+                                    map_extract(tags, 'waterway'),
+                                    ['riverbank', 'dock', 'boatyard', 'dam']
+                                )
+                            )
+                            -- if the value for that key in the element
+                            -- is not in the blocklist -> Polygon
+                            OR (
+                                list_contains(map_keys(tags), 'aeroway')
+                                AND NOT list_has_any(map_extract(tags, 'aeroway'), ['taxiway'])
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'man_made')
+                                AND NOT list_has_any(
+                                    map_extract(tags, 'man_made'),
+                                    ['cutline', 'embankment', 'pipeline']
+                                )
+                            )
+                            OR (
+                                list_contains(map_keys(tags), 'natural')
+                                AND NOT list_has_any(
+                                    map_extract(tags, 'natural'),
+                                    ['coastline', 'cliff', 'ridge', 'arete', 'tree_row']
+                                )
+                            )
                         )
-                        OR (
-                            list_contains(map_keys(tags), 'power')
-                            AND list_has_any(map_extract(tags, 'power'), ['plant', 'substation', 'generator', 'transformer'])
-                        )
-                        OR (
-                            list_contains(map_keys(tags), 'railway')
-                            AND list_has_any(map_extract(tags, 'railway'), ['station', 'turntable', 'roundhouse', 'platform'])
-                        )
-                        OR (
-                            list_contains(map_keys(tags), 'waterway')
-                            AND list_has_any(map_extract(tags, 'waterway'), ['riverbank', 'dock', 'boatyard', 'dam'])
-                        )
-                        -- if the value for that key in the element is not in the blocklist -> Polygon
-                        OR (
-                            list_contains(map_keys(tags), 'aeroway')
-                            AND NOT list_has_any(map_extract(tags, 'aeroway'), ['taxiway'])
-                        )
-                        OR (
-                            list_contains(map_keys(tags), 'man_made')
-                            AND NOT list_has_any(map_extract(tags, 'man_made'), ['cutline', 'embankment', 'pipeline'])
-                        )
-                        OR (
-                            list_contains(map_keys(tags), 'natural')
-                            AND NOT list_has_any(map_extract(tags, 'natural'), ['coastline', 'cliff', 'ridge', 'arete', 'tree_row'])
-                        )
-                    )
-                THEN
-                    ST_MakePolygon(geometry)
-                ELSE
-                    geometry
-                END AS geometry
-            FROM
-                ({ways.sql_query()}) w
-            WHERE
-                is_filtered
+                    ) AS is_polygon
+                FROM ({required_ways_with_linestrings.sql_query()}) w_l
+                SEMI JOIN ({osm_parquet_files.ways_filtered_ids.sql_query()}) fw ON w_l.id = fw.id
+                JOIN ({osm_parquet_files.ways_all_with_tags.sql_query()}) w ON w.id = w_l.id
+            ),
+            proper_geometries AS (
+                SELECT
+                    id,
+                    tags,
+                    (CASE
+                        WHEN is_polygon
+                        THEN linestring_to_polygon_wkt(linestring)
+                        ELSE linestring_to_linestring_wkt(linestring)
+                    END)::GEOMETRY AS geometry
+                FROM
+                    required_ways_with_linestrings w
+            )
+            SELECT id, tags, geometry FROM proper_geometries
             """)
         ways_parquet = self._save_parquet_file_with_geometry(
-            elements=ways_with_geometry, file_path=Path(tmp_dir_name) / "ways_proper.parquet"
+            relation=ways_with_proper_geometry,
+            file_path=Path(tmp_dir_name) / "filtered_ways_with_geometry",
         )
         return ways_parquet
 
-    def _parse_relations(
+    def _get_filtered_relations_with_geometry(
         self,
-        elements: "duckdb.DuckDBPyRelation",
-        ways: "duckdb.DuckDBPyRelation",
-        filtered_osm_ids: FilteredOSMIds,
+        osm_parquet_files: ConvertedOSMParquetFiles,
+        required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
         relations_with_geometry = self.connection.sql(f"""
-            WITH relations AS (
-                SELECT *
-                FROM ({elements.sql_query()}) r
-                SEMI JOIN ({filtered_osm_ids.relations_filtered.sql_query()}) fr ON r.id = fr.id
-                WHERE kind = 'relation'
-                --AND id = 16048460
-            ),
-            unnested_relations AS (
+            WITH unnested_relations AS (
                 SELECT
                     r.id,
-                    r.ref_type,
-                    COALESCE(r.ref_role, 'outer') ref_role,
+                    COALESCE(r.ref_role, 'outer') as ref_role,
                     r.ref,
-                    w.geometry
-                FROM (
-                    -- Filter ways
-                    SELECT
-                        *
-                    FROM (
-                        -- Unnest relations
-                        SELECT
-                            r.id,
-                            r.tags,
-                            UNNEST(refs) as ref,
-                            UNNEST(ref_types) as ref_type,
-                            UNNEST(ref_roles) as ref_role,
-                            UNNEST(range(length(refs))) as idx,
-                        FROM relations r
-                    )
-                    WHERE ref_type = 'way'
-                ) r
-                JOIN ({ways.sql_query()}) w
+                    linestring_to_linestring_wkt(w.linestring)::GEOMETRY as geometry
+                FROM ({osm_parquet_files.relations_with_unnested_way_refs.sql_query()}) r
+                SEMI JOIN ({osm_parquet_files.relations_filtered_ids.sql_query()}) fr
+                ON r.id = fr.id
+                JOIN ({required_ways_with_linestrings.sql_query()}) w
                 ON w.id = r.ref
-                ORDER BY r.id, r.idx
+                ORDER BY r.id, r.ref_idx
             ),
             relations_with_geometries AS (
                 SELECT id, ref_role, geom geometry
@@ -815,7 +1003,9 @@ class PbfFileHandler:
                     SELECT
                         id,
                         ref_role,
-                        UNNEST(ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true),
+                        UNNEST(
+                            ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true
+                        ),
                     FROM unnested_relations
                     GROUP BY id, ref_role
                 )
@@ -825,7 +1015,10 @@ class PbfFileHandler:
                 SELECT id, is_valid
                 FROM (
                     SELECT
-                        id, bool_and(ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))) is_valid
+                        id,
+                        bool_and(
+                            ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))
+                        ) is_valid
                     FROM relations_with_geometries
                     GROUP BY id
                 )
@@ -857,12 +1050,13 @@ class PbfFileHandler:
                 ) inners
                 ON outers.id = inners.id
             )
-            SELECT r.id, r.tags, r_g.geometry
+            SELECT r_g.id, r.tags, r_g.geometry
             FROM final_geometries r_g
-            JOIN relations r
+            JOIN ({osm_parquet_files.relations_all_with_tags.sql_query()}) r
             ON r.id = r_g.id
         """)
         relations_parquet = self._save_parquet_file_with_geometry(
-            elements=relations_with_geometry, file_path=Path(tmp_dir_name) / "relations.parquet"
+            relation=relations_with_geometry,
+            file_path=Path(tmp_dir_name) / "filtered_relations_with_geometry",
         )
         return relations_parquet
