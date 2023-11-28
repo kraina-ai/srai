@@ -724,7 +724,6 @@ class PbfFileHandler:
             ways_with_linestrings = self.connection.sql(f"""
                 SELECT id, list(point)::LINESTRING_2D linestring
                 FROM (
-                    -- Join nodes
                     SELECT w.id, n.point
                     FROM ({osm_parquet_files.ways_with_unnested_nodes_refs.sql_query()}) w
                     SEMI JOIN ({current_required_ways_ids_group_relation.sql_query()}) rw
@@ -884,7 +883,6 @@ class PbfFileHandler:
             relations_with_geometries AS (
                 SELECT id, ref_role, geom geometry
                 FROM (
-                    -- Collect geometry
                     SELECT
                         id,
                         ref_role,
