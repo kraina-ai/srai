@@ -6,6 +6,7 @@ This module contains a handler capable of parsing a PBF file into a GeoDataFrame
 
 import hashlib
 import json
+import shutil
 import tempfile
 import warnings
 from collections.abc import Sequence
@@ -210,22 +211,69 @@ class PbfFileHandler:
             elements = self.connection.sql(f"SELECT * FROM ST_READOSM('{Path(pbf_path)}');")
             converted_osm_parquet_files = self._prefilter_elements_ids(elements, tmp_dir_name)
 
+            self._delete_directories(
+                tmp_dir_name,
+                [
+                    "nodes_filtered_non_distinct_ids",
+                    "nodes_prepared_ids",
+                    "ways_valid_ids",
+                    "ways_filtered_non_distinct_ids",
+                    "relations_valid_ids",
+                    "relations_ids",
+                ],
+            )
+
             filtered_nodes_with_geometry = self._get_filtered_nodes_with_geometry(
                 converted_osm_parquet_files, tmp_dir_name
             )
+            self._delete_directories(tmp_dir_name, "nodes_filtered_ids")
+
             required_nodes_with_structs = self._get_required_nodes_with_structs(
                 converted_osm_parquet_files, tmp_dir_name
+            )
+            self._delete_directories(
+                tmp_dir_name,
+                [
+                    "nodes_valid_with_tags",
+                    "nodes_required_ids",
+                ],
             )
 
             required_ways_with_linestrings = self._get_required_ways_with_linestrings(
                 converted_osm_parquet_files, required_nodes_with_structs, tmp_dir_name
             )
+            self._delete_directories(
+                tmp_dir_name,
+                [
+                    "ways_required_ids_grouped",
+                    "ways_required_ids",
+                    "ways_with_unnested_nodes_refs",
+                    "required_nodes_with_points",
+                ],
+            )
+
             filtered_ways_with_proper_geometry = self._get_filtered_ways_with_proper_geometry(
                 converted_osm_parquet_files, required_ways_with_linestrings, tmp_dir_name
+            )
+            self._delete_directories(
+                tmp_dir_name,
+                [
+                    "ways_prepared_ids",
+                    "ways_all_with_tags",
+                ],
             )
 
             filtered_relations_with_geometry = self._get_filtered_relations_with_geometry(
                 converted_osm_parquet_files, required_ways_with_linestrings, tmp_dir_name
+            )
+            self._delete_directories(
+                tmp_dir_name,
+                [
+                    "relations_all_with_tags",
+                    "relations_with_unnested_way_refs",
+                    "relations_filtered_ids",
+                    "required_ways_with_linestrings",
+                ],
             )
 
             self._concatenate_results_to_geoparquet(
@@ -531,6 +579,12 @@ class PbfFileHandler:
             relations_with_unnested_way_refs=relations_with_unnested_way_refs,
             relations_filtered_ids=relations_filtered_ids,
         )
+
+    def _delete_directories(self, tmp_dir_name: str, directories: Union[str, list[str]]) -> None:
+        if isinstance(directories, str):
+            directories = [directories]
+        for directory in directories:
+            shutil.rmtree(Path(tmp_dir_name) / directory)
 
     def _generate_osm_tags_sql_filter(self) -> str:
         """Prepare features filter clauses based on tags filter."""
