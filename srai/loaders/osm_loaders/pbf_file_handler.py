@@ -145,7 +145,7 @@ class PbfFileHandler:
         import duckdb
 
         self.connection = duckdb.connect(database=str(Path(tmp_dir_name) / "db.duckdb"))
-        for extension_name in ["parquet", "spatial"]:
+        for extension_name in ("parquet", "spatial"):
             self.connection.install_extension(extension_name)
             self.connection.load_extension(extension_name)
 
@@ -554,11 +554,11 @@ class PbfFileHandler:
 
         if not self.filter_tags:
             osm_tag_keys = set()
-            for elements in [
+            for elements in (
                 parsed_data.nodes,
                 parsed_data.ways,
                 parsed_data.relations,
-            ]:
+            ):
                 found_tag_keys = [row[0] for row in self.connection.sql(f"""
                     SELECT DISTINCT UNNEST(map_keys(tags)) tag_key
                     FROM ({elements.sql_query()})
@@ -732,7 +732,7 @@ class PbfFileHandler:
 
         empty_columns = []
         for column_name in joined_parquet_table.column_names:
-            if column_name in [FEATURES_INDEX, GEOMETRY_COLUMN]:
+            if column_name in (FEATURES_INDEX, GEOMETRY_COLUMN):
                 continue
             if (
                 is_empty
