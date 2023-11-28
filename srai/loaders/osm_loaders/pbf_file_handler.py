@@ -827,6 +827,8 @@ class PbfFileHandler:
             (FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000)
         """)
 
+        print([pth for pth in grouped_required_ways_ids_path.iterdir()])
+
         required_ways_with_linestrings_path = Path(tmp_dir_name) / "required_ways_with_linestrings"
         required_ways_with_linestrings_path.mkdir(parents=True, exist_ok=True)
 
