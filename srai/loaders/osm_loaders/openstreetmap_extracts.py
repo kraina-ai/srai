@@ -6,12 +6,13 @@ repositories.
 """
 import json
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Iterable, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import requests
@@ -43,7 +44,7 @@ class OpenStreetMapExtract:
 
 def find_smallest_containing_geofabrik_extracts(
     geometry: Union[BaseGeometry, BaseMultipartGeometry],
-) -> List[OpenStreetMapExtract]:
+) -> list[OpenStreetMapExtract]:
     """
     Find smallest extracts from Geofabrik that contains given geometry.
 
@@ -65,7 +66,7 @@ def find_smallest_containing_geofabrik_extracts(
 
 def find_smallest_containing_openstreetmap_fr_extracts(
     geometry: Union[BaseGeometry, BaseMultipartGeometry],
-) -> List[OpenStreetMapExtract]:
+) -> list[OpenStreetMapExtract]:
     """
     Find smallest extracts from OpenStreetMap.fr that contains given polygon.
 
@@ -92,7 +93,7 @@ def _find_smallest_containing_extracts(
     polygons_index_gdf: gpd.GeoDataFrame,
     num_of_multiprocessing_workers: int = -1,
     multiprocessing_activation_threshold: Optional[int] = None,
-) -> List[OpenStreetMapExtract]:
+) -> list[OpenStreetMapExtract]:
     """
     Find smallest set of extracts covering a given geometry.
 
@@ -123,7 +124,7 @@ def _find_smallest_containing_extracts(
     if not multiprocessing_activation_threshold:
         multiprocessing_activation_threshold = 100
 
-    unique_extracts_ids: Set[str] = set()
+    unique_extracts_ids: set[str] = set()
 
     geometries = flatten_geometry(geometry)
 
@@ -167,7 +168,7 @@ def _find_smallest_containing_extracts(
 
 def _find_smallest_containing_extracts_for_single_geometry(
     geometry: BaseGeometry, polygons_index_gdf: gpd.GeoDataFrame
-) -> Set[str]:
+) -> set[str]:
     """
     Find smallest set of extracts covering a given singular geometry.
 
@@ -185,7 +186,7 @@ def _find_smallest_containing_extracts_for_single_geometry(
     if polygons_index_gdf is None:
         raise RuntimeError("Extracts index is empty.")
 
-    extracts_ids: Set[str] = set()
+    extracts_ids: set[str] = set()
     geometry_to_cover = geometry.buffer(0)
 
     exactly_matching_geometry = polygons_index_gdf[
@@ -217,7 +218,7 @@ def _filter_extracts(
     polygons_index_gdf: gpd.GeoDataFrame,
     num_of_multiprocessing_workers: int,
     multiprocessing_activation_threshold: int,
-) -> List[OpenStreetMapExtract]:
+) -> list[OpenStreetMapExtract]:
     """
     Filter a set of extracts to include least overlaps in it.
 
@@ -243,8 +244,8 @@ def _filter_extracts(
         polygons_index_gdf["id"].isin(extracts_ids)
     ].sort_values(by="area", ignore_index=True, ascending=False)
 
-    filtered_extracts: List[OpenStreetMapExtract] = []
-    filtered_extracts_ids: Set[str] = set()
+    filtered_extracts: list[OpenStreetMapExtract] = []
+    filtered_extracts_ids: set[str] = set()
 
     geometries = flatten_geometry(geometry)
 
@@ -292,7 +293,7 @@ def _filter_extracts(
 
 def _filter_extracts_for_single_geometry(
     geometry: BaseGeometry, sorted_extracts_gdf: gpd.GeoDataFrame
-) -> Set[str]:
+) -> set[str]:
     """
     Filter a set of extracts to include least overlaps in it for a single geometry.
 
@@ -307,7 +308,7 @@ def _filter_extracts_for_single_geometry(
         Set[str]: Selected extract index string values.
     """
     polygon_to_cover = geometry.buffer(0)
-    filtered_extracts_ids: Set[str] = set()
+    filtered_extracts_ids: set[str] = set()
 
     polygon_to_cover = geometry.buffer(0)
     for _, extract_row in sorted_extracts_gdf.iterrows():
@@ -324,9 +325,9 @@ def _filter_extracts_for_single_geometry(
 
 
 def _simplify_selected_extracts(
-    filtered_extracts_ids: Set[str], sorted_extracts_gdf: gpd.GeoDataFrame
-) -> Set[str]:
-    simplified_extracts_ids: Set[str] = filtered_extracts_ids.copy()
+    filtered_extracts_ids: set[str], sorted_extracts_gdf: gpd.GeoDataFrame
+) -> set[str]:
+    simplified_extracts_ids: set[str] = filtered_extracts_ids.copy()
 
     matching_extracts = sorted_extracts_gdf[sorted_extracts_gdf["id"].isin(simplified_extracts_ids)]
 
@@ -409,7 +410,7 @@ def _load_openstreetmap_fr_index() -> gpd.GeoDataFrame:
 
 def _iterate_openstreetmap_fr_index(
     id_prefix: str, directory_url: str, return_extracts: bool, pbar: tqdm
-) -> List[OpenStreetMapExtract]:
+) -> list[OpenStreetMapExtract]:
     """
     Iterate OpenStreetMap.fr extracts service page.
 
@@ -487,7 +488,7 @@ def _parse_polygon_file(polygon_url: str) -> Optional[MultiPolygon]:
     return poly
 
 
-def parse_poly(lines: List[str]) -> MultiPolygon:
+def parse_poly(lines: list[str]) -> MultiPolygon:
     """
     Parse an Osmosis polygon filter file.
 
@@ -497,7 +498,7 @@ def parse_poly(lines: List[str]) -> MultiPolygon:
     http://wiki.openstreetmap.org/wiki/Osmosis/Polygon_Filter_File_Format
     """
     in_ring = False
-    coords: List[Any] = []
+    coords: list[Any] = []
 
     for index, line in enumerate(lines):
         if index == 0:

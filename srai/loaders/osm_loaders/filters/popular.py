@@ -7,7 +7,7 @@ to download the most popular tags from OSM
 References:
     1. https://taginfo.openstreetmap.org/
 """
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 from functional import seq
@@ -52,7 +52,7 @@ def get_popular_tags(
 
 
 def _parse_taginfo_response(
-    taginfo_data: List[Dict[str, Any]], in_wiki_only: bool, min_count: int, min_fraction: float
+    taginfo_data: list[dict[str, Any]], in_wiki_only: bool, min_count: int, min_fraction: float
 ) -> OsmTagsFilter:
     result_tags = (
         seq(taginfo_data)

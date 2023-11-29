@@ -1,6 +1,6 @@
 """Tests for OSMPbfLoader."""
 from pathlib import Path
-from typing import List, Union
+from typing import Union
 from unittest import TestCase
 
 import geopandas as gpd
@@ -147,7 +147,7 @@ def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourc
         ),
     ],
 )
-def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: List[str]):
+def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str]):
     """Test proper files downloading in `PbfFileDownloader`."""
     regions_gdf = gpd.GeoDataFrame(
         geometry=[test_polygon],
@@ -280,13 +280,13 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
     ],
 )
 def test_osm_pbf_loader(
-    test_geometries: List[BaseGeometry],
+    test_geometries: list[BaseGeometry],
     pbf_file: Path,
     query: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     pbf_source: PbfSourceLiteral,
     expected_result_length: int,
     expected_features_columns_length: int,
-    expected_features_columns_names: List[str],
+    expected_features_columns_names: list[str],
 ):
     """Test `OSMPbfLoader.load()`."""
     download_directory = Path(__file__).parent / "test_files"

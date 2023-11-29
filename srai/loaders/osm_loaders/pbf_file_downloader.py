@@ -6,9 +6,10 @@ This module contains a downloader capable of downloading a PBF files from multip
 import json
 import time
 import warnings
+from collections.abc import Hashable, Sequence
 from pathlib import Path
 from time import sleep
-from typing import Any, Callable, Dict, Hashable, List, Literal, Sequence, Union
+from typing import Any, Callable, Literal, Union
 
 import geopandas as gpd
 import requests
@@ -35,9 +36,9 @@ from srai.loaders.osm_loaders.openstreetmap_extracts import (
 from srai.loaders.osm_loaders.pbf_file_clipper import PbfFileClipper
 
 PbfSourceLiteral = Literal["geofabrik", "openstreetmap_fr", "protomaps"]
-PbfSourceExtractsFunctions: Dict[
+PbfSourceExtractsFunctions: dict[
     PbfSourceLiteral,
-    Callable[[Union[BaseGeometry, BaseMultipartGeometry]], List[OpenStreetMapExtract]],
+    Callable[[Union[BaseGeometry, BaseMultipartGeometry]], list[OpenStreetMapExtract]],
 ] = {
     "geofabrik": find_smallest_containing_geofabrik_extracts,
     "openstreetmap_fr": find_smallest_containing_openstreetmap_fr_extracts,
@@ -114,7 +115,7 @@ class PbfFileDownloader:
 
     def download_pbf_files_for_regions_gdf(
         self, regions_gdf: gpd.GeoDataFrame
-    ) -> Dict[Hashable, Sequence[Path]]:
+    ) -> dict[Hashable, Sequence[Path]]:
         """
         Download PBF files for regions GeoDataFrame.
 
@@ -131,7 +132,7 @@ class PbfFileDownloader:
             Dict[Hashable, Sequence[Path]]: List of Paths to downloaded PBF files per
                 each region_id.
         """
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+        regions_mapping: dict[Hashable, Sequence[Path]] = {}
 
         non_polygon_types = set(
             type(geometry)
@@ -172,8 +173,8 @@ class PbfFileDownloader:
 
     def _download_pbf_files_for_polygons_from_existing_extracts(
         self, regions_gdf: gpd.GeoDataFrame, override_to_geofabrik: bool = False
-    ) -> Dict[Hashable, Sequence[Path]]:
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+    ) -> dict[Hashable, Sequence[Path]]:
+        regions_mapping: dict[Hashable, Sequence[Path]] = {}
 
         unary_union_geometry = regions_gdf.geometry.unary_union
 
@@ -204,8 +205,8 @@ class PbfFileDownloader:
 
     def _download_pbf_files_for_polygons_from_protomaps(
         self, regions_gdf: gpd.GeoDataFrame
-    ) -> Dict[Hashable, Sequence[Path]]:
-        regions_mapping: Dict[Hashable, Sequence[Path]] = {}
+    ) -> dict[Hashable, Sequence[Path]]:
+        regions_mapping: dict[Hashable, Sequence[Path]] = {}
 
         for region_id, row in regions_gdf.iterrows():
             polygons = flatten_geometry(row.geometry)
@@ -284,7 +285,7 @@ class PbfFileDownloader:
                 raise RuntimeError(error_message) from err
 
             with tqdm() as pbar:
-                status_response: Dict[str, Any] = {}
+                status_response: dict[str, Any] = {}
                 cells_total = 0
                 nodes_total = 0
                 elems_total = 0

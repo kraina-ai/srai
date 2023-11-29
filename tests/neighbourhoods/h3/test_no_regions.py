@@ -1,5 +1,4 @@
 """Tests for neigbourhoods with no regions."""
-from typing import Set
 
 import pytest
 
@@ -72,7 +71,7 @@ from srai.neighbourhoods import H3Neighbourhood
     ],
 )
 def test_get_neighbours(
-    index: str, expected: Set[str], expected_with_include_center: Set[str]
+    index: str, expected: set[str], expected_with_include_center: set[str]
 ) -> None:
     """Test get_neighbours of H3Neighbourhood."""
     neighbourhood = H3Neighbourhood()
@@ -159,7 +158,7 @@ def test_get_neighbours(
     ],
 )
 def test_get_neighbours_up_to_distance(
-    index: str, distance: int, expected: Set[str], expected_with_include_center: Set[str]
+    index: str, distance: int, expected: set[str], expected_with_include_center: set[str]
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood."""
     neighbourhood = H3Neighbourhood()
@@ -243,7 +242,7 @@ def test_get_neighbours_up_to_distance(
     ],
 )
 def test_get_neighbours_at_distance(
-    index: str, distance: int, expected: Set[str], expected_with_include_center: Set[str]
+    index: str, distance: int, expected: set[str], expected_with_include_center: set[str]
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood."""
     neighbourhood = H3Neighbourhood()

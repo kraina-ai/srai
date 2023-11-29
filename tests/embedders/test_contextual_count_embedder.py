@@ -1,6 +1,6 @@
 """ContextualCountEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd
 import pytest
@@ -16,7 +16,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import geopandas as gpd
 
 
-def _create_features_dataframe(data: Dict[str, Any]) -> pd.DataFrame:
+def _create_features_dataframe(data: dict[str, Any]) -> pd.DataFrame:
     return pd.DataFrame(data).set_index(REGIONS_INDEX)
 
 
@@ -201,7 +201,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2() -> pd.DataFram
 
 
 @pytest.fixture  # type: ignore
-def expected_feature_names() -> List[str]:
+def expected_feature_names() -> list[str]:
     """Get expected feature names for ContextualCountEmbedder."""
     expected_feature_names = ["amenity_parking", "leisure_park", "amenity_pub"]
     return expected_feature_names

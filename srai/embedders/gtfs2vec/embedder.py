@@ -11,7 +11,7 @@ References:
 import json
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -171,7 +171,7 @@ class GTFS2VecEmbedder(Embedder):
         regions_features = self._normalize_features(regions_features)
         return regions_features
 
-    def _get_columns_aggregation(self, columns: List[str]) -> Dict[str, Any]:
+    def _get_columns_aggregation(self, columns: list[str]) -> dict[str, Any]:
         """
         Get aggregation dict for given columns.
 
@@ -181,7 +181,7 @@ class GTFS2VecEmbedder(Embedder):
         Returns:
             dict: Aggregation dict.
         """
-        agg_dict: Dict[str, Any] = {}
+        agg_dict: dict[str, Any] = {}
 
         for column in columns:
             if column.startswith(GTFS2VEC_TRIPS_PREFIX):
@@ -190,7 +190,7 @@ class GTFS2VecEmbedder(Embedder):
                 agg_dict[column] = lambda x: len(reduce(set.union, x))
         return agg_dict
 
-    def _normalize_columns_group(self, df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+    def _normalize_columns_group(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         """
         Normalize given columns in df.
 
@@ -275,7 +275,7 @@ class GTFS2VecEmbedder(Embedder):
             index=features.index,
         )
 
-    def _save(self, path: Union[Path, str], embedder_config: Dict[str, Any]) -> None:
+    def _save(self, path: Union[Path, str], embedder_config: dict[str, Any]) -> None:
         if isinstance(path, str):
             path = Path(path)
 
@@ -307,7 +307,7 @@ class GTFS2VecEmbedder(Embedder):
         self._save(path, embedder_config)
 
     @classmethod
-    def _load(cls, path: Union[Path, str], model_module: Type[ModelT]) -> "GTFS2VecEmbedder":
+    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "GTFS2VecEmbedder":
         if isinstance(path, str):
             path = Path(path)
 

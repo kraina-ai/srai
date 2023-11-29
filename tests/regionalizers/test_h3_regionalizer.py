@@ -1,6 +1,6 @@
 """Tests for H3Regionalizer."""
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from unittest import TestCase
 
 import pytest
@@ -18,7 +18,7 @@ H3_RESOLUTION = 3
 
 
 @pytest.fixture  # type: ignore
-def expected_h3_indexes() -> List[str]:
+def expected_h3_indexes() -> list[str]:
     """Get expected h3 indexes."""
     return [
         "837559fffffffff",
@@ -32,7 +32,7 @@ def expected_h3_indexes() -> List[str]:
 
 
 @pytest.fixture  # type: ignore
-def expected_unbuffered_h3_indexes() -> List[str]:
+def expected_unbuffered_h3_indexes() -> list[str]:
     """Get expected h3 index for the unbuffered case."""
     return [
         "83754efffffffff",
@@ -61,7 +61,7 @@ def test_transform(
 ) -> None:
     """Test transform of H3Regionalizer."""
     gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
-    h3_indexes: List[str] = request.getfixturevalue(expected_h3_indexes_fixture)
+    h3_indexes: list[str] = request.getfixturevalue(expected_h3_indexes_fixture)
     with expectation:
         gdf_h3 = H3Regionalizer(resolution, buffer=buffer).transform(gdf)
 

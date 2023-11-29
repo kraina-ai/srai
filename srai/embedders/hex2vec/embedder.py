@@ -6,9 +6,10 @@ This module contains embedder from Hex2Vec paper[1].
 References:
     [1] https://dl.acm.org/doi/10.1145/3486635.3491076
 """
+
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import geopandas as gpd
 import numpy as np
@@ -32,9 +33,9 @@ class Hex2VecEmbedder(CountEmbedder):
 
     def __init__(
         self,
-        encoder_sizes: Optional[List[int]] = None,
+        encoder_sizes: Optional[list[int]] = None,
         expected_output_features: Optional[
-            Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]
+            Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
     ) -> None:
         """
@@ -101,7 +102,7 @@ class Hex2VecEmbedder(CountEmbedder):
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit the model to the data.
@@ -132,10 +133,10 @@ class Hex2VecEmbedder(CountEmbedder):
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
 
-        if self.expected_output_features is None:  # type: ignore[has-type]
+        if self.expected_output_features is None:
             self.expected_output_features = pd.Series(counts_df.columns)
 
-        num_features = len(self.expected_output_features)  # type: ignore[arg-type]
+        num_features = len(self.expected_output_features)
         self._model = Hex2VecModel(
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
         )
@@ -155,7 +156,7 @@ class Hex2VecEmbedder(CountEmbedder):
         negative_sample_k_distance: int = 2,
         batch_size: int = 32,
         learning_rate: float = 0.001,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit the model to the data and return the embeddings.
@@ -194,7 +195,7 @@ class Hex2VecEmbedder(CountEmbedder):
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
 
-    def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[dict[str, Any]]) -> dict[str, Any]:
         if trainer_kwargs is None:
             trainer_kwargs = {}
         if "max_epochs" not in trainer_kwargs:
@@ -210,13 +211,13 @@ class Hex2VecEmbedder(CountEmbedder):
         if not self._is_fitted or self._model is None:
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
 
-    def _assert_encoder_sizes_correct(self, encoder_sizes: List[int]) -> None:
+    def _assert_encoder_sizes_correct(self, encoder_sizes: list[int]) -> None:
         if len(encoder_sizes) < 1:
             raise ValueError("Encoder sizes must have at least one element - embedding size.")
         if any(size <= 0 for size in encoder_sizes):
             raise ValueError("Encoder sizes must be positive integers.")
 
-    def _save(self, path: Union[Path, str], embedder_config: Dict[str, Any]) -> None:
+    def _save(self, path: Union[Path, str], embedder_config: dict[str, Any]) -> None:
         if isinstance(path, str):
             path = Path(path)
 
@@ -251,7 +252,7 @@ class Hex2VecEmbedder(CountEmbedder):
         self._save(path, embedder_config)
 
     @classmethod
-    def _load(cls, path: Union[Path, str], model_module: Type[ModelT]) -> "Hex2VecEmbedder":
+    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "Hex2VecEmbedder":
         if isinstance(path, str):
             path = Path(path)
 

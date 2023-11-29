@@ -1,6 +1,6 @@
 """Voronoi regionalizer tests."""
 from multiprocessing import cpu_count
-from typing import Any, List, cast
+from typing import Any, cast
 
 import geopandas as gpd
 import numpy as np
@@ -19,7 +19,7 @@ from srai.regionalizers._spherical_voronoi import (
 )
 
 
-def get_random_points(number_of_points: int) -> List[Point]:
+def get_random_points(number_of_points: int) -> list[Point]:
     """Get random points within WGS84 bounds sampled on a sphere."""
     vec = np.random.default_rng().standard_normal((3, number_of_points))
     vec /= np.linalg.norm(vec, axis=0)
@@ -35,7 +35,7 @@ def get_random_points(number_of_points: int) -> List[Point]:
     ]
 
 
-def list_to_geodataframe(points: List[Point]) -> gpd.GeoDataFrame:
+def list_to_geodataframe(points: list[Point]) -> gpd.GeoDataFrame:
     """Wrap points into GeoDataFrame."""
     return gpd.GeoDataFrame(
         {GEOMETRY_COLUMN: points},

@@ -1,11 +1,11 @@
 """Module contains a dedicated type alias for OSM tags filter."""
-from typing import Dict, List, Union, cast
+from typing import Union, cast
 
 from srai._typing import is_expected_type
 
-OsmTagsFilter = Dict[str, Union[List[str], str, bool]]
+OsmTagsFilter = dict[str, Union[list[str], str, bool]]
 
-GroupedOsmTagsFilter = Dict[str, OsmTagsFilter]
+GroupedOsmTagsFilter = dict[str, OsmTagsFilter]
 
 
 def merge_grouped_osm_tags_filter(grouped_filter: GroupedOsmTagsFilter) -> OsmTagsFilter:
@@ -40,16 +40,16 @@ def merge_grouped_osm_tags_filter(grouped_filter: GroupedOsmTagsFilter) -> OsmTa
                 result[osm_tag_key] = True
             # Check string
             elif isinstance(osm_tag_value, str) and osm_tag_value not in cast(
-                List[str], result[osm_tag_key]
+                list[str], result[osm_tag_key]
             ):
-                cast(List[str], result[osm_tag_key]).append(osm_tag_value)
+                cast(list[str], result[osm_tag_key]).append(osm_tag_value)
             # Check list
             elif isinstance(osm_tag_value, list):
                 new_values = [
                     value
                     for value in osm_tag_value
-                    if value not in cast(List[str], result[osm_tag_key])
+                    if value not in cast(list[str], result[osm_tag_key])
                 ]
-                cast(List[str], result[osm_tag_key]).extend(new_values)
+                cast(list[str], result[osm_tag_key]).extend(new_values)
 
     return result
