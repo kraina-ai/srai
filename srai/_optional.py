@@ -1,6 +1,6 @@
 from enum import Enum
 from types import ModuleType
-from typing import List, Optional
+from typing import Optional
 
 
 class ImportErrorHandle(Enum):
@@ -60,7 +60,7 @@ def import_optional_dependency(
 
 
 def import_optional_dependencies(
-    dependency_group: str, modules: List[str], error: ImportErrorHandle = ImportErrorHandle.RAISE
+    dependency_group: str, modules: list[str], error: ImportErrorHandle = ImportErrorHandle.RAISE
 ) -> None:
     """
     Import list of optional dependencies.

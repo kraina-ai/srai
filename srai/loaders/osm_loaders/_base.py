@@ -1,7 +1,8 @@
 """Base class for OSM loaders."""
 
 import abc
-from typing import Iterable, Optional, Union, cast
+from collections.abc import Iterable
+from typing import Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np

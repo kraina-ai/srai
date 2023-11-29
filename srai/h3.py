@@ -1,6 +1,7 @@
 """Utility H3 related functions."""
 
-from typing import Iterable, List, Literal, Tuple, Union, overload
+from collections.abc import Iterable
+from typing import Literal, Union, overload
 
 import geopandas as gpd
 import h3
@@ -28,7 +29,7 @@ def shapely_geometry_to_h3(
     geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
     h3_resolution: int,
     buffer: bool = True,
-) -> List[str]:
+) -> list[str]:
     """
     Convert Shapely geometry to H3 indexes.
 
@@ -98,14 +99,14 @@ def h3_to_shapely_geometry(h3_index: Union[int, str]) -> Polygon:
 
 
 @overload
-def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> List[Polygon]:
+def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> list[Polygon]:
     ...
 
 
 # TODO: write tests (#322)
 def h3_to_shapely_geometry(
     h3_index: Union[int, str, Iterable[Union[int, str]]]
-) -> Union[Polygon, List[Polygon]]:
+) -> Union[Polygon, list[Polygon]]:
     """
     Convert H3 index to Shapely polygon.
 
@@ -123,20 +124,20 @@ def h3_to_shapely_geometry(
 
 
 @overload
-def get_local_ij_index(origin_index: str, h3_index: str) -> Tuple[int, int]:
+def get_local_ij_index(origin_index: str, h3_index: str) -> tuple[int, int]:
     ...
 
 
 @overload
 def get_local_ij_index(
-    origin_index: str, h3_index: List[str], return_as_numpy: Literal[False]
-) -> List[Tuple[int, int]]:
+    origin_index: str, h3_index: list[str], return_as_numpy: Literal[False]
+) -> list[tuple[int, int]]:
     ...
 
 
 @overload
 def get_local_ij_index(
-    origin_index: str, h3_index: List[str], return_as_numpy: Literal[True]
+    origin_index: str, h3_index: list[str], return_as_numpy: Literal[True]
 ) -> npt.NDArray[np.int8]:
     ...
 
@@ -145,14 +146,14 @@ def get_local_ij_index(
 # https://mypy.readthedocs.io/en/stable/literal_types.html#literal-types
 @overload
 def get_local_ij_index(
-    origin_index: str, h3_index: List[str], return_as_numpy: bool
-) -> Union[List[Tuple[int, int]], npt.NDArray[np.int8]]:
+    origin_index: str, h3_index: list[str], return_as_numpy: bool
+) -> Union[list[tuple[int, int]], npt.NDArray[np.int8]]:
     ...
 
 
 def get_local_ij_index(
-    origin_index: str, h3_index: Union[str, List[str]], return_as_numpy: bool = False
-) -> Union[Tuple[int, int], List[Tuple[int, int]], npt.NDArray[np.int8]]:
+    origin_index: str, h3_index: Union[str, list[str]], return_as_numpy: bool = False
+) -> Union[tuple[int, int], list[tuple[int, int]], npt.NDArray[np.int8]]:
     """
     Calculate the local H3 ij index based on provided origin index.
 
@@ -182,7 +183,7 @@ def get_local_ij_index(
     return local_ijs
 
 
-def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int) -> List[str]:
+def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int) -> list[str]:
     """
     Buffer H3 indexes by a given number of k-rings.
 

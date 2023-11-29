@@ -1,6 +1,5 @@
 """Tests for TileLoader class."""
 from io import BytesIO
-from typing import List
 from urllib.parse import urljoin
 
 import geopandas as gpd
@@ -37,7 +36,7 @@ def loader() -> OSMTileLoader:
 
 
 @pytest.fixture  # type: ignore
-def images() -> List[bytes]:
+def images() -> list[bytes]:
     """Create list of images as bytes."""
     return [
         to_bytes(Image.fromarray(rng.integers(low=0, high=256, size=(4, 4, 3), dtype="uint8")))
@@ -61,7 +60,7 @@ def gdf() -> gpd.GeoDataFrame:
     return gdf
 
 
-def mock_requests(images: List[bytes], m: requests_mock.Mocker) -> None:
+def mock_requests(images: list[bytes], m: requests_mock.Mocker) -> None:
     """Make mocks for requests."""
     m.get(urljoin(TEST_DOMAIN, f"10/560/341.{RESOURCE_TYPE}"), content=images[0])
     m.get(urljoin(TEST_DOMAIN, f"10/559/342.{RESOURCE_TYPE}"), content=images[1])
@@ -69,7 +68,7 @@ def mock_requests(images: List[bytes], m: requests_mock.Mocker) -> None:
 
 
 def test_load_images_properly(
-    images: List[bytes],
+    images: list[bytes],
     gdf: gpd.GeoDataFrame,
     loader: OSMTileLoader,
 ) -> None:

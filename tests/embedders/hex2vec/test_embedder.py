@@ -1,7 +1,7 @@
 """Hex2VecEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 import geopandas as gpd
 import pandas as pd
@@ -26,7 +26,7 @@ from tests.embedders.hex2vec.constants import ENCODER_SIZES, PREDEFINED_TEST_CAS
         ([0], pytest.raises(ValueError)),
     ],
 )
-def test_checking_encoder_sizes(encoder_sizes: List[int], expectation: Any) -> None:
+def test_checking_encoder_sizes(encoder_sizes: list[int], expectation: Any) -> None:
     """Test that incorrect encoder sizes raise ValueError."""
     with expectation:
         Hex2VecEmbedder(encoder_sizes)

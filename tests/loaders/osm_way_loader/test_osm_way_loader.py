@@ -1,9 +1,10 @@
 """Tests for OSMWayLoader."""
 import pickle as pkl
+from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 from unittest import TestCase
 
 import geopandas as gpd
@@ -222,8 +223,8 @@ def valid_and_empty_polygons_area_gdf(
 )
 def test_contract(
     area_gdf_fixture: str,
-    expected_result: Optional[Tuple[int, int]],
-    loader_params: Optional[Dict[str, Any]],
+    expected_result: Optional[tuple[int, int]],
+    loader_params: Optional[dict[str, Any]],
     file_name: Optional[str],
     expectation,
     request: pytest.FixtureRequest,

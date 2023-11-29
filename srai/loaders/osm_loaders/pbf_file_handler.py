@@ -4,7 +4,8 @@ PBF File Handler.
 This module contains a handler capable of parsing a PBF file into a GeoDataFrame.
 """
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 import geopandas as gpd
 import osmium
@@ -74,7 +75,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
             self.filter_tags_keys = set()
         self.region_geometry = region_geometry
         self.wkbfab = osmium.geom.WKBFactory()
-        self.features_cache: Dict[str, Dict[str, Any]] = {}
+        self.features_cache: dict[str, dict[str, Any]] = {}
         self.features_count: Optional[int] = None
 
     def get_features_gdf(
@@ -224,13 +225,13 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
                 full_osm_id=full_osm_id, matching_tags=matching_tags, geometry=geometry
             )
 
-    def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> Dict[str, str]:
+    def _get_matching_tags(self, osm_object: osmium.osm.OSMObject[T_obj]) -> dict[str, str]:
         """
         Find matching tags between provided filter and currently parsed OSM object.
 
         If tags filter is `None`, it will copy all tags from the OSM object.
         """
-        matching_tags: Dict[str, str] = {}
+        matching_tags: dict[str, str] = {}
 
         if self.filter_tags:
             for tag_key in self.filter_tags_keys:
@@ -270,7 +271,7 @@ class PbfFileHandler(osmium.SimpleHandler):  # type: ignore
         return geometry
 
     def _add_feature_to_cache(
-        self, full_osm_id: str, matching_tags: Dict[str, str], geometry: Optional[BaseGeometry]
+        self, full_osm_id: str, matching_tags: dict[str, str], geometry: Optional[BaseGeometry]
     ) -> None:
         """
         Add OSM feature to cache or update existing one based on ID.

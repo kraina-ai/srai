@@ -2,7 +2,7 @@
 
 import ast
 from pathlib import Path
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 
 import mkdocs_gen_files
 
@@ -85,7 +85,7 @@ def write_file(file_path: Path) -> None:
         nav[key] = Path(operational_path.parts[-2]).as_posix()
 
 
-def _read_imports_from_file(file_path: Path) -> Tuple[List[str], List[str], str]:
+def _read_imports_from_file(file_path: Path) -> tuple[list[str], list[str], str]:
     st = ast.parse(file_path.read_text())
 
     module_docstring = ""
@@ -105,8 +105,8 @@ def _read_imports_from_file(file_path: Path) -> Tuple[List[str], List[str], str]
         definition.value for definition in cast(Any, st_all_definition[0]).value.elts
     ]
 
-    classes: List[str] = []
-    functions: List[str] = []
+    classes: list[str] = []
+    functions: list[str] = []
 
     # Content
 

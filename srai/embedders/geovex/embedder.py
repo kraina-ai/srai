@@ -6,7 +6,7 @@ This module contains embedder from GeoVex paper[1].
 References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
-from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import geopandas as gpd
 import numpy as np
@@ -35,7 +35,7 @@ class GeoVexEmbedder(CountEmbedder):
 
     def __init__(
         self,
-        target_features: Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter],
+        target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
         batch_size: Optional[int] = 32,
         neighbourhood_radius: int = 4,
         convolutional_layers: int = 2,
@@ -75,11 +75,11 @@ class GeoVexEmbedder(CountEmbedder):
         self._batch_size = batch_size
 
         # save invalid h3s for later
-        self._invalid_cells: List[str] = []
+        self._invalid_cells: list[str] = []
         self._dataset: DataLoader = None
 
     @property
-    def invalid_cells(self) -> List[str]:
+    def invalid_cells(self) -> list[str]:
         """List of invalid h3s."""
         return self._invalid_cells
 
@@ -144,7 +144,7 @@ class GeoVexEmbedder(CountEmbedder):
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: H3Neighbourhood,
         learning_rate: float = 0.001,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit the model to the data.
@@ -192,7 +192,7 @@ class GeoVexEmbedder(CountEmbedder):
         neighbourhood: H3Neighbourhood,
         batch_size: Optional[int],
         shuffle: bool = True,
-    ) -> Tuple[pd.DataFrame, DataLoader, HexagonalDataset[T]]:
+    ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[T]]:
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         dataset: HexagonalDataset[T] = HexagonalDataset(
             counts_df,
@@ -209,7 +209,7 @@ class GeoVexEmbedder(CountEmbedder):
         joint_gdf: gpd.GeoDataFrame,
         neighbourhood: H3Neighbourhood,
         learning_rate: float = 0.001,
-        trainer_kwargs: Optional[Dict[str, Any]] = None,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit the model to the data and create region embeddings.
@@ -245,14 +245,14 @@ class GeoVexEmbedder(CountEmbedder):
         if not self._is_fitted or self._model is None:
             raise ModelNotFitException("Model not fitted. Call fit() or fit_transform() first.")
 
-    def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[dict[str, Any]]) -> dict[str, Any]:
         if trainer_kwargs is None:
             trainer_kwargs = {}
         if "max_epochs" not in trainer_kwargs:
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
 
-    def _assert_feature_length(self, target_features: List[str], conv_layer_size: int) -> None:
+    def _assert_feature_length(self, target_features: list[str], conv_layer_size: int) -> None:
         if len(target_features) < conv_layer_size:
             raise ValueError(
                 f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."

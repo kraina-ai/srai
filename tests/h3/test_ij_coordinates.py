@@ -1,6 +1,5 @@
 """H3 IJ coordinates tests."""
 
-from typing import List
 
 import h3
 import numpy as np
@@ -78,7 +77,7 @@ def test_string_ok(h3_origin: str, h3_cell: str) -> None:
     ],
 )  # type: ignore
 @pytest.mark.parametrize("return_as_numpy", [True, False])  # type: ignore
-def test_list_ok(h3_origin: str, h3_cells: List[str], return_as_numpy: bool) -> None:
+def test_list_ok(h3_origin: str, h3_cells: list[str], return_as_numpy: bool) -> None:
     """Test checks if lists are parsed correctly."""
     coordinates = get_local_ij_index(
         origin_index=h3_origin, h3_index=h3_cells, return_as_numpy=return_as_numpy
