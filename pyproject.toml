@@ -101,6 +101,7 @@ test = [
     "pytest-check",
     "pytest-parametrization",
     "pytest-xdist",
+    "pytest-doctestplus",
 ]
 # pdm add -dG visualization <library>
 visualization = ["keplergl", "matplotlib"]
