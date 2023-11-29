@@ -1,6 +1,5 @@
 """Fixtures for Regionalizers."""
 
-from typing import List
 
 import geopandas as gpd
 import pytest
@@ -99,7 +98,7 @@ def gdf_multipolygon() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def earth_poles() -> List[geometry.Point]:
+def earth_poles() -> list[geometry.Point]:
     """Get 6 Earth poles."""
     return [
         geometry.Point(0, 0),

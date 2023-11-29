@@ -1,5 +1,4 @@
 """Conftest for H3 tests."""
-from typing import List
 
 import geopandas as gpd
 import pytest
@@ -15,7 +14,7 @@ def gdf_single_point() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def expected_point_h3_index() -> List[str]:
+def expected_point_h3_index() -> list[str]:
     """Get expected h3 index for the point case."""
     return [
         "8a1e23c44b5ffff",
@@ -88,7 +87,7 @@ def gdf_multipolygon() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def expected_h3_indexes() -> List[str]:
+def expected_h3_indexes() -> list[str]:
     """Get expected h3 indexes."""
     return [
         "837559fffffffff",
@@ -102,7 +101,7 @@ def expected_h3_indexes() -> List[str]:
 
 
 @pytest.fixture  # type: ignore
-def expected_unbuffered_h3_indexes() -> List[str]:
+def expected_unbuffered_h3_indexes() -> list[str]:
     """Get expected h3 index for the unbuffered case."""
     return [
         "83754efffffffff",

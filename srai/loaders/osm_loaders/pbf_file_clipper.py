@@ -9,9 +9,10 @@ import shutil
 import stat
 import tempfile
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
 from sys import platform
-from typing import Sequence, Union
+from typing import Union
 
 import numpy as np
 from shapely.geometry import MultiPolygon, Polygon

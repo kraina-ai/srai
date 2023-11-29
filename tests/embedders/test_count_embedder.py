@@ -1,6 +1,6 @@
 """CountEmbedder tests."""
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, Union
 from unittest import TestCase
 
 import pandas as pd
@@ -49,7 +49,7 @@ def expected_subcategories_embedding_df() -> pd.DataFrame:
 
 
 @pytest.fixture  # type: ignore
-def expected_feature_names() -> List[str]:
+def expected_feature_names() -> list[str]:
     """Get expected feature names for CountEmbedder."""
     expected_feature_names = ["amenity_parking", "leisure_park", "amenity_pub"]
     return expected_feature_names

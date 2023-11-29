@@ -2,7 +2,7 @@
 import os
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Union, cast
 
 import geopandas as gpd
 import pandas as pd
@@ -28,10 +28,10 @@ from tests.embedders.geovex.constants import EMBEDDING_SIZE, PREDEFINED_TEST_CAS
     ],
 )
 def test_checking_encoder_sizes(
-    target_features: Union[str, List[str]], conv_layer_size, expectation: Any
+    target_features: Union[str, list[str]], conv_layer_size, expectation: Any
 ) -> None:
     """Test that incorrect encoder sizes raise ValueError."""
-    target_tags: Dict[str, List[str]] = target_features or HEX2VEC_FILTER  # type: ignore
+    target_tags: dict[str, list[str]] = target_features or HEX2VEC_FILTER  # type: ignore
     target_features = [f"{t}_{st}" for t in target_tags for st in HEX2VEC_FILTER[t]]  # type: ignore
 
     with expectation:

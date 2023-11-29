@@ -3,8 +3,9 @@ OSM PBF Loader.
 
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
+from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Hashable, Iterable, List, Mapping, Optional, Sequence, Union
+from typing import Optional, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -137,7 +138,7 @@ class OSMPbfLoader(OSMLoader):
 
         return self._parse_features_gdf_to_groups(result_gdf, tags)
 
-    def _group_gdfs(self, gdfs: List[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
+    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
         if not gdfs:
             return self._get_empty_result()
         elif len(gdfs) == 1:
