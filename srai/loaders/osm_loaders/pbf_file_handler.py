@@ -584,7 +584,10 @@ class PbfFileHandler:
         if isinstance(directories, str):
             directories = [directories]
         for directory in directories:
-            shutil.rmtree(Path(tmp_dir_name) / directory)
+            directory_path = Path(tmp_dir_name) / directory
+            if not directory_path.exists():
+                continue
+            shutil.rmtree(directory_path)
 
     def _generate_osm_tags_sql_filter(self) -> str:
         """Prepare features filter clauses based on tags filter."""

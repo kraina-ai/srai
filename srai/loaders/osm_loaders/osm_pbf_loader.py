@@ -63,7 +63,7 @@ class OSMPbfLoader(OSMLoader):
             switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
                 switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
-        import_optional_dependencies(dependency_group="osm", modules=["duckdb", "geoarrow-pyarrow"])
+        import_optional_dependencies(dependency_group="osm", modules=["duckdb", "geoarrow.pyarrow"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory

@@ -17,7 +17,7 @@ def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
         "duckdb",
-        "geoarrow-pyarrow",
+        "geoarrow.pyarrow",
         "osmnx",
         "overpass",
         "beautifulsoup4",
