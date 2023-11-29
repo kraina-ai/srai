@@ -20,6 +20,14 @@ def write_file(file_path: Path) -> None:
         dst.write(src.read())
 
 
+banned_directories = ["cache", "files", "example_files", "__pycache__", "lightning_logs"]
 for i in EXAMPLES_DIRECTORY_PATH.glob("**/*"):
-    if i.is_file() and "cache" not in i.parts:
-        write_file(i)
+    if i.is_file():
+        should_copy = True
+        for banned_directory in banned_directories:
+            if banned_directory in i.parts:
+                should_copy = False
+                break
+
+        if should_copy:
+            write_file(i)
