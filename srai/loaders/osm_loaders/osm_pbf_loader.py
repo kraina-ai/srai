@@ -3,9 +3,9 @@ OSM PBF Loader.
 
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
