@@ -7,6 +7,6 @@ docs:
 	mkdocs serve --livereload -w srai
 
 test:
-	pytest -n auto
+	pytest --durations=20 --doctest-modules --doctest-continue-on-failure srai tests
 
 .PHONY: install docs test
