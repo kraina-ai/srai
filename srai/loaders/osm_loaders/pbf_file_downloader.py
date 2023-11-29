@@ -92,7 +92,7 @@ class PbfFileDownloader:
 
     def __init__(
         self,
-        download_source: PbfSourceLiteral = "protomaps",
+        download_source: PbfSourceLiteral = "geofabrik",
         download_directory: Union[str, Path] = "files",
         switch_to_geofabrik_on_error: bool = True,
     ) -> None:
@@ -102,7 +102,7 @@ class PbfFileDownloader:
         Args:
             download_source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
                 Can be one of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
-                Defaults to "protomaps".
+                Defaults to "geofabrik".
             download_directory (Union[str, Path], optional): Directory where to save
                 the downloaded `*.osm.pbf` files. Defaults to "files".
             switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
