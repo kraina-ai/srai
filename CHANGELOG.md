@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Refactored `PbfFileHandler` to use `DuckDB` with `spatial` extension instead of `osmium` and `GDAL` [#405](https://github.com/kraina-ai/srai/pull/405)
+- Changed the default pbf download source from `protomaps` download service to `geofabrik`.
 
 ### Deprecated
 
