@@ -133,3 +133,51 @@ class OSMPbfLoader(OSMLoader):
         result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
         return result_gdf
+
+    def load_to_geoparquet(
+        self,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+    ) -> list[Path]:
+        """
+        Load OSM features with specified tags for a given area and save it to geoparquet file.
+
+        Args:
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
+                specifying which tags to download.
+                The keys should be OSM tags (e.g. `building`, `amenity`).
+                The values should either be `True` for retrieving all objects with the tag,
+                string for retrieving a single tag-value pair
+                or list of strings for retrieving all values specified in the list.
+                `tags={'leisure': 'park}` would return parks from the area.
+                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
+                would return parks, all amenity types, bakeries and bicycle shops.
+
+        Returns:
+            list[Path]: List of saved GeoParquet files.
+        """
+        from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
+        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+
+        area_wgs84 = self._prepare_area_gdf(area)
+
+        downloaded_pbf_files: Sequence[Union[str, os.PathLike[str]]]
+        if self.pbf_file is not None:
+            downloaded_pbf_files = [self.pbf_file]
+        else:
+            downloaded_pbf_files = PbfFileDownloader(
+                download_source=self.download_source,
+                download_directory=self.download_directory,
+                switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
+            ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
+
+        pbf_handler = PbfFileHandler(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
+
+        converted_files = []
+        for downloaded_pbf_file in downloaded_pbf_files:
+            geoparquet_file = pbf_handler.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
+            converted_files.append(geoparquet_file)
+
+        return converted_files
