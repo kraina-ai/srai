@@ -3,9 +3,10 @@
 
 [metadata]
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-strategy = ["cross_platform"]
-lock_version = "4.4"
-content_hash = "sha256:104f054e0d20d8de62a226dc505e89cc59988043cb22e35d1fcd40a08cfb57dc"
+cross_platform = true
+static_urls = false
+lock_version = "4.3"
+content_hash = "sha256:2c1e5b440b2a1f5661e4f6e8b3594e20eaf0e31a0af09c080861249043c2adf3"
 
 [[package]]
 name = "aiohttp"
@@ -1122,11 +1123,12 @@ files = [
 
 [[package]]
 name = "geoarrow-pyarrow"
-version = "0.1.2.dev6+g53b05c5"
+version = "0.1.2.dev7+g0a95d5f"
 requires_python = ">=3.8"
 subdirectory = "geoarrow-pyarrow"
 git = "https://github.com/geoarrow/geoarrow-python.git"
-revision = "53b05c5eade9aafbc878bf9beaf0cf7e02f000a4"
+ref = "0a95d5ff3180c20e89f4572ac38d255f58e13396"
+revision = "0a95d5ff3180c20e89f4572ac38d255f58e13396"
 summary = ""
 dependencies = [
     "geoarrow-c",
