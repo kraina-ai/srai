@@ -3,6 +3,7 @@ OSM PBF Loader.
 
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
+import os
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
@@ -17,7 +18,7 @@ from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
 
 if TYPE_CHECKING:
-    import os
+    from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
 
 class OSMPbfLoader(OSMLoader):
@@ -104,24 +105,12 @@ class OSMPbfLoader(OSMLoader):
         Returns:
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
-        from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
-
         area_wgs84 = self._prepare_area_gdf(area)
 
-        downloaded_pbf_files: Sequence[Union[str, os.PathLike[str]]]
-        if self.pbf_file is not None:
-            downloaded_pbf_files = [self.pbf_file]
-        else:
-            downloaded_pbf_files = PbfFileDownloader(
-                download_source=self.download_source,
-                download_directory=self.download_directory,
-                switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
-            ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
+        pbf_handler = self._get_pbf_file_handler(area_wgs84, tags)
+        pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
 
-        pbf_handler = PbfFileHandler(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
-
-        features_gdf = pbf_handler.get_features_gdf(file_paths=downloaded_pbf_files)
+        features_gdf = pbf_handler.get_features_gdf(file_paths=pbf_files_to_load)
         result_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
@@ -157,26 +146,39 @@ class OSMPbfLoader(OSMLoader):
         Returns:
             list[Path]: List of saved GeoParquet files.
         """
-        from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
-
         area_wgs84 = self._prepare_area_gdf(area)
 
-        downloaded_pbf_files: Sequence[Union[str, os.PathLike[str]]]
+        pbf_handler = self._get_pbf_file_handler(area_wgs84, tags)
+        pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
+
+        converted_files = []
+        for downloaded_pbf_file in pbf_files_to_load:
+            geoparquet_file = pbf_handler.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
+            converted_files.append(geoparquet_file)
+
+        return converted_files
+
+    def _get_pbf_files_to_load(
+        self, area_wgs84: gpd.GeoDataFrame
+    ) -> Sequence[Union[str, os.PathLike[str]]]:
+        from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
+
+        pbf_files_to_load: Sequence[Union[str, os.PathLike[str]]]
         if self.pbf_file is not None:
-            downloaded_pbf_files = [self.pbf_file]
+            pbf_files_to_load = [self.pbf_file]
         else:
-            downloaded_pbf_files = PbfFileDownloader(
+            pbf_files_to_load = PbfFileDownloader(
                 download_source=self.download_source,
                 download_directory=self.download_directory,
                 switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
             ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
 
+        return pbf_files_to_load
+
+    def _get_pbf_file_handler(
+        self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
+    ) -> "PbfFileHandler":
+        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+
         pbf_handler = PbfFileHandler(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
-
-        converted_files = []
-        for downloaded_pbf_file in downloaded_pbf_files:
-            geoparquet_file = pbf_handler.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
-            converted_files.append(geoparquet_file)
-
-        return converted_files
+        return pbf_handler
