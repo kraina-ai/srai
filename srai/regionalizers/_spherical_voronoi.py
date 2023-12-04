@@ -147,158 +147,163 @@ def generate_voronoi_regions(
         num_of_multiprocessing_workers > 1 and total_regions >= multiprocessing_activation_threshold
     )
 
-    # generate all spherical polygons
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-    generate_spherical_polygons_parts_func = partial(
-        _generate_spherical_polygons_parts,
-        sv=sv,
-    )
+        # generate all spherical polygons
 
-    if activate_multiprocessing:
-        spherical_polygons_parts = [  # noqa: FURB179
-            polygon_part_tuple
-            for polygon_part_tuples in process_map(
-                generate_spherical_polygons_parts_func,
-                region_ids,
-                desc="Generating spherical polygons",
-                max_workers=num_of_multiprocessing_workers,
-                chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
-            )
-            for polygon_part_tuple in polygon_part_tuples
-        ]
-    else:
-        spherical_polygons_parts = [
-            polygon_part_tuple
-            for region_id in tqdm(region_ids, desc="Generating spherical polygons")
-            for polygon_part_tuple in generate_spherical_polygons_parts_func(region_id=region_id)
-        ]
+        generate_spherical_polygons_parts_func = partial(
+            _generate_spherical_polygons_parts,
+            sv=sv,
+        )
 
-    # identify all edges
-
-    hashed_vertices: dict[VertexHash, npt.NDArray[np.float32]] = {}
-    hashed_edges: set[EdgeHash] = set()
-
-    regions_parts: dict[int, list[tuple[int, list[EdgeHash]]]] = {}
-
-    for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
-        if region_id not in regions_parts:
-            regions_parts[region_id] = []
-
-        n = len(spherical_polygon_points)
-        polygon_vertices_hashes = []
-        polygon_edges = []
-
-        # Hash all vertices
-        for i in range(n):
-            start: npt.NDArray[np.float32] = spherical_polygon_points[i]
-            start_hash = hashlib.sha256(start.data).digest()
-            hashed_vertices[start_hash] = start
-            polygon_vertices_hashes.append(start_hash)
-
-        # Map all edges
-        for i in range(n):
-            start_hash = polygon_vertices_hashes[i]
-            end_hash = polygon_vertices_hashes[(i + 1) % n]
-
-            if start_hash == end_hash:
-                continue
-
-            polygon_edges.append((start_hash, end_hash))
-
-            if (start_hash, end_hash) not in hashed_edges and (
-                end_hash,
-                start_hash,
-            ) not in hashed_edges:
-                hashed_edges.add(
-                    (
-                        start_hash,
-                        end_hash,
-                    )
-                )
-
-        regions_parts[region_id].append((sphere_part_id, polygon_edges))
-
-    # interpolate unique ones
-
-    interpolated_edges: dict[EdgeHash, list[tuple[float, float]]]
-
-    interpolate_polygon_edge_func = partial(
-        _interpolate_polygon_edge,
-        hashed_vertices=hashed_vertices,
-        ell=unit_sphere_ellipsoid,
-        max_meters_between_points=max_meters_between_points,
-    )
-
-    if activate_multiprocessing:
-        interpolated_edges = {
-            hashed_edge: interpolated_edge
-            for hashed_edge, interpolated_edge in zip(
-                hashed_edges,
-                process_map(
-                    interpolate_polygon_edge_func,
-                    hashed_edges,
-                    desc="Interpolating edges",
+        if activate_multiprocessing:
+            spherical_polygons_parts = [  # noqa: FURB179
+                polygon_part_tuple
+                for polygon_part_tuples in process_map(
+                    generate_spherical_polygons_parts_func,
+                    region_ids,
+                    desc="Generating spherical polygons",
                     max_workers=num_of_multiprocessing_workers,
-                    chunksize=ceil(len(hashed_edges) / (4 * num_of_multiprocessing_workers)),
-                ),
-            )
-        }
-    else:
-        interpolated_edges = {
-            hashed_edge: interpolate_polygon_edge_func(hashed_edge)
-            for hashed_edge in tqdm(hashed_edges, desc="Interpolating edges")
-        }
-
-    # use interpolated edges to map spherical polygons into regions
-
-    generated_regions: list[MultiPolygon] = []
-    _generate_sphere_parts()
-
-    for region_id in tqdm(region_ids, desc="Generating polygons"):
-        multi_polygon_parts: list[Polygon] = []
-
-        for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
-            polygon_points: list[tuple[float, float]] = []
-
-            for edge_start, edge_end in region_polygon_edges:
-                if (edge_start, edge_end) in interpolated_edges:
-                    interpolated_edge = interpolated_edges[(edge_start, edge_end)]
-                else:
-                    interpolated_edge = interpolated_edges[(edge_end, edge_start)][::-1]
-
-                interpolated_edge = _fix_edge(
-                    interpolated_edge,
-                    SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id].bounds,
-                    prev_lon=polygon_points[-1][0] if polygon_points else None,
-                    prev_lat=polygon_points[-1][1] if polygon_points else None,
+                    chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
                 )
+                for polygon_part_tuple in polygon_part_tuples
+            ]
+        else:
+            spherical_polygons_parts = [
+                polygon_part_tuple
+                for region_id in tqdm(region_ids, desc="Generating spherical polygons")
+                for polygon_part_tuple in generate_spherical_polygons_parts_func(
+                    region_id=region_id
+                )
+            ]
 
-                polygon_points.extend(interpolated_edge)
+        # identify all edges
 
-            polygon = Polygon(polygon_points)
-            polygon = make_valid(polygon)
-            polygon = polygon.intersection(SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id])
-            if isinstance(polygon, GeometryCollection):
-                for geometry in polygon.geoms:
-                    if isinstance(geometry, (Polygon, MultiPolygon)):
-                        polygon = geometry
-                        break
-                else:
-                    raise RuntimeError(
-                        f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
+        hashed_vertices: dict[VertexHash, npt.NDArray[np.float32]] = {}
+        hashed_edges: set[EdgeHash] = set()
+
+        regions_parts: dict[int, list[tuple[int, list[EdgeHash]]]] = {}
+
+        for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
+            if region_id not in regions_parts:
+                regions_parts[region_id] = []
+
+            n = len(spherical_polygon_points)
+            polygon_vertices_hashes = []
+            polygon_edges = []
+
+            # Hash all vertices
+            for i in range(n):
+                start: npt.NDArray[np.float32] = spherical_polygon_points[i]
+                start_hash = hashlib.sha256(start.data).digest()
+                hashed_vertices[start_hash] = start
+                polygon_vertices_hashes.append(start_hash)
+
+            # Map all edges
+            for i in range(n):
+                start_hash = polygon_vertices_hashes[i]
+                end_hash = polygon_vertices_hashes[(i + 1) % n]
+
+                if start_hash == end_hash:
+                    continue
+
+                polygon_edges.append((start_hash, end_hash))
+
+                if (start_hash, end_hash) not in hashed_edges and (
+                    end_hash,
+                    start_hash,
+                ) not in hashed_edges:
+                    hashed_edges.add(
+                        (
+                            start_hash,
+                            end_hash,
+                        )
                     )
 
-            if isinstance(polygon, Polygon):
-                multi_polygon_parts.append(polygon)
-            elif isinstance(polygon, MultiPolygon):
-                multi_polygon_parts.extend(polygon.geoms)
-            elif isinstance(polygon, (LineString, MultiLineString, Point)):
-                pass
-            else:
-                raise RuntimeError(str(type(polygon)))
+            regions_parts[region_id].append((sphere_part_id, polygon_edges))
 
-        multi_polygon = MultiPolygon(multi_polygon_parts)
-        generated_regions.append(multi_polygon)
+        # interpolate unique ones
+
+        interpolated_edges: dict[EdgeHash, list[tuple[float, float]]]
+
+        interpolate_polygon_edge_func = partial(
+            _interpolate_polygon_edge,
+            hashed_vertices=hashed_vertices,
+            ell=unit_sphere_ellipsoid,
+            max_meters_between_points=max_meters_between_points,
+        )
+
+        if activate_multiprocessing:
+            interpolated_edges = {
+                hashed_edge: interpolated_edge
+                for hashed_edge, interpolated_edge in zip(
+                    hashed_edges,
+                    process_map(
+                        interpolate_polygon_edge_func,
+                        hashed_edges,
+                        desc="Interpolating edges",
+                        max_workers=num_of_multiprocessing_workers,
+                        chunksize=ceil(len(hashed_edges) / (4 * num_of_multiprocessing_workers)),
+                    ),
+                )
+            }
+        else:
+            interpolated_edges = {
+                hashed_edge: interpolate_polygon_edge_func(hashed_edge)
+                for hashed_edge in tqdm(hashed_edges, desc="Interpolating edges")
+            }
+
+        # use interpolated edges to map spherical polygons into regions
+
+        generated_regions: list[MultiPolygon] = []
+        _generate_sphere_parts()
+
+        for region_id in tqdm(region_ids, desc="Generating polygons"):
+            multi_polygon_parts: list[Polygon] = []
+
+            for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
+                polygon_points: list[tuple[float, float]] = []
+
+                for edge_start, edge_end in region_polygon_edges:
+                    if (edge_start, edge_end) in interpolated_edges:
+                        interpolated_edge = interpolated_edges[(edge_start, edge_end)]
+                    else:
+                        interpolated_edge = interpolated_edges[(edge_end, edge_start)][::-1]
+
+                    interpolated_edge = _fix_edge(
+                        interpolated_edge,
+                        SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id].bounds,
+                        prev_lon=polygon_points[-1][0] if polygon_points else None,
+                        prev_lat=polygon_points[-1][1] if polygon_points else None,
+                    )
+
+                    polygon_points.extend(interpolated_edge)
+
+                polygon = Polygon(polygon_points)
+                polygon = make_valid(polygon)
+                polygon = polygon.intersection(SPHERE_PARTS_BOUNDING_BOXES[sphere_part_id])
+                if isinstance(polygon, GeometryCollection):
+                    for geometry in polygon.geoms:
+                        if isinstance(geometry, (Polygon, MultiPolygon)):
+                            polygon = geometry
+                            break
+                    else:
+                        raise RuntimeError(
+                            f"Intersection with a quadrant did not produce any Polygon. ({polygon})"
+                        )
+
+                if isinstance(polygon, Polygon):
+                    multi_polygon_parts.append(polygon)
+                elif isinstance(polygon, MultiPolygon):
+                    multi_polygon_parts.extend(polygon.geoms)
+                elif isinstance(polygon, (LineString, MultiLineString, Point)):
+                    pass
+                else:
+                    raise RuntimeError(str(type(polygon)))
+
+            multi_polygon = MultiPolygon(multi_polygon_parts)
+            generated_regions.append(multi_polygon)
 
     return generated_regions
 
