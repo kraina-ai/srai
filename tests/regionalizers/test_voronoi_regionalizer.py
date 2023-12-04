@@ -90,6 +90,13 @@ def test_duplicate_seeds_value_error() -> None:
         VoronoiRegionalizer(seeds=seeds_gdf)
 
 
+def test_seed_outside_earth_bounding_box_value_error() -> None:
+    """Test checks if duplicate points are disallowed."""
+    with pytest.raises(ValueError):
+        seeds = [Point(0, 0), Point(0, 0), Point(-1, -1), Point(2, 2), Point(200, 200)]
+        VoronoiRegionalizer(seeds=seeds)
+
+
 def test_single_seed_region() -> None:
     """Test checks if single seed is disallowed."""
     with pytest.raises(ValueError):

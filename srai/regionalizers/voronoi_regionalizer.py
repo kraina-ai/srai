@@ -63,6 +63,7 @@ class VoronoiRegionalizer(Regionalizer):
             ValueError: If any seed is duplicated.
             ValueError: If less than 4 seeds are provided.
             ValueError: If provided seeds geodataframe has no crs defined.
+            ValueError: If any seed is outside WGS84 coordinates domain.
         """
         import_optional_dependencies(
             dependency_group="voronoi",
@@ -86,11 +87,14 @@ class VoronoiRegionalizer(Regionalizer):
         if len(self.seeds) < 4:
             raise ValueError("Minimum 4 seeds are required.")
 
-        from ._spherical_voronoi import _get_duplicated_seeds_ids
+        from ._spherical_voronoi import _check_if_in_bounds, _get_duplicated_seeds_ids
 
         duplicated_seeds_ids = _get_duplicated_seeds_ids(self.seeds, self.region_ids)
         if duplicated_seeds_ids:
             raise ValueError(f"Duplicate seeds present: {duplicated_seeds_ids}.")
+
+        if not _check_if_in_bounds(self.seeds):
+            raise ValueError("Seeds outside Earth WGS84 bounding box.")
 
     def transform(self, gdf: Optional[gpd.GeoDataFrame] = None) -> gpd.GeoDataFrame:
         """
