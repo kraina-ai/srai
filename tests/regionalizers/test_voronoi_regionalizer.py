@@ -93,7 +93,7 @@ def test_duplicate_seeds_value_error() -> None:
 def test_seed_outside_earth_bounding_box_value_error() -> None:
     """Test checks if points outside Earth bounding box are disallowed."""
     with pytest.raises(ValueError):
-        seeds = [Point(0, 0), Point(0, 0), Point(-1, -1), Point(2, 2), Point(200, 200)]
+        seeds = [Point(0, 0), Point(-1, -1), Point(2, 2), Point(200, 200)]
         VoronoiRegionalizer(seeds=seeds)
 
 
