@@ -4,8 +4,7 @@ Voronoi Regionalizer.
 This module contains voronoi regionalizer implementation.
 """
 
-from collections.abc import Hashable
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd
 from shapely.geometry import Point, box
@@ -13,6 +12,9 @@ from shapely.geometry import Point, box
 from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.regionalizers import Regionalizer
+
+if TYPE_CHECKING:
+    from collections.abc import Hashable
 
 
 class VoronoiRegionalizer(Regionalizer):
@@ -70,7 +72,9 @@ class VoronoiRegionalizer(Regionalizer):
         self.seeds: list[Point] = []
 
         if isinstance(seeds, gpd.GeoDataFrame):
-            self._parse_geodataframe_seeds(seeds_gdf=seeds)
+            from ._spherical_voronoi import _parse_geodataframe_seeds
+
+            self.seeds, self.region_ids = _parse_geodataframe_seeds(seeds)
         else:
             self.seeds = seeds
             self.region_ids = list(range(len(seeds)))
@@ -82,7 +86,9 @@ class VoronoiRegionalizer(Regionalizer):
         if len(self.seeds) < 4:
             raise ValueError("Minimum 4 seeds are required.")
 
-        duplicated_seeds_ids = self._get_duplicated_seeds_ids()
+        from ._spherical_voronoi import _get_duplicated_seeds_ids
+
+        duplicated_seeds_ids = _get_duplicated_seeds_ids(self.seeds, self.region_ids)
         if duplicated_seeds_ids:
             raise ValueError(f"Duplicate seeds present: {duplicated_seeds_ids}.")
 
@@ -127,20 +133,3 @@ class VoronoiRegionalizer(Regionalizer):
         regions_gdf.index.rename(REGIONS_INDEX, inplace=True)
         clipped_regions_gdf = regions_gdf.clip(mask=gdf_wgs84, keep_geom_type=False)
         return clipped_regions_gdf
-
-    def _parse_geodataframe_seeds(self, seeds_gdf: gpd.GeoDataFrame) -> None:
-        seeds_wgs84 = seeds_gdf.to_crs(crs=WGS84_CRS)
-        for index, row in seeds_wgs84.iterrows():
-            candidate_point = row.geometry.centroid
-            if not candidate_point.is_empty:
-                self.region_ids.append(index)
-                self.seeds.append(candidate_point)
-
-    def _get_duplicated_seeds_ids(self) -> list[Hashable]:
-        """Return all seeds ids that overlap with another using quick sjoin operation."""
-        gdf = gpd.GeoDataFrame(
-            data={GEOMETRY_COLUMN: self.seeds}, index=self.region_ids, crs=WGS84_CRS
-        )
-        duplicated_seeds = gdf.sjoin(gdf).index.value_counts().loc[lambda x: x > 1]
-        duplicated_seeds_ids: list[Hashable] = duplicated_seeds.index.to_list()
-        return duplicated_seeds_ids

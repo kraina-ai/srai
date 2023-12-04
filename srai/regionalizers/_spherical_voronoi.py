@@ -34,7 +34,7 @@ from spherical_geometry.polygon import SphericalPolygon
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 SPHERE_PARTS: list[SphericalPolygon] = []
 SPHERE_PARTS_BOUNDING_BOXES: list[Polygon] = []
@@ -108,7 +108,7 @@ def generate_voronoi_regions(
         ValueError: If any seed is outside WGS84 coordinates domain.
     """
     if isinstance(seeds, gpd.GeoDataFrame):
-        seeds, region_ids = _generate_seeds(seeds)
+        seeds, region_ids = _parse_geodataframe_seeds(seeds)
     else:
         region_ids = list(range(len(seeds)))
 
@@ -326,7 +326,7 @@ def _parse_multiprocessing_activation_threshold(
     return multiprocessing_activation_threshold
 
 
-def _generate_seeds(gdf: gpd.GeoDataFrame) -> tuple[list[Point], list[Hashable]]:
+def _parse_geodataframe_seeds(gdf: gpd.GeoDataFrame) -> tuple[list[Point], list[Hashable]]:
     """Transform GeoDataFrame into list of Points with index."""
     seeds_wgs84 = gdf.to_crs(crs=WGS84_CRS)
     region_ids: list[Hashable] = []
@@ -343,7 +343,7 @@ def _generate_seeds(gdf: gpd.GeoDataFrame) -> tuple[list[Point], list[Hashable]]
 
 def _get_duplicated_seeds_ids(seeds: list[Point], region_ids: list[Hashable]) -> list[Hashable]:
     """Return all seeds ids that overlap with another using quick sjoin operation."""
-    gdf = gpd.GeoDataFrame(data={"geometry": seeds}, index=region_ids, crs=WGS84_CRS)
+    gdf = gpd.GeoDataFrame(data={GEOMETRY_COLUMN: seeds}, index=region_ids, crs=WGS84_CRS)
     duplicated_seeds = gdf.sjoin(gdf).index.value_counts().loc[lambda x: x > 1]
     duplicated_seeds_ids: list[Hashable] = duplicated_seeds.index.to_list()
     return duplicated_seeds_ids
