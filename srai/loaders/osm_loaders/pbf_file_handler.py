@@ -29,7 +29,7 @@ from srai.loaders.osm_loaders.filters import (
     merge_osm_tags_filter,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import os
 
     import duckdb

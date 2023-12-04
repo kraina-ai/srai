@@ -1,4 +1,5 @@
 """Voronoi regionalizer tests."""
+
 from multiprocessing import cpu_count
 from typing import Any, cast
 
@@ -19,9 +20,9 @@ from srai.regionalizers._spherical_voronoi import (
 )
 
 
-def get_random_points(number_of_points: int) -> list[Point]:
+def get_random_points(number_of_points: int, seed: int) -> list[Point]:
     """Get random points within WGS84 bounds sampled on a sphere."""
-    vec = np.random.default_rng().standard_normal((3, number_of_points))
+    vec = np.random.default_rng(seed=seed).standard_normal((3, number_of_points))
     vec /= np.linalg.norm(vec, axis=0)
     xi, yi, zi = vec
 
@@ -87,6 +88,13 @@ def test_duplicate_seeds_value_error() -> None:
             crs=WGS84_CRS,
         )
         VoronoiRegionalizer(seeds=seeds_gdf)
+
+
+def test_seed_outside_earth_bounding_box_value_error() -> None:
+    """Test checks if points outside Earth bounding box are disallowed."""
+    with pytest.raises(ValueError):
+        seeds = [Point(0, 0), Point(-1, -1), Point(2, 2), Point(200, 200)]
+        VoronoiRegionalizer(seeds=seeds)
 
 
 def test_single_seed_region() -> None:
@@ -180,17 +188,18 @@ def test_multiple_seeds_regions(
     earth_bbox: Polygon,
 ) -> None:
     """Test checks if regions are generated correctly."""
-    seeds = get_random_points(random_points)
+    seed = np.random.default_rng().integers(100_000_000)
+    seeds = get_random_points(random_points, seed)
     vr = VoronoiRegionalizer(seeds=seeds)
     result_gdf = vr.transform()
     assert len(result_gdf.index) == random_points
     assert check_if_seeds_match_regions(
         seeds=gpd.GeoDataFrame(geometry=seeds, crs=WGS84_CRS), regions=result_gdf
-    ), "Seeds don't match generated regions"
+    ), f"Seeds don't match generated regions (seed: {seed})"
     assert result_gdf.geometry.unary_union.difference(
         earth_bbox
-    ).is_empty, "Result doesn't cover bounding box"
-    assert check_if_disjoint(result_gdf), "Result isn't disjoint"
+    ).is_empty, f"Result doesn't cover bounding box (seed: {seed})"
+    assert check_if_disjoint(result_gdf), f"Result isn't disjoint (seed: {seed})"
 
 
 def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Polygon) -> None:
