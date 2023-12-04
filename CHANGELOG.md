@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `PbfFileClipper` (unnecessary after geospatial filtering has been incorporated into refactored `PbfFileHandler`) [#405](https://github.com/kraina-ai/srai/pull/405).
+
 ### Fixed
 
 ### Security
