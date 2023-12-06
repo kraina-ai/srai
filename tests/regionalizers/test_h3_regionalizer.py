@@ -1,4 +1,5 @@
 """Tests for H3Regionalizer."""
+
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any
 from unittest import TestCase
@@ -9,7 +10,7 @@ from srai.constants import GEOMETRY_COLUMN
 from srai.regionalizers import H3Regionalizer
 from srai.regionalizers.geocode import geocode_to_region_gdf
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import geopandas as gpd
 
 

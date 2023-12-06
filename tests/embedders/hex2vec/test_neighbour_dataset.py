@@ -1,4 +1,5 @@
 """NeighbourDataset tests."""
+
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any
 
@@ -8,7 +9,7 @@ import pytest
 from srai.embedders.hex2vec.neighbour_dataset import NeighbourDataset
 from srai.neighbourhoods import H3Neighbourhood
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pytest_mock import MockerFixture
 
 
