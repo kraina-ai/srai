@@ -1,4 +1,5 @@
 """Tests for OSMOnlineLoader."""
+
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
@@ -11,7 +12,7 @@ from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
 from srai.loaders.osm_loaders.filters import OsmTagsFilter
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from shapely.geometry import Polygon
 
 
