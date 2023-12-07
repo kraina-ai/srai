@@ -33,25 +33,25 @@ def geocode_to_region_gdf(
         Download geometry for a city
         >>> from srai.regionalizers import geocode_to_region_gdf
         >>> geocode_to_region_gdf("Wrocław, PL")
-                           geometry
+                             geometry
         region_id
-        Wrocław...    POLYGON ((...
+        Wrocław, ...    POLYGON ((...
 
         Download geometries for multiple cities
 
         >>> geocode_to_region_gdf(["New York City", "Washington, DC"])
-                                  geometry
+                                    geometry
         region_id
-        New York...    MULTIPOLYGON (((...
-        Washington...        POLYGON ((...
+        New York, ...    MULTIPOLYGON (((...
+        Washington, ...        POLYGON ((...
 
         Use OSM relation IDs to get geometries.
 
         >>> geocode_to_region_gdf(["R175342", "R5750005"], by_osmid=True)
-                                  geometry
+                                    geometry
         region_id
-        Greater London...    POLYGON ((...
-        Sydney...            POLYGON ((...
+        Greater London, ...    POLYGON ((...
+        Sydney, ...            POLYGON ((...
     """
     import_optional_dependencies(
         dependency_group="osm",
