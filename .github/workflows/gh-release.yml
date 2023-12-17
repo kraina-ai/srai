@@ -20,7 +20,7 @@ jobs:
           token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Get last commit message
         id: get-last-commit-message
-        run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat)" >> "$GITHUB_OUTPUT"
+        run: echo COMMIT_MESSAGE="$(git log -1 --pretty=%B | cat | head -n 1)" >> "$GITHUB_OUTPUT"
       - name: Cancel run if not a release commit
         run: |
           # done this way instead of "exit 1" to avoid having a failed run in the logs
