@@ -102,6 +102,7 @@ test = [
     "pytest-check",
     "pytest-parametrization",
     "pytest-xdist",
+    "pyogrio",
 ]
 # pdm add -dG visualization <library>
 visualization = ["keplergl", "matplotlib"]
