@@ -152,6 +152,7 @@ class PbfFileHandler:
         self,
         pbf_path: Union[str, "os.PathLike[str]"],
         result_file_path: Optional[Union[str, "os.PathLike[str]"]] = None,
+        explode_tags: bool = True,
         ignore_cache: bool = False,
     ) -> Path:
         """
@@ -162,7 +163,9 @@ class PbfFileHandler:
             result_file_path (Union[str, os.PathLike[str]], optional): Where to save
                 the geoparquet file. If not provided, will be generated based on hashes
                 from provided tags filter and geometry filter. Defaults to None.
-            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+            explode_tags (bool, optional): Whether to split tags into columns based on keys.
+                Defaults to False.
+            ignore_cache (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
         Returns:
@@ -175,7 +178,11 @@ class PbfFileHandler:
                     pbf_path
                 )
                 parsed_geoparquet_file = self._parse_pbf_file(
-                    pbf_path, tmp_dir_name, Path(result_file_path), ignore_cache
+                    pbf_path=pbf_path,
+                    tmp_dir_name=tmp_dir_name,
+                    result_file_path=Path(result_file_path),
+                    explode_tags=explode_tags,
+                    ignore_cache=ignore_cache,
                 )
                 return parsed_geoparquet_file
             finally:
@@ -205,6 +212,7 @@ class PbfFileHandler:
         pbf_path: Union[str, "os.PathLike[str]"],
         tmp_dir_name: str,
         result_file_path: Path,
+        explode_tags: bool = True,
         ignore_cache: bool = False,
     ) -> Path:
         if not result_file_path.exists() or ignore_cache:
@@ -284,6 +292,7 @@ class PbfFileHandler:
                 ),
                 tmp_dir_name=tmp_dir_name,
                 save_file_path=result_file_path,
+                explode_tags=explode_tags,
             )
 
         return result_file_path
@@ -963,12 +972,19 @@ class PbfFileHandler:
         """)
 
     def _concatenate_results_to_geoparquet(
-        self, parsed_data: ParsedOSMFeatures, tmp_dir_name: str, save_file_path: Path
+        self,
+        parsed_data: ParsedOSMFeatures,
+        tmp_dir_name: str,
+        save_file_path: Path,
+        explode_tags: bool,
     ) -> None:
         import geoarrow.pyarrow as ga
         from geoarrow.pyarrow import io
 
-        select_clauses = [*self._generate_osm_tags_sql_select(parsed_data), "geometry"]
+        select_clauses = [
+            *self._generate_osm_tags_sql_select(parsed_data, explode_tags),
+            "geometry",
+        ]
 
         node_select_clauses = ["'node/' || id as feature_id", *select_clauses]
         way_select_clauses = ["'way/' || id as feature_id", *select_clauses]
@@ -1099,7 +1115,9 @@ class PbfFileHandler:
             joined_parquet_table, save_file_path, primary_geometry_column=GEOMETRY_COLUMN
         )
 
-    def _generate_osm_tags_sql_select(self, parsed_data: ParsedOSMFeatures) -> list[str]:
+    def _generate_osm_tags_sql_select(
+        self, parsed_data: ParsedOSMFeatures, explode_tags: bool
+    ) -> list[str]:
         """Prepare features filter clauses based on tags filter."""
         osm_tag_keys_select_clauses = []
 
