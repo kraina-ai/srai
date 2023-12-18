@@ -214,7 +214,7 @@ def test_pbf_handler(
     handler = PbfFileHandler(tags_filter=query)
     features_gdf = handler.get_features_gdf(
         file_paths=[Path(__file__).parent / "test_files" / test_file_name],
-        explode_tags=False,
+        explode_tags=True,
         ignore_cache=True,
     )
     assert (
@@ -234,7 +234,7 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
     )
     features_gdf = handler.get_features_gdf(
         file_paths=[Path(__file__).parent / "test_files" / file_name],
-        explode_tags=False,
+        explode_tags=True,
         ignore_cache=True,
     )
     assert len(features_gdf) == 0
