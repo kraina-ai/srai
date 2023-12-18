@@ -328,6 +328,8 @@ class PbfFileHandler:
         self, elements: "duckdb.DuckDBPyRelation", tmp_dir_name: str
     ) -> ConvertedOSMParquetFiles:
         sql_filter = self._generate_osm_tags_sql_filter()
+        filtered_tags_clause = self._generate_filtered_tags_clause()
+
         is_intersecting = self.geometry_filter is not None
 
         nodes_prepared_ids_path = Path(tmp_dir_name) / "nodes_prepared_ids"
@@ -341,7 +343,11 @@ class PbfFileHandler:
         # - select all with lat and lon not empty
         nodes_valid_with_tags = self._sql_to_parquet_file(
             sql_query=f"""
-            SELECT id, tags, lon, lat
+            SELECT
+                id,
+                {filtered_tags_clause},
+                lon,
+                lat
             FROM ({elements.sql_query()})
             WHERE kind = 'node'
             AND lat IS NOT NULL AND lon IS NOT NULL
@@ -395,9 +401,14 @@ class PbfFileHandler:
             WHERE kind = 'way' AND len(refs) >= 2
         """).to_view("ways", replace=True)
         ways_all_with_tags = self._sql_to_parquet_file(
-            sql_query="""
+            sql_query=f"""
+            WITH filtered_tags AS (
+                SELECT id, {filtered_tags_clause}
+                FROM ways w
+                WHERE tags IS NOT NULL AND cardinality(tags) > 0
+            )
             SELECT id, tags
-            FROM ways w
+            FROM filtered_tags
             WHERE tags IS NOT NULL AND cardinality(tags) > 0
             """,
             file_path=Path(tmp_dir_name) / "ways_all_with_tags",
@@ -471,9 +482,14 @@ class PbfFileHandler:
             AND list_has_any(map_extract(tags, 'type'), ['boundary', 'multipolygon'])
         """).to_view("relations", replace=True)
         relations_all_with_tags = self._sql_to_parquet_file(
-            sql_query="""
+            sql_query=f"""
+            WITH filtered_tags AS (
+                SELECT id, {filtered_tags_clause}
+                FROM relations r
+                WHERE tags IS NOT NULL AND cardinality(tags) > 0
+            )
             SELECT id, tags
-            FROM relations r
+            FROM filtered_tags
             WHERE tags IS NOT NULL AND cardinality(tags) > 0
             """,
             file_path=Path(tmp_dir_name) / "relations_all_with_tags",
@@ -629,6 +645,33 @@ class PbfFileHandler:
                     )
 
         return " OR ".join(filter_clauses)
+
+    def _generate_filtered_tags_clause(self) -> str:
+        """Prepare filtered tags clause by removing tags commonly ignored by OGR."""
+        tags_to_ignore = [
+            "created_by",
+            "converted_by",
+            "source",
+            "time",
+            "ele",
+            "note",
+            "todo",
+            "fixme",
+            "FIXME",
+            "openGeoDB:",
+        ]
+        escaped_tags_to_ignore = [f"'{tag}'" for tag in tags_to_ignore]
+
+        return f"""
+        map_from_entries(
+            [
+                tag_entry
+                for tag_entry in map_entries(tags)
+                if not tag_entry.key in ({','.join(escaped_tags_to_ignore)})
+                and not starts_with(tag_entry.key, 'openGeoDB:')
+            ]
+        ) as tags
+        """
 
     def _sql_escape(self, value: str) -> str:
         """Escape value for SQL query."""
