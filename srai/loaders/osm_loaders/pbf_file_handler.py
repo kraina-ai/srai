@@ -109,7 +109,10 @@ class PbfFileHandler:
         self.rows_per_bucket = 1_000_000
 
     def get_features_gdf(
-        self, file_paths: Sequence[Union[str, "os.PathLike[str]"]], ignore_cache: bool = False
+        self,
+        file_paths: Sequence[Union[str, "os.PathLike[str]"]],
+        explode_tags: bool = True,
+        ignore_cache: bool = False,
     ) -> gpd.GeoDataFrame:
         """
         Get features GeoDataFrame from a list of PBF files.
@@ -122,6 +125,8 @@ class PbfFileHandler:
         Args:
             file_paths (Sequence[Union[str, os.PathLike[str]]]): List of paths to `*.osm.pbf`
                 files to be parsed.
+            explode_tags (bool, optional): Whether to split tags into columns based on OSM tag keys.
+                Defaults to True.
             ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
@@ -133,7 +138,9 @@ class PbfFileHandler:
 
         parsed_geoparquet_files = []
         for file_path in file_paths:
-            parsed_geoparquet_file = self.convert_pbf_to_gpq(file_path, ignore_cache=ignore_cache)
+            parsed_geoparquet_file = self.convert_pbf_to_gpq(
+                file_path, explode_tags=explode_tags, ignore_cache=ignore_cache
+            )
             parsed_geoparquet_files.append(parsed_geoparquet_file)
 
         parquet_tables = [
@@ -142,7 +149,7 @@ class PbfFileHandler:
         ]
         joined_parquet_table: pa.Table = pa.concat_tables(parquet_tables)
         gdf_parquet = gpd.GeoDataFrame(
-            data=joined_parquet_table.drop(GEOMETRY_COLUMN).to_pandas(),
+            data=joined_parquet_table.drop(GEOMETRY_COLUMN).to_pandas(maps_as_pydicts="strict"),
             geometry=ga.to_geopandas(joined_parquet_table.column(GEOMETRY_COLUMN)),
         ).set_index(FEATURES_INDEX)
 
@@ -163,8 +170,8 @@ class PbfFileHandler:
             result_file_path (Union[str, os.PathLike[str]], optional): Where to save
                 the geoparquet file. If not provided, will be generated based on hashes
                 from provided tags filter and geometry filter. Defaults to None.
-            explode_tags (bool, optional): Whether to split tags into columns based on keys.
-                Defaults to False.
+            explode_tags (bool, optional): Whether to split tags into columns based on OSM tag keys.
+                Defaults to True.
             ignore_cache (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
@@ -865,7 +872,7 @@ class PbfFileHandler:
                     required_ways_with_linestrings w
             )
             SELECT id, tags, geometry FROM proper_geometries
-            """)
+        """)
         ways_parquet = self._save_parquet_file_with_geometry(
             relation=ways_with_proper_geometry,
             file_path=Path(tmp_dir_name) / "filtered_ways_with_geometry",
@@ -1001,7 +1008,7 @@ class PbfFileHandler:
             FROM ({parsed_data.relations.sql_query()}) r
         """)
 
-        grouped_features = self._parse_features_relation_to_groups(unioned_features)
+        grouped_features = self._parse_features_relation_to_groups(unioned_features, explode_tags)
 
         valid_features_full_relation = self.connection.sql(f"""
             SELECT * FROM ({grouped_features.sql_query()})
@@ -1121,7 +1128,10 @@ class PbfFileHandler:
         """Prepare features filter clauses based on tags filter."""
         osm_tag_keys_select_clauses = []
 
-        if not self.merged_tags_filter:
+        # TODO: elif keep other tags
+        if not self.merged_tags_filter and not explode_tags:
+            osm_tag_keys_select_clauses = ["tags"]
+        elif not self.merged_tags_filter and explode_tags:
             osm_tag_keys = set()
             for elements in (
                 parsed_data.nodes,
@@ -1129,16 +1139,41 @@ class PbfFileHandler:
                 parsed_data.relations,
             ):
                 found_tag_keys = [row[0] for row in self.connection.sql(f"""
-                    SELECT DISTINCT UNNEST(map_keys(tags)) tag_key
-                    FROM ({elements.sql_query()})
+                        SELECT DISTINCT UNNEST(map_keys(tags)) tag_key
+                        FROM ({elements.sql_query()})
                 """).fetchall()]
                 osm_tag_keys.update(found_tag_keys)
             osm_tag_keys_select_clauses = [
                 f"list_extract(map_extract(tags, '{osm_tag_key}'), 1) as \"{osm_tag_key}\""
                 for osm_tag_key in sorted(list(osm_tag_keys))
             ]
-        # TODO: elif keep other tags
-        else:
+        elif self.merged_tags_filter and not explode_tags:
+            filter_tag_clauses = []
+            for filter_tag_key, filter_tag_value in self.merged_tags_filter.items():
+                if isinstance(filter_tag_value, bool) and filter_tag_value:
+                    filter_tag_clauses.append(f"tag_entry.key = '{filter_tag_key}'")
+                elif isinstance(filter_tag_value, str):
+                    escaped_value = self._sql_escape(filter_tag_value)
+                    filter_tag_clauses.append(
+                        f"(tag_entry.key = '{filter_tag_key}' AND tag_entry.value ="
+                        f" '{escaped_value}')"
+                    )
+                elif isinstance(filter_tag_value, list) and filter_tag_value:
+                    values_list = [f"'{self._sql_escape(value)}'" for value in filter_tag_value]
+                    filter_tag_clauses.append(
+                        f"(tag_entry.key = '{filter_tag_key}' AND tag_entry.value IN"
+                        f" ({', '.join(values_list)}))"
+                    )
+            osm_tag_keys_select_clauses = [f"""
+                map_from_entries(
+                    [
+                        tag_entry
+                        for tag_entry in map_entries(tags)
+                        if {" OR ".join(filter_tag_clauses)}
+                    ]
+                ) as tags
+            """]
+        elif self.merged_tags_filter and explode_tags:
             for filter_tag_key, filter_tag_value in self.merged_tags_filter.items():
                 if isinstance(filter_tag_value, bool) and filter_tag_value:
                     osm_tag_keys_select_clauses.append(
@@ -1180,6 +1215,7 @@ class PbfFileHandler:
     def _parse_features_relation_to_groups(
         self,
         features_relation: "duckdb.DuckDBPyRelation",
+        explode_tags: bool,
     ) -> "duckdb.DuckDBPyRelation":
         """
         Optionally group raw OSM features into groups defined in `GroupedOsmTagsFilter`.
@@ -1192,13 +1228,19 @@ class PbfFileHandler:
 
         Args:
             features_relation (duckdb.DuckDBPyRelation): Generated features from the loader.
+            explode_tags (bool, optional): Whether to split tags into columns based on OSM tag keys.
+                Defaults to True.
 
         Returns:
             duckdb.DuckDBPyRelation: Parsed features_relation.
         """
-        if self.tags_filter and is_expected_type(self.tags_filter, GroupedOsmTagsFilter):
-            grouped_tags_filter = cast(GroupedOsmTagsFilter, self.tags_filter)
+        if not self.tags_filter or not is_expected_type(self.tags_filter, GroupedOsmTagsFilter):
+            return features_relation
 
+        grouped_features_relation: "duckdb.DuckDBPyRelation"
+        grouped_tags_filter = cast(GroupedOsmTagsFilter, self.tags_filter)
+
+        if explode_tags:
             case_clauses = []
             for group_name in sorted(grouped_tags_filter.keys()):
                 osm_filter = grouped_tags_filter[group_name]
@@ -1225,9 +1267,53 @@ class PbfFileHandler:
                 case_clauses.append(case_clause)
 
             joined_case_clauses = ", ".join(case_clauses)
-            features_relation = self.connection.sql(f"""
+            grouped_features_relation = self.connection.sql(f"""
                 SELECT feature_id, {joined_case_clauses}, geometry
                 FROM ({features_relation.sql_query()})
             """)
+        else:
+            case_clauses = []
+            group_names = sorted(grouped_tags_filter.keys())
+            for group_name in group_names:
+                osm_filter = grouped_tags_filter[group_name]
+                case_when_clauses = []
+                for osm_tag_key, osm_tag_value in osm_filter.items():
+                    element_clause = f"element_at(tags, '{osm_tag_key}')[1]"
+                    if isinstance(osm_tag_value, bool) and osm_tag_value:
+                        case_when_clauses.append(
+                            f"WHEN {element_clause} IS NOT NULL THEN '{osm_tag_key}=' ||"
+                            f" {element_clause}"
+                        )
+                    elif isinstance(osm_tag_value, str):
+                        escaped_value = self._sql_escape(osm_tag_value)
+                        case_when_clauses.append(
+                            f"WHEN {element_clause} = '{escaped_value}' THEN '{osm_tag_key}=' ||"
+                            f" {element_clause}"
+                        )
+                    elif isinstance(osm_tag_value, list) and osm_tag_value:
+                        values_list = [f"'{self._sql_escape(value)}'" for value in osm_tag_value]
+                        case_when_clauses.append(
+                            f"WHEN {element_clause} IN ({', '.join(values_list)}) THEN"
+                            f" '{osm_tag_key}=' || {element_clause}"
+                        )
+                case_clause = f'CASE {" ".join(case_when_clauses)} END'
+                case_clauses.append(case_clause)
 
-        return features_relation
+            group_names_as_sql_strings = [f"'{group_name}'" for group_name in group_names]
+            groups_map = (
+                f"map([{', '.join(group_names_as_sql_strings)}], [{', '.join(case_clauses)}])"
+            )
+            non_null_groups_map = f"""map_from_entries(
+                [
+                    tag_entry
+                    for tag_entry in map_entries({groups_map})
+                    if tag_entry.value IS NOT NULL
+                ]
+            ) as tags"""
+
+            grouped_features_relation = self.connection.sql(f"""
+                SELECT feature_id, {non_null_groups_map}, geometry
+                FROM ({features_relation.sql_query()})
+            """)
+
+        return grouped_features_relation
