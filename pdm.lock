@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:d08cb43ad06f3d6fdd08bbe6e5d7f6c51991b67074e98a9c3deaded348a0e328"
+content_hash = "sha256:70637569f124e065d81cd7286537bc1afc53779dc3a79555e53ac893cfd4264e"
 
 [[package]]
 name = "aiohttp"
@@ -2860,6 +2860,17 @@ dependencies = [
 files = [
     {file = "pexpect-4.8.0-py2.py3-none-any.whl", hash = "sha256:0b48a55dcb3c05f3329815901ea4fc1537514d6ba867a152b581d69ae3710937"},
     {file = "pexpect-4.8.0.tar.gz", hash = "sha256:fc65a43959d153d0114afe13997d439c22823a27cefceb5ff35c2178c6784c0c"},
+]
+
+[[package]]
+name = "pghstore"
+version = "2.0.2"
+summary = "PostgreSQL hstore formatter"
+dependencies = [
+    "six",
+]
+files = [
+    {file = "pghstore-2.0.2.tar.gz", hash = "sha256:c6d152d454b6fea8ec13a46ff754b2c6ca76aebe752068d4f8d8f6a948dd5436"},
 ]
 
 [[package]]
