@@ -244,7 +244,7 @@ class OSMWayLoader(Loader):
                 gdf = gdf.assign(**{col: None})
             gdf = gdf.explode(col)
 
-        gdf["i"] = range(0, len(gdf))
+        gdf["i"] = range(len(gdf))
         gdf.set_index("i", append=True, inplace=True)
 
         return gdf
