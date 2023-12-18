@@ -76,12 +76,8 @@ def test_geometry_preparing(test_polygon: BaseGeometry):
     assert test_polygon.covered_by(prepared_polygon)
 
 
-@pytest.mark.parametrize(
-    "test_geometry", [Point(1, 1), LineString([(1, 1), (0, 1)])]
-)  # type: ignore
-@pytest.mark.parametrize(
-    "pbf_source", ["geofabrik", "openstreetmap_fr", "protomaps"]
-)  # type: ignore
+@pytest.mark.parametrize("test_geometry", [Point(1, 1), LineString([(1, 1), (0, 1)])])  # type: ignore
+@pytest.mark.parametrize("pbf_source", ["geofabrik", "openstreetmap_fr", "protomaps"])  # type: ignore
 def test_disallow_non_polygons(test_geometry: BaseGeometry, pbf_source: PbfSourceLiteral) -> None:
     """Test if `PbfFileDownloader` disallows non polygon geometries."""
     with pytest.raises(ValueError):
@@ -217,7 +213,9 @@ def test_pbf_handler(
     """Test proper files loading in `PbfFileHandler`."""
     handler = PbfFileHandler(tags_filter=query)
     features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / test_file_name], ignore_cache=True
+        file_paths=[Path(__file__).parent / "test_files" / test_file_name],
+        explode_tags=False,
+        ignore_cache=True,
     )
     assert (
         len(features_gdf) == expected_result_length
@@ -235,7 +233,9 @@ def test_pbf_handler_geometry_filtering():  # type: ignore
         tags_filter=HEX2VEC_FILTER, geometry_filter=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     )
     features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / file_name], ignore_cache=True
+        file_paths=[Path(__file__).parent / "test_files" / file_name],
+        explode_tags=False,
+        ignore_cache=True,
     )
     assert len(features_gdf) == 0
 
