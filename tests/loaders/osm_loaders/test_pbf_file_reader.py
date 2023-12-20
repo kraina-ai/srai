@@ -1,14 +1,16 @@
 """Tests for PbfFileReader."""
 
+import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import cast
+from typing import Optional, cast
 from unittest import TestCase
 
 import duckdb
 import geopandas as gpd
-import pghstore
 import pyogrio
 import pytest
+import six
 from parametrization import Parametrization as P
 from shapely import get_num_geometries, get_num_points, hausdorff_distance
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
@@ -99,6 +101,87 @@ def test_pbf_reader_geometry_filtering():  # type: ignore
     assert len(features_gdf) == 0
 
 
+# Copyright (C) 2011 by Hong Minhee <http://dahlia.kr/>,
+#                       Robert Kajic <http://github.com/kajic>
+# Copyright (C) 2020 by Salesforce.com, Inc
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+def parse_hstore_tags(tags: str) -> dict[str, Optional[str]]:
+    """
+    Parse hstore tags to python dict.
+
+    This function has been copied from pghstore library
+    https://github.com/heroku/pghstore/blob/main/src/pghstore/_native.py
+    since it can't be installed on Windows.
+    """
+    ESCAPE_RE = re.compile(r"\\(.)")
+
+    PAIR_RE = re.compile(
+        r'\s*(?:"(?P<kq>(?:[^\\"]|\\.)*)")\s*=>\s*'
+        r'(?:"(?P<vq>(?:[^\\"]|\\.)*)"|(?P<vn>NULL))'
+        r"\s*(?:(?P<ts>,)|$)",
+        re.IGNORECASE,
+    )
+
+    def _unescape(s: str) -> str:
+        return ESCAPE_RE.sub(r"\1", s)
+
+    def _parse(string: str, encoding: str = "utf-8") -> Iterable[tuple[str, Optional[str]]]:
+        if isinstance(string, six.binary_type):
+            string = string.decode(encoding)
+
+        string = string.strip()
+        offset = 0
+        term_sep = None
+        for match in PAIR_RE.finditer(string):
+            if match.start() > offset:
+                raise ValueError("malformed hstore value: position %d" % offset)
+
+            key = value = None
+            kq = match.group("kq")
+            if kq:
+                key = _unescape(kq)
+
+            if key is None:
+                raise ValueError("Malformed hstore value starting at position %d" % offset)
+
+            vq = match.group("vq")
+            if vq:
+                value = _unescape(vq)
+            elif match.group("vn"):
+                value = None
+            else:
+                raise ValueError("Malformed hstore value starting at position %d" % offset)
+
+            yield key, value
+
+            term_sep = match.group("ts")
+
+            offset = match.end()
+
+        if len(string) > offset or term_sep:
+            raise ValueError("malformed hstore value: position %d" % offset)
+
+    return dict(_parse(tags, encoding="utf-8"))
+
+
 def read_features_with_pyogrio(pbf_file: Path) -> gpd.GeoDataFrame:
     """Read features from *.osm.pbf file using pyogrio."""
     gdal_options = dict(
@@ -138,7 +221,7 @@ def read_features_with_pyogrio(pbf_file: Path) -> gpd.GeoDataFrame:
 
     final_gdf = gpd.pd.concat(gdfs)
     final_gdf = final_gdf[~final_gdf["all_tags"].isnull()]
-    final_gdf["tags"] = final_gdf["all_tags"].apply(pghstore.loads)
+    final_gdf["tags"] = final_gdf["all_tags"].apply(parse_hstore_tags)
     non_relations = ~final_gdf["feature_id"].str.startswith("relation/")
     relations = final_gdf["feature_id"].str.startswith("relation/")
     matching_relations = relations & final_gdf["tags"].apply(
