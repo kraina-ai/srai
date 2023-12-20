@@ -12,7 +12,7 @@ import warnings
 from collections.abc import Sequence
 from math import floor
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 import geopandas as gpd
 import pyarrow as pa
@@ -23,6 +23,11 @@ from srai._optional import import_optional_dependencies
 from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.geometry import get_geometry_hash
+from srai.loaders.osm_loaders._osm_way_polygon_features import (
+    OSM_WAY_POLYGON_CONFIG,
+    OsmWayPolygonConfig,
+    parse_dict_to_config_object,
+)
 from srai.loaders.osm_loaders.filters import (
     GroupedOsmTagsFilter,
     OsmTagsFilter,
@@ -50,179 +55,6 @@ class PbfFileHandler:
         2. https://duckdb.org/
         3. https://github.com/duckdb/duckdb_spatial
     """
-
-    AREA_KEYS_URL = "https://raw.githubusercontent.com/ideditor/id-area-keys/main/areaKeys.json"
-    AREA_KEYS_CONFIG = {
-        "addr:*": True,
-        "advertising": ["billboard"],
-        "aerialway": [
-            "cable_car",
-            "chair_lift",
-            "drag_lift",
-            "gondola",
-            "goods",
-            "j-bar",
-            "magic_carpet",
-            "mixed_lift",
-            "platter",
-            "rope_tow",
-            "t-bar",
-            "zip_line",
-        ],
-        "aeroway": ["jet_bridge", "parking_position", "runway", "taxiway"],
-        "allotments": True,
-        "amenity": ["bench", "weighbridge"],
-        "area:highway": True,
-        "attraction": ["dark_ride", "river_rafting", "summer_toboggan", "train", "water_slide"],
-        "bridge:support": True,
-        "building": True,
-        "building:part": True,
-        "cemetery": True,
-        "club": True,
-        "craft": True,
-        "demolished:building": True,
-        "disused:amenity": True,
-        "disused:railway": True,
-        "disused:shop": True,
-        "emergency": ["designated", "destination", "no", "official", "private", "yes"],
-        "golf": ["cartpath", "hole", "path"],
-        "healthcare": True,
-        "historic": True,
-        "indoor": ["corridor", "wall"],
-        "industrial": True,
-        "internet_access": True,
-        "junction": True,
-        "landuse": True,
-        "leisure": ["slipway", "track"],
-        "man_made": [
-            "yes",
-            "breakwater",
-            "carpet_hanger",
-            "crane",
-            "cutline",
-            "dyke",
-            "embankment",
-            "goods_conveyor",
-            "groyne",
-            "pier",
-            "pipeline",
-            "torii",
-            "video_wall",
-        ],
-        "military": ["trench"],
-        "natural": ["bay", "cliff", "coastline", "ridge", "strait", "tree_row", "valley"],
-        "office": True,
-        "piste:type": ["downhill", "hike", "ice_skate", "nordic", "skitour", "sled", "sleigh"],
-        "place": True,
-        "playground": [
-            "activitypanel",
-            "balancebeam",
-            "basketswing",
-            "bridge",
-            "climbingwall",
-            "hopscotch",
-            "horizontal_bar",
-            "seesaw",
-            "slide",
-            "structure",
-            "swing",
-            "tunnel_tube",
-            "water",
-            "zipwire",
-        ],
-        "police": True,
-        "polling_station": True,
-        "power": ["cable", "line", "minor_line"],
-        "public_transport": ["platform"],
-        "residential": True,
-        "seamark:type": True,
-        "shop": True,
-        "telecom": True,
-        "tourism": ["artwork", "attraction"],
-        "traffic_calming": [
-            "yes",
-            "bump",
-            "chicane",
-            "choker",
-            "cushion",
-            "dip",
-            "hump",
-            "island",
-            "mini_bumps",
-            "rumble_strip",
-        ],
-        "waterway": [
-            "canal",
-            "dam",
-            "ditch",
-            "drain",
-            "fish_pass",
-            "lock_gate",
-            "river",
-            "stream",
-            "tidal_channel",
-            "weir",
-        ],
-    }
-
-    # From https://github.com/Binnette/osm-polygon-features/blob/patch-1/polygon-features.json
-    POLYGON_FEATURES = [
-        {"key": "building", "polygon": "all"},
-        {
-            "key": "highway",
-            "polygon": "whitelist",
-            "values": ["services", "rest_area", "escape", "elevator"],
-        },
-        {
-            "key": "natural",
-            "polygon": "blacklist",
-            "values": ["no", "coastline", "cliff", "ridge", "arete", "tree_row"],
-        },
-        {"key": "landuse", "polygon": "all"},
-        {
-            "key": "waterway",
-            "polygon": "whitelist",
-            "values": ["riverbank", "dock", "boatyard", "dam"],
-        },
-        {"key": "amenity", "polygon": "all"},
-        {"key": "leisure", "polygon": "all"},
-        {
-            "key": "barrier",
-            "polygon": "whitelist",
-            "values": ["city_wall", "ditch", "hedge", "retaining_wall", "wall", "spikes"],
-        },
-        {
-            "key": "railway",
-            "polygon": "whitelist",
-            "values": ["station", "turntable", "roundhouse", "platform"],
-        },
-        {"key": "area", "polygon": "all"},
-        {"key": "boundary", "polygon": "all"},
-        {
-            "key": "man_made",
-            "polygon": "blacklist",
-            "values": ["no", "cutline", "embankment", "pipeline"],
-        },
-        {
-            "key": "power",
-            "polygon": "whitelist",
-            "values": ["plant", "substation", "generator", "transformer"],
-        },
-        {"key": "place", "polygon": "all"},
-        {"key": "shop", "polygon": "all"},
-        {"key": "aeroway", "polygon": "blacklist", "values": ["no", "taxiway"]},
-        {"key": "tourism", "polygon": "all"},
-        {"key": "historic", "polygon": "all"},
-        {"key": "public_transport", "polygon": "all"},
-        {"key": "office", "polygon": "all"},
-        {"key": "building:part", "polygon": "all"},
-        {"key": "military", "polygon": "all"},
-        {"key": "ruins", "polygon": "all"},
-        {"key": "area:highway", "polygon": "all"},
-        {"key": "craft", "polygon": "all"},
-        {"key": "golf", "polygon": "all"},
-        {"key": "indoor", "polygon": "all"},
-    ]
 
     class ConvertedOSMParquetFiles(NamedTuple):
         """List of parquet files read from the `*.osm.pbf` file."""
@@ -252,6 +84,9 @@ class PbfFileHandler:
         tags_filter: Optional[Union[OsmTagsFilter, GroupedOsmTagsFilter]] = None,
         geometry_filter: Optional[BaseGeometry] = None,
         working_directory: Union[str, Path] = "files",
+        osm_way_polygon_features_config: Union[
+            OsmWayPolygonConfig, dict[str, Any]
+        ] = OSM_WAY_POLYGON_CONFIG,
     ) -> None:
         """
         Initialize PbfFileHandler.
@@ -271,6 +106,10 @@ class PbfFileHandler:
                 intersecting OSM objects. Defaults to None.
             working_directory (Union[str, Path], optional): Directory where to save
                 the parsed `*.parquet` files. Defaults to "files".
+            osm_way_polygon_features_config (Union[OsmWayPolygonConfig, dict[str, Any]], optional):
+                Config used to determine which closed way features are polygons.
+                Modifications to this config left are left for experienced OSM users.
+                Defaults to predefined OSM_WAY_POLYGON_FEATURES_CONFIG.
         """
         import_optional_dependencies(dependency_group="osm", modules=["duckdb"])
         self.tags_filter = tags_filter
@@ -280,6 +119,11 @@ class PbfFileHandler:
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self.connection: duckdb.DuckDBPyConnection = None
         self.rows_per_bucket = 1_000_000
+        self.osm_way_polygon_features_config = (
+            osm_way_polygon_features_config
+            if isinstance(osm_way_polygon_features_config, OsmWayPolygonConfig)
+            else parse_dict_to_config_object(osm_way_polygon_features_config)
+        )
 
     def get_features_gdf(
         self,
@@ -985,6 +829,34 @@ class PbfFileHandler:
         required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
+        osm_way_polygon_features_filter_clauses = [
+            "list_contains(map_keys(tags), 'area') AND list_extract(map_extract(tags, 'area'), 1) ="
+            " 'yes'"
+        ]
+
+        for osm_tag_key in self.osm_way_polygon_features_config.all:
+            osm_way_polygon_features_filter_clauses.append(
+                f"list_contains(map_keys(tags), '{osm_tag_key}')"
+            )
+
+        for osm_tag_key, osm_tag_values in self.osm_way_polygon_features_config.allowlist.items():
+            escaped_values = ",".join(
+                [f"'{self._sql_escape(osm_tag_value)}'" for osm_tag_value in osm_tag_values]
+            )
+            osm_way_polygon_features_filter_clauses.append(
+                f"list_contains(map_keys(tags), '{osm_tag_key}') AND list_has_any(map_extract(tags,"
+                f" '{osm_tag_key}'), [{escaped_values}])"
+            )
+
+        for osm_tag_key, osm_tag_values in self.osm_way_polygon_features_config.denylist.items():
+            escaped_values = ",".join(
+                [f"'{self._sql_escape(osm_tag_value)}'" for osm_tag_value in osm_tag_values]
+            )
+            osm_way_polygon_features_filter_clauses.append(
+                f"list_contains(map_keys(tags), '{osm_tag_key}') AND NOT"
+                f" list_has_any(map_extract(tags, '{osm_tag_key}'), [{escaped_values}])"
+            )
+
         ways_with_proper_geometry = self.connection.sql(f"""
             WITH required_ways_with_linestrings AS (
                 SELECT
@@ -992,7 +864,7 @@ class PbfFileHandler:
                     w.tags,
                     w_l.linestring,
                     -- Filter below is based on `_is_closed_way_a_polygon` function from OSMnx
-                    -- Filter values taken from https://wiki.openstreetmap.org/wiki/Overpass_turbo/Polygon_Features
+                    -- Filter values are built dynamically from a config.
                     (
                         -- if first and last nodes are the same
                         ST_Equals(linestring[1]::POINT_2D, linestring[-1]::POINT_2D)
@@ -1003,73 +875,7 @@ class PbfFileHandler:
                             list_contains(map_keys(tags), 'area')
                             AND list_extract(map_extract(tags, 'area'), 1) = 'no'
                         )
-                        AND (
-                            -- if all features with that key should be polygons -> Polygon
-                            list_has_any(map_keys(tags), [
-                                'amenity', 'area', 'area:highway', 'boundary',
-                                'building', 'building:part', 'craft', 'golf',
-                                'historic', 'indoor', 'landuse', 'leisure',
-                                'military', 'office', 'place', 'public_transport',
-                                'ruins', 'shop', 'tourism'
-                            ])
-                            -- if the value for that key in the element
-                            -- is in the passlist -> Polygon
-                            OR (
-                                list_contains(map_keys(tags), 'barrier')
-                                AND list_has_any(
-                                    map_extract(tags, 'barrier'),
-                                    ['city_wall', 'ditch', 'hedge', 'retaining_wall', 'spikes']
-                                )
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'highway')
-                                AND list_has_any(
-                                    map_extract(tags, 'highway'),
-                                    ['services', 'rest_area', 'escape', 'elevator']
-                                )
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'power')
-                                AND list_has_any(
-                                    map_extract(tags, 'power'),
-                                    ['plant', 'substation', 'generator', 'transformer']
-                                )
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'railway')
-                                AND list_has_any(
-                                    map_extract(tags, 'railway'),
-                                    ['station', 'turntable', 'roundhouse', 'platform']
-                                )
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'waterway')
-                                AND list_has_any(
-                                    map_extract(tags, 'waterway'),
-                                    ['riverbank', 'dock', 'boatyard', 'dam']
-                                )
-                            )
-                            -- if the value for that key in the element
-                            -- is not in the blocklist -> Polygon
-                            OR (
-                                list_contains(map_keys(tags), 'aeroway')
-                                AND NOT list_has_any(map_extract(tags, 'aeroway'), ['taxiway'])
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'man_made')
-                                AND NOT list_has_any(
-                                    map_extract(tags, 'man_made'),
-                                    ['cutline', 'embankment', 'pipeline']
-                                )
-                            )
-                            OR (
-                                list_contains(map_keys(tags), 'natural')
-                                AND NOT list_has_any(
-                                    map_extract(tags, 'natural'),
-                                    ['coastline', 'cliff', 'ridge', 'arete', 'tree_row']
-                                )
-                            )
-                        )
+                        AND ({' OR '.join(osm_way_polygon_features_filter_clauses)})
                     ) AS is_polygon
                 FROM ({required_ways_with_linestrings.sql_query()}) w_l
                 SEMI JOIN ({osm_parquet_files.ways_filtered_ids.sql_query()}) fw ON w_l.id = fw.id
