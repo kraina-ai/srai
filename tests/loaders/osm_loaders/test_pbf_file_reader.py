@@ -273,12 +273,12 @@ def test_gdal_parity(pbf_file_name: str, pbf_file_download_url: str) -> None:
         )
     ]
 
-    assert not len(
-        non_relations_missing_in_duckdb
+    assert (
+        not non_relations_missing_in_duckdb
     ), f"Missing non relation features in PbfFileReader ({non_relations_missing_in_duckdb})"
 
-    assert not len(
-        valid_relations_missing_in_duckdb
+    assert (
+        not valid_relations_missing_in_duckdb
     ), f"Missing valid relation features in PbfFileReader ({valid_relations_missing_in_duckdb})"
 
     for gdal_row_index in gdal_index:
@@ -289,8 +289,8 @@ def test_gdal_parity(pbf_file_name: str, pbf_file_download_url: str) -> None:
 
         # Check tags
         tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(gdal_tags.keys())
-        assert not len(
-            tags_keys_difference
+        assert (
+            not tags_keys_difference
         ), f"Tags keys aren't equal. ({gdal_row_index}, {tags_keys_difference})"
         ut.assertDictEqual(
             duckdb_tags,
