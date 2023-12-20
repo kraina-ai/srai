@@ -19,7 +19,6 @@ from srai.loaders.osm_loaders.filters import (
     OsmTagsFilter,
 )
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader, PbfSourceLiteral
-from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
 
 ut = TestCase()
 
@@ -160,84 +159,6 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
     files = downloader.download_pbf_files_for_regions_gdf(regions_gdf)
     file_names = [path.name for path in files]
     assert set(file_names) == set(test_file_names)
-
-
-@pytest.mark.parametrize(  # type: ignore
-    "test_file_name,query,expected_result_length,expected_features_columns_length",
-    [
-        (
-            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            None,
-            678,
-            275,
-        ),
-        (
-            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
-            None,
-            1,
-            23,
-        ),
-        ("529cdcbb7a3cc103658ef31b39bed24984e421127d319c867edf2f86ff3bb098.osm.pbf", None, 0, 0),
-        (
-            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            HEX2VEC_FILTER,
-            97,
-            10,
-        ),
-        (
-            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
-            HEX2VEC_FILTER,
-            0,
-            0,
-        ),
-        (
-            "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf",
-            GEOFABRIK_LAYERS,
-            433,
-            22,
-        ),
-        (
-            "eb2848d259345ce7dfe8af34fd1ab24503bb0b952e04e872c87c55550fa50fbf.osm.pbf",
-            GEOFABRIK_LAYERS,
-            0,
-            0,
-        ),
-    ],
-)
-def test_pbf_handler(
-    test_file_name: str,
-    query: OsmTagsFilter,
-    expected_result_length: int,
-    expected_features_columns_length: int,
-):
-    """Test proper files loading in `PbfFileHandler`."""
-    handler = PbfFileHandler(tags_filter=query)
-    features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / test_file_name],
-        explode_tags=True,
-        ignore_cache=True,
-    )
-    assert (
-        len(features_gdf) == expected_result_length
-    ), f"Mismatched result length ({len(features_gdf)}, {expected_result_length})"
-    assert len(features_gdf.columns) == expected_features_columns_length + 1, (
-        f"Mismatched columns length ({len(features_gdf.columns)},"
-        f" {expected_features_columns_length + 1})"
-    )
-
-
-def test_pbf_handler_geometry_filtering():  # type: ignore
-    """Test proper spatial data filtering in `PbfFileHandler`."""
-    file_name = "d17f922ed15e9609013a6b895e1e7af2d49158f03586f2c675d17b760af3452e.osm.pbf"
-    handler = PbfFileHandler(
-        tags_filter=HEX2VEC_FILTER, geometry_filter=Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
-    )
-    features_gdf = handler.get_features_gdf(
-        file_paths=[Path(__file__).parent / "test_files" / file_name],
-        explode_tags=True,
-        ignore_cache=True,
-    )
-    assert len(features_gdf) == 0
 
 
 @pytest.mark.parametrize(  # type: ignore

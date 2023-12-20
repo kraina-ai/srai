@@ -24,7 +24,7 @@ from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.geometry import get_geometry_hash
 from srai.loaders.osm_loaders._osm_way_polygon_features import (
-    OSM_WAY_POLYGON_CONFIG,
+    OSM_WAY_POLYGON_CONFIG_RAW,
     OsmWayPolygonConfig,
     parse_dict_to_config_object,
 )
@@ -40,12 +40,12 @@ if TYPE_CHECKING:  # pragma: no cover
     import duckdb
 
 
-class PbfFileHandler:
+class PbfFileReader:
     """
-    PbfFileHandler.
+    PbfFileReader.
 
-    PBF(Protocolbuffer Binary Format)[1] file handler is a dedicated `*.osm.pbf` files reader
-    based on DuckDB[2] and its spatial extension[3].
+    PBF(Protocolbuffer Binary Format)[1] file reader is a dedicated `*.osm.pbf` files reader
+    class based on DuckDB[2] and its spatial extension[3].
 
     Handler can filter out OSM features based on tags filter and geometry filter
     to limit the result.
@@ -86,10 +86,10 @@ class PbfFileHandler:
         working_directory: Union[str, Path] = "files",
         osm_way_polygon_features_config: Union[
             OsmWayPolygonConfig, dict[str, Any]
-        ] = OSM_WAY_POLYGON_CONFIG,
+        ] = OSM_WAY_POLYGON_CONFIG_RAW,
     ) -> None:
         """
-        Initialize PbfFileHandler.
+        Initialize PbfFileReader.
 
         Args:
             tags_filter (OsmTagsFilter, optional): A dictionary
@@ -119,7 +119,7 @@ class PbfFileHandler:
         self.working_directory.mkdir(parents=True, exist_ok=True)
         self.connection: duckdb.DuckDBPyConnection = None
         self.rows_per_bucket = 1_000_000
-        self.osm_way_polygon_features_config = (
+        self.osm_way_polygon_features_config: OsmWayPolygonConfig = (
             osm_way_polygon_features_config
             if isinstance(osm_way_polygon_features_config, OsmWayPolygonConfig)
             else parse_dict_to_config_object(osm_way_polygon_features_config)
@@ -309,7 +309,7 @@ class PbfFileHandler:
             )
 
             self._concatenate_results_to_geoparquet(
-                PbfFileHandler.ParsedOSMFeatures(
+                PbfFileReader.ParsedOSMFeatures(
                     nodes=filtered_nodes_with_geometry,
                     ways=filtered_ways_with_proper_geometry,
                     relations=filtered_relations_with_geometry,
@@ -420,11 +420,11 @@ class PbfFileHandler:
         ways_all_with_tags = self._sql_to_parquet_file(
             sql_query=f"""
             WITH filtered_tags AS (
-                SELECT id, {filtered_tags_clause}
+                SELECT id, {filtered_tags_clause}, tags as raw_tags
                 FROM ways w
                 WHERE tags IS NOT NULL AND cardinality(tags) > 0
             )
-            SELECT id, tags
+            SELECT id, tags, raw_tags
             FROM filtered_tags
             WHERE tags IS NOT NULL AND cardinality(tags) > 0
             """,
@@ -616,7 +616,7 @@ class PbfFileHandler:
             nodes_prepared_ids_path, Path(tmp_dir_name) / "nodes_required_ids"
         )
 
-        return PbfFileHandler.ConvertedOSMParquetFiles(
+        return PbfFileReader.ConvertedOSMParquetFiles(
             nodes_valid_with_tags=nodes_valid_with_tags,
             nodes_required_ids=nodes_required_ids,
             nodes_filtered_ids=nodes_filtered_ids,
@@ -666,6 +666,7 @@ class PbfFileHandler:
     def _generate_filtered_tags_clause(self) -> str:
         """Prepare filtered tags clause by removing tags commonly ignored by OGR."""
         tags_to_ignore = [
+            "area",
             "created_by",
             "converted_by",
             "source",
@@ -830,13 +831,13 @@ class PbfFileHandler:
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
         osm_way_polygon_features_filter_clauses = [
-            "list_contains(map_keys(tags), 'area') AND list_extract(map_extract(tags, 'area'), 1) ="
-            " 'yes'"
+            "list_contains(map_keys(raw_tags), 'area') AND "
+            "list_extract(map_extract(raw_tags, 'area'), 1) = 'yes'"
         ]
 
         for osm_tag_key in self.osm_way_polygon_features_config.all:
             osm_way_polygon_features_filter_clauses.append(
-                f"list_contains(map_keys(tags), '{osm_tag_key}')"
+                f"list_contains(map_keys(raw_tags), '{osm_tag_key}')"
             )
 
         for osm_tag_key, osm_tag_values in self.osm_way_polygon_features_config.allowlist.items():
@@ -844,8 +845,8 @@ class PbfFileHandler:
                 [f"'{self._sql_escape(osm_tag_value)}'" for osm_tag_value in osm_tag_values]
             )
             osm_way_polygon_features_filter_clauses.append(
-                f"list_contains(map_keys(tags), '{osm_tag_key}') AND list_has_any(map_extract(tags,"
-                f" '{osm_tag_key}'), [{escaped_values}])"
+                f"list_contains(map_keys(raw_tags), '{osm_tag_key}') AND"
+                f" list_has_any(map_extract(raw_tags, '{osm_tag_key}'), [{escaped_values}])"
             )
 
         for osm_tag_key, osm_tag_values in self.osm_way_polygon_features_config.denylist.items():
@@ -853,8 +854,8 @@ class PbfFileHandler:
                 [f"'{self._sql_escape(osm_tag_value)}'" for osm_tag_value in osm_tag_values]
             )
             osm_way_polygon_features_filter_clauses.append(
-                f"list_contains(map_keys(tags), '{osm_tag_key}') AND NOT"
-                f" list_has_any(map_extract(tags, '{osm_tag_key}'), [{escaped_values}])"
+                f"list_contains(map_keys(raw_tags), '{osm_tag_key}') AND NOT"
+                f" list_has_any(map_extract(raw_tags, '{osm_tag_key}'), [{escaped_values}])"
             )
 
         ways_with_proper_geometry = self.connection.sql(f"""
@@ -869,11 +870,11 @@ class PbfFileHandler:
                         -- if first and last nodes are the same
                         ST_Equals(linestring[1]::POINT_2D, linestring[-1]::POINT_2D)
                         -- if the element doesn't have any tags leave it as a Linestring
-                        AND tags IS NOT NULL
+                        AND raw_tags IS NOT NULL
                         -- if the element is specifically tagged 'area':'no' -> LineString
                         AND NOT (
-                            list_contains(map_keys(tags), 'area')
-                            AND list_extract(map_extract(tags, 'area'), 1) = 'no'
+                            list_contains(map_keys(raw_tags), 'area')
+                            AND list_extract(map_extract(raw_tags, 'area'), 1) = 'no'
                         )
                         AND ({' OR '.join(osm_way_polygon_features_filter_clauses)})
                     ) AS is_polygon

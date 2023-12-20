@@ -3,6 +3,7 @@ OSM PBF Loader.
 
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
+
 import os
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -18,7 +19,7 @@ from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
 
 if TYPE_CHECKING:
-    from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+    from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
 
 
 class OSMPbfLoader(OSMLoader):
@@ -79,7 +80,7 @@ class OSMPbfLoader(OSMLoader):
 
         The loader will use provided `*.osm.pbf` file, or download extracts
         using `PbfFileDownloader`. Later it will parse and filter features from files
-        using `PbfFileHandler`. It will return a GeoDataFrame containing the `geometry` column
+        using `PbfFileReader`. It will return a GeoDataFrame containing the `geometry` column
         and columns for tag keys.
 
         Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
@@ -107,10 +108,10 @@ class OSMPbfLoader(OSMLoader):
         """
         area_wgs84 = self._prepare_area_gdf(area)
 
-        pbf_handler = self._get_pbf_file_handler(area_wgs84, tags)
+        pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
         pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
 
-        features_gdf = pbf_handler.get_features_gdf(file_paths=pbf_files_to_load)
+        features_gdf = pbf_reader.get_features_gdf(file_paths=pbf_files_to_load)
         result_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
@@ -148,12 +149,12 @@ class OSMPbfLoader(OSMLoader):
         """
         area_wgs84 = self._prepare_area_gdf(area)
 
-        pbf_handler = self._get_pbf_file_handler(area_wgs84, tags)
+        pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
         pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
 
         converted_files = []
         for downloaded_pbf_file in pbf_files_to_load:
-            geoparquet_file = pbf_handler.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
+            geoparquet_file = pbf_reader.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
             converted_files.append(geoparquet_file)
 
         return converted_files
@@ -175,10 +176,10 @@ class OSMPbfLoader(OSMLoader):
 
         return pbf_files_to_load
 
-    def _get_pbf_file_handler(
+    def _get_pbf_file_reader(
         self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
-    ) -> "PbfFileHandler":
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
+    ) -> "PbfFileReader":
+        from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
 
-        pbf_handler = PbfFileHandler(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
-        return pbf_handler
+        pbf_reader = PbfFileReader(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
+        return pbf_reader
