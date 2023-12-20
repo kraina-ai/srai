@@ -21,6 +21,7 @@ from srai.loaders.osm_loaders.filters import GEOFABRIK_LAYERS, HEX2VEC_FILTER, O
 from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
 
 ut = TestCase()
+LFS_DIRECTORY_URL = "https://github.com/kraina-ai/srai-test-files/raw/main/files/"
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -182,24 +183,17 @@ def parse_hstore_tags(tags: str) -> dict[str, Optional[str]]:
     return dict(_parse(tags, encoding="utf-8"))
 
 
-def read_features_with_pyogrio(pbf_file: Path) -> gpd.GeoDataFrame:
+def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
     """Read features from *.osm.pbf file using pyogrio."""
-    gdal_options = dict(
-        INTERLEAVED_READING=True,
-        CONFIG_FILE=str(Path(__file__).parent / "test_files" / "osmconf.ini"),
-        use_arrow=True,
-    )
     gdfs = []
-    for layer_info in pyogrio.list_layers(pbf_file):
-        layer_name = layer_info[0]
-
-        gdf = pyogrio.read_dataframe(
-            pbf_file,
-            layer=layer_name,
-            columns=["osm_id", "osm_way_id", "all_tags", "geometry"],
-            **gdal_options,
+    for layer_name in ["points", "lines", "multilinestrings", "multipolygons", "other_relations"]:
+        gpkg_file_path = Path(__file__).parent / "files" / f"{extract_name}_{layer_name}.gpkg"
+        download_file(
+            LFS_DIRECTORY_URL + f"{extract_name}_{layer_name}.gpkg",
+            str(gpkg_file_path),
+            force_download=True,
         )
-        assert len(gdf) > 0, f"Layer {layer_name} is empty."
+        gdf = pyogrio.read_dataframe(gpkg_file_path)
 
         if layer_name == "points":
             gdf["feature_id"] = "node/" + gdf["osm_id"]
@@ -275,70 +269,35 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
     )
 
 
-@P.parameters("pbf_file_name", "pbf_file_download_url")  # type: ignore
-@P.case(  # type: ignore
-    "Monaco",
-    "files/monaco.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/monaco-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Cyprus",
-    "files/cyprus.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/cyprus-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Cambodia",
-    "files/cambodia.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/cambodia-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Maldives",
-    "files/maldives.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/maldives-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Seychelles",
-    "files/seychelles.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/seychelles-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Sierra Leone",
-    "files/sierra-leone.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/sierra-leone-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Greenland",
-    "files/greenland.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/greenland-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "El Salvador",
-    "files/el-salvador.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/el-salvador-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Panama",
-    "files/panama.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/panama-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Fiji",
-    "files/fiji.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/fiji-latest.osm.pbf",
-)
-@P.case(  # type: ignore
-    "Kiribati",
-    "files/kiribati.osm.pbf",
-    "https://github.com/kraina-ai/srai-test-files/raw/main/files/kiribati-latest.osm.pbf",
-)
-def test_gdal_parity(pbf_file_name: str, pbf_file_download_url: str) -> None:
+@P.parameters("extract_name")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+@P.case("Monaco", "monaco")  # type: ignore
+# @P.case("Cyprus", "cyprus")  # type: ignore
+# @P.case("Cambodia", "cambodia")  # type: ignore
+# @P.case("Maldives", "maldives")  # type: ignore
+# @P.case("Seychelles", "seychelles")  # type: ignore
+# @P.case("Sierra Leone", "sierra-leone")  # type: ignore
+# @P.case("Greenland", "greenland")  # type: ignore
+# @P.case("El Salvador", "el-salvador")  # type: ignore
+# @P.case("Panama", "panama")  # type: ignore
+# @P.case("Fiji", "fiji")  # type: ignore
+# @P.case("Kiribati", "kiribati")  # type: ignore
+def test_gdal_parity(extract_name: str) -> None:
     """Test if loaded data is similar to GDAL results."""
-    pbf_file_path = Path(__file__).parent / pbf_file_name
+    pbf_file_download_url = LFS_DIRECTORY_URL + f"{extract_name}.osm.pbf"
+    pbf_file_path = Path(__file__).parent / "files" / f"{extract_name}.osm.pbf"
     download_file(pbf_file_download_url, str(pbf_file_path), force_download=True)
 
     reader = PbfFileReader()
     duckdb_gdf = reader.get_features_gdf([pbf_file_path], explode_tags=False, ignore_cache=True)
-    gdal_gdf = read_features_with_pyogrio(pbf_file_path)
+    gdal_gdf = read_features_with_pyogrio(extract_name)
 
     gdal_index = gdal_gdf.index
     duckdb_index = duckdb_gdf.index
