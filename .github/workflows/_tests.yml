@@ -35,6 +35,7 @@ jobs:
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
           Add-Path $env:CONDA\Library\bin
+          echo $env:PATH
           & ogr2ogr --help
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
