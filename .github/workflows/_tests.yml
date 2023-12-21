@@ -26,22 +26,24 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install GDAL (unix)
         if: matrix.os != 'windows-latest'
-        uses: Wandalen/wretry.action@master
+        uses: nick-fields/retry@v2
         with:
+          shell: bash
           command: |
             $CONDA/bin/conda install -c conda-forge gdal
             $CONDA/bin/ogr2ogr --version
-          attempt_limit: 100
-          attempt_delay: 10000
+          max_attempts: 100
+          timeout_seconds: 10
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
-        uses: Wandalen/wretry.action@master
+        uses: nick-fields/retry@v2
         with:
+          shell: powershell
           command: |
             & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
             & $env:CONDA\Library\bin\ogr2ogr.exe --version
-          attempt_limit: 100
-          attempt_delay: 10000
+          max_attempts: 100
+          timeout_seconds: 10
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
