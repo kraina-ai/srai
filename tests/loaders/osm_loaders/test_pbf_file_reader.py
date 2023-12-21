@@ -200,7 +200,6 @@ def transform_pbf_to_gpkg(extract_name: str, layer_name: str) -> Path:
         "-oo",
         f"CONFIG_FILE={config_file}",
     ]
-    print(args)
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
     _, err = p.communicate()
     rc = p.returncode
@@ -234,7 +233,6 @@ def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
             )
 
         gdfs.append(gdf)
-        print(layer_name, len(gdf))
 
     final_gdf = gpd.pd.concat(gdfs)
     final_gdf = final_gdf[~final_gdf["all_tags"].isnull()]
