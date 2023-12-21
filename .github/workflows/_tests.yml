@@ -61,8 +61,8 @@ jobs:
           key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
           restore-keys: |
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
-      - name: Run tests with tox
-        run: pdm run tox -e python${{ matrix.python-version }}
+      # - name: Run tests with tox
+      #   run: pdm run tox -e python${{ matrix.python-version }}
       - name: Run tests with tox (unix)
         if: matrix.os != 'windows-latest'
         run: |
