@@ -33,7 +33,7 @@ jobs:
             $CONDA/bin/conda install -c conda-forge gdal
             $CONDA/bin/ogr2ogr --version
           max_attempts: 100
-          timeout_minutes: 1
+          timeout_minutes: 10
           retry_on: error
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
@@ -44,7 +44,7 @@ jobs:
             & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
             & $env:CONDA\Library\bin\ogr2ogr.exe --version
           max_attempts: 100
-          timeout_minutes: 1
+          timeout_minutes: 10
           retry_on: error
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
