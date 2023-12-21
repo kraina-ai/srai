@@ -1,5 +1,6 @@
 """Tests for PbfFileReader."""
 
+import platform
 import re
 import subprocess
 from collections.abc import Iterable
@@ -191,7 +192,7 @@ def transform_pbf_to_gpkg(extract_name: str, layer_name: str) -> Path:
     output_file = Path(__file__).parent / "files" / f"{extract_name}_{layer_name}.gpkg"
     config_file = Path(__file__).parent / "test_files" / "osmconf.ini"
     args = [
-        "ogr2ogr",
+        "ogr2ogr" if platform.system() != "Windows" else "ogr2ogr.exe",
         str(output_file),
         str(input_file),
         layer_name,

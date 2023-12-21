@@ -28,17 +28,12 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           $CONDA/bin/conda install -c conda-forge gdal
-          PATH=$CONDA/bin:$PATH
-          ogr2ogr --version
+          $CONDA/bin/ogr2ogr --version
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
-          cd $env:CONDA\Library\bin
-          dir
-          $env:Path = "$env:CONDA\Library\bin;" + $env:Path
-          echo $env:PATH
-          & ogr2ogr.exe --version
+          & $env:CONDA\Library\bin\ogr2ogr.exe --version
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
@@ -61,8 +56,6 @@ jobs:
           key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
           restore-keys: |
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
-      # - name: Run tests with tox
-      #   run: pdm run tox -e python${{ matrix.python-version }}
       - name: Run tests with tox (unix)
         if: matrix.os != 'windows-latest'
         run: |
