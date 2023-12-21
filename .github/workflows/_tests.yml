@@ -63,6 +63,18 @@ jobs:
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
+      - name: Run tests with tox (unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          PATH=$CONDA/bin:$PATH
+          echo $PATH
+          pdm run tox -e python${{ matrix.python-version }}
+      - name: Run tests with tox (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          $env:Path = "$env:CONDA\Library\bin;" + $env:Path
+          echo $env:PATH
+          pdm run tox -e python${{ matrix.python-version }}
       - name: Upload coverage to Codecov
         uses: Wandalen/wretry.action@master
         with:
