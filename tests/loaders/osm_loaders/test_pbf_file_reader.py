@@ -4,6 +4,7 @@ import platform
 import re
 import subprocess
 from collections.abc import Iterable
+from distutils.spawn import find_executable
 from pathlib import Path
 from typing import Optional, cast
 from unittest import TestCase
@@ -291,6 +292,10 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
     )
 
 
+@pytest.mark.skipif(  # type: ignore
+    find_executable("ogr2ogr") is None,
+    reason="requires ogr2ogr (GDAL) to be installed and available",
+)
 @P.parameters("extract_name")  # type: ignore
 @P.case("Monaco", "monaco")  # type: ignore
 @P.case("Monaco", "monaco")  # type: ignore
