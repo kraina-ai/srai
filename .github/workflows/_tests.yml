@@ -29,14 +29,16 @@ jobs:
         run: |
           $CONDA/bin/conda install -c conda-forge gdal
           PATH=$CONDA/bin:$PATH
-          ogr2ogr --help
+          ogr2ogr --version
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
-          Add-Path $env:CONDA\Library\bin
+          $env:Path = '$env:CONDA\Library\bin;' + $env:Path
           echo $env:PATH
-          & ogr2ogr --help
+          & $env:Path = '$env:CONDA\Library\bin;' + $env:Path
+          echo $env:PATH
+          & ogr2ogr --version
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
