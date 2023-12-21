@@ -34,6 +34,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
+          cd $env:CONDA\Library\bin
+          dir
           $env:Path = '$($env:CONDA)\Library\bin;' + $env:Path
           echo $env:PATH
           & ogr2ogr --version
