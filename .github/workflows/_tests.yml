@@ -34,9 +34,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
-          $env:Path = '$env:CONDA\Library\bin;' + $env:Path
-          echo $env:PATH
-          & $env:Path = '$env:CONDA\Library\bin;' + $env:Path
+          $env:Path = '$($env:CONDA)\Library\bin;' + $env:Path
           echo $env:PATH
           & ogr2ogr --version
       - uses: pdm-project/setup-pdm@v3

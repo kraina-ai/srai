@@ -8,7 +8,6 @@ from typing import Optional, cast
 from unittest import TestCase
 
 import duckdb
-import gdaltools
 import geopandas as gpd
 import pyogrio
 import pytest
@@ -192,7 +191,7 @@ def transform_pbf_to_gpkg(extract_name: str, layer_name: str) -> Path:
     output_file = Path(__file__).parent / "files" / f"{extract_name}_{layer_name}.gpkg"
     config_file = Path(__file__).parent / "test_files" / "osmconf.ini"
     args = [
-        gdaltools.ogr2ogr()._get_command(),
+        "ogr2ogr",
         str(output_file),
         str(input_file),
         layer_name,
