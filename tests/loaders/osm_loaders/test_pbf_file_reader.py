@@ -18,6 +18,7 @@ from shapely import get_num_geometries, get_num_points, hausdorff_distance
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 
+from srai.constants import FEATURES_INDEX
 from srai.loaders.download import download_file
 from srai.loaders.osm_loaders.filters import GEOFABRIK_LAYERS, HEX2VEC_FILTER, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
@@ -216,13 +217,13 @@ def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
         gdf = pyogrio.read_dataframe(gpkg_file_path)
 
         if layer_name == "points":
-            gdf["feature_id"] = "node/" + gdf["osm_id"]
+            gdf[FEATURES_INDEX] = "node/" + gdf["osm_id"]
         elif layer_name == "lines":
-            gdf["feature_id"] = "way/" + gdf["osm_id"]
+            gdf[FEATURES_INDEX] = "way/" + gdf["osm_id"]
         elif layer_name in ("multilinestrings", "other_relations"):
-            gdf["feature_id"] = "relation/" + gdf["osm_id"]
+            gdf[FEATURES_INDEX] = "relation/" + gdf["osm_id"]
         elif layer_name == "multipolygons":
-            gdf["feature_id"] = gdf.apply(
+            gdf[FEATURES_INDEX] = gdf.apply(
                 lambda row: (
                     "relation/" + row["osm_id"]
                     if row["osm_id"] is not None
@@ -237,13 +238,13 @@ def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
     final_gdf = gpd.pd.concat(gdfs)
     final_gdf = final_gdf[~final_gdf["all_tags"].isnull()]
     final_gdf["tags"] = final_gdf["all_tags"].apply(parse_hstore_tags)
-    non_relations = ~final_gdf["feature_id"].str.startswith("relation/")
-    relations = final_gdf["feature_id"].str.startswith("relation/")
+    non_relations = ~final_gdf[FEATURES_INDEX].str.startswith("relation/")
+    relations = final_gdf[FEATURES_INDEX].str.startswith("relation/")
     matching_relations = relations & final_gdf["tags"].apply(
         lambda x: x.get("type") in ("boundary", "multipolygon")
     )
     final_gdf = final_gdf[non_relations | matching_relations]
-    return final_gdf[["feature_id", "tags", "geometry"]].set_index("feature_id")
+    return final_gdf[[FEATURES_INDEX, "tags", "geometry"]].set_index(FEATURES_INDEX)
 
 
 def iou_metric(geom_a: BaseGeometry, geom_b: BaseGeometry) -> float:
@@ -344,6 +345,8 @@ def test_gdal_parity(extract_name: str) -> None:
         not valid_relations_missing_in_duckdb
     ), f"Missing valid relation features in PbfFileReader ({valid_relations_missing_in_duckdb})"
 
+    invalid_features = []
+
     for gdal_row_index in gdal_index:
         duckdb_row = duckdb_gdf.loc[gdal_row_index]
         gdal_row = gdal_gdf.loc[gdal_row_index]
@@ -416,6 +419,7 @@ def test_gdal_parity(extract_name: str) -> None:
         )
 
         full_debug_dict = {
+            FEATURES_INDEX: gdal_row_index,
             "geometries_are_equal_and_the_same_type": geometries_are_equal_and_the_same_type,
             "geometries_are_equal_but_different_type": geometries_are_equal_but_different_type,
             "geometry_both_closed_or_not": geometry_both_closed_or_not,
@@ -434,6 +438,13 @@ def test_gdal_parity(extract_name: str) -> None:
             "gdal_geometry_points": gdal_geometry_points,
         }
 
-        assert (
-            geometries_are_equal_and_the_same_type or geometries_are_equal_but_different_type
-        ), f"{gdal_row_index} geometries aren't equal. ({full_debug_dict})"
+        if (
+            not geometries_are_equal_and_the_same_type
+            and not geometries_are_equal_but_different_type
+        ):
+            invalid_features.append(full_debug_dict)
+
+    assert not invalid_features, (
+        f"Geometries aren't equal - ({[t[FEATURES_INDEX] for t in invalid_features]}). Full debug"
+        f" output: ({invalid_features})"
+    )
