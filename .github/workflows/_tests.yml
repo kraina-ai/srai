@@ -30,12 +30,13 @@ jobs:
           $CONDA/bin/conda install -c conda-forge gdal
           $CONDA/bin/conda run gdalinfo --version
           $CONDA/bin/conda run python -c "from osgeo import gdal; print(gdal.__file__)"
+          ls -la $CONDA/lib/${{ matrix.python-version }}/site-packages/osgeo/
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          '& $env:CONDA\Scripts\conda.exe install -c conda-forge gdal'
-          '& $env:CONDA\Scripts\conda.exe run gdalinfo --version'
-          '& $env:CONDA\Scripts\conda.exe run -c "from osgeo import gdal; print(gdal.__file__)"'
+          '$env:CONDA\Scripts\conda.exe install -c conda-forge gdal'
+          '$env:CONDA\Scripts\conda.exe run gdalinfo --version'
+          '$env:CONDA\Scripts\conda.exe run -c "from osgeo import gdal; print(gdal.__file__)"'
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
