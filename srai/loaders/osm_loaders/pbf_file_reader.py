@@ -736,7 +736,7 @@ class PbfFileReader:
             SELECT
                 n.id,
                 n.tags,
-                ST_Point(n.lon, n.lat) geometry
+                ST_Point(round(n.lon, 7), round(n.lat, 7)) geometry
             FROM ({osm_parquet_files.nodes_valid_with_tags.sql_query()}) n
             SEMI JOIN ({osm_parquet_files.nodes_filtered_ids.sql_query()}) fn ON n.id = fn.id
         """)
@@ -754,7 +754,7 @@ class PbfFileReader:
         nodes_with_structs = self.connection.sql(f"""
             SELECT
                 n.id,
-                struct_pack(x := lon, y := lat)::POINT_2D point
+                struct_pack(x := round(n.lon, 7), y := round(n.lat, 7))::POINT_2D point
             FROM ({osm_parquet_files.nodes_valid_with_tags.sql_query()}) n
             SEMI JOIN ({osm_parquet_files.nodes_required_ids.sql_query()}) rn ON n.id = rn.id
         """)
@@ -802,15 +802,14 @@ class PbfFileReader:
             """)
 
             ways_with_linestrings = self.connection.sql(f"""
-                SELECT id, list(point)::LINESTRING_2D linestring
+                SELECT id, list(point ORDER BY ref_idx ASC)::LINESTRING_2D linestring
                 FROM (
-                    SELECT w.id, n.point
+                    SELECT w.id, n.point, w.ref_idx
                     FROM ({osm_parquet_files.ways_with_unnested_nodes_refs.sql_query()}) w
                     SEMI JOIN ({current_required_ways_ids_group_relation.sql_query()}) rw
                     ON w.id = rw.id
                     JOIN ({required_nodes_with_structs.sql_query()}) n
                     ON n.id = w.ref
-                    ORDER BY w.id, w.ref_idx
                 )
                 GROUP BY id
             """)
