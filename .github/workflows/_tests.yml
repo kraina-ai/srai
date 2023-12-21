@@ -30,7 +30,7 @@ jobs:
           $CONDA/bin/conda install -c conda-forge gdal
           $CONDA/bin/conda run gdalinfo --version
           $CONDA/bin/conda run python -c "from osgeo import gdal; print(gdal.__file__)"
-          ls -la $CONDA/lib/${{ matrix.python-version }}/site-packages/osgeo/
+          ls -la $CONDA/lib/python${{ matrix.python-version }}/site-packages/osgeo/
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
         run: |
