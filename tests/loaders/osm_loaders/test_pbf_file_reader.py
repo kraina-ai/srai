@@ -3,6 +3,7 @@
 import platform
 import re
 import subprocess
+import warnings
 from collections.abc import Iterable
 from distutils.spawn import find_executable
 from pathlib import Path
@@ -336,6 +337,10 @@ def test_gdal_parity(extract_name: str) -> None:
         )
     ]
 
+    invalid_relations_missing_in_duckdb = missing_in_duckdb.difference(
+        non_relations_missing_in_duckdb
+    ).difference(valid_relations_missing_in_duckdb)
+
     assert (
         not non_relations_missing_in_duckdb
     ), f"Missing non relation features in PbfFileReader ({non_relations_missing_in_duckdb})"
@@ -344,9 +349,18 @@ def test_gdal_parity(extract_name: str) -> None:
         not valid_relations_missing_in_duckdb
     ), f"Missing valid relation features in PbfFileReader ({valid_relations_missing_in_duckdb})"
 
+    warnings.warn(
+        "Invalid relations exists in OSM GDAL data extract"
+        f" ({invalid_relations_missing_in_duckdb})",
+        stacklevel=1,
+    )
+
     invalid_features = []
 
     for gdal_row_index in gdal_index:
+        if gdal_row_index in invalid_relations_missing_in_duckdb:
+            continue
+
         duckdb_row = duckdb_gdf.loc[gdal_row_index]
         gdal_row = gdal_gdf.loc[gdal_row_index]
         duckdb_tags = duckdb_row.tags
