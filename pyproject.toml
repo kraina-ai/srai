@@ -104,7 +104,6 @@ test = [
     "pytest-xdist",
     "pyogrio",
     "six",
-    "pygdaltools",
 ]
 # pdm add -dG visualization <library>
 visualization = ["keplergl", "matplotlib"]
