@@ -28,17 +28,14 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           $CONDA/bin/conda install -c conda-forge gdal
-          $CONDA/bin/conda run gdalinfo --version
-          $CONDA/bin/conda run which ogr2ogr
-          $CONDA/bin/conda run python -c "from osgeo import gdal; print(gdal.__file__)"
-          ls -la $CONDA/lib/python3.11/site-packages/osgeo/
+          PATH=$CONDA/bin:$PATH
+          ogr2ogr --help-general
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
         run: |
           & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
-          & $env:CONDA\Scripts\conda.exe run gdalinfo --version
-          & $env:CONDA\Scripts\conda.exe run where.exe ogr2ogr
-          & $env:CONDA\Scripts\conda.exe run python -c "from osgeo import gdal; print(gdal.__file__)"
+          $env:Path = '$env:CONDA\Library\bin;' + $env:Path
+          ogr2ogr --help-general
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
