@@ -29,7 +29,14 @@ jobs:
         run: $CONDA/bin/conda install -c conda-forge gdal
       - name: Install GDAL (windows)
         if: matrix.os == 'windows-latest'
-        run: '& $env:CONDA\bin\conda install -c conda-forge gdal'
+        run: |
+          cd $env:CONDA
+          dir
+          cd Scripts
+          dir
+      - name: Install GDAL (windows)
+        if: matrix.os == 'windows-latest'
+        run: '& $env:CONDA\Scripts\conda.exe install -c conda-forge gdal'
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
