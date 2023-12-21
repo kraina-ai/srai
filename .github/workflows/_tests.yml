@@ -28,7 +28,6 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: Wandalen/wretry.action@master
         with:
-          action: codecov/codecov-action@v3
           command: |
             $CONDA/bin/conda install -c conda-forge gdal
             $CONDA/bin/ogr2ogr --version
@@ -38,7 +37,6 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: Wandalen/wretry.action@master
         with:
-          action: codecov/codecov-action@v3
           command: |
             & $env:CONDA\Scripts\conda.exe install -c conda-forge gdal
             & $env:CONDA\Library\bin\ogr2ogr.exe --version
