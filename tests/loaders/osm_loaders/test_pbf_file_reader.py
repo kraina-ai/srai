@@ -1,12 +1,14 @@
 """Tests for PbfFileReader."""
 
 import re
+import subprocess
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Optional, cast
 from unittest import TestCase
 
 import duckdb
+import gdaltools
 import geopandas as gpd
 import pyogrio
 import pytest
@@ -183,16 +185,34 @@ def parse_hstore_tags(tags: str) -> dict[str, Optional[str]]:
     return dict(_parse(tags, encoding="utf-8"))
 
 
+def transform_pbf_to_gpkg(extract_name: str, layer_name: str) -> Path:
+    """Uses GDAL ogr2ogr to transform PBF file into GPKG."""
+    input_file = Path(__file__).parent / "files" / f"{extract_name}.osm.pbf"
+    output_file = Path(__file__).parent / "files" / f"{extract_name}_{layer_name}.gpkg"
+    config_file = Path(__file__).parent / "test_files" / "osmconf.ini"
+    args = [
+        gdaltools.ogr2ogr()._get_command(),
+        str(output_file),
+        str(input_file),
+        layer_name,
+        "-oo",
+        f"CONFIG_FILE={config_file}",
+    ]
+    print(args)
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1)
+    _, err = p.communicate()
+    rc = p.returncode
+    if rc > 0:
+        raise RuntimeError(rc, err)
+
+    return output_file
+
+
 def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
     """Read features from *.osm.pbf file using pyogrio."""
     gdfs = []
-    for layer_name in ["points", "lines", "multilinestrings", "multipolygons", "other_relations"]:
-        gpkg_file_path = Path(__file__).parent / "files" / f"{extract_name}_{layer_name}.gpkg"
-        download_file(
-            LFS_DIRECTORY_URL + f"{extract_name}_{layer_name}.gpkg",
-            str(gpkg_file_path),
-            force_download=True,
-        )
+    for layer_name in ("points", "lines", "multilinestrings", "multipolygons", "other_relations"):
+        gpkg_file_path = transform_pbf_to_gpkg(extract_name, layer_name)
         gdf = pyogrio.read_dataframe(gpkg_file_path)
 
         if layer_name == "points":
@@ -212,6 +232,7 @@ def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
             )
 
         gdfs.append(gdf)
+        print(layer_name, len(gdf))
 
     final_gdf = gpd.pd.concat(gdfs)
     final_gdf = final_gdf[~final_gdf["all_tags"].isnull()]
@@ -291,7 +312,7 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
 # @P.case("Kiribati", "kiribati")  # type: ignore
 def test_gdal_parity(extract_name: str) -> None:
     """Test if loaded data is similar to GDAL results."""
-    pbf_file_download_url = LFS_DIRECTORY_URL + f"{extract_name}.osm.pbf"
+    pbf_file_download_url = LFS_DIRECTORY_URL + f"{extract_name}-latest.osm.pbf"
     pbf_file_path = Path(__file__).parent / "files" / f"{extract_name}.osm.pbf"
     download_file(pbf_file_download_url, str(pbf_file_path), force_download=True)
 

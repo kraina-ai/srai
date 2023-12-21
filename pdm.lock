@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:96543fb13df499ae1933558790136867344ab43742bf0760370f3658a4146c1d"
+content_hash = "sha256:c4c357d2007aa1f3bda021909e763f9ab3939a3cc91bdddb52ed983f2c79255f"
 
 [[package]]
 name = "aiohttp"
@@ -3153,6 +3153,15 @@ dependencies = [
 files = [
     {file = "PyFunctional-1.4.3-py3-none-any.whl", hash = "sha256:50f11ea3c386c4330c7a8be92c0736b4b6a5924bdbd00b8b93f93b0c7fe6f2b3"},
     {file = "PyFunctional-1.4.3.tar.gz", hash = "sha256:11c313fe251b269c6506689135456a05bc5a6fa129c9d02b445f383d4f411e10"},
+]
+
+[[package]]
+name = "pygdaltools"
+version = "1.4.1"
+summary = "Python wrapper for Gdal/OGR command line tools"
+files = [
+    {file = "pygdaltools-1.4.1-py2.py3-none-any.whl", hash = "sha256:8fbd4f948a32890c45df82e465cd6d96d6659c0956e13cea17e5257bcefcec9d"},
+    {file = "pygdaltools-1.4.1.tar.gz", hash = "sha256:863584a1d7706c0c85ed734ceaba83a926bc65c285c6d414558ff0470431c27a"},
 ]
 
 [[package]]
