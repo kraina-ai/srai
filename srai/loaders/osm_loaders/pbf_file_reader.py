@@ -951,6 +951,7 @@ class PbfFileReader:
         required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
+        # TODO: if no ways with outer role -> then treat all as outer
         print(self.connection.sql(f"""
             WITH unnested_relations AS (
                 SELECT
