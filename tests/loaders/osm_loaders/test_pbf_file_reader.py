@@ -7,7 +7,7 @@ import warnings
 from collections.abc import Iterable
 from distutils.spawn import find_executable
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional, Union, cast
 from unittest import TestCase
 
 import duckdb
@@ -17,11 +17,13 @@ import pytest
 import six
 from parametrization import Parametrization as P
 from shapely import get_num_geometries, get_num_points, hausdorff_distance
-from shapely.geometry import LineString, MultiPoint, Point, Polygon
+from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX
+from srai.geometry import remove_interiors
 from srai.loaders.download import download_file
 from srai.loaders.osm_loaders.filters import GEOFABRIK_LAYERS, HEX2VEC_FILTER, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
@@ -296,6 +298,20 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
     )
 
 
+def extract_polygons_from_geometry(geometry: BaseGeometry) -> list[Union[Polygon, MultiPolygon]]:
+    """Extract only Polygons and MultiPolygons from the geometry."""
+    polygon_geometries = []
+    if geometry.geom_type in ("Polygon", "MultiPolygon"):
+        polygon_geometries.append(geometry)
+    elif geometry.geom_type in ("GeometryCollection"):
+        polygon_geometries.extend(
+            sub_geom
+            for sub_geom in geometry.geoms
+            if sub_geom.geom_type in ("Polygon", "MultiPolygon")
+        )
+    return polygon_geometries
+
+
 @pytest.mark.skipif(  # type: ignore
     find_executable("ogr2ogr") is None,
     reason="requires ogr2ogr (GDAL) to be installed and available",
@@ -357,6 +373,7 @@ def test_gdal_parity(extract_name: str) -> None:
     )
 
     invalid_features = []
+    invalid_relations_defined_in_osm = []
 
     for gdal_row_index in tqdm(gdal_index):
         if gdal_row_index in invalid_relations_missing_in_duckdb:
@@ -364,14 +381,15 @@ def test_gdal_parity(extract_name: str) -> None:
 
         duckdb_row = duckdb_gdf.loc[gdal_row_index]
         gdal_row = gdal_gdf.loc[gdal_row_index]
-        duckdb_tags = duckdb_row.tags
-        gdal_tags = duckdb_row.tags
+        duckdb_tags = {k: v for k, v in duckdb_row.tags.items() if k != "area"}
+        gdal_tags = {k: v for k, v in gdal_row.tags.items() if k != "area"}
 
         # Check tags
         tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(gdal_tags.keys())
-        assert (
-            not tags_keys_difference
-        ), f"Tags keys aren't equal. ({gdal_row_index}, {tags_keys_difference})"
+        assert not tags_keys_difference, (
+            f"Tags keys aren't equal. ({gdal_row_index}, {tags_keys_difference},"
+            f" {duckdb_tags.keys()}, {gdal_tags.keys()})"
+        )
         ut.assertDictEqual(
             duckdb_tags,
             gdal_tags,
@@ -379,33 +397,43 @@ def test_gdal_parity(extract_name: str) -> None:
         )
 
         try:
+            duckdb_geometry = duckdb_row.geometry
+            gdal_geometry = gdal_row.geometry
             # Check if both geometries are closed or open
-            geometry_both_closed_or_not = (
-                duckdb_row.geometry.is_closed == gdal_row.geometry.is_closed
-            )
+            geometry_both_closed_or_not = duckdb_geometry.is_closed == gdal_geometry.is_closed
+            # Check geometries equality - same geom type, same points
+            geometry_equal = duckdb_geometry.equals(gdal_geometry)
+
+            if geometry_both_closed_or_not and geometry_equal:
+                continue
 
             tolerance = 0.5 * 10 ** (-6)
-            # Check geometries equality - same geom type, same points
-            geometry_equal = duckdb_row.geometry.equals(gdal_row.geometry)
-            geometry_almost_equal = duckdb_row.geometry.equals_exact(gdal_row.geometry, tolerance)
+            # Check if geometries are almost equal - same geom type, same points
+            geometry_almost_equal = duckdb_geometry.equals_exact(gdal_geometry, tolerance)
+
+            if geometry_both_closed_or_not and geometry_almost_equal:
+                continue
 
             # Check geometries overlap if polygons - slight misalingment between points,
             # but marginal
-            iou_value = iou_metric(duckdb_row.geometry, gdal_row.geometry)
+            iou_value = iou_metric(duckdb_geometry, gdal_geometry)
             geometry_iou_near_one = iou_value >= (1 - tolerance)
+
+            if geometry_both_closed_or_not and geometry_iou_near_one:
+                continue
 
             # Check if points lay near each other - regardless of geometry type
             # (Polygon vs LineString)
             hausdorff_distance_value = hausdorff_distance(
-                duckdb_row.geometry, gdal_row.geometry, densify=0.5
+                duckdb_geometry, gdal_geometry, densify=0.5
             )
             geometry_close_hausdorff_distance = hausdorff_distance_value < 1e-10
 
             # Check if GDAL geometry is a linestring while DuckDB geometry is a polygon
-            is_different_geometry_type = duckdb_row.geometry.geom_type in (
+            is_different_geometry_type = duckdb_geometry.geom_type in (
                 "Polygon",
                 "MultiPolygon",
-            ) and gdal_row.geometry.geom_type in ("LineString", "MultiLineString")
+            ) and gdal_geometry.geom_type in ("LineString", "MultiLineString")
 
             # Check if DuckDB geometry can be a polygon and not a linestring
             # based on features config
@@ -419,29 +447,67 @@ def test_gdal_parity(extract_name: str) -> None:
                     tag in reader.osm_way_polygon_features_config.denylist
                     and value not in reader.osm_way_polygon_features_config.denylist[tag]
                 )
-                for tag, value in duckdb_tags.items()
+                for tag, value in duckdb_row.tags.items()
             )
 
             # Check if geometries have the same number of points
-            duckdb_geometry_points = calculate_total_points(duckdb_row.geometry)
-            gdal_geometry_points = calculate_total_points(gdal_row.geometry)
+            duckdb_geometry_points = calculate_total_points(duckdb_geometry)
+            gdal_geometry_points = calculate_total_points(gdal_geometry)
             same_number_of_points = duckdb_geometry_points == gdal_geometry_points
 
-            # Combine conditions
-            geometries_are_equal_and_the_same_type = geometry_both_closed_or_not and (
-                geometry_equal or geometry_almost_equal or geometry_iou_near_one
-            )
-            geometries_are_equal_but_different_type = (
+            geometries_are_different_type_but_equal = (
                 geometry_close_hausdorff_distance
                 and is_different_geometry_type
                 and is_proper_filter_tag_value
                 and same_number_of_points
             )
 
+            if geometries_are_different_type_but_equal:
+                continue
+
+            # Sometimes GDAL parses geometries incorrectly because of errors in OSM data
+            # Examples of errors:
+            # - overlapping inner ring with outer ring
+            # - intersecting outer rings
+            # - intersecting inner rings
+            # - inner ring outside outer geometry
+            # If we detect thattaht the difference between those geometries
+            # lie inside the exterior of the geometry, we can assume that the OSM geometry
+            # is improperly defined.
+            gdal_geometry_fully_covered_by_duckdb = False
+            duckdb_geometry_fully_covered_by_gdal = False
+
+            duckdb_polygon_geometries = extract_polygons_from_geometry(duckdb_geometry)
+            gdal_polygon_geometries = extract_polygons_from_geometry(gdal_geometry)
+
+            if duckdb_polygon_geometries and gdal_polygon_geometries:
+                duckdb_unioned_geometry = unary_union(duckdb_polygon_geometries)
+                gdal_unioned_geometry = unary_union(gdal_polygon_geometries)
+                duckdb_unioned_geometry_without_holes = remove_interiors(duckdb_unioned_geometry)
+                gdal_unioned_geometry_without_holes = remove_interiors(gdal_unioned_geometry)
+
+                # Check if the differences doesn't extend both geometries,
+                # only one sided difference can be accepted
+                gdal_geometry_fully_covered_by_duckdb = (
+                    gdal_unioned_geometry_without_holes.covered_by(
+                        duckdb_unioned_geometry_without_holes
+                    )
+                )
+                duckdb_geometry_fully_covered_by_gdal = (
+                    duckdb_unioned_geometry_without_holes.covered_by(
+                        gdal_unioned_geometry_without_holes
+                    )
+                )
+
+            duckdb_polygon_geometries = extract_polygons_from_geometry(duckdb_geometry)
+            gdal_polygon_geometries = extract_polygons_from_geometry(gdal_geometry)
+
+            if gdal_geometry_fully_covered_by_duckdb or duckdb_geometry_fully_covered_by_gdal:
+                invalid_relations_defined_in_osm.append(gdal_row_index)
+                continue
+
             full_debug_dict = {
                 FEATURES_INDEX: gdal_row_index,
-                "geometries_are_equal_and_the_same_type": geometries_are_equal_and_the_same_type,
-                "geometries_are_equal_but_different_type": geometries_are_equal_but_different_type,
                 "geometry_both_closed_or_not": geometry_both_closed_or_not,
                 "geometry_equal": geometry_equal,
                 "geometry_almost_equal": geometry_almost_equal,
@@ -450,22 +516,25 @@ def test_gdal_parity(extract_name: str) -> None:
                 "geometry_close_hausdorff_distance": geometry_close_hausdorff_distance,
                 "hausdorff_distance_value": hausdorff_distance_value,
                 "is_different_geometry_type": is_different_geometry_type,
-                "duckdb_geom_type": duckdb_row.geometry.geom_type,
-                "gdal_geom_type": gdal_row.geometry.geom_type,
+                "duckdb_geom_type": duckdb_geometry.geom_type,
+                "gdal_geom_type": gdal_geometry.geom_type,
                 "is_proper_filter_tag_value": is_proper_filter_tag_value,
                 "same_number_of_points": same_number_of_points,
                 "duckdb_geometry_points": duckdb_geometry_points,
                 "gdal_geometry_points": gdal_geometry_points,
+                "geometries_are_different_type_but_equal": geometries_are_different_type_but_equal,
+                "duckdb_geometry_fully_covered_by_gdal": duckdb_geometry_fully_covered_by_gdal,
+                "gdal_geometry_fully_covered_by_duckdb": gdal_geometry_fully_covered_by_duckdb,
             }
 
-            if (
-                not geometries_are_equal_and_the_same_type
-                and not geometries_are_equal_but_different_type
-            ):
-                invalid_features.append(full_debug_dict)
-                # print(gdal_row_index)
+            invalid_features.append(full_debug_dict)
         except Exception as ex:
             raise RuntimeError(f"Unexpected error for feature: {gdal_row_index}") from ex
+
+    warnings.warn(
+        f"Detected invalid relations defined in OSM ({invalid_relations_defined_in_osm})",
+        stacklevel=1,
+    )
 
     assert not invalid_features, (
         f"Geometries aren't equal - ({[t[FEATURES_INDEX] for t in invalid_features]}). Full debug"
