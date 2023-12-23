@@ -951,92 +951,6 @@ class PbfFileReader:
         required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        print(self.connection.sql(f"""
-            WITH unnested_relations AS (
-                SELECT
-                    r.id,
-                    COALESCE(r.ref_role, 'outer') as ref_role,
-                    r.ref,
-                    linestring_to_linestring_wkt(w.linestring)::GEOMETRY as geometry
-                FROM ({osm_parquet_files.relations_with_unnested_way_refs.sql_query()}) r
-                SEMI JOIN ({osm_parquet_files.relations_filtered_ids.sql_query()}) fr
-                ON r.id = fr.id
-                JOIN ({required_ways_with_linestrings.sql_query()}) w
-                ON w.id = r.ref
-                --WHERE r.id = 9286845
-                WHERE r.id = 2540221
-                ORDER BY r.id, r.ref_idx
-            ),
-            relations_with_geometries AS (
-                SELECT id, ref_role, geom geometry
-                FROM (
-                    SELECT
-                        id,
-                        ref_role,
-                        UNNEST(
-                            ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true
-                        ),
-                    FROM unnested_relations
-                    GROUP BY id, ref_role
-                )
-                WHERE ST_NPoints(geom) >= 4
-            ),
-            valid_relations AS (
-                SELECT id, is_valid
-                FROM (
-                    SELECT
-                        id,
-                        bool_and(
-                            ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))
-                        ) is_valid
-                    FROM relations_with_geometries
-                    GROUP BY id
-                )
-                WHERE is_valid = true
-            ),
-            inner_geometries AS (
-                -- SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'inner'
-                GROUP BY id
-            ),
-            outer_geometries AS (
-                -- SELECT id, ref, ST_MakePolygon(geometry) geometry
-                SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'outer'
-                GROUP BY id
-            ),
-            outer_geometries_with_holes AS (
-                SELECT
-                    og.id,
-                    ST_Difference(ST_Union_Agg(og.geometry), ST_Union_Agg(ig.geometry)) geometry
-                FROM outer_geometries og
-                JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
-                GROUP BY og.id
-            ),
-            outer_geometries_without_holes AS (
-                SELECT id, geometry
-                FROM outer_geometries og
-                ANTI JOIN outer_geometries_with_holes ogwh ON og.id = ogwh.id
-            ),
-            unioned_outer_geometries AS (
-                SELECT id, geometry
-                FROM outer_geometries_with_holes
-                UNION ALL
-                SELECT id, geometry
-                FROM outer_geometries_without_holes
-            ),
-            final_geometries AS (
-                SELECT id, ST_Union_Agg(geometry) geometry
-                FROM unioned_outer_geometries
-                GROUP BY id
-            )
-            SELECT * FROM outer_geometries
-        """))
         relations_with_geometry = self.connection.sql(f"""
             WITH unnested_relations AS (
                 SELECT
@@ -1049,11 +963,15 @@ class PbfFileReader:
                 ON r.id = fr.id
                 JOIN ({required_ways_with_linestrings.sql_query()}) w
                 ON w.id = r.ref
-                --WHERE r.id = 9597961
                 ORDER BY r.id, r.ref_idx
             ),
             relations_with_geometries AS (
-                SELECT id, ref, ref_role, geom geometry
+                SELECT
+                    id,
+                    ref,
+                    ref_role,
+                    geom geometry,
+                    row_number() OVER (PARTITION BY id) as geometry_id
                 FROM (
                     SELECT
                         id,
@@ -1081,44 +999,39 @@ class PbfFileReader:
                 WHERE is_valid = true
             ),
             inner_geometries AS (
-                -- SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                SELECT id, ref, ST_MakePolygon(geometry) geometry
+                SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
                 FROM relations_with_geometries
                 SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
                 WHERE ref_role = 'inner'
-                -- GROUP BY id
             ),
             outer_geometries AS (
-                SELECT id, ref, ST_MakePolygon(geometry) geometry
+                SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
                 FROM relations_with_geometries
                 SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
                 WHERE ref_role = 'outer'
-                -- GROUP BY id
+            ),
+            outer_geometries_with_inner_geometries AS (
+                SELECT
+                    og.id,
+                    og.geometry_id,
+                    ST_Union_Agg(og.geometry) outer_geometry,
+                    ST_Union_Agg(ig.geometry) inner_geometry
+                FROM outer_geometries og
+                LEFT JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
+                GROUP BY og.id, og.geometry_id
             ),
             outer_geometries_with_holes AS (
                 SELECT
-                    og.id,
-                    og.ref,
-                    ST_Difference(ST_Union_Agg(og.geometry), ST_Union_Agg(ig.geometry)) geometry
-                FROM outer_geometries og
-                JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
-                GROUP BY og.id, og.ref
-            ),
-            outer_geometries_without_holes AS (
-                SELECT id, ref, geometry
-                FROM outer_geometries og
-                ANTI JOIN outer_geometries_with_holes ogwh ON og.id = ogwh.id AND og.ref = ogwh.ref
-            ),
-            unioned_outer_geometries AS (
-                SELECT id, geometry
-                FROM outer_geometries_with_holes
-                UNION ALL
-                SELECT id, geometry
-                FROM outer_geometries_without_holes
+                    id,
+                    geometry_id,
+                    CASE WHEN inner_geometry IS NOT NULL
+                    THEN ST_Difference(outer_geometry, inner_geometry)
+                    ELSE outer_geometry END AS geometry
+                FROM outer_geometries_with_inner_geometries
             ),
             final_geometries AS (
                 SELECT id, ST_Union_Agg(geometry) geometry
-                FROM unioned_outer_geometries
+                FROM outer_geometries_with_holes
                 GROUP BY id
             )
             SELECT r_g.id, r.tags, r_g.geometry
@@ -1126,7 +1039,6 @@ class PbfFileReader:
             JOIN ({osm_parquet_files.relations_all_with_tags.sql_query()}) r
             ON r.id = r_g.id
         """)
-        print(relations_with_geometry)
         relations_parquet = self._save_parquet_file_with_geometry(
             relation=relations_with_geometry,
             file_path=Path(tmp_dir_name) / "filtered_relations_with_geometry",
