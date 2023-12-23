@@ -12,7 +12,7 @@ import warnings
 from collections.abc import Sequence
 from math import floor
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, cast
 
 import geopandas as gpd
 import pyarrow as pa
@@ -396,13 +396,7 @@ class PbfFileReader:
         # - select all from NV which intersect given geometry filter
         # NODES - FILTERED (NF)
         # - select all from NI with tags filter
-        filter_osm_node_ids = [
-            osm_id.replace("node/", "") for osm_id in filter_osm_ids if osm_id.startswith("node/")
-        ]
-        filter_osm_node_ids_filter = (
-            "1=1" if not filter_osm_node_ids else f"id in ({','.join(filter_osm_node_ids)})"
-        )
-
+        filter_osm_node_ids_filter = self._generate_elements_filter(filter_osm_ids, "node")
         if is_intersecting:
             wkt = cast(BaseGeometry, self.geometry_filter).wkt
             intersection_filter = f"ST_Intersects(ST_Point(lon, lat), ST_GeomFromText('{wkt}'))"
@@ -502,12 +496,7 @@ class PbfFileReader:
             ways_intersecting_ids = ways_valid_ids
         # WAYS - FILTERED (WF)
         # - select all from WI with tags filter
-        filter_osm_way_ids = [
-            osm_id.replace("way/", "") for osm_id in filter_osm_ids if osm_id.startswith("way/")
-        ]
-        filter_osm_way_ids_filter = (
-            "1=1" if not filter_osm_way_ids else f"id in ({','.join(filter_osm_way_ids)})"
-        )
+        filter_osm_way_ids_filter = self._generate_elements_filter(filter_osm_ids, "way")
         self._sql_to_parquet_file(
             sql_query=f"""
             SELECT id FROM ({ways_all_with_tags.sql_query()}) w
@@ -599,14 +588,8 @@ class PbfFileReader:
             relations_intersecting_ids = relations_valid_ids
         # RELATIONS - FILTERED (RF)
         # - select all from RI with tags filter
-        filter_osm_relation_ids = [
-            osm_id.replace("relation/", "")
-            for osm_id in filter_osm_ids
-            if osm_id.startswith("relation/")
-        ]
-        filter_osm_relation_ids_filter = (
-            "1=1" if not filter_osm_relation_ids else f"id in ({','.join(filter_osm_relation_ids)})"
-        )
+        filter_osm_relation_ids_filter = self._generate_elements_filter(filter_osm_ids, "relation")
+
         relations_ids_path = Path(tmp_dir_name) / "relations_ids"
         relations_ids_path.mkdir(parents=True, exist_ok=True)
         self._sql_to_parquet_file(
@@ -734,6 +717,23 @@ class PbfFileReader:
             ]
         ) as tags
         """
+
+    def _generate_elements_filter(
+        self, filter_osm_ids: list[str], element_type: Literal["node", "way", "relation"]
+    ) -> str:
+        filter_osm_relation_ids = [
+            osm_id.replace(f"{element_type}/", "")
+            for osm_id in filter_osm_ids
+            if osm_id.startswith(f"{element_type}/")
+        ]
+        if not filter_osm_ids:
+            filter_osm_ids_filter = "1=1"
+        elif filter_osm_relation_ids:
+            filter_osm_ids_filter = f"id in ({','.join(filter_osm_relation_ids)})"
+        else:
+            filter_osm_ids_filter = "id IS NULL"
+
+        return filter_osm_ids_filter
 
     def _sql_escape(self, value: str) -> str:
         """Escape value for SQL query."""
@@ -968,20 +968,18 @@ class PbfFileReader:
             relations_with_geometries AS (
                 SELECT
                     id,
-                    ref,
                     ref_role,
                     geom geometry,
                     row_number() OVER (PARTITION BY id) as geometry_id
                 FROM (
                     SELECT
                         id,
-                        ref,
                         ref_role,
                         UNNEST(
                             ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true
                         ),
                     FROM unnested_relations
-                    GROUP BY id, ref, ref_role
+                    GROUP BY id, ref_role
                 )
                 WHERE ST_NPoints(geom) >= 4
             ),
