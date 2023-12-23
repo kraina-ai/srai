@@ -965,12 +965,19 @@ class PbfFileReader:
                 ON w.id = r.ref
                 ORDER BY r.id, r.ref_idx
             ),
+            any_outer_refs AS (
+                SELECT id, bool_or(ref_role == 'outer') any_outer_refs
+                FROM unnested_relations
+                GROUP BY id
+            ),
             relations_with_geometries AS (
                 SELECT
-                    id,
-                    ref_role,
-                    geom geometry,
-                    row_number() OVER (PARTITION BY id) as geometry_id
+                    x.id,
+                    CASE WHEN aor.any_outer_refs
+                        THEN x.ref_role ELSE 'outer'
+                    END as ref_role,
+                    x.geom geometry,
+                    row_number() OVER (PARTITION BY x.id) as geometry_id
                 FROM (
                     SELECT
                         id,
@@ -980,7 +987,8 @@ class PbfFileReader:
                         ),
                     FROM unnested_relations
                     GROUP BY id, ref_role
-                )
+                ) x
+                JOIN any_outer_refs aor ON aor.id = x.id
                 WHERE ST_NPoints(geom) >= 4
             ),
             valid_relations AS (
