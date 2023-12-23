@@ -545,7 +545,7 @@ def test_gdal_parity(extract_name: str) -> None:
         not valid_relations_missing_in_duckdb
     ), f"Missing valid relation features in PbfFileReader ({valid_relations_missing_in_duckdb})"
 
-    if invalid_relations_missing_in_duckdb:
+    if len(invalid_relations_missing_in_duckdb) > 0:
         warnings.warn(
             "Invalid relations exists in OSM GDAL data extract"
             f" ({invalid_relations_missing_in_duckdb})",
