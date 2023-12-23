@@ -21,7 +21,6 @@ from shapely import get_num_geometries, get_num_points, hausdorff_distance
 from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
-from tqdm import tqdm
 
 from srai.constants import FEATURES_INDEX
 from srai.geometry import remove_interiors
@@ -555,7 +554,7 @@ def test_gdal_parity(extract_name: str) -> None:
 
     invalid_features = []
 
-    for gdal_row_index in tqdm(gdal_index):
+    for gdal_row_index in gdal_index:
         if gdal_row_index in invalid_relations_missing_in_duckdb:
             continue
 
