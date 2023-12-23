@@ -1015,7 +1015,8 @@ class PbfFileReader:
                     ST_Union_Agg(og.geometry) outer_geometry,
                     ST_Union_Agg(ig.geometry) inner_geometry
                 FROM outer_geometries og
-                LEFT JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
+                LEFT JOIN inner_geometries ig
+                ON og.id = ig.id AND ST_WITHIN(ig.geometry, og.geometry)
                 GROUP BY og.id, og.geometry_id
             ),
             outer_geometries_with_holes AS (
