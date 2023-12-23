@@ -366,11 +366,12 @@ def test_gdal_parity(extract_name: str) -> None:
         not valid_relations_missing_in_duckdb
     ), f"Missing valid relation features in PbfFileReader ({valid_relations_missing_in_duckdb})"
 
-    warnings.warn(
-        "Invalid relations exists in OSM GDAL data extract"
-        f" ({invalid_relations_missing_in_duckdb})",
-        stacklevel=1,
-    )
+    if invalid_relations_missing_in_duckdb:
+        warnings.warn(
+            "Invalid relations exists in OSM GDAL data extract"
+            f" ({invalid_relations_missing_in_duckdb})",
+            stacklevel=1,
+        )
 
     invalid_features = []
     invalid_relations_defined_in_osm = []
@@ -430,7 +431,7 @@ def test_gdal_parity(extract_name: str) -> None:
             geometry_close_hausdorff_distance = hausdorff_distance_value < 1e-10
 
             # Check if GDAL geometry is a linestring while DuckDB geometry is a polygon
-            is_different_geometry_type = duckdb_geometry.geom_type in (
+            is_duckdb_polygon_and_gdal_linestring = duckdb_geometry.geom_type in (
                 "Polygon",
                 "MultiPolygon",
             ) and gdal_geometry.geom_type in ("LineString", "MultiLineString")
@@ -455,14 +456,51 @@ def test_gdal_parity(extract_name: str) -> None:
             gdal_geometry_points = calculate_total_points(gdal_geometry)
             same_number_of_points = duckdb_geometry_points == gdal_geometry_points
 
-            geometries_are_different_type_but_equal = (
+            duckdb_polygon_and_gdal_linestring_but_geometried_are_equal = (
                 geometry_close_hausdorff_distance
-                and is_different_geometry_type
+                and is_duckdb_polygon_and_gdal_linestring
                 and is_proper_filter_tag_value
                 and same_number_of_points
             )
 
-            if geometries_are_different_type_but_equal:
+            if duckdb_polygon_and_gdal_linestring_but_geometried_are_equal:
+                continue
+
+            # Check if GDAL geometry is a polygon while DuckDB geometry is a linestring
+            is_duckdb_linestring_and_gdal_polygon = duckdb_geometry.geom_type in (
+                "LineString",
+                "MultiLineString",
+            ) and gdal_geometry.geom_type in ("Polygon", "MultiPolygon")
+
+            # Check if DuckDB geometry should be a linestring and not a polygon
+            # based on features config
+            is_not_in_filter_tag_value = any(
+                (tag not in reader.osm_way_polygon_features_config.all)
+                and (
+                    tag not in reader.osm_way_polygon_features_config.allowlist
+                    or (
+                        tag in reader.osm_way_polygon_features_config.allowlist
+                        and value not in reader.osm_way_polygon_features_config.allowlist[tag]
+                    )
+                )
+                and (
+                    tag not in reader.osm_way_polygon_features_config.denylist
+                    or (
+                        tag in reader.osm_way_polygon_features_config.denylist
+                        and value in reader.osm_way_polygon_features_config.denylist[tag]
+                    )
+                )
+                for tag, value in duckdb_row.tags.items()
+            )
+
+            duckdb_linestring_and_gdal_polygon_but_geometried_are_equal = (
+                geometry_close_hausdorff_distance
+                and is_duckdb_linestring_and_gdal_polygon
+                and is_not_in_filter_tag_value
+                and same_number_of_points
+            )
+
+            if duckdb_linestring_and_gdal_polygon_but_geometried_are_equal:
                 continue
 
             # Sometimes GDAL parses geometries incorrectly because of errors in OSM data
@@ -515,14 +553,21 @@ def test_gdal_parity(extract_name: str) -> None:
                 "iou_value": iou_value,
                 "geometry_close_hausdorff_distance": geometry_close_hausdorff_distance,
                 "hausdorff_distance_value": hausdorff_distance_value,
-                "is_different_geometry_type": is_different_geometry_type,
+                "is_duckdb_polygon_and_gdal_linestring": is_duckdb_polygon_and_gdal_linestring,
+                "is_duckdb_linestring_and_gdal_polygon": is_duckdb_linestring_and_gdal_polygon,
                 "duckdb_geom_type": duckdb_geometry.geom_type,
                 "gdal_geom_type": gdal_geometry.geom_type,
                 "is_proper_filter_tag_value": is_proper_filter_tag_value,
+                "is_not_in_filter_tag_value": is_not_in_filter_tag_value,
                 "same_number_of_points": same_number_of_points,
                 "duckdb_geometry_points": duckdb_geometry_points,
                 "gdal_geometry_points": gdal_geometry_points,
-                "geometries_are_different_type_but_equal": geometries_are_different_type_but_equal,
+                "duckdb_polygon_and_gdal_linestring_but_geometried_are_equal": (
+                    duckdb_polygon_and_gdal_linestring_but_geometried_are_equal
+                ),
+                "duckdb_linestring_and_gdal_polygon_but_geometried_are_equal": (
+                    duckdb_linestring_and_gdal_polygon_but_geometried_are_equal
+                ),
                 "duckdb_geometry_fully_covered_by_gdal": duckdb_geometry_fully_covered_by_gdal,
                 "gdal_geometry_fully_covered_by_duckdb": gdal_geometry_fully_covered_by_duckdb,
             }
@@ -531,10 +576,11 @@ def test_gdal_parity(extract_name: str) -> None:
         except Exception as ex:
             raise RuntimeError(f"Unexpected error for feature: {gdal_row_index}") from ex
 
-    warnings.warn(
-        f"Detected invalid relations defined in OSM ({invalid_relations_defined_in_osm})",
-        stacklevel=1,
-    )
+    if invalid_relations_defined_in_osm:
+        warnings.warn(
+            f"Detected invalid relations defined in OSM ({invalid_relations_defined_in_osm})",
+            stacklevel=1,
+        )
 
     assert not invalid_features, (
         f"Geometries aren't equal - ({[t[FEATURES_INDEX] for t in invalid_features]}). Full debug"
