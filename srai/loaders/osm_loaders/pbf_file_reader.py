@@ -326,6 +326,11 @@ class PbfFileReader:
                     "relations_with_unnested_way_refs",
                     "relations_filtered_ids",
                     "required_ways_with_linestrings",
+                    "valid_relation_parts",
+                    "relation_inner_parts",
+                    "relation_outer_parts",
+                    "relation_outer_parts_with_holes",
+                    "relation_outer_parts_without_holes",
                 ],
             )
 
@@ -951,7 +956,7 @@ class PbfFileReader:
         required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        relations_with_geometry = self.connection.sql(f"""
+        valid_relation_parts = self.connection.sql(f"""
             WITH unnested_relations AS (
                 SELECT
                     r.id,
@@ -1003,42 +1008,70 @@ class PbfFileReader:
                     GROUP BY id
                 )
                 WHERE is_valid = true
-            ),
-            inner_geometries AS (
-                SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'inner'
-            ),
-            outer_geometries AS (
-                SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'outer'
-            ),
-            outer_geometries_with_inner_geometries AS (
-                SELECT
-                    og.id,
-                    og.geometry_id,
-                    ST_Union_Agg(og.geometry) outer_geometry,
-                    ST_Union_Agg(ig.geometry) inner_geometry
-                FROM outer_geometries og
-                LEFT JOIN inner_geometries ig
-                ON og.id = ig.id AND ST_WITHIN(ig.geometry, og.geometry)
-                GROUP BY og.id, og.geometry_id
-            ),
-            outer_geometries_with_holes AS (
-                SELECT
-                    id,
-                    geometry_id,
-                    CASE WHEN inner_geometry IS NOT NULL
-                    THEN ST_Difference(outer_geometry, inner_geometry)
-                    ELSE outer_geometry END AS geometry
-                FROM outer_geometries_with_inner_geometries
+            )
+            SELECT * FROM relations_with_geometries
+            SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
+        """)
+        valid_relation_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=valid_relation_parts,
+            file_path=Path(tmp_dir_name) / "valid_relation_parts",
+        )
+        relation_inner_parts = self.connection.sql(f"""
+            SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
+            FROM ({valid_relation_parts_parquet.sql_query()})
+            WHERE ref_role = 'inner'
+        """)
+        relation_inner_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_inner_parts,
+            file_path=Path(tmp_dir_name) / "relation_inner_parts",
+        )
+        relation_outer_parts = self.connection.sql(f"""
+            SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
+            FROM ({valid_relation_parts_parquet.sql_query()})
+            WHERE ref_role = 'outer'
+        """)
+        relation_outer_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts",
+        )
+        relation_outer_parts_with_holes = self.connection.sql(f"""
+            SELECT
+                og.id,
+                og.geometry_id,
+                ST_Difference(any_value(og.geometry), ST_Union_Agg(ig.geometry)) geometry
+            FROM ({relation_outer_parts_parquet.sql_query()}) og
+            JOIN ({relation_inner_parts_parquet.sql_query()}) ig
+            ON og.id = ig.id AND ST_WITHIN(ig.geometry, og.geometry)
+            GROUP BY og.id, og.geometry_id
+        """)
+        relation_outer_parts_with_holes_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts_with_holes,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts_with_holes",
+        )
+        relation_outer_parts_without_holes = self.connection.sql(f"""
+            SELECT
+                og.id,
+                og.geometry_id,
+                og.geometry
+            FROM ({relation_outer_parts_parquet.sql_query()}) og
+            ANTI JOIN ({relation_outer_parts_with_holes_parquet.sql_query()}) ogwh
+            ON og.id = ogwh.id AND og.geometry_id = ogwh.geometry_id
+        """)
+        relation_outer_parts_without_holes_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts_without_holes,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts_without_holes",
+        )
+        relations_with_geometry = self.connection.sql(f"""
+            WITH unioned_outer_geometries AS (
+                SELECT id, geometry
+                FROM ({relation_outer_parts_with_holes_parquet.sql_query()})
+                UNION ALL
+                SELECT id, geometry
+                FROM ({relation_outer_parts_without_holes_parquet.sql_query()})
             ),
             final_geometries AS (
                 SELECT id, ST_Union_Agg(geometry) geometry
-                FROM outer_geometries_with_holes
+                FROM unioned_outer_geometries
                 GROUP BY id
             )
             SELECT r_g.id, r.tags, r_g.geometry
