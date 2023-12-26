@@ -298,6 +298,16 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
     )
 
 
+def get_tags_from_osm_element(pbf_file: str, feature_id: str) -> dict[str, str]:
+    """Check if given relation in OSM is valid."""
+    duckdb.load_extension("spatial")
+    kind, osm_id = feature_id.split("/", 2)
+    raw_tags = duckdb.sql(
+        f"SELECT tags FROM ST_READOSM('{pbf_file}') WHERE kind = '{kind}' AND id = {osm_id}"
+    ).fetchone()[0]
+    return dict(zip(raw_tags["key"], raw_tags["value"]))
+
+
 def extract_polygons_from_geometry(geometry: BaseGeometry) -> list[Union[Polygon, MultiPolygon]]:
     """Extract only Polygons and MultiPolygons from the geometry."""
     polygon_geometries = []
@@ -561,17 +571,23 @@ def test_gdal_parity(extract_name: str) -> None:
         duckdb_row = duckdb_gdf.loc[gdal_row_index]
         gdal_row = gdal_gdf.loc[gdal_row_index]
         duckdb_tags = {k: v for k, v in duckdb_row.tags.items() if k != "area"}
-        gdal_tags = {k: v for k, v in gdal_row.tags.items() if k != "area"}
+        source_tags = {k: v for k, v in gdal_row.tags.items() if k != "area"}
 
         # Check tags
-        tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(gdal_tags.keys())
+        tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(source_tags.keys())
+        # If difference - compare tags with source data.
+        # Sometimes GDAL copies tags from members to a parent.
+        if tags_keys_difference:
+            source_tags = get_tags_from_osm_element(str(pbf_file_path), gdal_row_index)
+            tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(source_tags.keys())
+
         assert not tags_keys_difference, (
             f"Tags keys aren't equal. ({gdal_row_index}, {tags_keys_difference},"
-            f" {duckdb_tags.keys()}, {gdal_tags.keys()})"
+            f" {duckdb_tags.keys()}, {source_tags.keys()})"
         )
         ut.assertDictEqual(
             duckdb_tags,
-            gdal_tags,
+            source_tags,
             f"Tags aren't equal. ({gdal_row_index})",
         )
 
