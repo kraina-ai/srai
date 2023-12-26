@@ -284,7 +284,7 @@ def calculate_total_points(geom: BaseGeometry) -> int:
     return sum(get_num_points(line_string) for line_string in line_strings)
 
 
-def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
+def check_if_relation_in_osm_is_valid_based_on_tags(pbf_file: str, relation_id: str) -> bool:
     """Check if given relation in OSM is valid."""
     duckdb.load_extension("spatial")
     return cast(
@@ -295,6 +295,129 @@ def check_if_relation_in_osm_is_valid(pbf_file: str, relation_id: str) -> bool:
             "AND list_has_any(map_extract(tags, 'type'), ['boundary', 'multipolygon']) "
             f"AND id = {relation_id}"
         ).fetchone()[0],
+    )
+
+
+def check_if_relation_in_osm_is_valid_based_on_geometry(pbf_file: str, relation_id: str) -> bool:
+    """
+    Check if given relation in OSM is valid.
+
+    Reconstructs full geometry for a single ID and check if there is at least one outer geometry.
+    Sometimes
+    """
+    duckdb.load_extension("spatial")
+    return cast(
+        bool,
+        duckdb.sql(f"""
+            WITH required_relation AS (
+                SELECT
+                    r.id
+                FROM ST_ReadOsm('{pbf_file}') r
+                WHERE r.kind = 'relation'
+                    AND len(r.refs) > 0
+                    AND list_contains(map_keys(r.tags), 'type')
+                    AND list_has_any(
+                        map_extract(r.tags, 'type'),
+                        ['boundary', 'multipolygon']
+                    )
+                    AND r.id = {relation_id}
+            ),
+            unnested_relation_refs AS (
+                SELECT
+                    r.id,
+                    UNNEST(refs) as ref,
+                    UNNEST(ref_types) as ref_type,
+                    UNNEST(ref_roles) as ref_role,
+                    UNNEST(range(length(refs))) as ref_idx
+                FROM ST_ReadOsm('{pbf_file}') r
+                SEMI JOIN required_relation rr
+                ON r.id = rr.id
+            ),
+            unnested_relation_way_refs AS (
+                SELECT id, ref, COALESCE(ref_role, 'outer') as ref_role, ref_idx
+                FROM unnested_relation_refs
+                WHERE ref_type = 'way'
+            ),
+            unnested_relations AS (
+                SELECT
+                    r.id,
+                    COALESCE(r.ref_role, 'outer') as ref_role,
+                    r.ref,
+                FROM unnested_relation_way_refs r
+                ORDER BY r.id, r.ref_idx
+            ),
+            unnested_way_refs AS (
+                SELECT
+                    w.id,
+                    UNNEST(refs) as ref,
+                    UNNEST(ref_types) as ref_type,
+                    UNNEST(range(length(refs))) as ref_idx
+                FROM ST_ReadOsm('{pbf_file}') w
+                SEMI JOIN unnested_relation_way_refs urwr
+                ON urwr.ref = w.id
+                WHERE w.kind = 'way'
+            ),
+            nodes_geometries AS (
+                SELECT
+                    n.id,
+                    ST_POINT(n.lon, n.lat) geom
+                FROM ST_ReadOsm('{pbf_file}') n
+                SEMI JOIN unnested_way_refs uwr
+                ON uwr.ref = n.id
+                WHERE n.kind = 'node'
+            ),
+            way_geometries AS (
+                SELECT uwr.id, ST_MakeLine(LIST(n.geom ORDER BY ref_idx ASC)) linestring
+                FROM unnested_way_refs uwr
+                JOIN nodes_geometries n
+                ON uwr.ref = n.id
+                GROUP BY uwr.id
+            ),
+            any_outer_refs AS (
+                SELECT id, bool_or(ref_role == 'outer') any_outer_refs
+                FROM unnested_relations
+                GROUP BY id
+            ),
+            relations_with_geometries AS (
+                SELECT
+                    x.id,
+                    CASE WHEN aor.any_outer_refs
+                        THEN x.ref_role ELSE 'outer'
+                    END as ref_role,
+                    x.geom geometry,
+                    row_number() OVER (PARTITION BY x.id) as geometry_id
+                FROM (
+                    SELECT
+                        unnested_relations.id,
+                        unnested_relations.ref_role,
+                        UNNEST(
+                            ST_Dump(ST_LineMerge(ST_Collect(list(way_geometries.linestring)))),
+                            recursive := true
+                        ),
+                    FROM unnested_relations
+                    JOIN way_geometries ON way_geometries.id = unnested_relations.ref
+                    GROUP BY unnested_relations.id, unnested_relations.ref_role
+                ) x
+                JOIN any_outer_refs aor ON aor.id = x.id
+                WHERE ST_NPoints(geom) >= 4
+            ),
+            valid_relations AS (
+                SELECT id, is_valid
+                FROM (
+                    SELECT
+                        id,
+                        bool_and(
+                            ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))
+                        ) is_valid
+                    FROM relations_with_geometries
+                    WHERE ref_role = 'outer'
+                    GROUP BY id
+                )
+                WHERE is_valid = true
+            )
+            SELECT COUNT(*) > 0 AS 'any_valid_outer_geometry'
+            FROM valid_relations
+        """).fetchone()[0],
     )
 
 
@@ -531,14 +654,21 @@ def test_gdal_parity(extract_name: str) -> None:
     duckdb_index = duckdb_gdf.index
 
     missing_in_duckdb = gdal_index.difference(duckdb_index)
+    # Get missing non relation features with at least one non-area tag value
     non_relations_missing_in_duckdb = [
-        feature_id for feature_id in missing_in_duckdb if not feature_id.startswith("relation/")
+        feature_id
+        for feature_id in missing_in_duckdb
+        if not feature_id.startswith("relation/")
+        and any(True for k in gdal_gdf.loc[feature_id].tags.keys() if k != "area")
     ]
     valid_relations_missing_in_duckdb = [
         feature_id
         for feature_id in missing_in_duckdb
         if feature_id.startswith("relation/")
-        and check_if_relation_in_osm_is_valid(
+        and check_if_relation_in_osm_is_valid_based_on_tags(
+            str(pbf_file_path), feature_id.replace("relation/", "")
+        )
+        and check_if_relation_in_osm_is_valid_based_on_geometry(
             str(pbf_file_path), feature_id.replace("relation/", "")
         )
     ]
