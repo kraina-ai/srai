@@ -175,9 +175,9 @@ def parse_hstore_tags(tags: str) -> dict[str, Optional[str]]:
             if vq:
                 value = _unescape(vq)
             elif match.group("vn"):
-                value = None
+                value = ""
             else:
-                raise ValueError("Malformed hstore value starting at position %d" % offset)
+                value = ""
 
             yield key, value
 
