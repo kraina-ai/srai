@@ -12,7 +12,7 @@ import warnings
 from collections.abc import Sequence
 from math import floor
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, cast
 
 import geopandas as gpd
 import pyarrow as pa
@@ -326,6 +326,11 @@ class PbfFileReader:
                     "relations_with_unnested_way_refs",
                     "relations_filtered_ids",
                     "required_ways_with_linestrings",
+                    "valid_relation_parts",
+                    "relation_inner_parts",
+                    "relation_outer_parts",
+                    "relation_outer_parts_with_holes",
+                    "relation_outer_parts_without_holes",
                 ],
             )
 
@@ -396,13 +401,7 @@ class PbfFileReader:
         # - select all from NV which intersect given geometry filter
         # NODES - FILTERED (NF)
         # - select all from NI with tags filter
-        filter_osm_node_ids = [
-            osm_id.replace("node/", "") for osm_id in filter_osm_ids if osm_id.startswith("node/")
-        ]
-        filter_osm_node_ids_filter = (
-            "1=1" if not filter_osm_node_ids else f"id in ({','.join(filter_osm_node_ids)})"
-        )
-
+        filter_osm_node_ids_filter = self._generate_elements_filter(filter_osm_ids, "node")
         if is_intersecting:
             wkt = cast(BaseGeometry, self.geometry_filter).wkt
             intersection_filter = f"ST_Intersects(ST_Point(lon, lat), ST_GeomFromText('{wkt}'))"
@@ -502,12 +501,7 @@ class PbfFileReader:
             ways_intersecting_ids = ways_valid_ids
         # WAYS - FILTERED (WF)
         # - select all from WI with tags filter
-        filter_osm_way_ids = [
-            osm_id.replace("way/", "") for osm_id in filter_osm_ids if osm_id.startswith("way/")
-        ]
-        filter_osm_way_ids_filter = (
-            "1=1" if not filter_osm_way_ids else f"id in ({','.join(filter_osm_way_ids)})"
-        )
+        filter_osm_way_ids_filter = self._generate_elements_filter(filter_osm_ids, "way")
         self._sql_to_parquet_file(
             sql_query=f"""
             SELECT id FROM ({ways_all_with_tags.sql_query()}) w
@@ -599,14 +593,8 @@ class PbfFileReader:
             relations_intersecting_ids = relations_valid_ids
         # RELATIONS - FILTERED (RF)
         # - select all from RI with tags filter
-        filter_osm_relation_ids = [
-            osm_id.replace("relation/", "")
-            for osm_id in filter_osm_ids
-            if osm_id.startswith("relation/")
-        ]
-        filter_osm_relation_ids_filter = (
-            "1=1" if not filter_osm_relation_ids else f"id in ({','.join(filter_osm_relation_ids)})"
-        )
+        filter_osm_relation_ids_filter = self._generate_elements_filter(filter_osm_ids, "relation")
+
         relations_ids_path = Path(tmp_dir_name) / "relations_ids"
         relations_ids_path.mkdir(parents=True, exist_ok=True)
         self._sql_to_parquet_file(
@@ -734,6 +722,23 @@ class PbfFileReader:
             ]
         ) as tags
         """
+
+    def _generate_elements_filter(
+        self, filter_osm_ids: list[str], element_type: Literal["node", "way", "relation"]
+    ) -> str:
+        filter_osm_relation_ids = [
+            osm_id.replace(f"{element_type}/", "")
+            for osm_id in filter_osm_ids
+            if osm_id.startswith(f"{element_type}/")
+        ]
+        if not filter_osm_ids:
+            filter_osm_ids_filter = "1=1"
+        elif filter_osm_relation_ids:
+            filter_osm_ids_filter = f"id in ({','.join(filter_osm_relation_ids)})"
+        else:
+            filter_osm_ids_filter = "id IS NULL"
+
+        return filter_osm_ids_filter
 
     def _sql_escape(self, value: str) -> str:
         """Escape value for SQL query."""
@@ -951,8 +956,7 @@ class PbfFileReader:
         required_ways_with_linestrings: "duckdb.DuckDBPyRelation",
         tmp_dir_name: str,
     ) -> "duckdb.DuckDBPyRelation":
-        # TODO: if no ways with outer role -> then treat all as outer
-        print(self.connection.sql(f"""
+        valid_relation_parts = self.connection.sql(f"""
             WITH unnested_relations AS (
                 SELECT
                     r.id,
@@ -964,12 +968,21 @@ class PbfFileReader:
                 ON r.id = fr.id
                 JOIN ({required_ways_with_linestrings.sql_query()}) w
                 ON w.id = r.ref
-                --WHERE r.id = 9286845
-                WHERE r.id = 2540221
                 ORDER BY r.id, r.ref_idx
             ),
+            any_outer_refs AS (
+                SELECT id, bool_or(ref_role == 'outer') any_outer_refs
+                FROM unnested_relations
+                GROUP BY id
+            ),
             relations_with_geometries AS (
-                SELECT id, ref_role, geom geometry
+                SELECT
+                    x.id,
+                    CASE WHEN aor.any_outer_refs
+                        THEN x.ref_role ELSE 'outer'
+                    END as ref_role,
+                    x.geom geometry,
+                    row_number() OVER (PARTITION BY x.id) as geometry_id
                 FROM (
                     SELECT
                         id,
@@ -979,7 +992,8 @@ class PbfFileReader:
                         ),
                     FROM unnested_relations
                     GROUP BY id, ref_role
-                )
+                ) x
+                JOIN any_outer_refs aor ON aor.id = x.id
                 WHERE ST_NPoints(geom) >= 4
             ),
             valid_relations AS (
@@ -994,128 +1008,66 @@ class PbfFileReader:
                     GROUP BY id
                 )
                 WHERE is_valid = true
-            ),
-            inner_geometries AS (
-                -- SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'inner'
-                GROUP BY id
-            ),
-            outer_geometries AS (
-                -- SELECT id, ref, ST_MakePolygon(geometry) geometry
-                SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'outer'
-                GROUP BY id
-            ),
-            outer_geometries_with_holes AS (
-                SELECT
-                    og.id,
-                    ST_Difference(ST_Union_Agg(og.geometry), ST_Union_Agg(ig.geometry)) geometry
-                FROM outer_geometries og
-                JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
-                GROUP BY og.id
-            ),
-            outer_geometries_without_holes AS (
-                SELECT id, geometry
-                FROM outer_geometries og
-                ANTI JOIN outer_geometries_with_holes ogwh ON og.id = ogwh.id
-            ),
-            unioned_outer_geometries AS (
-                SELECT id, geometry
-                FROM outer_geometries_with_holes
-                UNION ALL
-                SELECT id, geometry
-                FROM outer_geometries_without_holes
-            ),
-            final_geometries AS (
-                SELECT id, ST_Union_Agg(geometry) geometry
-                FROM unioned_outer_geometries
-                GROUP BY id
             )
-            SELECT * FROM outer_geometries
-        """))
+            SELECT * FROM relations_with_geometries
+            SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
+        """)
+        valid_relation_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=valid_relation_parts,
+            file_path=Path(tmp_dir_name) / "valid_relation_parts",
+        )
+        relation_inner_parts = self.connection.sql(f"""
+            SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
+            FROM ({valid_relation_parts_parquet.sql_query()})
+            WHERE ref_role = 'inner'
+        """)
+        relation_inner_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_inner_parts,
+            file_path=Path(tmp_dir_name) / "relation_inner_parts",
+        )
+        relation_outer_parts = self.connection.sql(f"""
+            SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
+            FROM ({valid_relation_parts_parquet.sql_query()})
+            WHERE ref_role = 'outer'
+        """)
+        relation_outer_parts_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts",
+        )
+        relation_outer_parts_with_holes = self.connection.sql(f"""
+            SELECT
+                og.id,
+                og.geometry_id,
+                ST_Difference(any_value(og.geometry), ST_Union_Agg(ig.geometry)) geometry
+            FROM ({relation_outer_parts_parquet.sql_query()}) og
+            JOIN ({relation_inner_parts_parquet.sql_query()}) ig
+            ON og.id = ig.id AND ST_WITHIN(ig.geometry, og.geometry)
+            GROUP BY og.id, og.geometry_id
+        """)
+        relation_outer_parts_with_holes_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts_with_holes,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts_with_holes",
+        )
+        relation_outer_parts_without_holes = self.connection.sql(f"""
+            SELECT
+                og.id,
+                og.geometry_id,
+                og.geometry
+            FROM ({relation_outer_parts_parquet.sql_query()}) og
+            ANTI JOIN ({relation_outer_parts_with_holes_parquet.sql_query()}) ogwh
+            ON og.id = ogwh.id AND og.geometry_id = ogwh.geometry_id
+        """)
+        relation_outer_parts_without_holes_parquet = self._save_parquet_file_with_geometry(
+            relation=relation_outer_parts_without_holes,
+            file_path=Path(tmp_dir_name) / "relation_outer_parts_without_holes",
+        )
         relations_with_geometry = self.connection.sql(f"""
-            WITH unnested_relations AS (
-                SELECT
-                    r.id,
-                    COALESCE(r.ref_role, 'outer') as ref_role,
-                    r.ref,
-                    linestring_to_linestring_wkt(w.linestring)::GEOMETRY as geometry
-                FROM ({osm_parquet_files.relations_with_unnested_way_refs.sql_query()}) r
-                SEMI JOIN ({osm_parquet_files.relations_filtered_ids.sql_query()}) fr
-                ON r.id = fr.id
-                JOIN ({required_ways_with_linestrings.sql_query()}) w
-                ON w.id = r.ref
-                --WHERE r.id = 9597961
-                ORDER BY r.id, r.ref_idx
-            ),
-            relations_with_geometries AS (
-                SELECT id, ref, ref_role, geom geometry
-                FROM (
-                    SELECT
-                        id,
-                        ref,
-                        ref_role,
-                        UNNEST(
-                            ST_Dump(ST_LineMerge(ST_Collect(list(geometry)))), recursive := true
-                        ),
-                    FROM unnested_relations
-                    GROUP BY id, ref, ref_role
-                )
-                WHERE ST_NPoints(geom) >= 4
-            ),
-            valid_relations AS (
-                SELECT id, is_valid
-                FROM (
-                    SELECT
-                        id,
-                        bool_and(
-                            ST_Equals(ST_StartPoint(geometry), ST_EndPoint(geometry))
-                        ) is_valid
-                    FROM relations_with_geometries
-                    GROUP BY id
-                )
-                WHERE is_valid = true
-            ),
-            inner_geometries AS (
-                -- SELECT id, ST_Union_Agg(ST_MakePolygon(geometry)) geometry
-                SELECT id, ref, ST_MakePolygon(geometry) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'inner'
-                -- GROUP BY id
-            ),
-            outer_geometries AS (
-                SELECT id, ref, ST_MakePolygon(geometry) geometry
-                FROM relations_with_geometries
-                SEMI JOIN valid_relations ON relations_with_geometries.id = valid_relations.id
-                WHERE ref_role = 'outer'
-                -- GROUP BY id
-            ),
-            outer_geometries_with_holes AS (
-                SELECT
-                    og.id,
-                    og.ref,
-                    ST_Difference(ST_Union_Agg(og.geometry), ST_Union_Agg(ig.geometry)) geometry
-                FROM outer_geometries og
-                JOIN inner_geometries ig ON ST_WITHIN(ig.geometry, og.geometry)
-                GROUP BY og.id, og.ref
-            ),
-            outer_geometries_without_holes AS (
-                SELECT id, ref, geometry
-                FROM outer_geometries og
-                ANTI JOIN outer_geometries_with_holes ogwh ON og.id = ogwh.id AND og.ref = ogwh.ref
-            ),
-            unioned_outer_geometries AS (
+            WITH unioned_outer_geometries AS (
                 SELECT id, geometry
-                FROM outer_geometries_with_holes
+                FROM ({relation_outer_parts_with_holes_parquet.sql_query()})
                 UNION ALL
                 SELECT id, geometry
-                FROM outer_geometries_without_holes
+                FROM ({relation_outer_parts_without_holes_parquet.sql_query()})
             ),
             final_geometries AS (
                 SELECT id, ST_Union_Agg(geometry) geometry
@@ -1127,7 +1079,6 @@ class PbfFileReader:
             JOIN ({osm_parquet_files.relations_all_with_tags.sql_query()}) r
             ON r.id = r_g.id
         """)
-        print(relations_with_geometry)
         relations_parquet = self._save_parquet_file_with_geometry(
             relation=relations_with_geometry,
             file_path=Path(tmp_dir_name) / "filtered_relations_with_geometry",

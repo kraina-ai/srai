@@ -9,6 +9,7 @@ from functional import seq
 from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
+from shapely.ops import unary_union
 
 __all__ = [
     "flatten_geometry_series",
@@ -39,19 +40,21 @@ def flatten_geometry(geometry: BaseGeometry) -> list[BaseGeometry]:
 
 
 # https://stackoverflow.com/a/70387141/7766101
-def remove_interiors(polygon: Polygon) -> Polygon:
+def remove_interiors(geometry: Union[Polygon, MultiPolygon]) -> Polygon:
     """
     Close polygon holes by limitation to the exterior ring.
 
     Args:
-        polygon (Polygon): Polygon to close.
+        geometry (Union[Polygon, MultiPolygon])): Polygon to close.
 
     Returns:
         Polygon: Closed polygon.
     """
-    if polygon.interiors:
-        return Polygon(list(polygon.exterior.coords))
-    return polygon
+    if isinstance(geometry, MultiPolygon):
+        return unary_union([remove_interiors(sub_polygon) for sub_polygon in geometry.geoms])
+    if geometry.interiors:
+        return Polygon(list(geometry.exterior.coords))
+    return geometry
 
 
 def buffer_geometry(geometry: BaseGeometry, meters: float) -> BaseGeometry:
