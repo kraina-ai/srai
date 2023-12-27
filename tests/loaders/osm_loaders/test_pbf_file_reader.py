@@ -690,36 +690,64 @@ def test_gdal_parity(extract_name: str) -> None:
 
     invalid_features = []
 
-    for gdal_row_index in gdal_index:
-        if gdal_row_index in invalid_relations_missing_in_duckdb:
-            continue
+    common_index = gdal_index.difference(invalid_relations_missing_in_duckdb)
+    joined_df = pd.DataFrame(
+        dict(
+            duckdb_tags=duckdb_gdf.loc[common_index].tags,
+            gdal_tags=gdal_gdf.loc[common_index].tags,
+            duckdb_geometry=duckdb_gdf.loc[common_index].geometry,
+            gdal_geometry=gdal_gdf.loc[common_index].geometry,
+        ),
+        index=common_index,
+    )
 
-        duckdb_row = duckdb_gdf.loc[gdal_row_index]
-        gdal_row = gdal_gdf.loc[gdal_row_index]
-        duckdb_tags = {k: v for k, v in duckdb_row.tags.items() if k != "area"}
-        source_tags = {k: v for k, v in gdal_row.tags.items() if k != "area"}
+    # Check tags
+    joined_df["tags_keys_difference"] = joined_df.apply(
+        lambda x: set(x.duckdb_tags.keys())
+        .symmetric_difference(x.gdal_tags.keys())
+        .difference(["area"]),
+        axis=1,
+    )
 
-        # Check tags
-        tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(source_tags.keys())
-        # If difference - compare tags with source data.
-        # Sometimes GDAL copies tags from members to a parent.
-        if tags_keys_difference:
-            source_tags = get_tags_from_osm_element(str(pbf_file_path), gdal_row_index)
-            tags_keys_difference = set(duckdb_tags.keys()).symmetric_difference(source_tags.keys())
+    # If difference - compare tags with source data.
+    # Sometimes GDAL copies tags from members to a parent.
+    mismatched_rows = joined_df["tags_keys_difference"].str.len() != 0
+    if mismatched_rows:
+        joined_df.loc[mismatched_rows, "source_tags"] = [
+            get_tags_from_osm_element(str(pbf_file_path), row_index)
+            for row_index in joined_df.loc[mismatched_rows].index
+        ]
 
+        joined_df.loc[mismatched_rows, "tags_keys_difference"] = joined_df.loc[
+            mismatched_rows
+        ].apply(
+            lambda x: set(x.duckdb_tags.keys())
+            .symmetric_difference(x.source_tags.keys())
+            .difference(["area"]),
+            axis=1,
+        )
+
+    for row_index in common_index:
+        tags_keys_difference = joined_df.loc[row_index, "tags_keys_difference"]
+        duckdb_tags = joined_df.loc[row_index, "duckdb_tags"]
+        source_tags = joined_df.loc[row_index, "source_tags"]
         assert not tags_keys_difference, (
-            f"Tags keys aren't equal. ({gdal_row_index}, {tags_keys_difference},"
+            f"Tags keys aren't equal. ({row_index}, {tags_keys_difference},"
             f" {duckdb_tags.keys()}, {source_tags.keys()})"
         )
         ut.assertDictEqual(
             duckdb_tags,
             source_tags,
-            f"Tags aren't equal. ({gdal_row_index})",
+            f"Tags aren't equal. ({row_index})",
         )
+
+    for row_index in common_index:
+        duckdb_row = duckdb_gdf.loc[row_index]
+        gdal_row = gdal_gdf.loc[row_index]
 
         try:
             are_geometries_similar, full_debug_dict = check_if_two_geometries_are_similar(
-                gdal_row_index=gdal_row_index,
+                gdal_row_index=row_index,
                 duckdb_row=duckdb_row,
                 gdal_row=gdal_row,
                 reader=reader,
@@ -728,7 +756,7 @@ def test_gdal_parity(extract_name: str) -> None:
             if not are_geometries_similar:
                 invalid_features.append(full_debug_dict)
         except Exception as ex:
-            raise RuntimeError(f"Unexpected error for feature: {gdal_row_index}") from ex
+            raise RuntimeError(f"Unexpected error for feature: {row_index}") from ex
 
     assert not invalid_features, (
         f"Geometries aren't equal - ({[t[FEATURES_INDEX] for t in invalid_features]}). Full debug"
