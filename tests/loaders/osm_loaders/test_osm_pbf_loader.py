@@ -178,7 +178,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
             None,
             HEX2VEC_FILTER,
             "geofabrik",
-            403,
+            397,
             12,
             [
                 "amenity",
@@ -209,7 +209,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
             None,
             GEOFABRIK_LAYERS,
             "geofabrik",
-            959,
+            949,
             23,
             [
                 "accommodation",
