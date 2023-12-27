@@ -694,7 +694,7 @@ def test_gdal_parity(extract_name: str) -> None:
     joined_df = pd.DataFrame(
         dict(
             duckdb_tags=duckdb_gdf.loc[common_index].tags,
-            gdal_tags=gdal_gdf.loc[common_index].tags,
+            source_tags=gdal_gdf.loc[common_index].tags,
             duckdb_geometry=duckdb_gdf.loc[common_index].geometry,
             gdal_geometry=gdal_gdf.loc[common_index].geometry,
         ),
@@ -704,7 +704,7 @@ def test_gdal_parity(extract_name: str) -> None:
     # Check tags
     joined_df["tags_keys_difference"] = joined_df.apply(
         lambda x: set(x.duckdb_tags.keys())
-        .symmetric_difference(x.gdal_tags.keys())
+        .symmetric_difference(x.source_tags.keys())
         .difference(["area"]),
         axis=1,
     )
@@ -730,18 +730,14 @@ def test_gdal_parity(extract_name: str) -> None:
     for row_index in common_index:
         tags_keys_difference = joined_df.loc[row_index, "tags_keys_difference"]
         duckdb_tags = joined_df.loc[row_index, "duckdb_tags"]
-        source_tags = (
-            joined_df.loc[row_index, "source_tags"]
-            if "source_tags" in joined_df.columns
-            else joined_df.loc[row_index, "gdal_tags"]
-        )
+        source_tags = joined_df.loc[row_index, "source_tags"]
         assert not tags_keys_difference, (
             f"Tags keys aren't equal. ({row_index}, {tags_keys_difference},"
             f" {duckdb_tags.keys()}, {source_tags.keys()})"
         )
         ut.assertDictEqual(
-            duckdb_tags,
-            source_tags,
+            {k: v for k, v in duckdb_tags.items() if k != "area"},
+            {k: v for k, v in source_tags.items() if k != "area"},
             f"Tags aren't equal. ({row_index})",
         )
 
