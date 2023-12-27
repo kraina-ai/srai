@@ -504,13 +504,11 @@ def check_if_two_geometries_are_similar(
     # Check if geometries have the same number of points
     duckdb_geometry_points = calculate_total_points(duckdb_geometry)
     gdal_geometry_points = calculate_total_points(gdal_geometry)
-    same_number_of_points = duckdb_geometry_points == gdal_geometry_points
 
     duckdb_polygon_and_gdal_linestring_but_geometried_are_equal = (
         geometry_close_hausdorff_distance
         and is_duckdb_polygon_and_gdal_linestring
         and is_proper_filter_tag_value
-        and same_number_of_points
     )
 
     if duckdb_polygon_and_gdal_linestring_but_geometried_are_equal:
@@ -547,7 +545,6 @@ def check_if_two_geometries_are_similar(
         geometry_close_hausdorff_distance
         and is_duckdb_linestring_and_gdal_polygon
         and is_not_in_filter_tag_value
-        and same_number_of_points
     )
 
     if duckdb_linestring_and_gdal_polygon_but_geometried_are_equal:
@@ -608,7 +605,6 @@ def check_if_two_geometries_are_similar(
         "gdal_geom_type": gdal_geometry.geom_type,
         "is_proper_filter_tag_value": is_proper_filter_tag_value,
         "is_not_in_filter_tag_value": is_not_in_filter_tag_value,
-        "same_number_of_points": same_number_of_points,
         "duckdb_geometry_points": duckdb_geometry_points,
         "gdal_geometry_points": gdal_geometry_points,
         "duckdb_polygon_and_gdal_linestring_but_geometried_are_equal": (
