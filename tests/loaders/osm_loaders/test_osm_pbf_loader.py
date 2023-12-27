@@ -178,7 +178,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
             Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             HEX2VEC_FILTER,
             "geofabrik",
-            397,
+            403,
             12,
             [
                 "amenity",
@@ -209,7 +209,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
             Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             GEOFABRIK_LAYERS,
             "geofabrik",
-            949,
+            958,
             23,
             [
                 "accommodation",
@@ -284,7 +284,7 @@ def test_osm_pbf_loader(
         download_source=pbf_source,
         switch_to_geofabrik_on_error=False,
     )
-    result = loader.load(area, tags=query)
+    result = loader.load(area, tags=query, ignore_cache=True)
 
     assert (
         len(result) == expected_result_length

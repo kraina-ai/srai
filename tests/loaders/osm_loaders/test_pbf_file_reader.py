@@ -17,8 +17,8 @@ import pyogrio
 import pytest
 import six
 from parametrization import Parametrization as P
-from shapely import get_num_geometries, get_num_points, hausdorff_distance
-from shapely.geometry import LineString, MultiPoint, MultiPolygon, Point, Polygon
+from shapely import hausdorff_distance
+from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
@@ -249,39 +249,6 @@ def read_features_with_pyogrio(extract_name: str) -> gpd.GeoDataFrame:
     final_gdf = final_gdf[non_relations | matching_relations]
     final_gdf.geometry = final_gdf.geometry.make_valid()
     return final_gdf[[FEATURES_INDEX, "tags", "geometry"]].set_index(FEATURES_INDEX)
-
-
-def iou_metric(geom_a: BaseGeometry, geom_b: BaseGeometry) -> float:
-    """Calculate IoU metric for geometries."""
-    if geom_a.geom_type not in (
-        "Polygon",
-        "MultiPolygon",
-        "GeometryCollection",
-    ) or geom_b.geom_type not in ("Polygon", "MultiPolygon", "GeometryCollection"):
-        return 0
-    intersection = geom_a.intersection(geom_b).area
-    union = geom_a.area + geom_b.area - intersection
-    if union == 0:
-        return 0
-    return float(intersection / union)
-
-
-def calculate_total_points(geom: BaseGeometry) -> int:
-    """Calculate total number of points in a geometry."""
-    if isinstance(geom, (Point, MultiPoint)):
-        return int(get_num_geometries(geom))
-
-    line_strings = []
-
-    if isinstance(geom, LineString):
-        line_strings.append(geom)
-    elif isinstance(geom, Polygon):
-        line_strings.append(geom.exterior)
-        line_strings.extend(geom.interiors)
-    else:  # MultiLineString, MultiPolygon, GeometryCollection
-        return sum(calculate_total_points(sub_geom) for sub_geom in geom.geoms)
-
-    return sum(get_num_points(line_string) for line_string in line_strings)
 
 
 def check_if_relation_in_osm_is_valid_based_on_tags(pbf_file: str, relation_id: str) -> bool:
@@ -579,29 +546,6 @@ def test_gdal_parity(extract_name: str) -> None:
         invalid_geometries_df["duckdb_is_closed"] == invalid_geometries_df["gdal_is_closed"]
     )
 
-    # Check geometries equality - same geom type, same points
-    invalid_geometries_df.loc[
-        invalid_geometries_df["geometry_both_closed_or_not"], "geometry_equals"
-    ] = gpd.GeoSeries(
-        invalid_geometries_df.loc[
-            invalid_geometries_df["geometry_both_closed_or_not"], "duckdb_geometry"
-        ]
-    ).geom_equals(
-        gpd.GeoSeries(
-            invalid_geometries_df.loc[
-                invalid_geometries_df["geometry_both_closed_or_not"], "gdal_geometry"
-            ]
-        )
-    )
-    invalid_geometries_df = invalid_geometries_df.loc[
-        ~(
-            invalid_geometries_df["geometry_both_closed_or_not"]
-            & invalid_geometries_df["geometry_equals"]
-        )
-    ]
-    if invalid_geometries_df.empty:
-        return
-
     tolerance = 0.5 * 10 ** (-6)
     # Check if geometries are almost equal - same geom type, same points
     invalid_geometries_df.loc[
@@ -627,25 +571,71 @@ def test_gdal_parity(extract_name: str) -> None:
     if invalid_geometries_df.empty:
         return
 
-    # Check geometries overlap if polygons - slight misalingment between points,
-    # but marginal
+    # Check geometries equality - same geom type, same points
     invalid_geometries_df.loc[
-        invalid_geometries_df["geometry_both_closed_or_not"], "iou_metric"
-    ] = invalid_geometries_df.loc[invalid_geometries_df["geometry_both_closed_or_not"]].apply(
-        lambda x: iou_metric(x.duckdb_geometry, x.gdal_geometry), axis=1
-    )
-    invalid_geometries_df.loc[
-        invalid_geometries_df["geometry_both_closed_or_not"], "geometry_iou_near_one"
-    ] = invalid_geometries_df.loc[
-        invalid_geometries_df["geometry_both_closed_or_not"], "iou_metric"
-    ] >= (
-        1 - tolerance
+        invalid_geometries_df["geometry_both_closed_or_not"], "geometry_equals"
+    ] = gpd.GeoSeries(
+        invalid_geometries_df.loc[
+            invalid_geometries_df["geometry_both_closed_or_not"], "duckdb_geometry"
+        ]
+    ).geom_equals(
+        gpd.GeoSeries(
+            invalid_geometries_df.loc[
+                invalid_geometries_df["geometry_both_closed_or_not"], "gdal_geometry"
+            ]
+        )
     )
     invalid_geometries_df = invalid_geometries_df.loc[
         ~(
             invalid_geometries_df["geometry_both_closed_or_not"]
-            & invalid_geometries_df["geometry_iou_near_one"]
+            & invalid_geometries_df["geometry_equals"]
         )
+    ]
+    if invalid_geometries_df.empty:
+        return
+
+    # Check geometries overlap if polygons - slight misalingment between points,
+    # but marginal
+    matching_polygon_geometries_mask = (
+        invalid_geometries_df["geometry_both_closed_or_not"]
+        & gpd.GeoSeries(invalid_geometries_df["duckdb_geometry"]).geom_type.isin(
+            ("Polygon", "MultiPolygon", "GeometryCollection")
+        )
+        & gpd.GeoSeries(invalid_geometries_df["gdal_geometry"]).geom_type.isin(
+            ("Polygon", "MultiPolygon", "GeometryCollection")
+        )
+    )
+    invalid_geometries_df.loc[matching_polygon_geometries_mask, "geometry_intersection_area"] = (
+        gpd.GeoSeries(
+            invalid_geometries_df.loc[matching_polygon_geometries_mask, "duckdb_geometry"]
+        )
+        .intersection(
+            gpd.GeoSeries(
+                invalid_geometries_df.loc[matching_polygon_geometries_mask, "gdal_geometry"]
+            )
+        )
+        .area
+    )
+
+    invalid_geometries_df.loc[
+        matching_polygon_geometries_mask, "iou_metric"
+    ] = invalid_geometries_df.loc[
+        matching_polygon_geometries_mask, "geometry_intersection_area"
+    ] / (
+        gpd.GeoSeries(
+            invalid_geometries_df.loc[matching_polygon_geometries_mask, "duckdb_geometry"]
+        ).area
+        + gpd.GeoSeries(
+            invalid_geometries_df.loc[matching_polygon_geometries_mask, "gdal_geometry"]
+        ).area
+        - invalid_geometries_df.loc[matching_polygon_geometries_mask, "geometry_intersection_area"]
+    )
+
+    invalid_geometries_df.loc[matching_polygon_geometries_mask, "geometry_iou_near_one"] = (
+        invalid_geometries_df.loc[matching_polygon_geometries_mask, "iou_metric"] >= (1 - tolerance)
+    )
+    invalid_geometries_df = invalid_geometries_df.loc[
+        ~(matching_polygon_geometries_mask & invalid_geometries_df["geometry_iou_near_one"])
     ]
     if invalid_geometries_df.empty:
         return

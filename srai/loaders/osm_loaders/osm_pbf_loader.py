@@ -74,6 +74,7 @@ class OSMPbfLoader(OSMLoader):
         self,
         area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+        ignore_cache: bool = False,
     ) -> gpd.GeoDataFrame:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
@@ -98,6 +99,8 @@ class OSMPbfLoader(OSMLoader):
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
 
         Raises:
             ValueError: If PBF file is expected to be downloaded and provided geometries
@@ -111,7 +114,9 @@ class OSMPbfLoader(OSMLoader):
         pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
         pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
 
-        features_gdf = pbf_reader.get_features_gdf(file_paths=pbf_files_to_load)
+        features_gdf = pbf_reader.get_features_gdf(
+            file_paths=pbf_files_to_load, ignore_cache=ignore_cache
+        )
         result_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
