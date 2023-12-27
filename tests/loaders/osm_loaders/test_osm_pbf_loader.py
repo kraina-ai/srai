@@ -175,7 +175,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
                     ]
                 )
             ],
-            None,
+            Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             HEX2VEC_FILTER,
             "geofabrik",
             397,
@@ -206,7 +206,7 @@ def test_pbf_downloading(test_polygon: BaseGeometry, test_file_names: list[str])
                     ]
                 )
             ],
-            None,
+            Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             GEOFABRIK_LAYERS,
             "geofabrik",
             949,
