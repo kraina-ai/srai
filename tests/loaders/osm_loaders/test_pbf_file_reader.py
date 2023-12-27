@@ -712,7 +712,7 @@ def test_gdal_parity(extract_name: str) -> None:
     # If difference - compare tags with source data.
     # Sometimes GDAL copies tags from members to a parent.
     mismatched_rows = joined_df["tags_keys_difference"].str.len() != 0
-    if mismatched_rows:
+    if mismatched_rows.any():
         joined_df.loc[mismatched_rows, "source_tags"] = [
             get_tags_from_osm_element(str(pbf_file_path), row_index)
             for row_index in joined_df.loc[mismatched_rows].index
