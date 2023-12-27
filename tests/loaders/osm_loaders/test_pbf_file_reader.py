@@ -455,9 +455,9 @@ def extract_polygons_from_geometry(geometry: BaseGeometry) -> list[Union[Polygon
 @P.case("Cambodia", "cambodia")  # type: ignore
 @P.case("Maldives", "maldives")  # type: ignore
 @P.case("Seychelles", "seychelles")  # type: ignore
-@P.case("Sierra Leone", "sierra-leone")  # type: ignore
+@P.case("Mauritius", "mauritius")  # type: ignore
 @P.case("Greenland", "greenland")  # type: ignore
-@P.case("El Salvador", "el-salvador")  # type: ignore
+@P.case("Bahamas", "bahamas")  # type: ignore
 @P.case("Panama", "panama")  # type: ignore
 @P.case("Fiji", "fiji")  # type: ignore
 @P.case("Kiribati", "kiribati")  # type: ignore
