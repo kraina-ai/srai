@@ -730,7 +730,11 @@ def test_gdal_parity(extract_name: str) -> None:
     for row_index in common_index:
         tags_keys_difference = joined_df.loc[row_index, "tags_keys_difference"]
         duckdb_tags = joined_df.loc[row_index, "duckdb_tags"]
-        source_tags = joined_df.loc[row_index, "source_tags"]
+        source_tags = (
+            joined_df.loc[row_index, "source_tags"]
+            if "source_tags" in joined_df.columns
+            else joined_df.loc[row_index, "gdal_tags"]
+        )
         assert not tags_keys_difference, (
             f"Tags keys aren't equal. ({row_index}, {tags_keys_difference},"
             f" {duckdb_tags.keys()}, {source_tags.keys()})"
