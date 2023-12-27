@@ -216,7 +216,9 @@ class PbfFileReader:
             try:
                 self._set_up_duckdb_connection(tmp_dir_name)
                 result_file_path = result_file_path or self._generate_geoparquet_result_file_path(
-                    pbf_path
+                    pbf_path,
+                    filter_osm_ids=filter_osm_ids,
+                    explode_tags=explode_tags,
                 )
                 parsed_geoparquet_file = self._parse_pbf_file(
                     pbf_path=pbf_path,
@@ -348,7 +350,10 @@ class PbfFileReader:
         return result_file_path
 
     def _generate_geoparquet_result_file_path(
-        self, pbf_file_path: Union[str, "os.PathLike[str]"]
+        self,
+        pbf_file_path: Union[str, "os.PathLike[str]"],
+        explode_tags: bool,
+        filter_osm_ids: list[str],
     ) -> Path:
         pbf_file_name = Path(pbf_file_path).name.removesuffix(".osm.pbf")
 
@@ -362,8 +367,17 @@ class PbfFileReader:
         if self.geometry_filter is not None:
             clipping_geometry_hash_part = get_geometry_hash(self.geometry_filter)
 
+        exploded_tags_part = "exploded" if explode_tags else "compact"
+
+        filter_osm_ids_hash_part = ""
+        if filter_osm_ids:
+            h = hashlib.new("sha256")
+            h.update(json.dumps(sorted(set(filter_osm_ids))).encode())
+            filter_osm_ids_hash_part = f"_{h.hexdigest()}"
+
         result_file_name = (
-            f"{pbf_file_name}_{osm_filter_tags_hash_part}_{clipping_geometry_hash_part}.geoparquet"
+            f"{pbf_file_name}_{osm_filter_tags_hash_part}"
+            f"_{clipping_geometry_hash_part}_{exploded_tags_part}{filter_osm_ids_hash_part}.geoparquet"
         )
         return Path(self.working_directory) / result_file_name
 
@@ -661,7 +675,9 @@ class PbfFileReader:
             relations_filtered_ids=relations_filtered_ids,
         )
 
-    def _delete_directories(self, tmp_dir_name: str, directories: Union[str, list[str]]) -> None:
+    def _delete_directories(
+        self, tmp_dir_name: Union[Path, str], directories: Union[str, list[str]]
+    ) -> None:
         if isinstance(directories, str):
             directories = [directories]
         for directory in directories:
@@ -1024,6 +1040,7 @@ class PbfFileReader:
         relation_inner_parts_parquet = self._save_parquet_file_with_geometry(
             relation=relation_inner_parts,
             file_path=Path(tmp_dir_name) / "relation_inner_parts",
+            fix_geometries=True,
         )
         relation_outer_parts = self.connection.sql(f"""
             SELECT id, geometry_id, ST_MakePolygon(geometry) geometry
@@ -1033,6 +1050,7 @@ class PbfFileReader:
         relation_outer_parts_parquet = self._save_parquet_file_with_geometry(
             relation=relation_outer_parts,
             file_path=Path(tmp_dir_name) / "relation_outer_parts",
+            fix_geometries=True,
         )
         relation_outer_parts_with_holes = self.connection.sql(f"""
             SELECT
@@ -1086,15 +1104,86 @@ class PbfFileReader:
         return relations_parquet
 
     def _save_parquet_file_with_geometry(
-        self, relation: "duckdb.DuckDBPyRelation", file_path: Path
+        self, relation: "duckdb.DuckDBPyRelation", file_path: Path, fix_geometries: bool = False
     ) -> "duckdb.DuckDBPyRelation":
-        self.connection.sql(f"""
-            COPY (
-                SELECT
-                    * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
-                FROM ({relation.sql_query()})
-            ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
-        """)
+        if not fix_geometries:
+            self.connection.sql(f"""
+                COPY (
+                    SELECT
+                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
+                    FROM ({relation.sql_query()})
+                ) TO '{file_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
+            """)
+        else:
+            import geoarrow.pyarrow as ga
+
+            valid_path = file_path / "valid"
+            invalid_path = file_path / "invalid"
+            fixed_path = file_path / "fixed"
+
+            valid_path.mkdir(parents=True, exist_ok=True)
+            invalid_path.mkdir(parents=True, exist_ok=True)
+            fixed_path.mkdir(parents=True, exist_ok=True)
+
+            # Save valid features
+            self.connection.sql(f"""
+                COPY (
+                    SELECT
+                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb
+                    FROM ({relation.sql_query()})
+                    WHERE ST_IsValid(geometry)
+                ) TO '{valid_path}' (FORMAT 'parquet', PER_THREAD_OUTPUT true, ROW_GROUP_SIZE 25000)
+            """)
+
+            # Save invalid features
+            self.connection.sql(f"""
+                COPY (
+                    SELECT
+                        * EXCLUDE (geometry), ST_AsWKB(geometry) geometry_wkb,
+                        floor(
+                            row_number() OVER () / {self.rows_per_bucket}
+                        )::INTEGER as "group",
+                    FROM ({relation.sql_query()})
+                    WHERE NOT ST_IsValid(geometry)
+                ) TO '{invalid_path}' (
+                    FORMAT 'parquet', PARTITION_BY ("group"), ROW_GROUP_SIZE 25000
+                )
+            """)
+
+            # Fix invalid features
+            group_id = 0
+            current_invalid_features_group_path = invalid_path / f"group={group_id}"
+            while current_invalid_features_group_path.exists():
+                current_invalid_features_group_table = pq.read_table(
+                    current_invalid_features_group_path
+                ).drop("group")
+                valid_geometry_column = ga.as_wkb(
+                    ga.as_geoarrow(
+                        ga.to_geopandas(
+                            ga.with_crs(
+                                current_invalid_features_group_table.column("geometry_wkb"),
+                                WGS84_CRS,
+                            )
+                        ).make_valid()
+                    )
+                )
+                current_invalid_features_group_table = current_invalid_features_group_table.drop(
+                    "geometry_wkb"
+                )
+
+                current_invalid_features_group_table = (
+                    current_invalid_features_group_table.append_column(
+                        "geometry_wkb", valid_geometry_column
+                    )
+                )
+                pq.write_table(
+                    current_invalid_features_group_table, fixed_path / f"data_{group_id}.parquet"
+                )
+                group_id += 1
+                current_invalid_features_group_path = invalid_path / f"group={group_id}"
+
+            self._delete_directories(invalid_path.parent, ["invalid"])
+
         return self.connection.sql(f"""
             SELECT * EXCLUDE (geometry_wkb), ST_GeomFromWKB(geometry_wkb) geometry
             FROM read_parquet('{file_path}/**')
