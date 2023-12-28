@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
 from srai.h3 import get_local_ij_index
-from srai.neighbourhoods import H3Neighbourhood
+from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch

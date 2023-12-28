@@ -3,10 +3,9 @@
 
 [metadata]
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-cross_platform = true
-static_urls = false
-lock_version = "4.3"
-content_hash = "sha256:bee382bb644b13d92a5bbdccdd61f7e4ca63165f18896b0c1c9b855679472c31"
+strategy = ["cross_platform"]
+lock_version = "4.4"
+content_hash = "sha256:c4af38b5fd08ed438eb58eda75e1724dd9c190479761de12ef690719e9664c60"
 
 [[package]]
 name = "aiohttp"
@@ -3415,6 +3414,21 @@ dependencies = [
 files = [
     {file = "pytest_check-2.2.0-py3-none-any.whl", hash = "sha256:9769c9a13889d1f3298ee6b0ff0b84b59c8af4d927f7d52d070513601b9979c2"},
     {file = "pytest_check-2.2.0.tar.gz", hash = "sha256:ec93701d930de5a628957cd54fe918e324da1b811040e64cb70cae2857cf26ff"},
+]
+
+[[package]]
+name = "pytest-doctestplus"
+version = "1.0.0"
+requires_python = ">=3.7"
+summary = "Pytest plugin with advanced doctest features."
+dependencies = [
+    "packaging>=17.0",
+    "pytest>=4.6",
+    "setuptools>=30.3.0",
+]
+files = [
+    {file = "pytest-doctestplus-1.0.0.tar.gz", hash = "sha256:f650440dcaede13ed6d7da73bfb4ac585d40a80444ba3542d3e6eecdb275d49f"},
+    {file = "pytest_doctestplus-1.0.0-py3-none-any.whl", hash = "sha256:dcba88e1e38bc4871c355e44b778ccfd49b25e33f6aa5393eed6b56440decb2a"},
 ]
 
 [[package]]

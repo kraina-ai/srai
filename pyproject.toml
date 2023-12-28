@@ -57,13 +57,7 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = [
-    "osmium",
-    "osmnx",
-    "overpass",
-    "pillow",
-    "beautifulsoup4",
-]
+osm = ["osmium", "osmnx", "overpass", "pillow", "beautifulsoup4"]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
 # pdm add -G gtfs <library>
@@ -101,6 +95,7 @@ test = [
     "pytest-check",
     "pytest-parametrization",
     "pytest-xdist",
+    "pytest-doctestplus",
 ]
 # pdm add -dG visualization <library>
 visualization = ["keplergl", "matplotlib"]
@@ -202,6 +197,7 @@ push = false
 addopts = ["--import-mode=importlib"]
 markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 log_cli = true
+doctest_optionflags = ['ELLIPSIS', 'NORMALIZE_WHITESPACE', 'IGNORE_EXCEPTION_DETAIL']
 
 [tool.licensecheck]
 using = "requirements"
