@@ -3,10 +3,9 @@
 
 [metadata]
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
-cross_platform = true
-static_urls = false
-lock_version = "4.3"
-content_hash = "sha256:bee382bb644b13d92a5bbdccdd61f7e4ca63165f18896b0c1c9b855679472c31"
+strategy = ["cross_platform"]
+lock_version = "4.4"
+content_hash = "sha256:18e84b4393296bd85772b4d9472d893e2bda2294837069a77cd8c0731dce7cf9"
 
 [[package]]
 name = "aiohttp"
