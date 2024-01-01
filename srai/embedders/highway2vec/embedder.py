@@ -6,6 +6,7 @@ This module contains the embedder from the `highway2vec` paper [1].
 References:
     1. https://doi.org/10.1145/3557918.3565865
 """
+
 import json
 from pathlib import Path
 from typing import Any, Optional, Union

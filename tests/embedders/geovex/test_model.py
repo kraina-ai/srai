@@ -1,4 +1,5 @@
 """Tests for GeoVex model."""
+
 import os
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path

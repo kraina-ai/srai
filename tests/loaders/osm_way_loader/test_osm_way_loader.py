@@ -1,4 +1,5 @@
 """Tests for OSMWayLoader."""
+
 import pickle as pkl
 from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise
@@ -57,15 +58,13 @@ def empty_polygon_area_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def first_polygon_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with one polygon."""
-    polygon = shpg.Polygon(
-        [
-            (17.1005309, 51.1100158),
-            (17.1020436, 51.1100427),
-            (17.1021938, 51.1082509),
-            (17.1006274, 51.1081027),
-            (17.1005201, 51.1099956),
-        ]
-    )
+    polygon = shpg.Polygon([
+        (17.1005309, 51.1100158),
+        (17.1020436, 51.1100427),
+        (17.1021938, 51.1082509),
+        (17.1006274, 51.1081027),
+        (17.1005201, 51.1099956),
+    ])
 
     gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]}, crs=WGS84_CRS)
     return gdf
@@ -74,14 +73,12 @@ def first_polygon_area_gdf() -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def second_polygon_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with one polygon."""
-    polygon = shpg.Polygon(
-        [
-            (17.0994473, 51.1084126),
-            (17.1023226, 51.1086551),
-            (17.1023333, 51.1076312),
-            (17.0994473, 51.1083722),
-        ]
-    )
+    polygon = shpg.Polygon([
+        (17.0994473, 51.1084126),
+        (17.1023226, 51.1086551),
+        (17.1023333, 51.1076312),
+        (17.0994473, 51.1083722),
+    ])
 
     gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon]}, crs=WGS84_CRS)
     return gdf
@@ -98,23 +95,19 @@ def multiple_polygons_overlapping_area_gdf(
 @pytest.fixture  # type: ignore
 def multipolygons_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with a multipolygon."""
-    polygon1 = shpg.Polygon(
-        [
-            (17.1005309, 51.1100158),
-            (17.1020436, 51.1100427),
-            (17.1021938, 51.1082509),
-            (17.1006274, 51.1081027),
-            (17.1005201, 51.1099956),
-        ]
-    )
-    polygon2 = shpg.Polygon(
-        [
-            (17.0997584, 51.1049434),
-            (17.0995009, 51.1044112),
-            (17.1003485, 51.1043910),
-            (17.0997584, 51.1049434),
-        ]
-    )
+    polygon1 = shpg.Polygon([
+        (17.1005309, 51.1100158),
+        (17.1020436, 51.1100427),
+        (17.1021938, 51.1082509),
+        (17.1006274, 51.1081027),
+        (17.1005201, 51.1099956),
+    ])
+    polygon2 = shpg.Polygon([
+        (17.0997584, 51.1049434),
+        (17.0995009, 51.1044112),
+        (17.1003485, 51.1043910),
+        (17.0997584, 51.1049434),
+    ])
     multipolygon = shpg.MultiPolygon([polygon1, polygon2])
     return gpd.GeoDataFrame(geometry=[multipolygon], crs=WGS84_CRS)
 

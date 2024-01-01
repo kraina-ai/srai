@@ -1,4 +1,5 @@
 """Test case generation for GeoVexEmbedder."""
+
 import os
 from pathlib import Path
 from typing import Optional, cast

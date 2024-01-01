@@ -1,6 +1,5 @@
 """Constants for OSMWayLoader."""
 
-
 import numpy as np
 
 MPH_TO_KMH = 1.609344

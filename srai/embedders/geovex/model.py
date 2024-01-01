@@ -6,6 +6,7 @@ This pytorch lightning module implements the GeoVeX hexagonal autoencoder model.
 References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
+
 import math
 from typing import TYPE_CHECKING, Callable
 

@@ -1,4 +1,5 @@
 """Tests for merging OSM Loaders filters."""
+
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 from unittest import TestCase

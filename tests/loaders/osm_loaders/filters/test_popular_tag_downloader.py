@@ -1,4 +1,5 @@
 """Tests for OSM Loaders filters."""
+
 import json
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path

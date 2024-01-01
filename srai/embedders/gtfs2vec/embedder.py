@@ -7,7 +7,6 @@ References:
     1. https://doi.org/10.1145/3486640.3491392
 """
 
-
 import json
 from functools import reduce
 from pathlib import Path

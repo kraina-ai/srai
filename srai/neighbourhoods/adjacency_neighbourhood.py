@@ -4,6 +4,7 @@ Adjacency neighbourhood.
 This module contains the AdjacencyNeighbourhood class, that allows to get the neighbours of any
 region based on its borders.
 """
+
 from collections.abc import Hashable
 from typing import Optional
 

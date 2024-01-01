@@ -6,7 +6,6 @@ or gtfs2vec into a single interface. This allows to easily switch between differ
 methods without changing the rest of the code.
 """
 
-
 from ._base import Embedder, Model, ModelT
 from .contextual_count_embedder import ContextualCountEmbedder
 from .count_embedder import CountEmbedder

@@ -1,4 +1,5 @@
 """Tests for TileLoader class."""
+
 from io import BytesIO
 from urllib.parse import urljoin
 
@@ -47,15 +48,13 @@ def images() -> list[bytes]:
 @pytest.fixture  # type: ignore
 def gdf() -> gpd.GeoDataFrame:
     """GeoDataFrame approximating Wroclaw bounds."""
-    polygon = Polygon(
-        [
-            (16.8073393, 51.1389477),
-            (17.0278673, 51.0426754),
-            (17.1762192, 51.1063195),
-            (16.9580276, 51.2093551),
-            (16.8073393, 51.1389477),
-        ]
-    )
+    polygon = Polygon([
+        (16.8073393, 51.1389477),
+        (17.0278673, 51.0426754),
+        (17.1762192, 51.1063195),
+        (16.9580276, 51.2093551),
+        (16.8073393, 51.1389477),
+    ])
     gdf = gpd.GeoDataFrame({"geometry": [polygon]}, crs=WGS84_CRS)
     return gdf
 

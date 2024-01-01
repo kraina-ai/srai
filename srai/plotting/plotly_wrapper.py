@@ -3,6 +3,7 @@ Plotly wrapper.
 
 This module contains functions for quick plotting of analysed gdfs using Plotly library.
 """
+
 from typing import Any, Optional
 
 import geopandas as gpd
