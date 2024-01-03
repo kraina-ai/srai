@@ -95,17 +95,15 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
             # check if all the neighbors are in the dataset
             if len(neighbors.intersection(all_indices)) == len(neighbors):
                 # add the h3_index to the valid h3 indices, with the ring of neighbors
-                valid_h3s.append(
-                    (
-                        h3_index,
-                        data.index.get_loc(h3_index),
-                        [
-                            # get the index of the h3 in the dataset
-                            (data.index.get_loc(_h), get_local_ij_index(h3_index, _h))
-                            for _h in neighbors
-                        ],
-                    )
-                )
+                valid_h3s.append((
+                    h3_index,
+                    data.index.get_loc(h3_index),
+                    [
+                        # get the index of the h3 in the dataset
+                        (data.index.get_loc(_h), get_local_ij_index(h3_index, _h))
+                        for _h in neighbors
+                    ],
+                ))
             else:
                 # some of the neighbors are not in the dataset, add the h3_index to the invalid h3s
                 invalid_h3s.add(h3_index)
@@ -142,13 +140,11 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         # the target h3 is in the center of the tensor
         # the tensor is 2*neighbor_k_ring + 1 x 2*neighbor_k_ring + 1 x 2*neighbor_k_ring + 1
         # make a tensor of zeros, padded by 1 zero all around to make it even for the convolutions
-        tensor: torch.Tensor = torch.zeros(
-            (
-                self._N,
-                2 * self._k + 2,
-                2 * self._k + 2,
-            )
-        )
+        tensor: torch.Tensor = torch.zeros((
+            self._N,
+            2 * self._k + 2,
+            2 * self._k + 2,
+        ))
 
         # set the target h3 to the center of the tensor
         tensor[

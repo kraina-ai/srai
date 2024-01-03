@@ -1,4 +1,5 @@
 """Tests for merging OSM Loaders filters."""
+
 from typing import Any
 from unittest import TestCase
 

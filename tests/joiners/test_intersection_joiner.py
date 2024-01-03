@@ -1,4 +1,5 @@
 """Intersection joiner tests."""
+
 from unittest import TestCase
 
 import geopandas as gpd

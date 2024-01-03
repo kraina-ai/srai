@@ -214,12 +214,10 @@ def generate_voronoi_regions(
                     end_hash,
                     start_hash,
                 ) not in hashed_edges:
-                    hashed_edges.add(
-                        (
-                            start_hash,
-                            end_hash,
-                        )
-                    )
+                    hashed_edges.add((
+                        start_hash,
+                        end_hash,
+                    ))
 
             regions_parts[region_id].append((sphere_part_id, polygon_edges))
 
@@ -690,9 +688,7 @@ def ecef2geodetic_vectorized(
 
     # inside ellipsoid?
     inside = (
-        x**2 / ell.semimajor_axis**2
-        + y**2 / ell.semimajor_axis**2
-        + z**2 / ell.semiminor_axis**2
+        x**2 / ell.semimajor_axis**2 + y**2 / ell.semimajor_axis**2 + z**2 / ell.semiminor_axis**2
         < 1
     )
 

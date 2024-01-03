@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:a50cb764fea2fd8b3d21389a596feac6450938aaee6cd46e173d2f337b97bd7c"
+content_hash = "sha256:20f27151e7ca5603eb4b5dca1a23b647c84215230c40392b620167b7e38e3698"
 
 [[package]]
 name = "aiohttp"

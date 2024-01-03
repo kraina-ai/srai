@@ -6,6 +6,7 @@ This module contains embedder from GeoVex paper[1].
 References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
+
 from typing import Any, Optional, TypeVar, Union
 
 import geopandas as gpd

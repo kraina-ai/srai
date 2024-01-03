@@ -3,6 +3,7 @@ H3 neighbourhood.
 
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
+
 from typing import Optional
 
 import geopandas as gpd

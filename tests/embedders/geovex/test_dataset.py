@@ -1,4 +1,5 @@
 """GeoVex HexagonalDataset tests."""
+
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -115,14 +116,12 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
     # commpare to the transposed image in the paper
     # specifically fig. 3
     # the bottom and right are padded by 0s for even #
-    desired = np.array(
-        [
-            [(0, 0), (0, 0), (0, 2), (1, 2), (2, 2), (0, 0)],
-            [(0, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (0, 0)],
-            [(-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (0, 0)],
-            [(-2, -1), (-1, -1), (0, -1), (1, -1), (0, 0), (0, 0)],
-            [(-2, -2), (-1, -2), (0, -2), (0, 0), (0, 0), (0, 0)],
-            [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
-        ]
-    )
+    desired = np.array([
+        [(0, 0), (0, 0), (0, 2), (1, 2), (2, 2), (0, 0)],
+        [(0, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (0, 0)],
+        [(-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (0, 0)],
+        [(-2, -1), (-1, -1), (0, -1), (1, -1), (0, 0), (0, 0)],
+        [(-2, -2), (-1, -2), (0, -2), (0, 0), (0, 0), (0, 0)],
+        [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+    ])
     assert np.all(ijs.transpose(1, 0, -1) == desired)
