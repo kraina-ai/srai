@@ -269,7 +269,9 @@ class OSMWayLoader(Loader):
         max_osm_keys_str_len = max(map(len, self.osm_keys))
         for col in (pbar := tqdm(self.osm_keys, leave=False)):
             pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
-            gdf[col] = gdf[col].apply(lambda x, c=col: self._sanitize_and_normalize(x, c))
+            gdf[col] = gdf[col].apply(
+                lambda x, c=col: self._sanitize_and_normalize(x, c)
+            )  # noqa: FURB111
 
         return gdf if not inplace else None
 

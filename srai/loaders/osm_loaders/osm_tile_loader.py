@@ -110,7 +110,7 @@ class OSMTileLoader:
         """
         area_wgs84 = prepare_area_gdf_for_loader(area)
         regions = self.regionalizer.transform(gdf=area_wgs84)
-        regions["tile"] = regions.apply(lambda row: self._get_tile_for_area(row), axis=1)
+        regions["tile"] = regions.apply(self._get_tile_for_area, axis=1)
         return regions
 
     def _get_tile_for_area(self, row: pd.Series) -> Any:

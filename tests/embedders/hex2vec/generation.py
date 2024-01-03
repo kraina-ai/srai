@@ -58,7 +58,7 @@ def generate_test_case(
     )
     results_df.columns = results_df.columns.astype(str)
 
-    files_prefix = f"{test_case_name}"
+    files_prefix = test_case_name
 
     output_path = Path(__file__).parent / "test_files"
     regions_gdf.to_parquet(output_path / f"{files_prefix}_regions.parquet")
