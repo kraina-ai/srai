@@ -30,7 +30,7 @@ keywords:
   - geospatial
   - spatial-analysis
 license: Apache-2.0
-version: 0.6.1
+version: 0.6.2
 date-released: '2022-11-23'
 preferred-citation:
   type: conference-paper
