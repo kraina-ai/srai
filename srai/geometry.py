@@ -1,4 +1,5 @@
 """Utility geometry operations functions."""
+
 import hashlib
 from typing import Union
 
