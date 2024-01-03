@@ -1,4 +1,5 @@
 """Test case generation for GeoVexEmbedder."""
+
 import os
 from pathlib import Path
 from typing import Optional, cast
@@ -87,7 +88,7 @@ def generate_test_case(
 
     results_df.columns = results_df.columns.astype(str)
 
-    files_prefix = f"{test_case_name}"
+    files_prefix = test_case_name
 
     output_path = Path(__file__).parent / "test_files"
     regions_gdf.to_parquet(
@@ -155,7 +156,7 @@ def generate_test_case_batches(
         param.data.fill_(0.01)
 
     output_path = Path(__file__).parent / "test_files"
-    files_prefix = f"{test_case_name}"
+    files_prefix = test_case_name
 
     for i, batch in enumerate(dataloader):
         torch.save(batch, output_path / f"{files_prefix}_batch_{i}.pt")

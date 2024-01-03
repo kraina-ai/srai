@@ -3,6 +3,7 @@ OSM Way loader.
 
 This module contains osm loader implementation for ways based on OSMnx.
 """
+
 import logging
 from enum import Enum
 from typing import Any, Optional, Union
@@ -244,7 +245,7 @@ class OSMWayLoader(Loader):
                 gdf = gdf.assign(**{col: None})
             gdf = gdf.explode(col)
 
-        gdf["i"] = range(0, len(gdf))
+        gdf["i"] = range(len(gdf))
         gdf.set_index("i", append=True, inplace=True)
 
         return gdf
@@ -268,7 +269,9 @@ class OSMWayLoader(Loader):
         max_osm_keys_str_len = max(map(len, self.osm_keys))
         for col in (pbar := tqdm(self.osm_keys, leave=False)):
             pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
-            gdf[col] = gdf[col].apply(lambda x, c=col: self._sanitize_and_normalize(x, c))
+            gdf[col] = gdf[col].apply(
+                lambda x, c=col: self._sanitize_and_normalize(x, c)  # noqa: FURB111
+            )
 
         return gdf if not inplace else None
 

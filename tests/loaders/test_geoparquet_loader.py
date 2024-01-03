@@ -1,4 +1,5 @@
 """Geoparquet loader tests."""
+
 from pathlib import Path
 
 import geopandas as gpd

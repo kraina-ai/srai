@@ -7,6 +7,7 @@ to download the most popular tags from OSM
 References:
     1. https://taginfo.openstreetmap.org/
 """
+
 from typing import Any
 
 import requests

@@ -214,6 +214,7 @@ ignore_packages = [
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
+    'keplergl',                 # uses MIT license, has mismatched license in analysis
     'nvidia-cublas-cu11',       # uses NVIDIA license
     'nvidia-cuda-cupti-cu11',   # uses NVIDIA license
     'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license
@@ -225,4 +226,15 @@ ignore_packages = [
     'nvidia-cusparse-cu11',     # uses NVIDIA license
     'nvidia-nccl-cu11',         # uses NVIDIA license
     'nvidia-nvtx-cu11',         # uses NVIDIA license
+    'nvidia-cublas-cu12',       # uses NVIDIA license
+    'nvidia-cuda-cupti-cu12',   # uses NVIDIA license
+    'nvidia-cuda-nvrtc-cu12',   # uses NVIDIA license
+    'nvidia-cuda-runtime-cu12', # uses NVIDIA license
+    'nvidia-cudnn-cu12',        # uses NVIDIA license
+    'nvidia-cufft-cu12',        # uses NVIDIA license
+    'nvidia-curand-cu12',       # uses NVIDIA license
+    'nvidia-cusolver-cu12',     # uses NVIDIA license
+    'nvidia-cusparse-cu12',     # uses NVIDIA license
+    'nvidia-nccl-cu12',         # uses NVIDIA license
+    'nvidia-nvtx-cu12',         # uses NVIDIA license
 ]

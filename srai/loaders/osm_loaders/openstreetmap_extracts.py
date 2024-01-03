@@ -4,6 +4,7 @@ OpenStreetMap extracts.
 This module contains iterators for publically available OpenStreetMap `*.osm.pbf` files
 repositories.
 """
+
 import json
 import re
 from collections.abc import Iterable

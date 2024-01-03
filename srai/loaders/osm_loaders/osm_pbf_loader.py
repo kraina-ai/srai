@@ -3,6 +3,7 @@ OSM PBF Loader.
 
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
+
 from collections.abc import Hashable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Optional, Union

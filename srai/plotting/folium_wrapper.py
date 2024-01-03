@@ -4,6 +4,7 @@ Folium wrapper.
 This module contains functions for quick plotting of analysed gdfs using Geopandas `explore()`
 function.
 """
+
 from itertools import cycle, islice
 from typing import Optional, Union
 

@@ -1,4 +1,5 @@
 """Voronoi regionalizer tests."""
+
 from contextlib import nullcontext as does_not_raise
 from typing import Any, Union
 

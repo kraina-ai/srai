@@ -1,4 +1,5 @@
 """GTFS Loader tests."""
+
 from pathlib import Path
 from typing import Any
 from unittest import TestCase

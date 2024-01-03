@@ -4,6 +4,7 @@ PBF File Clipper.
 This module contains a clipper capable of clipping a PBF file to a smaller size using osmconvert or
 osmosis CLI tools.
 """
+
 import os
 import shutil
 import stat

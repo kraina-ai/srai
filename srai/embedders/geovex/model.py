@@ -6,6 +6,7 @@ This pytorch lightning module implements the GeoVeX hexagonal autoencoder model.
 References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
+
 import math
 from typing import TYPE_CHECKING, Callable
 
@@ -370,9 +371,7 @@ class GeoVeXZIP(nn.Module):  # type: ignore
             Tuple[torch.Tensor, torch.Tensor]: The predicted pi and lambda tensors.
         """
         _x = x.view(-1, self.M, self.M, self.in_dim)
-        pi = torch.sigmoid(self.pi(_x))
-        # clamp pi to avoid nan's
-        pi = pi.view(
+        pi = torch.sigmoid(self.pi(_x)).view(
             -1,
             self.out_dim,
             self.M,
@@ -384,8 +383,9 @@ class GeoVeXZIP(nn.Module):  # type: ignore
             self.M,
             self.M,
         )
-        pi = torch.clamp(pi, 1e-6, 1 - 1e-6)
-        return pi, lambda_
+        # clamp pi to avoid nan's
+        clamped_pi = torch.clamp(pi, 1e-6, 1 - 1e-6)
+        return clamped_pi, lambda_
 
 
 class GeoVexModel(Model):

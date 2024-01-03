@@ -1,4 +1,5 @@
 """Module contains a dedicated type alias for OSM tags filter."""
+
 from typing import Union, cast
 
 from srai._typing import is_expected_type
