@@ -28,7 +28,7 @@ repos:
       - id: mypy
         additional_dependencies: ['types-requests']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.11.1
+    rev: 2.11.2
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -54,7 +54,7 @@ repos:
     rev: v1.26.0
     hooks:
       - id: refurb
-        args: ["--python-version", "3.9"]
+        args: ["--python-version", "3.9", "--disable", "FURB184", "--format", "github"]
         language: python
         language_version: python3.10
         stages: [manual]
