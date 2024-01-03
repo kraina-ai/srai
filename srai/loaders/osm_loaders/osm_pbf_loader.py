@@ -19,7 +19,7 @@ from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
 
 if TYPE_CHECKING:
-    from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
+    from quackosm import PbfFileReader
 
 
 class OSMPbfLoader(OSMLoader):
@@ -64,7 +64,7 @@ class OSMPbfLoader(OSMLoader):
             switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
                 switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
-        import_optional_dependencies(dependency_group="osm", modules=["duckdb", "geoarrow.pyarrow"])
+        import_optional_dependencies(dependency_group="osm", modules=["quackosm"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory
@@ -81,8 +81,8 @@ class OSMPbfLoader(OSMLoader):
 
         The loader will use provided `*.osm.pbf` file, or download extracts
         using `PbfFileDownloader`. Later it will parse and filter features from files
-        using `PbfFileReader`. It will return a GeoDataFrame containing the `geometry` column
-        and columns for tag keys.
+        using `PbfFileReader` from `QuackOSM` library. It will return a GeoDataFrame
+        containing the `geometry` column and columns for tag keys.
 
         Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
@@ -115,7 +115,7 @@ class OSMPbfLoader(OSMLoader):
         pbf_files_to_load = self._get_pbf_files_to_load(area_wgs84)
 
         features_gdf = pbf_reader.get_features_gdf(
-            file_paths=pbf_files_to_load, ignore_cache=ignore_cache
+            file_paths=pbf_files_to_load, explode_tags=True, ignore_cache=ignore_cache
         )
         result_gdf = features_gdf.set_crs(WGS84_CRS)
 
@@ -132,6 +132,8 @@ class OSMPbfLoader(OSMLoader):
         self,
         area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+        ignore_cache: bool = False,
+        explode_tags: bool = True,
     ) -> list[Path]:
         """
         Load OSM features with specified tags for a given area and save it to geoparquet file.
@@ -148,6 +150,10 @@ class OSMPbfLoader(OSMLoader):
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
+            explode_tags: (bool, optional): Whether to split OSM tags into multiple columns or keep
+                them in a single dict. Defaults to True.
 
         Returns:
             list[Path]: List of saved GeoParquet files.
@@ -159,7 +165,9 @@ class OSMPbfLoader(OSMLoader):
 
         converted_files = []
         for downloaded_pbf_file in pbf_files_to_load:
-            geoparquet_file = pbf_reader.convert_pbf_to_gpq(pbf_path=downloaded_pbf_file)
+            geoparquet_file = pbf_reader.convert_pbf_to_gpq(
+                pbf_path=downloaded_pbf_file, ignore_cache=ignore_cache, explode_tags=explode_tags
+            )
             converted_files.append(geoparquet_file)
 
         return converted_files
@@ -184,7 +192,11 @@ class OSMPbfLoader(OSMLoader):
     def _get_pbf_file_reader(
         self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
     ) -> "PbfFileReader":
-        from srai.loaders.osm_loaders.pbf_file_reader import PbfFileReader
+        from quackosm import PbfFileReader
 
-        pbf_reader = PbfFileReader(tags_filter=tags, geometry_filter=area_wgs84.unary_union)
+        pbf_reader = PbfFileReader(
+            tags_filter=tags,
+            geometry_filter=area_wgs84.unary_union,
+            working_directory=self.download_directory,
+        )
         return pbf_reader
