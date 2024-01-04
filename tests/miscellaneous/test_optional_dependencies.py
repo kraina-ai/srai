@@ -16,8 +16,7 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
-        "duckdb",
-        "geoarrow.pyarrow",
+        "quackosm",
         "osmnx",
         "overpass",
         "beautifulsoup4",
