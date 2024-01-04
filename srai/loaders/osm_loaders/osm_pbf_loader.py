@@ -30,7 +30,8 @@ class OSMPbfLoader(OSMLoader):
     capable of loading OSM features from a PBF file. It filters features based on OSM tags[3]
     in form of key:value pairs, that are used by OSM users to give meaning to geometries.
 
-    This loader uses `duckdb`[3] engine with `spatial`[4] extension
+    This loader uses `PbfFileReader` from the `QuackOSM`[3] library.
+    It utilizes the `duckdb`[4] engine with `spatial`[5] extension
     capable of parsing an `*.osm.pbf` file.
 
     Additionally, it can download a pbf file extract for a given area using different sources.
@@ -38,8 +39,9 @@ class OSMPbfLoader(OSMLoader):
     References:
         1. https://www.openstreetmap.org/
         2. https://wiki.openstreetmap.org/wiki/PBF_Format
-        3. https://duckdb.org/
-        4. https://github.com/duckdb/duckdb_spatial
+        3. https://github.com/kraina-ai/quackosm
+        4. https://duckdb.org/
+        5. https://github.com/duckdb/duckdb_spatial
     """
 
     def __init__(
