@@ -25,6 +25,7 @@ dependencies = [
     "typeguard",
     "requests",
     "h3ronpy>=0.18.0",
+    "osmnx",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -58,11 +59,10 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 # pdm add -G osm <library>
 osm = [
-    "osmnx",
     "overpass",
     "pillow",
     "beautifulsoup4",
-    "quackosm>=0.3.2",
+    "quackosm>=0.4.1",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]

@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:ff107d337f22d3d38751f3825d9cd8fe206b2f99973f3186a9eb11ec586d3eaa"
+content_hash = "sha256:0257caa7a18adc2186de43cfc263b74b176d7a3d8f99c346f6390cde07b0b82d"
 
 [[package]]
 name = "aiohttp"
@@ -2722,20 +2722,20 @@ files = [
 
 [[package]]
 name = "osmnx"
-version = "1.4.0"
+version = "1.9.1"
 requires_python = ">=3.8"
-summary = "Retrieve, model, analyze, and visualize OpenStreetMap street networks and other spatial data"
+summary = "Download, model, analyze, and visualize street networks and other geospatial features from OpenStreetMap"
 dependencies = [
     "geopandas>=0.12",
     "networkx>=2.5",
     "numpy>=1.20",
     "pandas>=1.1",
-    "requests>=2.25",
+    "requests>=2.27",
     "shapely>=2.0",
 ]
 files = [
-    {file = "osmnx-1.4.0-py3-none-any.whl", hash = "sha256:37860442e0b728649f721c8ce8a6eadd1e1c90840ae03f8a7d35c114ae522fda"},
-    {file = "osmnx-1.4.0.tar.gz", hash = "sha256:4eab2363a15abd16d0a8f48d614a46cf74397d8ea6e699fee0e5680b6d1e9e17"},
+    {file = "osmnx-1.9.1-py3-none-any.whl", hash = "sha256:804790b4963f915ca172f56ef27a9bd62347c44616902a1c8a12dc3d94737f4b"},
+    {file = "osmnx-1.9.1.tar.gz", hash = "sha256:0c28e32755b27110b0dc140b74f7b66ba9d037f4a246dab8fb50d9383334e311"},
 ]
 
 [[package]]
@@ -2960,6 +2960,21 @@ files = [
 ]
 
 [[package]]
+name = "pooch"
+version = "1.8.0"
+requires_python = ">=3.7"
+summary = "\"Pooch manages your Python library's sample data files: it automatically downloads and stores them in a local directory, with support for versioning and corruption checks.\""
+dependencies = [
+    "packaging>=20.0",
+    "platformdirs>=2.5.0",
+    "requests>=2.19.0",
+]
+files = [
+    {file = "pooch-1.8.0-py3-none-any.whl", hash = "sha256:1bfba436d9e2ad5199ccad3583cca8c241b8736b5bb23fe67c213d52650dbb66"},
+    {file = "pooch-1.8.0.tar.gz", hash = "sha256:f59981fd5b9b5d032dcde8f4a11eaa492c2ac6343fae3596a2fdae35fc54b0a0"},
+]
+
+[[package]]
 name = "pre-commit"
 version = "3.3.3"
 requires_python = ">=3.8"
@@ -3080,6 +3095,18 @@ summary = ""
 files = [
     {file = "pyarrow_hotfix-0.6-py3-none-any.whl", hash = "sha256:dcc9ae2d220dff0083be6a9aa8e0cdee5182ad358d4931fce825c545e5c89178"},
     {file = "pyarrow_hotfix-0.6.tar.gz", hash = "sha256:79d3e030f7ff890d408a100ac16d6f00b14d44a502d7897cd9fc3e3a534e9945"},
+]
+
+[[package]]
+name = "pyarrow-ops"
+version = "0.0.8"
+summary = "Useful data crunching tools for pyarrow"
+dependencies = [
+    "numpy>=1.19.2",
+    "pyarrow>=3.0",
+]
+files = [
+    {file = "pyarrow_ops-0.0.8.tar.gz", hash = "sha256:b59b29535268c06e224e9d417b6c3b358e761dbf0d170d1b6d1337b05811d06b"},
 ]
 
 [[package]]
@@ -3601,22 +3628,27 @@ files = [
 
 [[package]]
 name = "quackosm"
-version = "0.3.2"
+version = "0.4.1"
 requires_python = ">=3.9"
 summary = "An open-source tool for reading OpenStreetMap PBF files using DuckDB"
 dependencies = [
+    "beautifulsoup4",
     "duckdb>=0.9.2",
     "geoarrow-pyarrow>=0.1.1",
     "geopandas",
+    "pooch",
     "psutil",
     "pyarrow-hotfix",
+    "pyarrow-ops",
     "pyarrow>=13.0.0",
+    "requests",
     "shapely>=2",
+    "tqdm",
     "typeguard",
 ]
 files = [
-    {file = "quackosm-0.3.2-py3-none-any.whl", hash = "sha256:8bf15f309a292acac6241dd4fe9dc4b768b1a7cd7117baa07c19c95a22901b34"},
-    {file = "quackosm-0.3.2.tar.gz", hash = "sha256:ada7f08cfc7dffbfc6cc933952daa24d6d3e9367ec26913f6e93e78efcf2a325"},
+    {file = "quackosm-0.4.1-py3-none-any.whl", hash = "sha256:f993c49f900466597ea0e31d68c2fa43340c034c395c79628f03d357e4307810"},
+    {file = "quackosm-0.4.1.tar.gz", hash = "sha256:967d6cb26abf20010d96becaf141eb41bbd32b9e40650b6f8e36d4cf419f30bb"},
 ]
 
 [[package]]
