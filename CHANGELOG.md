@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support for `BBBike` download service.
+- Option to merge a list of OSM tags filters into a single one.
+
+### Changed
+
+- Refactored `PbfFileHandler` to use `QuackOSM` library instead of `osmium` and `GDAL` [#405](https://github.com/kraina-ai/srai/pull/405)
+- Changed the default pbf download source from `protomaps` download service to `any`.
+
+### Removed
+
+- `PbfFileLoader` and moved its logic to `QuackOSM` library.
+- Support for `protomaps` download service..
+- `PbfFileClipper` (unnecessary after geospatial filtering has been incorporated into refactored `PbfFileHandler`) [#405](https://github.com/kraina-ai/srai/pull/405).
+- `PbfFileHandler` (unnecessary after moving away from `osmium` implementation).
+
 ## [0.6.2] - 2023-12-28
 
 ### Added
@@ -17,19 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Refactored `PbfFileHandler` to use `QuackOSM` library instead of `osmium` and `GDAL` [#405](https://github.com/kraina-ai/srai/pull/405)
-- Changed the default pbf download source from `protomaps` download service to `geofabrik`.
 - Added option to parse `MultiPolygon` geometries in `srai.geometry.remove_interiors` function.
-
-### Deprecated
-
-### Removed
-
-- `PbfFileClipper` (unnecessary after geospatial filtering has been incorporated into refactored `PbfFileHandler`) [#405](https://github.com/kraina-ai/srai/pull/405).
-
-### Fixed
-
-### Security
 
 ## [0.6.1] - 2023-11-12
 
