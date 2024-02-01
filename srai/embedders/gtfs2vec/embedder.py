@@ -186,7 +186,9 @@ class GTFS2VecEmbedder(Embedder):
             if column.startswith(GTFS2VEC_TRIPS_PREFIX):
                 agg_dict[column] = "sum"
             elif column.startswith(GTFS2VEC_DIRECTIONS_PREFIX):
-                agg_dict[column] = lambda x: len(reduce(set.union, x))
+                agg_dict[column] = lambda x: len(
+                    reduce(set.union, (val for val in x if not pd.isna(val)), set())
+                )
         return agg_dict
 
     def _normalize_columns_group(self, df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:

@@ -82,7 +82,7 @@ class GTFSLoader(Loader):
 
         result_gdf = result_gdf.merge(directions_df, how="left", on="stop_id")
 
-        result_gdf.index.name = None
+        result_gdf.index.name = "feature_id"
 
         return result_gdf
 
