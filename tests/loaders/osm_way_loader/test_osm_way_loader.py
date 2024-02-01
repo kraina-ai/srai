@@ -236,7 +236,14 @@ def test_contract(
         if f_name == "type_error":
             raise TypeError
         elif f_name == "empty_overpass_response":
-            raise osmnx._errors.EmptyOverpassResponse
+            from packaging import version
+
+            osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("1.6.0")
+
+            if osmnx_new_api:
+                raise osmnx._errors.InsufficientResponseError
+            else:
+                raise osmnx._errors.EmptyOverpassResponse
 
         files_path = Path(__file__).parent / "test_files"
         file_name = f_name + ".pkl"

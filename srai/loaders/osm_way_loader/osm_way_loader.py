@@ -192,11 +192,20 @@ class OSMWayLoader(Loader):
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
         """
-        import osmnx._errors
+        import osmnx as ox
+        from packaging import version
+
+        osmnx_new_api = version.parse(ox.__version__) >= version.parse("1.6.0")
+
+        response_error = (
+            ox._errors.InsufficientResponseError
+            if osmnx_new_api
+            else ox._errors.EmptyOverpassResponse
+        )
 
         try:
             return self._graph_from_polygon(polygon)
-        except (osmnx._errors.EmptyOverpassResponse, ValueError):
+        except (response_error, ValueError):
             return gpd.GeoDataFrame(), gpd.GeoDataFrame()
 
     def _graph_from_polygon(
