@@ -45,7 +45,7 @@ class OSMPbfLoader(OSMLoader):
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
-        download_source: str = "geofabrik",
+        download_source: str = "any",
         download_directory: Union[str, Path] = "files",
     ) -> None:
         """
@@ -56,8 +56,8 @@ class OSMPbfLoader(OSMLoader):
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
             download_source (str, optional): Source to use when downloading PBF files.
-                Can be one of: `geofabrik`, `osmfr`, `bbbike`.
-                Defaults to "geofabrik".
+                Can be one of: `any`, `geofabrik`, `osmfr`, `bbbike`.
+                Defaults to "any".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files".
         """
