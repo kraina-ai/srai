@@ -4,19 +4,21 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 
-from collections.abc import Hashable, Iterable, Mapping, Sequence
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd
-import pandas as pd
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
-from srai.loaders.osm_loaders.pbf_file_downloader import PbfSourceLiteral
+
+if TYPE_CHECKING:
+    from quackosm import PbfFileReader
+    from quackosm.osm_extracts import OsmExtractSource
 
 
 class OSMPbfLoader(OSMLoader):
@@ -27,22 +29,25 @@ class OSMPbfLoader(OSMLoader):
     capable of loading OSM features from a PBF file. It filters features based on OSM tags[3]
     in form of key:value pairs, that are used by OSM users to give meaning to geometries.
 
-    This loader uses `pyosmium`[3] library capable of parsing an `*.osm.pbf` file.
+    This loader uses `PbfFileReader` from the `QuackOSM`[3] library.
+    It utilizes the `duckdb`[4] engine with `spatial`[5] extension
+    capable of parsing an `*.osm.pbf` file.
 
     Additionally, it can download a pbf file extract for a given area using different sources.
 
     References:
         1. https://www.openstreetmap.org/
         2. https://wiki.openstreetmap.org/wiki/PBF_Format
-        3. https://osmcode.org/pyosmium/
+        3. https://github.com/kraina-ai/quackosm
+        4. https://duckdb.org/
+        5. https://github.com/duckdb/duckdb_spatial
     """
 
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
-        download_source: PbfSourceLiteral = "protomaps",
+        download_source: "OsmExtractSource" = "any",
         download_directory: Union[str, Path] = "files",
-        switch_to_geofabrik_on_error: bool = True,
     ) -> None:
         """
         Initialize OSMPbfLoader.
@@ -51,32 +56,32 @@ class OSMPbfLoader(OSMLoader):
             pbf_file (Union[str, Path], optional): Downloaded `*.osm.pbf` file to be used by
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
-            download_source (PbfSourceLiteral, optional): Source to use when downloading PBF files.
-                Can be one of: `geofabrik`, `openstreetmap_fr`, `protomaps`.
-                Defaults to "protomaps".
+            download_source (OsmExtractSource, optional): Source to use when downloading PBF files.
+                Can be one of: `any`, `geofabrik`, `osmfr`, `bbbike`.
+                Defaults to "any".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files".
-            switch_to_geofabrik_on_error (bool, optional): Flag whether to automatically
-                switch `download_source` to 'geofabrik' if error occures. Defaults to `True`.
         """
-        import_optional_dependencies(dependency_group="osm", modules=["osmium"])
+        import_optional_dependencies(dependency_group="osm", modules=["quackosm"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory
-        self.switch_to_geofabrik_on_error = switch_to_geofabrik_on_error
 
     def load(
         self,
         area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+        ignore_cache: bool = False,
+        explode_tags: bool = True,
+        keep_all_tags: bool = False,
     ) -> gpd.GeoDataFrame:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
 
         The loader will use provided `*.osm.pbf` file, or download extracts
-        using `PbfFileDownloader`. Later it will parse and filter features from files
-        using `PbfFileHandler`. It will return a GeoDataFrame containing the `geometry` column
-        and columns for tag keys.
+        automatically. Later it will parse and filter features from files
+        using `PbfFileReader` from `QuackOSM` library. It will return a GeoDataFrame
+        containing the `geometry` column and columns for tag keys.
 
         Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
             simply because there are no such objects in the given area.
@@ -93,6 +98,13 @@ class OSMPbfLoader(OSMLoader):
                 `tags={'leisure': 'park}` would return parks from the area.
                 `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
                 would return parks, all amenity types, bakeries and bicycle shops.
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
+            explode_tags: (bool, optional): Whether to split OSM tags into multiple columns or keep
+                them in a single dict. Defaults to True.
+            keep_all_tags: (bool, optional): Whether to keep all tags related to the element,
+                or return only those defined in the `tags_filter`. When True, will override
+                the optional grouping defined in the `tags_filter`. Defaults to False.
 
         Raises:
             ValueError: If PBF file is expected to be downloaded and provided geometries
@@ -101,53 +113,97 @@ class OSMPbfLoader(OSMLoader):
         Returns:
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
-        from srai.loaders.osm_loaders.pbf_file_downloader import PbfFileDownloader
-        from srai.loaders.osm_loaders.pbf_file_handler import PbfFileHandler
-
         area_wgs84 = self._prepare_area_gdf(area)
 
-        downloaded_pbf_files: Mapping[Hashable, Sequence[Union[str, Path]]]
+        pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
+
         if self.pbf_file is not None:
-            downloaded_pbf_files = {Path(self.pbf_file).name: [self.pbf_file]}
-        else:
-            downloaded_pbf_files = PbfFileDownloader(
-                download_source=self.download_source,
-                download_directory=self.download_directory,
-                switch_to_geofabrik_on_error=self.switch_to_geofabrik_on_error,
-            ).download_pbf_files_for_regions_gdf(regions_gdf=area_wgs84)
-
-        merged_tags = self._merge_osm_tags_filter(tags)
-
-        pbf_handler = PbfFileHandler(tags=merged_tags)
-
-        results = []
-        for region_id, pbf_files in downloaded_pbf_files.items():
-            features_gdf = pbf_handler.get_features_gdf(
-                file_paths=pbf_files, region_id=str(region_id)
+            features_gdf = pbf_reader.get_features_gdf(
+                file_paths=self.pbf_file,
+                keep_all_tags=keep_all_tags,
+                explode_tags=explode_tags,
+                ignore_cache=ignore_cache,
             )
-            matching_features_ids = features_gdf.sjoin(area_wgs84).index
-            results.append(features_gdf.loc[matching_features_ids])
+        else:
+            features_gdf = pbf_reader.get_features_gdf_from_geometry(
+                keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
+            )
 
-        result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
+        features_gdf = features_gdf.set_crs(WGS84_CRS)
 
         features_columns = [
             column
-            for column in result_gdf.columns
-            if column != GEOMETRY_COLUMN and result_gdf[column].notnull().any()
+            for column in features_gdf.columns
+            if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
         ]
-        result_gdf = result_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
+        features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
 
-        return self._parse_features_gdf_to_groups(result_gdf, tags)
+        return features_gdf
 
-    def _group_gdfs(self, gdfs: list[gpd.GeoDataFrame]) -> gpd.GeoDataFrame:
-        if not gdfs:
-            return self._get_empty_result()
-        elif len(gdfs) == 1:
-            gdf = gdfs[0]
+    def load_to_geoparquet(
+        self,
+        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
+        ignore_cache: bool = False,
+        explode_tags: bool = True,
+        keep_all_tags: bool = False,
+    ) -> Path:
+        """
+        Load OSM features with specified tags for a given area and save it to geoparquet file.
+
+        Args:
+            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+                Area for which to download objects.
+            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
+                specifying which tags to download.
+                The keys should be OSM tags (e.g. `building`, `amenity`).
+                The values should either be `True` for retrieving all objects with the tag,
+                string for retrieving a single tag-value pair
+                or list of strings for retrieving all values specified in the list.
+                `tags={'leisure': 'park}` would return parks from the area.
+                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
+                would return parks, all amenity types, bakeries and bicycle shops.
+            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
+                Defaults to False.
+            explode_tags: (bool, optional): Whether to split OSM tags into multiple columns or keep
+                them in a single dict. Defaults to True.
+            keep_all_tags: (bool, optional): Whether to keep all tags related to the element,
+                or return only those defined in the `tags_filter`. When True, will override
+                the optional grouping defined in the `tags_filter`. Defaults to False.
+
+        Returns:
+            Path: Path to the saved GeoParquet file.
+        """
+        area_wgs84 = self._prepare_area_gdf(area)
+
+        pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
+
+        geoparquet_file_path: Path
+
+        if self.pbf_file is not None:
+            geoparquet_file_path = pbf_reader.convert_pbf_to_gpq(
+                pbf_path=self.pbf_file,
+                keep_all_tags=keep_all_tags,
+                explode_tags=explode_tags,
+                ignore_cache=ignore_cache,
+            )
         else:
-            gdf = pd.concat(gdfs)
+            geoparquet_file_path = pbf_reader.convert_geometry_filter_to_gpq(
+                keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
+            )
 
-        return gdf[~gdf.index.duplicated(keep="first")]
+        return geoparquet_file_path
 
-    def _get_empty_result(self) -> gpd.GeoDataFrame:
-        return gpd.GeoDataFrame(index=pd.Index(name=FEATURES_INDEX), crs=WGS84_CRS, geometry=[])
+    def _get_pbf_file_reader(
+        self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
+    ) -> "PbfFileReader":
+        from quackosm import PbfFileReader
+        from quackosm.osm_extracts import OsmExtractSource
+
+        pbf_reader = PbfFileReader(
+            tags_filter=tags,
+            geometry_filter=area_wgs84.unary_union,
+            working_directory=self.download_directory,
+            osm_extract_source=OsmExtractSource(self.download_source),
+        )
+        return pbf_reader

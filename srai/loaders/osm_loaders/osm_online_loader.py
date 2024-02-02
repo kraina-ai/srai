@@ -18,7 +18,11 @@ from tqdm import tqdm
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
-from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
+from srai.loaders.osm_loaders.filters import (
+    GroupedOsmTagsFilter,
+    OsmTagsFilter,
+    merge_osm_tags_filter,
+)
 
 
 class OSMOnlineLoader(OSMLoader):
@@ -80,7 +84,7 @@ class OSMOnlineLoader(OSMLoader):
 
         area_wgs84 = self._prepare_area_gdf(area)
 
-        merged_tags = self._merge_osm_tags_filter(tags)
+        merged_tags = merge_osm_tags_filter(tags)
 
         _tags = self._flatten_tags(merged_tags)
 
