@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "performance", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:0257caa7a18adc2186de43cfc263b74b176d7a3d8f99c346f6390cde07b0b82d"
+content_hash = "sha256:c432bb7169a2364bfdabb0f46a00a105822d12f7e71a5cdc9e046864be0ad78f"
 
 [[package]]
 name = "aiohttp"
@@ -3628,7 +3628,7 @@ files = [
 
 [[package]]
 name = "quackosm"
-version = "0.4.1"
+version = "0.4.2"
 requires_python = ">=3.9"
 summary = "An open-source tool for reading OpenStreetMap PBF files using DuckDB"
 dependencies = [
@@ -3647,8 +3647,8 @@ dependencies = [
     "typeguard",
 ]
 files = [
-    {file = "quackosm-0.4.1-py3-none-any.whl", hash = "sha256:f993c49f900466597ea0e31d68c2fa43340c034c395c79628f03d357e4307810"},
-    {file = "quackosm-0.4.1.tar.gz", hash = "sha256:967d6cb26abf20010d96becaf141eb41bbd32b9e40650b6f8e36d4cf419f30bb"},
+    {file = "quackosm-0.4.2-py3-none-any.whl", hash = "sha256:f53a4d5b8752d17fa61678d0fb102ef34f2a97b214c61f5f877fed24eb11c8ff"},
+    {file = "quackosm-0.4.2.tar.gz", hash = "sha256:0bf63def30ae990a8691aba41f5ecc12db0b14610c44127b459565fc0d335991"},
 ]
 
 [[package]]
