@@ -33,7 +33,7 @@ def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
             (7.4218262821731, 43.730681304758946),
             (7.4218262821731, 43.7346112362936),
         ]),
-        tags={},
+        tags=GEOFABRIK_LAYERS,
         ignore_cache=True,
         explode_tags=explode_tags,
         keep_all_tags=keep_all_tags,
