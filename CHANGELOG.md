@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PbfFileClipper` (unnecessary after geospatial filtering has been incorporated into refactored `PbfFileHandler`) [#405](https://github.com/kraina-ai/srai/pull/405).
 - `PbfFileHandler` (unnecessary after moving away from `osmium` implementation).
 
+### Fixed
+
+- Bugs in GTFS Loader: missing index name and NaN handling (implemented by [@zackAemmer](https://github.com/zackAemmer))
+
 ## [0.6.2] - 2023-12-28
 
 ### Added
