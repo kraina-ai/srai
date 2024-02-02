@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Bugs in GTFS Loader: missing index name and NaN handling (implemented by [@zackAemmer](https://github.com/zackAemmer))
+
+
 ## [0.6.2] - 2023-12-28
 
 ### Added
@@ -24,8 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-
-- Bugs in GTFS Loader: missing index name and NaN handling (implemented by [@zackAemmer](https://github.com/zackAemmer))
 
 ### Security
 
