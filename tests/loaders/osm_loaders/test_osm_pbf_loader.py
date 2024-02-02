@@ -21,6 +21,25 @@ from srai.loaders.osm_loaders.filters import (
 ut = TestCase()
 
 
+@pytest.mark.parametrize("explode_tags", [True, False])  # type: ignore
+@pytest.mark.parametrize("keep_all_tags", [True, False])  # type: ignore
+def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
+    """Test if pbf to geoparquet conversion works."""
+    pbf_file = Path(__file__).parent / "test_files" / "monaco.osm.pbf"
+    OSMPbfLoader(pbf_file=pbf_file).load_to_geoparquet(
+        area=Polygon([
+            (7.416769421059001, 43.7346112362936),
+            (7.416769421059001, 43.730681304758946),
+            (7.4218262821731, 43.730681304758946),
+            (7.4218262821731, 43.7346112362936),
+        ]),
+        tags={},
+        ignore_cache=True,
+        explode_tags=explode_tags,
+        keep_all_tags=keep_all_tags,
+    )
+
+
 @pytest.mark.parametrize(  # type: ignore
     "test_geometries,pbf_file,query,pbf_source,expected_result_length,expected_features_columns_length,expected_features_columns_names",
     [
