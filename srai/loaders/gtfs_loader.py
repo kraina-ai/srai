@@ -18,7 +18,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders import Loader
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -82,7 +82,7 @@ class GTFSLoader(Loader):
 
         result_gdf = result_gdf.merge(directions_df, how="left", on="stop_id")
 
-        result_gdf.index.name = None
+        result_gdf.index.name = FEATURES_INDEX
 
         return result_gdf
 
