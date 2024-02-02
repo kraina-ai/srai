@@ -20,13 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `PbfFileLoader` and moved its logic to `QuackOSM` library.
-- Support for `protomaps` download service..
+- Support for `protomaps` download service.
 - `PbfFileClipper` (unnecessary after geospatial filtering has been incorporated into refactored `PbfFileHandler`) [#405](https://github.com/kraina-ai/srai/pull/405).
 - `PbfFileHandler` (unnecessary after moving away from `osmium` implementation).
 
 ### Fixed
 
-- Bugs in GTFS Loader: missing index name and NaN handling (implemented by [@zackAemmer](https://github.com/zackAemmer))
+- Bugs in GTFS Loader: missing index name and NaN handling (implemented by [@zackAemmer](https://github.com/zackAemmer)).
 
 ## [0.6.2] - 2023-12-28
 
