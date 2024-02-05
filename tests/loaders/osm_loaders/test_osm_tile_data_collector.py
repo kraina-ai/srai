@@ -73,7 +73,7 @@ class TestInMemoryDataCollector:
     "collector_type", [(collectors.DataCollectorType.RETURN), "return"]
 )
 def test_in_memory_collector_creation(
-    collector_type: Union[str, collectors.DataCollectorType]
+    collector_type: Union[str, collectors.DataCollectorType],
 ) -> None:
     """Test if factory creates properly InMemoryDataCollector."""
     created = collectors.get_collector(collector_type)
@@ -85,7 +85,7 @@ def test_in_memory_collector_creation(
     "collector_type", [(collectors.DataCollectorType.SAVE), "save"]
 )
 def test_saving_collector_creation(
-    collector_type: Union[str, collectors.DataCollectorType]
+    collector_type: Union[str, collectors.DataCollectorType],
 ) -> None:
     """Test if factory creates properly SavingDataCollector."""
     created = collectors.get_collector(collector_type, save_path=PATH, file_extension=FILE_TYPE)

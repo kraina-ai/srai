@@ -29,7 +29,7 @@ def merge_osm_tags_filter(osm_tags_filter: Iterable[GroupedOsmTagsFilter]) -> Os
 def merge_osm_tags_filter(
     osm_tags_filter: Union[
         OsmTagsFilter, GroupedOsmTagsFilter, Iterable[OsmTagsFilter], Iterable[GroupedOsmTagsFilter]
-    ]
+    ],
 ) -> OsmTagsFilter:
     """
     Merge OSM tags filter into `OsmTagsFilter` type.
