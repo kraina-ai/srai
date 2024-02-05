@@ -103,7 +103,7 @@ def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> list[Polygon]
 
 # TODO: write tests (#322)
 def h3_to_shapely_geometry(
-    h3_index: Union[int, str, Iterable[Union[int, str]]]
+    h3_index: Union[int, str, Iterable[Union[int, str]]],
 ) -> Union[Polygon, list[Polygon]]:
     """
     Convert H3 index to Shapely polygon.
