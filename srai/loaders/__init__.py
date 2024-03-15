@@ -12,6 +12,7 @@ from .geoparquet_loader import GeoparquetLoader
 from .gtfs_loader import GTFSLoader
 from .osm_loaders import OSMLoader, OSMOnlineLoader, OSMPbfLoader, OSMTileLoader
 from .osm_way_loader import OSMNetworkType, OSMWayLoader
+from .hf_loader import HFLoader
 
 __all__ = [
     "Loader",
@@ -24,4 +25,5 @@ __all__ = [
     "OSMTileLoader",
     "OSMNetworkType",
     "download_file",
+    "HFLoader",
 ]
