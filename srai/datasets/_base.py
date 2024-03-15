@@ -11,7 +11,7 @@ class Dataset(abc.ABC):
     """Abstract class for datasets."""
     def __init__(self, config_path: str) -> None:
         self.conf = OmegaConf.load(config_path)
-        
+
 
     @abc.abstractmethod
     def _preprocessing(self, data):
@@ -26,11 +26,9 @@ class Dataset(abc.ABC):
             GeoDataFrame with the downloaded dataset.
         """
         raise NotImplementedError
-    
+
     def load(self):
-        """
-        Method to load dataset
-        """
+        """Method to load dataset."""
         dataset_name = self.conf["dataset_name"]
         name = self.conf.get("name")
         data = HFLoader(os.environ["HF_access_token"]).load(dataset_name=dataset_name, name=name)
