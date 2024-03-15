@@ -1,14 +1,14 @@
 """File contains dataset definition of NYC Bike data."""
 
 import geopandas as gpd
-from srai.datasets import Dataset
 from shapely.geometry import MultiPoint
+
+from srai.datasets import Dataset
 
 
 class NYCBike(Dataset):
     def _preprocessing(self, data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Preprocessing to get GeoDataFrame, based on GEO_EDA files."""
-
         if (
             int(self.conf["name"][-4:]) in self.conf["years_previous"]
         ):  # get a year from dataset version name

@@ -1,9 +1,9 @@
 import abc
-from typing import Any
-from omegaconf import OmegaConf
-from srai.loaders import HFLoader
-import geopandas as gpd
 import os
+
+from omegaconf import OmegaConf
+
+from srai.loaders import HFLoader
 
 
 class Dataset(abc.ABC):
