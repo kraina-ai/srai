@@ -1,21 +1,18 @@
-from datasets import load_dataset
-from srai.loaders import Loader
-import geopandas as gpd
 from typing import Optional
+
+import geopandas as gpd
+from datasets import load_dataset
+
+from srai.loaders import Loader
 
 
 class HFLoader(Loader):
-    """
-    Loader to download dataset from HuggingFace and return GeoDataFrame
-    """
+    """Loader to download dataset from HuggingFace and return GeoDataFrame."""
+
     def __init__(self, hf_token: str) -> None:
         self.hf_token = hf_token
 
-    def load(
-            self,
-            dataset_name: str = "geolife",
-            name: Optional[str] = None
-             ) -> gpd.GeoDataFrame:
+    def load(self, dataset_name: str = "geolife", name: Optional[str] = None) -> gpd.GeoDataFrame:
         """
         Parameters
         ----------
@@ -25,10 +22,14 @@ class HFLoader(Loader):
             Name of version of dataset e.g. "nyc_bike_2013"
         """
         if name is not None:
-            dataset = load_dataset(f"kraina/{dataset_name}", name=name, token=self.hf_token) # download dataset from HF
+            dataset = load_dataset(
+                f"kraina/{dataset_name}", name=name, token=self.hf_token
+            )  # download dataset from HF
         else:
-            dataset = load_dataset(f"kraina/{dataset_name}", token=self.hf_token) # download dataset from HF
-            
+            dataset = load_dataset(
+                f"kraina/{dataset_name}", token=self.hf_token
+            )  # download dataset from HF
+
         df = dataset["train"].to_pandas()
 
         return gpd.GeoDataFrame(df)
