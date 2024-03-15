@@ -21,21 +21,9 @@ class HFLoader(Loader):
         name : Optional[str]
             Name of version of dataset e.g. "nyc_bike_2013"
         """
-<<<<<<< HEAD
 
         dataset = load_dataset(f"kraina/{dataset_name}", name=name, token=self.hf_token) # download dataset from HF
 
-=======
-        if name is not None:
-            dataset = load_dataset(
-                f"kraina/{dataset_name}", name=name, token=self.hf_token
-            )  # download dataset from HF
-        else:
-            dataset = load_dataset(
-                f"kraina/{dataset_name}", token=self.hf_token
-            )  # download dataset from HF
-
->>>>>>> a757ce7096b6de0fe509e16a1cdecec2ba28e575
         df = dataset["train"].to_pandas()
 
         return gpd.GeoDataFrame(df)

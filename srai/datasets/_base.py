@@ -4,14 +4,13 @@ from omegaconf import OmegaConf
 from srai.loaders import HFLoader
 import geopandas as gpd
 import os
-%load_ext dotenv
-%dotenv
+
 
 class Dataset(abc.ABC):
     """Abstract class for datasets."""
+
     def __init__(self, config_path: str) -> None:
         self.conf = OmegaConf.load(config_path)
-
 
     @abc.abstractmethod
     def _preprocessing(self, data):
