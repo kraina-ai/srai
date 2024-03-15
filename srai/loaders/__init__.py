@@ -10,9 +10,9 @@ from ._base import Loader
 from .download import download_file
 from .geoparquet_loader import GeoparquetLoader
 from .gtfs_loader import GTFSLoader
+from .hf_loader import HFLoader
 from .osm_loaders import OSMLoader, OSMOnlineLoader, OSMPbfLoader, OSMTileLoader
 from .osm_way_loader import OSMNetworkType, OSMWayLoader
-from .hf_loader import HFLoader
 
 __all__ = [
     "Loader",
