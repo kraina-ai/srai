@@ -8,7 +8,15 @@ from srai.datasets import Dataset
 
 class NYCBike(Dataset):
     def _preprocessing(self, data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """Preprocessing to get GeoDataFrame, based on GEO_EDA files."""
+        """
+        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+
+        Args:
+            data: Data of NYC dataset.
+
+        Returns:
+            GeoDataFrame of dataset, contatins location data - Multipoint(StartStation, EndStation).
+        """
         if (
             int(self.conf["name"][-4:]) in self.conf["years_previous"]
         ):  # get a year from dataset version name
