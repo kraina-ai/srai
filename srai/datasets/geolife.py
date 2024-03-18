@@ -17,7 +17,6 @@ class Geolife(Dataset):
         Returns:
             GeoDataFrame of dataset, contatins location data.
         """
-
         gdf = gpd.GeoDataFrame(
             data.drop(["arrays_geometry"], axis=1),
             geometry=gpd.GeoSeries(data["arrays_geometry"].map(LineString)),

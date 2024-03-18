@@ -1,9 +1,9 @@
-from srai.datasets import Dataset
 import geopandas as gpd
+
+from srai.datasets import Dataset
 
 
 class HouseSalesInKingCountry(Dataset):
-
     def _preprocessing(self, data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
