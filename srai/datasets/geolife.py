@@ -1,8 +1,9 @@
 """File contains dataset definition of NYC Bike data."""
 
-from srai.datasets import Dataset
 import geopandas as gpd
 from shapely.geometry import LineString
+
+from srai.datasets import Dataset
 
 
 class Geolife(Dataset):
@@ -15,9 +16,7 @@ class Geolife(Dataset):
 
         Returns:
             GeoDataFrame of dataset, contatins location data.
-
         """
-
         # data["geometry"] = data["arrays_geometry"].map(LineString)
         # data.set_geometry('geometry', inplace=True)
         gdf = gpd.GeoDataFrame(
