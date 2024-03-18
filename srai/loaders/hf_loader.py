@@ -22,7 +22,7 @@ class HFLoader(Loader):
             Name of version of dataset e.g. "nyc_bike_2013"
         """
         dataset = load_dataset(
-            f"kraina/{dataset_name}", name=name, token=self.hf_token
+            f"kraina/{dataset_name}", name=name, token=self.hf_token, trust_remote_code=True
         )  # download dataset from HF
 
         df = dataset["train"].to_pandas()
