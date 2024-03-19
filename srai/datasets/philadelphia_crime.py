@@ -1,5 +1,6 @@
-from srai.datasets import Dataset
 import geopandas as gpd
+
+from srai.datasets import Dataset
 
 
 class PhiladelphiaCrime(Dataset):
