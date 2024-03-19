@@ -1,13 +1,13 @@
 """File contains dataset definition of NYC Bike data."""
 
-import geopandas as gpd
 import os
-from srai.loaders import HFLoader
+from typing import override
 
+import geopandas as gpd
 from shapely.geometry import MultiPoint
 
 from srai.datasets import Dataset
-from typing import override
+from srai.loaders import HFLoader
 
 
 class NYCBike(Dataset):
