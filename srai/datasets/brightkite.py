@@ -1,7 +1,8 @@
-from srai.datasets import Dataset
 import geopandas as gpd
 from shapely.geometry import LineString
 from tqdm.contrib.concurrent import process_map
+
+from srai.datasets import Dataset
 
 
 class Brightkite(Dataset):
