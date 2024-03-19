@@ -1,0 +1,4 @@
+dataset_name: philadelphia_crime
+name: incidents_2023
+years_previous : [2013, 2014, 2015, 2016, 2017, 2018, 2019]
+years_current : [2020, 2021, 2022, 2023]
