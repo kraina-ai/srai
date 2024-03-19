@@ -1,8 +1,7 @@
 import abc
 import os
-
+import geopandas as gpd
 from omegaconf import OmegaConf
-
 from srai.loaders import HFLoader
 
 
@@ -26,7 +25,7 @@ class Dataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load(self):
+    def load(self) -> gpd.GeoDataFrame:
         """Method to load dataset."""
         dataset_name = self.conf["dataset_name"]
         name = self.conf.get("name")
