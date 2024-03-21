@@ -1,6 +1,7 @@
-from srai.datasets import Dataset
 import geopandas as gpd
 from shapely.geometry import LineString
+
+from srai.datasets import Dataset
 
 
 class TDrive(Dataset):
