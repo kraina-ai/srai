@@ -4,6 +4,7 @@ from tqdm.contrib.concurrent import process_map
 
 from srai.datasets import Dataset
 
+
 class PortoTaxi(Dataset):
     def _preprocessing(self, data: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
