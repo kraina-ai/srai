@@ -3,17 +3,17 @@
 default_stages: [commit]
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.0.0
+    rev: v3.2.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.1.9'
+    rev: 'v0.3.5'
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.3.0
     hooks:
       - id: black-jupyter
   - repo: https://github.com/PyCQA/docformatter
@@ -23,12 +23,12 @@ repos:
         additional_dependencies: [tomli]
         args: ["--in-place", "--config", "./pyproject.toml"]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.9.0
     hooks:
       - id: mypy
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.11.2
+    rev: 2.13.2
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -36,7 +36,7 @@ repos:
         files: ^pdm.lock$
         stages: [manual]
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.1
+    rev: 0.7.1
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -51,7 +51,7 @@ repos:
         args: ['--maxkb=1000']
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v1.26.0
+    rev: v2.0.0
     hooks:
       - id: refurb
         args: ["--python-version", "3.9", "--disable", "FURB184", "--format", "github"]
@@ -59,7 +59,7 @@ repos:
         language_version: python3.10
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "2023.5.2"
+    rev: "2024.1.4"
     hooks:
       - id: licensecheck
         stages: [manual]
