@@ -17,7 +17,7 @@ from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
 def prepare_area_gdf_for_loader(
-    area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]
+    area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
 ) -> gpd.GeoDataFrame:
     """
     Prepare an area for the loader.
