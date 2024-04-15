@@ -28,7 +28,7 @@ jobs:
         - name: Install pdm
           run: pip install pdm
         - name: Generate lock with newest dependencies
-          run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform
+          run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -dG:all
         - name: Install srai and tests dependencies
           run: pdm install --lockfile pdm.newest.lock -dG:all
         - name: Run tests with pytest
