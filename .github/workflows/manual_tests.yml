@@ -1,4 +1,4 @@
-name: "Run manual tests with newest dependencies"
+name: "Run tests with newest dependencies"
 on:
   workflow_dispatch
 
@@ -25,11 +25,13 @@ jobs:
           uses: actions/setup-python@v4
           with:
             python-version: ${{ matrix.python-version }}
+        - name: Install pdm
+          run: pip install pdm
+        - name: Generate lock with newest dependencies
+          run: pdm lock --lockfile pdm.newest.lock
+        - name: Export requirements file
+          run: pdm export -G test -f requirements -o requirements.newest.txt --self --lockfile pdm.newest.lock
         - name: Install srai and tests dependencies
-          run: |
-            pip install pdm
-            pdm lock --lockfile pdm.newest.lock
-            pdm export -G test -f requirements -o requirements.newest.txt --self --lockfile pdm.newest.lock
-            pip install --no-deps -r requirements.newest.txt
+          run: pip install --no-deps -r requirements.newest.txt
         - name: Run tests with pytest
           run: pytest -v --durations=20 tests
