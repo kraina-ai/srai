@@ -1,0 +1,35 @@
+name: "Run manual tests with newest dependencies"
+on:
+  workflow_dispatch
+
+jobs:
+    run-tests:
+      name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions
+      runs-on: ${{ matrix.os }}
+      strategy:
+        fail-fast: false
+        matrix:
+          os: [ubuntu-latest]
+          python-version: ["3.9", "3.10", "3.11"]
+          include:
+            - os: macos-latest
+              python-version: "3.11"
+            - os: windows-latest
+              python-version: "3.11"
+      env:
+        OS: ${{ matrix.os }}
+        PYTHON: ${{ matrix.python-version }}
+      steps:
+        - uses: actions/checkout@v3
+        - name: Setup Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v4
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Install srai and tests dependencies
+          run: |
+            pip install pdm
+            pdm lock --lockfile pdm.newest.lock
+            pdm export -G test -f requirements -o requirements.newest.txt --self --lockfile pdm.newest.lock
+            pip install --no-deps -r requirements.newest.txt
+        - name: Run tests with pytest
+          run: pytest -v --durations=20 tests
