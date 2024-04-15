@@ -28,10 +28,14 @@ jobs:
         - name: Install pdm
           run: pip install pdm
         - name: Generate lock with newest dependencies
-          run: pdm lock --lockfile pdm.newest.lock
+          run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform
         - name: Export requirements file
-          run: pdm export -G test -f requirements -o requirements.newest.txt --self --lockfile pdm.newest.lock
-        - name: Install srai and tests dependencies
+          run: pdm export -G test -f requirements -o requirements.newest.txt --lockfile pdm.newest.lock
+        - name: Install srai
+          run: |
+            pdm build -v -d dist
+            pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --upgrade
+        - name: Install tests dependencies
           run: pip install --no-deps -r requirements.newest.txt
         - name: Run tests with pytest
           run: pytest -v --durations=20 tests
