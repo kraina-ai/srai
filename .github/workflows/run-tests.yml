@@ -12,3 +12,4 @@ jobs:
   run-tests:
     name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
+    secrets: inherit
