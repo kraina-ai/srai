@@ -77,7 +77,6 @@ class NYCBike(Dataset):
             )
 
         elif dataset_year in self.conf["years_current"]:
-
             start_station_geometry = gpd.points_from_xy(x=data["start_lng"], y=data["start_lat"])
             end_station_geometry = gpd.points_from_xy(x=data["end_lng"], y=data["end_lat"])
             multi_point_stations_geometries = [
