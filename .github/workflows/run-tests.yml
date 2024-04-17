@@ -12,3 +12,10 @@ jobs:
   run-tests:
     name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
+    secrets: inherit
+
+  run-tests-newest-dependencies:
+    if: contains(github.event.pull_request.labels.*.name, 'release')
+    name: "Run tests with newest dependencies job"
+    uses: ./.github/workflows/manual_tests.yml
+    secrets: inherit
