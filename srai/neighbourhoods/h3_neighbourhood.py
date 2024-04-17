@@ -82,7 +82,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[str] = h3.grid_disk(index, distance)
+        neighbours: set[str] = set(h3.grid_disk(index, distance))
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=False, include_center_override=include_center
         )
@@ -108,7 +108,7 @@ class H3Neighbourhood(Neighbourhood[str]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[str] = h3.grid_ring(index, distance)
+        neighbours: set[str] = set(h3.grid_ring(index, distance))
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=True, include_center_override=include_center
         )
