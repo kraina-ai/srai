@@ -127,9 +127,10 @@ class GeoVexEmbedder(CountEmbedder):
             dataloader = DataLoader(dataset, batch_size=self._batch_size, shuffle=False)
 
         embeddings = [
-            self._model.encoder(batch).detach().numpy() for batch in dataloader  # type: ignore
+            self._model.encoder(batch).detach().numpy()  # type: ignore
+            for batch in dataloader
         ]
-        if len(dataset.get_invalid_cells()) > 0:
+        if dataset.get_invalid_cells():
             print(
                 "Warning: Some regions were not able to be encoded, as they don't have"
                 f" r={self._r} neighbors."

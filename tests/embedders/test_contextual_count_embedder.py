@@ -28,11 +28,13 @@ def expected_embedding_df_squashed_distance_0() -> pd.DataFrame:
 
     Count without subcategories. Squashed features, distance 0.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "leisure": [0, 1, 1],
-        "amenity": [1, 0, 1],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure": [0, 1, 1],
+            "amenity": [1, 0, 1],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -58,11 +60,13 @@ def expected_embedding_df_concatenated_distance_0() -> pd.DataFrame:
 
     Count without subcategories. Concatenated features, distance 0.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "leisure_0": [0, 1, 1],
-        "amenity_0": [1, 0, 1],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_0": [0, 1, 1],
+            "amenity_0": [1, 0, 1],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -221,12 +225,14 @@ def specified_features_expected_embedding_df_squashed_empty() -> pd.DataFrame:
 
     Count without subcategories. Squashed features, distance 0+.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking": [0, 0, 0],
-        "leisure_park": [0, 0, 0],
-        "amenity_pub": [0, 0, 0],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking": [0, 0, 0],
+            "leisure_park": [0, 0, 0],
+            "amenity_pub": [0, 0, 0],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -236,12 +242,14 @@ def specified_features_expected_subcategories_embedding_df_squashed_distance_0()
 
     Count with subcategories. Squashed features, distance 0.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking": [0, 0, 0],
-        "leisure_park": [0, 0, 0],
-        "amenity_pub": [1, 0, 1],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking": [0, 0, 0],
+            "leisure_park": [0, 0, 0],
+            "amenity_pub": [1, 0, 1],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -251,12 +259,14 @@ def specified_features_expected_subcategories_embedding_df_squashed_distance_1()
 
     Count with subcategories. Squashed features, distance 1+.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking": [0, 0, 0],
-        "leisure_park": [0, 0, 0],
-        "amenity_pub": [1.125, 0.25, 1.125],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking": [0, 0, 0],
+            "leisure_park": [0, 0, 0],
+            "amenity_pub": [1.125, 0.25, 1.125],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -266,12 +276,14 @@ def specified_features_expected_embedding_df_concatenated_distance_0() -> pd.Dat
 
     Count without subcategories. Concatenated features, distance 0.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [0, 0, 0],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [0, 0, 0],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -281,15 +293,17 @@ def specified_features_expected_embedding_df_concatenated_distance_1() -> pd.Dat
 
     Count without subcategories. Concatenated features, distance 1.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [0, 0, 0],
-        "amenity_parking_1": [0, 0, 0],
-        "leisure_park_1": [0, 0, 0],
-        "amenity_pub_1": [0, 0, 0],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [0, 0, 0],
+            "amenity_parking_1": [0, 0, 0],
+            "leisure_park_1": [0, 0, 0],
+            "amenity_pub_1": [0, 0, 0],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -299,18 +313,20 @@ def specified_features_expected_embedding_df_concatenated_distance_2() -> pd.Dat
 
     Count without subcategories. Concatenated features, distance 2.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [0, 0, 0],
-        "amenity_parking_1": [0, 0, 0],
-        "leisure_park_1": [0, 0, 0],
-        "amenity_pub_1": [0, 0, 0],
-        "amenity_parking_2": [0, 0, 0],
-        "leisure_park_2": [0, 0, 0],
-        "amenity_pub_2": [0, 0, 0],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [0, 0, 0],
+            "amenity_parking_1": [0, 0, 0],
+            "leisure_park_1": [0, 0, 0],
+            "amenity_pub_1": [0, 0, 0],
+            "amenity_parking_2": [0, 0, 0],
+            "leisure_park_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -322,12 +338,14 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
 
     Count with subcategories. Concatenated features, distance 0.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [1, 0, 1],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [1, 0, 1],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -339,15 +357,17 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
 
     Count with subcategories. Concatenated features, distance 1.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [1, 0, 1],
-        "amenity_parking_1": [0, 0, 0],
-        "leisure_park_1": [0, 0, 0],
-        "amenity_pub_1": [0.5, 1, 0.5],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "amenity_parking_1": [0, 0, 0],
+            "leisure_park_1": [0, 0, 0],
+            "amenity_pub_1": [0.5, 1, 0.5],
+        }
+    )
 
 
 @pytest.fixture  # type: ignore
@@ -359,18 +379,20 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
 
     Count with subcategories. Concatenated features, distance 2.
     """
-    return _create_features_dataframe({
-        REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
-        "amenity_parking_0": [0, 0, 0],
-        "leisure_park_0": [0, 0, 0],
-        "amenity_pub_0": [1, 0, 1],
-        "amenity_parking_1": [0, 0, 0],
-        "leisure_park_1": [0, 0, 0],
-        "amenity_pub_1": [0.5, 1, 0.5],
-        "amenity_parking_2": [0, 0, 0],
-        "leisure_park_2": [0, 0, 0],
-        "amenity_pub_2": [0, 0, 0],
-    })
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "amenity_parking_0": [0, 0, 0],
+            "leisure_park_0": [0, 0, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "amenity_parking_1": [0, 0, 0],
+            "leisure_park_1": [0, 0, 0],
+            "amenity_pub_1": [0.5, 1, 0.5],
+            "amenity_parking_2": [0, 0, 0],
+            "leisure_park_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        }
+    )
 
 
 @P.parameters(

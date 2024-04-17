@@ -70,7 +70,9 @@ def test_embedder() -> None:
 
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
-            f"{st}_{t}" for st in test_case["tags"] for t in test_case["tags"][st]  # type: ignore
+            f"{st}_{t}"
+            for st in test_case["tags"]  # type: ignore
+            for t in test_case["tags"][st]  # type: ignore
         ]
         embedder = GeoVexEmbedder(
             target_features=target_features,

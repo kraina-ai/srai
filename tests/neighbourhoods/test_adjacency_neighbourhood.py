@@ -97,25 +97,25 @@ def test_no_geometry_gdf_attribute_error(no_geometry_gdf: gpd.GeoDataFrame) -> N
 def test_empty_gdf_empty_set(empty_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if empty GeoDataFrames return empty neighbourhoods."""
     neighbourhood = AdjacencyNeighbourhood(empty_gdf)
-    assert neighbourhood.get_neighbours(1) == set()
+    assert not neighbourhood.get_neighbours(1)
 
 
 def test_empty_gdf_empty_set_include_center(empty_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if empty GeoDataFrames return empty neighbourhoods."""
     neighbourhood = AdjacencyNeighbourhood(empty_gdf, include_center=True)
-    assert neighbourhood.get_neighbours(1) == set()
+    assert not neighbourhood.get_neighbours(1)
 
 
 def test_lazy_loading_empty_set(squares_regions_fixture: gpd.GeoDataFrame) -> None:
     """Test checks if lookup table is empty after init."""
     neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture)
-    assert neighbourhood.lookup == {}
+    assert not neighbourhood.lookup
 
 
 def test_lazy_loading_empty_set_include_center(squares_regions_fixture: gpd.GeoDataFrame) -> None:
     """Test checks if lookup table is empty after init."""
     neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture, include_center=True)
-    assert neighbourhood.lookup == {}
+    assert not neighbourhood.lookup
 
 
 def test_adjacency_lazy_loading(rounded_regions_fixture: gpd.GeoDataFrame) -> None:

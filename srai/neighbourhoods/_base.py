@@ -1,5 +1,6 @@
 """Neighbourhood interface."""
 
+import operator
 from abc import ABC, abstractmethod
 from queue import Queue
 from typing import Generic, Optional, TypeVar
@@ -70,9 +71,15 @@ class Neighbourhood(ABC, Generic[IndexType]):
             Set[IndexType]: Indexes of the neighbours.
         """
         neighbours_with_distances = self._get_neighbours_with_distances(index, distance)
-        neighbours: set[IndexType] = seq(neighbours_with_distances).map(lambda x: x[0]).to_set()
+        neighbours: set[IndexType] = (
+            seq(neighbours_with_distances).map(operator.itemgetter(0)).to_set()
+        )
         neighbours = self._handle_center(
-            index, distance, neighbours, at_distance=False, include_center_override=include_center
+            index,
+            distance,
+            neighbours,
+            at_distance=False,
+            include_center_override=include_center,
         )
         return neighbours
 
@@ -96,7 +103,7 @@ class Neighbourhood(ABC, Generic[IndexType]):
         neighbours_at_distance: set[IndexType] = (
             seq(neighbours_up_to_distance)
             .filter(lambda x: x[1] == distance)
-            .map(lambda x: x[0])
+            .map(operator.itemgetter(0))
             .to_set()
         )
         neighbours_at_distance = self._handle_center(
