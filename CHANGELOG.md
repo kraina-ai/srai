@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Issue caused by the change in the `h3-py` library 4.0.0b3 [#431](https://github.com/kraina-ai/srai/issues/431)
+
 ## [0.7.0] - 2024-02-02
 
 ### Added
