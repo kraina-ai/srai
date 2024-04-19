@@ -4,6 +4,7 @@ Foursquare Checkins dataset loader.
 This module contains Foursquare Checkins Dataset.
 """
 
+import itertools
 from typing import Optional
 
 import geopandas as gpd
@@ -42,7 +43,7 @@ class FoursquareCheckins(HFDataset):
             data=df.drop(columns=["latitude", "longitude"]),
             geometry=df.apply(
                 lambda row: LineString(
-                    [Point(lon, lat) for lon, lat in zip(row["longitude"], row["latitude"])]
+                    list(itertools.starmap(Point, zip(row["longitude"], row["latitude"])))
                 ),
                 axis=1,
             ),

@@ -47,7 +47,7 @@ class HFLoader(Loader):
         from datasets import load_dataset
 
         dataset = load_dataset(
-            f"{dataset_name}", name=name, token=self.hf_token, trust_remote_code=True
+            dataset_name, name=name, token=self.hf_token, trust_remote_code=True
         )  # download dataset from HF
 
         df = dataset["train"].to_pandas()
