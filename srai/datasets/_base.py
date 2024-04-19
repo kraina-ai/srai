@@ -5,7 +5,6 @@ This module contains Base class of Dataset.
 """
 
 import abc
-import os
 from typing import Optional
 
 import geopandas as gpd
@@ -38,11 +37,11 @@ class Dataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load(self) -> gpd.GeoDataFrame:
+    def load(self, hf_token: Optional[str] = None) -> gpd.GeoDataFrame:
         """Method to load dataset."""
         dataset_name = self.conf["dataset_name"]
         name = self.conf.get("name")
-        data = HFLoader(os.environ["HF_access_token"]).load(dataset_name=dataset_name, name=name)
+        data = HFLoader(hf_token=hf_token).load(dataset_name=dataset_name, name=name)
         processed_data = self._preprocessing(data)
 
         return processed_data

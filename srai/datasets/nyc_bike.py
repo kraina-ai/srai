@@ -103,19 +103,23 @@ class NYCBike(Dataset):
         return gdf
 
     # @override
-    def load(self, dataset_version_name: str = "nyc_bike_2023") -> gpd.GeoDataFrame:
+    def load(
+        self, hf_token: Optional[str] = None, dataset_version_name: str = "nyc_bike_2023"
+    ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
 
         Args:
             dataset_version_name: Version name of dataset, e.g. "nyc_bike_2013". \
                 Available: nyc_bike_2013 - nyc_bike_2023.
+            hf_token: Token from Hugging Face
+
 
         Returns:
             GeoDataFrame of dataset, contatins location data.
         """
         dataset_name = self.conf["dataset_name"]
-        data = HFLoader(os.environ["HF_access_token"]).load(
+        data = HFLoader(hf_token=hf_token).load(
             dataset_name=dataset_name, name=dataset_version_name
         )
         processed_data = self._preprocessing(data, dataset_version_name)
