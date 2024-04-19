@@ -16,20 +16,21 @@ from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
-        "quackosm",
+        "beautifulsoup4",
+        "datasets",
+        "folium",
+        "gtfs_kit",
+        "haversine",
+        "kaleido",
+        "mapclassify",
         "osmnx",
         "overpass",
-        "beautifulsoup4",
+        "plotly",
         "pymap3d",
-        "haversine",
+        "pytorch-lightning",
+        "quackosm",
         "scipy",
         "spherical_geometry",
-        "gtfs_kit",
-        "folium",
-        "mapclassify",
-        "plotly",
-        "kaleido",
-        "pytorch-lightning",
         "torch",
     ]
 
@@ -126,6 +127,12 @@ def _test_gtfs() -> None:
     GTFSLoader()
 
 
+def _test_datasets() -> None:
+    from srai.loaders import HFLoader
+
+    HFLoader()
+
+
 def _get_regions_gdf() -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(
         data={
@@ -151,6 +158,7 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_torch),
         (_test_osm),
         (_test_gtfs),
+        (_test_datasets),
     ],
 )
 def test_optional_available(test_fn):
@@ -167,6 +175,7 @@ def test_optional_available(test_fn):
         (_test_torch),
         (_test_osm),
         (_test_gtfs),
+        (_test_datasets),
     ],
 )
 def test_optional_missing(test_fn):
