@@ -68,8 +68,10 @@ osm = [
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
+
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
+
 # pdm add -G plotting <library>
 plotting = [
     "folium",
@@ -78,9 +80,16 @@ plotting = [
     "plotly",
     "kaleido<=0.2.1",
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
+
 # pdm add -G torch <library>
 torch = ["pytorch-lightning", "torch"]
-all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
+
+# pdm add -G datasets <library>
+datasets = [
+    "datasets",
+]
+
+all = ["srai[osm,voronoi,gtfs,plotting,torch,datasets]"]
 
 
 [build-system]
@@ -91,7 +100,11 @@ build-backend = "pdm.backend"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = ["bumpver", "types-requests"]
+dev = [
+    "bumpver",
+    "types-requests",
+    "python-dotenv",
+]
 # pdm add -dG lint <library>
 lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
