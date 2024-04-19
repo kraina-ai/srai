@@ -27,11 +27,7 @@ dependencies = [
     "h3ronpy>=0.18.0",
     "osmnx",
     "omegaconf",
-    "python-dotenv",
-    "datasets",
-    "contextily",
-    "folium",
-    "mapclassify"
+    "datasets"
 ]
 requires-python = ">=3.9"
 readme = "README.md"

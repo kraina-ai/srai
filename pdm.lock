@@ -632,8 +632,8 @@ dependencies = [
     "xyzservices",
 ]
 files = [
-    {file = "contextily-1.6.0-py3-none-any.whl", hash = "sha256:8a0900ac5cfcec0f4ae46b5d83fe176625355dfeff2376a66b6e61694c2fe9cb"},
-    {file = "contextily-1.6.0.tar.gz", hash = "sha256:8ab8ea9ec427c07960fae4964cfa6964b88c87546b97896422dbefc9fa8457f3"},
+    {file = "comm-0.2.2-py3-none-any.whl", hash = "sha256:e6fb86cb70ff661ee8c9c14e7d36d6de3b4066f1441be4063df9c5009f0a64d3"},
+    {file = "comm-0.2.2.tar.gz", hash = "sha256:3fd7a84065306e07bea1773df6eb8282de51ba82f77c72f9c85716ab11fe980e"},
 ]
 
 [[package]]
@@ -703,15 +703,15 @@ files = [
 
 [[package]]
 name = "datasets"
-version = "2.18.0"
+version = "2.19.0"
 requires_python = ">=3.8.0"
 summary = "HuggingFace community-driven open-source library of datasets"
 dependencies = [
     "aiohttp",
     "dill<0.3.9,>=0.3.0",
     "filelock",
-    "fsspec[http]<=2024.2.0,>=2023.1.0",
-    "huggingface-hub>=0.19.4",
+    "fsspec[http]<=2024.3.1,>=2023.1.0",
+    "huggingface-hub>=0.21.2",
     "multiprocess",
     "numpy>=1.17",
     "packaging",
@@ -724,8 +724,8 @@ dependencies = [
     "xxhash",
 ]
 files = [
-    {file = "datasets-2.18.0-py3-none-any.whl", hash = "sha256:f1bbf0e2896917a914de01cbd37075b14deea3837af87ad0d9f697388ccaeb50"},
-    {file = "datasets-2.18.0.tar.gz", hash = "sha256:cdf8b8c6abf7316377ba4f49f9589a4c74556d6b481afd0abd2284f3d69185cb"},
+    {file = "datasets-2.19.0-py3-none-any.whl", hash = "sha256:f57c5316e123d4721b970c68c1cb856505f289cda58f5557ffe745b49c011a8e"},
+    {file = "datasets-2.19.0.tar.gz", hash = "sha256:0b47e08cc7af2c6800a42cadc4657b22a0afc7197786c8986d703c08d90886a6"},
 ]
 
 [[package]]
@@ -1254,19 +1254,6 @@ summary = "GeoPandas API for Parquet file format."
 files = [
     {file = "geoparquet-0.0.3-py3-none-any.whl", hash = "sha256:6aaee13d802d02d73c14a981bc73482c0074a5af671557971187890070fc7da9"},
     {file = "geoparquet-0.0.3.tar.gz", hash = "sha256:2968c0cd65fe5781abc057252e71bb364b5d18ecbf26c32d753a98df01196a65"},
-]
-
-[[package]]
-name = "geopy"
-version = "2.4.1"
-requires_python = ">=3.7"
-summary = "Python Geocoding Toolbox"
-dependencies = [
-    "geographiclib<3,>=1.52",
-]
-files = [
-    {file = "geopy-2.4.1-py3-none-any.whl", hash = "sha256:ae8b4bc5c1131820f4d75fce9d4aaaca0c85189b3aa5d64c3dcaf5e3b7b882a7"},
-    {file = "geopy-2.4.1.tar.gz", hash = "sha256:50283d8e7ad07d89be5cb027338c6365a32044df3ae2556ad3f52f4840b3d0d1"},
 ]
 
 [[package]]
@@ -2284,18 +2271,6 @@ summary = "Markdown URL utilities"
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
-]
-
-[[package]]
-name = "mercantile"
-version = "1.2.1"
-summary = "Web mercator XYZ tile utilities"
-dependencies = [
-    "click>=3.0",
-]
-files = [
-    {file = "mercantile-1.2.1-py3-none-any.whl", hash = "sha256:30f457a73ee88261aab787b7069d85961a5703bb09dc57a170190bc042cd023f"},
-    {file = "mercantile-1.2.1.tar.gz", hash = "sha256:fa3c6db15daffd58454ac198b31887519a19caccee3f9d63d17ae7ff61b3b56b"},
 ]
 
 [[package]]
@@ -3978,40 +3953,17 @@ files = [
 ]
 
 [[package]]
-name = "rasterio"
-version = "1.3.10"
+name = "referencing"
+version = "0.34.0"
 requires_python = ">=3.8"
-summary = "Fast and direct raster I/O for use with Numpy and SciPy"
+summary = "JSON Referencing + Python"
 dependencies = [
-    "affine",
-    "attrs",
-    "certifi",
-    "click-plugins",
-    "click>=4.0",
-    "cligj>=0.5",
-    "importlib-metadata; python_version < \"3.10\"",
-    "numpy",
-    "setuptools",
-    "snuggs>=1.4.1",
+    "attrs>=22.2.0",
+    "rpds-py>=0.7.0",
 ]
 files = [
-    {file = "rasterio-1.3.10-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:2ef27c3eff6f44f8b5d5de228003367c1843593edf648d85c0dc1319c00dc57d"},
-    {file = "rasterio-1.3.10-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:c711b497e9ef0c4f5e1c01e34ba910708e066e1c4a69c25df18d1bcc04481287"},
-    {file = "rasterio-1.3.10-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:d1ac85857144cb8075e332e9d908b65426d30ddc1f59f7a04bcf6ed6fd3c0d47"},
-    {file = "rasterio-1.3.10-cp310-cp310-win_amd64.whl", hash = "sha256:ef8a496740df1e68f7a3d3449aa3be9c3210c22f4bb78a4a9e1c290183abd9b1"},
-    {file = "rasterio-1.3.10-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:97d867cada29f16cb83f1743217f775f8b982676fcdda77671d25abb26698159"},
-    {file = "rasterio-1.3.10-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:505b3e659eb3b137192c25233bf7954bc4997b1a474bae9e129fbd5ac2619404"},
-    {file = "rasterio-1.3.10-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:30f27e309a14a70c821d10a0ea18b110968dc2e2186b06a900aebd92094f4e00"},
-    {file = "rasterio-1.3.10-cp311-cp311-win_amd64.whl", hash = "sha256:cbb2eea127328302f9e3158a000363a7d9eea22537378dee4f824a7fa2d78c05"},
-    {file = "rasterio-1.3.10-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:3a9c4fb63e050e11bcd23e53f084ca186b445f976df1f70e7abd851c4072837f"},
-    {file = "rasterio-1.3.10-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7c7ddca79444fd3b933f4cd1a1773e9f7839d0ce5d76e600bdf92ee9a79b95f8"},
-    {file = "rasterio-1.3.10-cp312-cp312-manylinux2014_x86_64.whl", hash = "sha256:f9cd757e11cfb07ef39b1cc79a32497bf22aff7fec41fe330b868cb3043b4db5"},
-    {file = "rasterio-1.3.10-cp312-cp312-win_amd64.whl", hash = "sha256:7e653968f64840654d277e0f86f8666ed8f3030ba36fa865f420f9bc38d619ee"},
-    {file = "rasterio-1.3.10-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:73ea4d0e584f696ef115601bbb97ba8d2b68a67c2bb3b40999414d31b6c7cf89"},
-    {file = "rasterio-1.3.10-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e6eece6420d7d6ef9b9830633b8fcd15e86b8702cb13419abe251c16ca502cf3"},
-    {file = "rasterio-1.3.10-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:0bbd62b45a35cab53cb7fe72419e823e47ab31ee2d055af8e21dc7f37fe5ed6c"},
-    {file = "rasterio-1.3.10-cp39-cp39-win_amd64.whl", hash = "sha256:450f2bd45335308829da90566fbcbdb8e8aa0251a9d1f6ebb60667855dfb7554"},
-    {file = "rasterio-1.3.10.tar.gz", hash = "sha256:ce182c735b4f9e8735d90600607ecab15ef895eb8aa660bf665751529477e326"},
+    {file = "referencing-0.34.0-py3-none-any.whl", hash = "sha256:d53ae300ceddd3169f1ffa9caf2cb7b769e92657e4fafb23d34b93679116dfd4"},
+    {file = "referencing-0.34.0.tar.gz", hash = "sha256:5773bd84ef41799a5a8ca72dc34590c041eb01bf9aa02632b4a973fb0181a844"},
 ]
 
 [[package]]

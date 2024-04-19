@@ -19,7 +19,7 @@ class HFLoader(Loader):
     Loader to download dataset from HuggingFace and return GeoDataFrame.
     """
 
-    def __init__(self, hf_token: str) -> None:
+    def __init__(self, hf_token: Optional[str] = None) -> None:
         """
         Initialize loader.
 
