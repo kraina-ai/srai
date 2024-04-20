@@ -8,6 +8,7 @@ References:
     1. https://taginfo.openstreetmap.org/
 """
 
+import operator
 from typing import Any
 
 import requests
@@ -61,8 +62,8 @@ def _parse_taginfo_response(
         .filter(lambda t: t["count_all_fraction"] >= min_fraction)
     )
     if in_wiki_only:
-        result_tags = result_tags.filter(lambda t: t["in_wiki"])
+        result_tags = result_tags.filter(operator.itemgetter("in_wiki"))
     taginfo_grouped: OsmTagsFilter = (
-        result_tags.map(lambda t: (t["key"], t["value"])).group_by_key().to_dict()
+        result_tags.map(operator.itemgetter("key", "value")).group_by_key().to_dict()
     )
     return taginfo_grouped

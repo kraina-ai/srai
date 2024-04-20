@@ -82,9 +82,7 @@ def test_model_tensors() -> None:
         torch.use_deterministic_algorithms(True)
 
         neighbourhood = H3Neighbourhood(regions_gdf)
-        target_features = [
-            f"{st}_{t}" for st in test_case["tags"] for t in test_case["tags"][st]  # type: ignore
-        ]
+        target_features = [f"{st}_{t}" for st in test_case["tags"] for t in test_case["tags"][st]]  # type: ignore
         embedder = GeoVexEmbedder(
             target_features=target_features,
             batch_size=10,

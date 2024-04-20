@@ -6,19 +6,13 @@ T_co = TypeVar("T_co", covariant=True)
 class Dataset(Generic[T_co]):
     """Dataset class stub."""
 
-    ...
-
 
 class DataLoader(Generic[T_co]):
     """DataLoader class stub."""
 
-    ...
-
 
 class LightningModule:  # pragma: no cover
     """LightningModule class stub."""
-
-    ...
 
 
 class nn:  # pragma: no cover
@@ -27,10 +21,6 @@ class nn:  # pragma: no cover
     class Module:
         """Pytorch nn.Module class stub."""
 
-        ...
-
 
 class torch:  # pragma: no cover
     """Pytorch class stub."""
-
-    ...

@@ -67,9 +67,7 @@ def test_raises_with_incorrect_ring_distance(
 def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame):
     """Test if HexagonalDataset constructs lookup tables correctly."""
     neighbourhood: H3Neighbourhood = H3Neighbourhood(regions_data_df)
-    dataset = HexagonalDataset(
-        regions_data_df, neighbourhood, neighbor_k_ring=ring_distance
-    )  # type: ignore
+    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)  # type: ignore
     assert len(dataset) == len(
         neighbourhood.get_neighbours_up_to_distance(
             ROOT_REGION, distance=RING_DISTANCE - ring_distance, include_center=True, unchecked=True
@@ -100,9 +98,7 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
     ring_distance = 2
 
     neighbourhood = H3Neighbourhood(regions_data_df)
-    dataset = HexagonalDataset(
-        regions_data_df, neighbourhood, neighbor_k_ring=ring_distance
-    )  # type: ignore
+    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)  # type: ignore
     item = next(iter(dataset)).detach().numpy()
     # flatten it out and get the corresponding hexagons
     cells = regions_data_df.reset_index().set_index("data").loc[item.reshape(-1).tolist()].values
@@ -116,12 +112,14 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
     # commpare to the transposed image in the paper
     # specifically fig. 3
     # the bottom and right are padded by 0s for even #
-    desired = np.array([
-        [(0, 0), (0, 0), (0, 2), (1, 2), (2, 2), (0, 0)],
-        [(0, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (0, 0)],
-        [(-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (0, 0)],
-        [(-2, -1), (-1, -1), (0, -1), (1, -1), (0, 0), (0, 0)],
-        [(-2, -2), (-1, -2), (0, -2), (0, 0), (0, 0), (0, 0)],
-        [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
-    ])
+    desired = np.array(
+        [
+            [(0, 0), (0, 0), (0, 2), (1, 2), (2, 2), (0, 0)],
+            [(0, 0), (-1, 1), (0, 1), (1, 1), (2, 1), (0, 0)],
+            [(-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (0, 0)],
+            [(-2, -1), (-1, -1), (0, -1), (1, -1), (0, 0), (0, 0)],
+            [(-2, -2), (-1, -2), (0, -2), (0, 0), (0, 0), (0, 0)],
+            [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+        ]
+    )
     assert np.all(ijs.transpose(1, 0, -1) == desired)

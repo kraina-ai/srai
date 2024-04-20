@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Update tooling
+- remove Black in favour of Ruff format
+
+### Added
+
+- Conform to PEP 561
+
 ## [0.7.1] - 2024-04-17
 
 ### Fixed

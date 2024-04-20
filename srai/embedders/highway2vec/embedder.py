@@ -175,7 +175,7 @@ class Highway2VecEmbedder(Embedder):
             "model_config": self._model.get_config(),  # type: ignore
             "embedder_config": embedder_config,
         }
-        with open(path / "config.json", "w") as f:
+        with (path / "config.json").open("w") as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
 
     def save(self, path: Union[Path, str]) -> None:

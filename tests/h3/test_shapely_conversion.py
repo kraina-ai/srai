@@ -18,7 +18,7 @@ def _gdf_noop(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_fixture
 
 
-def _gdf_to_geoseries(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoSeries:
+def _gdf_to_geoseries(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoSeries:  # noqa: FURB118
     return gdf_fixture[GEOMETRY_COLUMN]
 
 

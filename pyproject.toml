@@ -91,7 +91,7 @@ build-backend = "pdm.backend"
 # pdm add -d <library>
 dev = ["bumpver", "types-requests"]
 # pdm add -dG lint <library>
-lint = ["pre-commit", "black[jupyter]", "mypy", "docformatter[tomli]", "ruff"]
+lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
 test = [
     "pytest",
@@ -103,6 +103,7 @@ test = [
     "pytest-xdist",
     "pyogrio",
     "six",
+    "pytest-snapshot",
 ]
 # pdm add -dG visualization <library>
 visualization = ["keplergl", "matplotlib"]
@@ -120,20 +121,19 @@ docs = [
     "scikit-learn",
     "umap-learn",
 ]
-performance = ["scalene"]
+# performance = ["scalene"]
 license = ["licensecheck"]
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
 
-[tool.black]
-line-length = 100
-target-version = ["py39", "py310", "py311"]
-preview = true
-
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+extend-exclude = ["old"]
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
 select = [
     "E",
     "W",   # pycodestyle
@@ -154,14 +154,16 @@ select = [
     # "N",            # pep8-naming
     # "ANN",          # flake8-annotations
 ]
-ignore = ["D212"]
-extend-exclude = ["old"]
+ignore = ["D212", "ISC001"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.pycodestyle]
+[tool.ruff.lint.pycodestyle]
 max-doc-length = 100
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.mypy]
 strict = true
@@ -170,6 +172,7 @@ disallow_untyped_defs = true
 no_implicit_optional = true
 check_untyped_defs = true
 warn_return_any = true
+ignore_missing_imports = true
 
 [tool.docformatter]
 syntax = 'google'
@@ -239,4 +242,5 @@ ignore_packages = [
     'nvidia-cusparse-cu12',     # uses NVIDIA license
     'nvidia-nccl-cu12',         # uses NVIDIA license
     'nvidia-nvtx-cu12',         # uses NVIDIA license
+    'nvidia-nvjitlink-cu12',    # uses NVIDIA license
 ]

@@ -27,12 +27,14 @@ def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
     """Test if pbf to geoparquet conversion works."""
     pbf_file = Path(__file__).parent / "test_files" / "monaco.osm.pbf"
     OSMPbfLoader(pbf_file=pbf_file).load_to_geoparquet(
-        area=Polygon([
-            (7.416769421059001, 43.7346112362936),
-            (7.416769421059001, 43.730681304758946),
-            (7.4218262821731, 43.730681304758946),
-            (7.4218262821731, 43.7346112362936),
-        ]),
+        area=Polygon(
+            [
+                (7.416769421059001, 43.7346112362936),
+                (7.416769421059001, 43.730681304758946),
+                (7.4218262821731, 43.730681304758946),
+                (7.4218262821731, 43.7346112362936),
+            ]
+        ),
         tags=GEOFABRIK_LAYERS,
         ignore_cache=True,
         explode_tags=explode_tags,
@@ -45,12 +47,14 @@ def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
     [
         (
             [
-                Polygon([
-                    (7.416769421059001, 43.7346112362936),
-                    (7.416769421059001, 43.730681304758946),
-                    (7.4218262821731, 43.730681304758946),
-                    (7.4218262821731, 43.7346112362936),
-                ])
+                Polygon(
+                    [
+                        (7.416769421059001, 43.7346112362936),
+                        (7.416769421059001, 43.730681304758946),
+                        (7.4218262821731, 43.730681304758946),
+                        (7.4218262821731, 43.7346112362936),
+                    ]
+                )
             ],
             Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             HEX2VEC_FILTER,
@@ -74,12 +78,14 @@ def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
         ),
         (
             [
-                Polygon([
-                    (7.416769421059001, 43.7346112362936),
-                    (7.416769421059001, 43.730681304758946),
-                    (7.4218262821731, 43.730681304758946),
-                    (7.4218262821731, 43.7346112362936),
-                ])
+                Polygon(
+                    [
+                        (7.416769421059001, 43.7346112362936),
+                        (7.416769421059001, 43.730681304758946),
+                        (7.4218262821731, 43.730681304758946),
+                        (7.4218262821731, 43.7346112362936),
+                    ]
+                )
             ],
             Path(__file__).parent / "test_files" / "monaco.osm.pbf",
             GEOFABRIK_LAYERS,
