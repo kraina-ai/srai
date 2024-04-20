@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:1392f3b48dd654e32edcaa71b71c4ba26dceb63b05423715b6ae7db556fdbe8f"
+content_hash = "sha256:bde58e5d268892ac8aea573c2de9536228423f2c2526189bde1a2ab63d89db42"
 
 [[package]]
 name = "aiohttp"
@@ -3521,6 +3521,19 @@ dependencies = [
 ]
 files = [
     {file = "pytest-parametrization-2022.2.1.tar.gz", hash = "sha256:057229ad7e284fe3435a717a8a58dc5f169b3d1e5aa946d94ec591d31bd78445"},
+]
+
+[[package]]
+name = "pytest-snapshot"
+version = "0.9.0"
+requires_python = ">=3.5"
+summary = "A plugin for snapshot testing with pytest."
+dependencies = [
+    "pytest>=3.0.0",
+]
+files = [
+    {file = "pytest-snapshot-0.9.0.tar.gz", hash = "sha256:c7013c3abc3e860f9feff899f8b4debe3708650d8d8242a61bf2625ff64db7f3"},
+    {file = "pytest_snapshot-0.9.0-py3-none-any.whl", hash = "sha256:4b9fe1c21c868fe53a545e4e3184d36bc1c88946e3f5c1d9dd676962a9b3d4ab"},
 ]
 
 [[package]]
