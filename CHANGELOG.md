@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- make geofabrik the default download source for OSMPbfLoader
+
 ## [0.7.2] - 2024-04-20
 
 ### Changed
