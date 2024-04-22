@@ -10,10 +10,10 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString
 
-from srai.datasets import HFDataset
+from srai.datasets import HuggingFaceDataset
 
 
-class TDrive(HFDataset):
+class TDrive(HuggingFaceDataset):
     """
     T-Drive dataset.
 

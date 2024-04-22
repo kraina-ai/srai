@@ -10,10 +10,10 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString
 
-from srai.datasets import HFDataset
+from srai.datasets import HuggingFaceDataset
 
 
-class Geolife(HFDataset):
+class Geolife(HuggingFaceDataset):
     """
     Geolife Dataset.
 

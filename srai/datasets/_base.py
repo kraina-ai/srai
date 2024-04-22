@@ -9,10 +9,10 @@ import geopandas as gpd
 import pandas as pd
 from omegaconf import OmegaConf
 
-from srai.loaders import HFLoader
+from srai.loaders import HuggingFaceLoader
 
 
-class HFDataset(abc.ABC):
+class HuggingFaceDataset(abc.ABC):
     """Abstract class for HuggingFace datasets."""
 
     def __init__(self, config_path: Path | None = None) -> None:
@@ -45,15 +45,15 @@ class HFDataset(abc.ABC):
         Method to load dataset.
 
         Args:
-            hf_token (str, optional): If needed a User Access Token needed to authenticate to your
-                identity to Hugging Face Hub. Defaults to None.
+            hf_token (str, optional): If needed a User Access Token needed to authenticate to
+                the Hugging Face Hub. Defaults to None.
 
         Returns:
             gpd.GeoDataFrame: Loaded data.
         """
         dataset_name = self.conf["dataset_name"]
         name = self.conf.get("name")
-        data = HFLoader(hf_token=hf_token).load(dataset_name=dataset_name, name=name)
+        data = HuggingFaceLoader(hf_token=hf_token).load(dataset_name=dataset_name, name=name)
         processed_data = self._preprocessing(data)
 
         return processed_data

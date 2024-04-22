@@ -4,7 +4,7 @@ This module contains dataset used to load dataset containing spatial information
 Datasets can be loaded using .load() method. Some of them may need name of version.
 """
 
-from ._base import HFDataset
+from ._base import HuggingFaceDataset
 from .airbnb_multicity.dataset import AirbnbMulticity
 from .brightkite.dataset import Brightkite
 from .chicago_crime.dataset import ChicagoCrime
@@ -19,7 +19,7 @@ from .porto_taxi.dataset import PortoTaxi
 from .t_drive.dataset import TDrive
 
 __all__ = [
-    "HFDataset",
+    "HuggingFaceDataset",
     "AirbnbMulticity",
     "ChicagoCrime",
     "NYCBike",
