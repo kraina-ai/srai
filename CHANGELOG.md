@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+### Added
+
+- Initial implementation of datasets [#430](https://github.com/kraina-ai/srai/pull/430) for feature enrichment and benchmarking.
+
 ## [0.7.3] - 2024-04-21
 
 ### Changed
