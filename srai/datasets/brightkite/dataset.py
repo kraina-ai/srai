@@ -11,10 +11,10 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm.contrib.concurrent import process_map
 
-from srai.datasets import HFDataset
+from srai.datasets import HuggingFaceDataset
 
 
-class Brightkite(HFDataset):
+class Brightkite(HuggingFaceDataset):
     """
     Brightkite dataset.
 

@@ -128,9 +128,9 @@ def _test_gtfs() -> None:
 
 
 def _test_datasets() -> None:
-    from srai.loaders import HFLoader
+    from srai.loaders import HuggingFaceLoader
 
-    HFLoader()
+    HuggingFaceLoader()
 
 
 def _get_regions_gdf() -> gpd.GeoDataFrame:

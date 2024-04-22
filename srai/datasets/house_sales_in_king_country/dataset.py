@@ -9,10 +9,10 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
-from srai.datasets import HFDataset
+from srai.datasets import HuggingFaceDataset
 
 
-class HouseSalesInKingCountry(HFDataset):
+class HouseSalesInKingCountry(HuggingFaceDataset):
     """
     House Sales in King Country dataset.
 

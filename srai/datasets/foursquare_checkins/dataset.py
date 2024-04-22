@@ -11,10 +11,10 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString, Point
 
-from srai.datasets import HFDataset
+from srai.datasets import HuggingFaceDataset
 
 
-class FoursquareCheckins(HFDataset):
+class FoursquareCheckins(HuggingFaceDataset):
     """
     Foursquare Checkins dataset.
 

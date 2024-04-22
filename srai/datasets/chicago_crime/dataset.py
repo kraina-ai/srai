@@ -9,11 +9,11 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
-from srai.datasets import HFDataset
-from srai.loaders import HFLoader
+from srai.datasets import HuggingFaceDataset
+from srai.loaders import HuggingFaceLoader
 
 
-class ChicagoCrime(HFDataset):
+class ChicagoCrime(HuggingFaceDataset):
     """
     Chicago Crime dataset.
 
@@ -58,7 +58,7 @@ class ChicagoCrime(HFDataset):
             GeoDataFrame of dataset, contatins location data.
         """
         dataset_name = self.conf["dataset_name"]
-        data = HFLoader(hf_token=hf_token).load(
+        data = HuggingFaceLoader(hf_token=hf_token).load(
             dataset_name=dataset_name, name=dataset_version_name
         )
         processed_data = self._preprocessing(data)

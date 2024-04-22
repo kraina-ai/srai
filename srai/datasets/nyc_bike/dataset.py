@@ -10,11 +10,11 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import MultiPoint
 
-from srai.datasets import HFDataset
-from srai.loaders import HFLoader
+from srai.datasets import HuggingFaceDataset
+from srai.loaders import HuggingFaceLoader
 
 
-class NYCBike(HFDataset):
+class NYCBike(HuggingFaceDataset):
     """
     New York City Bike dataset.
 
@@ -112,7 +112,7 @@ class NYCBike(HFDataset):
             GeoDataFrame of dataset, contatins location data.
         """
         dataset_name = self.conf["dataset_name"]
-        data = HFLoader(hf_token=hf_token).load(
+        data = HuggingFaceLoader(hf_token=hf_token).load(
             dataset_name=dataset_name, name=dataset_version_name
         )
         processed_data = self._preprocessing(data, dataset_version_name)

@@ -12,7 +12,7 @@ from srai._optional import import_optional_dependencies
 from srai.loaders import Loader
 
 
-class HFLoader(Loader):
+class HuggingFaceLoader(Loader):
     """
     Hugging Face loader.
 
