@@ -6,7 +6,7 @@ This module contains Hugging Face loader.
 
 from typing import Optional
 
-import geopandas as gpd
+import pandas as pd
 
 from srai._optional import import_optional_dependencies
 from srai.loaders import Loader
@@ -16,7 +16,7 @@ class HuggingFaceLoader(Loader):
     """
     Hugging Face loader.
 
-    Loader to download dataset from HuggingFace and return GeoDataFrame.
+    Loader to download dataset from HuggingFace and return a Pandas DataFrame.
     """
 
     def __init__(self, hf_token: Optional[str] = None) -> None:
@@ -32,7 +32,7 @@ class HuggingFaceLoader(Loader):
         )
         self.hf_token = hf_token
 
-    def load(self, dataset_name: str, name: Optional[str] = None) -> gpd.GeoDataFrame:
+    def load(self, dataset_name: str, name: Optional[str] = None) -> pd.DataFrame:
         """
         Method to load data files from Hugging Face.
 
@@ -42,14 +42,10 @@ class HuggingFaceLoader(Loader):
                 Defaults to None.
 
         Returns:
-            gpd.GeoDataFrame: _description_
+            pd.DataFrame: _description_
         """
         from datasets import load_dataset
 
-        dataset = load_dataset(
-            dataset_name, name=name, token=self.hf_token, trust_remote_code=True
-        )  # download dataset from HF
+        dataset = load_dataset(dataset_name, name=name, token=self.hf_token, trust_remote_code=True)
 
-        df = dataset["train"].to_pandas()
-
-        return gpd.GeoDataFrame(df)
+        return dataset["train"].to_pandas()

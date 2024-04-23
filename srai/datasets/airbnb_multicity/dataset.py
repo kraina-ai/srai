@@ -9,34 +9,37 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class AirbnbMulticity(HuggingFaceDataset):
+class AirbnbMulticityDataset(HuggingFaceDataset):
     """
     AirbnbMulticity dataset.
 
     Dataset description will be added.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/airbnb_multicity")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
-            data: Data of AirbnbMulticity dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): Data of AirbnbMulticity dataset.
+            version (str, optional): version of a dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
         gdf = gpd.GeoDataFrame(
             df.drop(["latitude", "longitude"], axis=1),
             geometry=gpd.points_from_xy(x=df["longitude"], y=df["latitude"]),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
 
         return gdf

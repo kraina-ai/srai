@@ -9,10 +9,11 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class HouseSalesInKingCountry(HuggingFaceDataset):
+class HouseSalesInKingCountryDataset(HuggingFaceDataset):
     """
     House Sales in King Country dataset.
 
@@ -22,22 +23,24 @@ class HouseSalesInKingCountry(HuggingFaceDataset):
     It's a great dataset for evaluating simple regression models.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/house_sales_in_king_country")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of House Sales In King Country dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         gdf = gpd.GeoDataFrame(
             data.drop(["lat", "long"], axis=1),
             geometry=gpd.points_from_xy(x=data["long"], y=data["lat"]),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         return gdf

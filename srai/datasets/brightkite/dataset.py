@@ -11,10 +11,11 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm.contrib.concurrent import process_map
 
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class Brightkite(HuggingFaceDataset):
+class BrightkiteDataset(HuggingFaceDataset):
     """
     Brightkite dataset.
 
@@ -27,21 +28,23 @@ class Brightkite(HuggingFaceDataset):
     these users over the period of Apr. 2008 - Oct. 2010.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/brightkite")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
-            data: Data of Brightkite trajectories dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): Data of Brightkite trajectories dataset.
+            version (str, optional): version of dataset.
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
-        df["geometry"] = process_map(LineString, df["geometry"], chunksize=1000, max_workers=20)
-        gdf = gpd.GeoDataFrame(data=df, geometry="geometry", crs="EPSG:4326")
+        df[GEOMETRY_COLUMN] = process_map(LineString, df[GEOMETRY_COLUMN], chunksize=1000)
+        gdf = gpd.GeoDataFrame(data=df, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS)
 
         return gdf

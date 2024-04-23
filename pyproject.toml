@@ -25,9 +25,7 @@ dependencies = [
     "typeguard",
     "requests",
     "h3ronpy>=0.18.0",
-    "osmnx",
-    "omegaconf",
-    "datasets"
+    "osmnx"
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -179,6 +177,9 @@ max-doc-length = 100
 
 [tool.ruff.format]
 docstring-code-format = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D103"]
 
 [tool.mypy]
 strict = true

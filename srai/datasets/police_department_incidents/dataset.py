@@ -9,10 +9,11 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class PoliceDepartmentIncidents(HuggingFaceDataset):
+class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
     """
     The San Francisco Police Department's (SFPD) Incident Report Datatset.
 
@@ -21,23 +22,25 @@ class PoliceDepartmentIncidents(HuggingFaceDataset):
     online reporting system.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/police_department_incidents")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of The San Francisco Police Department's (SFPD) Incident Report dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
         gdf = gpd.GeoDataFrame(
             df.drop(["Latitude", "Longitude"], axis=1),
             geometry=gpd.points_from_xy(x=df["Longitude"], y=df["Latitude"]),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         return gdf

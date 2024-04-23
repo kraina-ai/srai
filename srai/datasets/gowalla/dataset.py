@@ -11,10 +11,11 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm.contrib.concurrent import process_map
 
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class Gowalla(HuggingFaceDataset):
+class GowallaDataset(HuggingFaceDataset):
     """
     Gowalla Dataset.
 
@@ -24,21 +25,23 @@ class Gowalla(HuggingFaceDataset):
     of 6,442,890 check-ins of these users over the period of Feb. 2009 - Oct. 2010.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/gowalla")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data (gpd.GeoDataFrame): Data of Gowalla trajectories dataset.
-            data_version_name (Optional[str], optional): Version of dataset. Defaults to None.
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            gpd.GeoDataFrame: GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
-        df["geometry"] = process_map(LineString, df["geometry"], chunksize=1000, max_workers=20)
-        gdf = gpd.GeoDataFrame(data=df, geometry="geometry", crs="EPSG:4326")
+        df[GEOMETRY_COLUMN] = process_map(LineString, df[GEOMETRY_COLUMN], chunksize=1000)
+        gdf = gpd.GeoDataFrame(data=df, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS)
 
         return gdf

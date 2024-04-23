@@ -10,10 +10,11 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class Geolife(HuggingFaceDataset):
+class GeolifeDataset(HuggingFaceDataset):
     """
     Geolife Dataset.
 
@@ -24,23 +25,25 @@ class Geolife(HuggingFaceDataset):
     total distance of 1,292,951 kilometers and a total duration of 50,176 hours.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/geolife")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of Geolife trajectories dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         gdf = gpd.GeoDataFrame(
             data.drop(["arrays_geometry"], axis=1),
             geometry=gpd.GeoSeries(data["arrays_geometry"].map(LineString)),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
 
         return gdf
