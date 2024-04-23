@@ -9,11 +9,11 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
-from srai.loaders import HuggingFaceLoader
 
 
-class ChicagoCrime(HuggingFaceDataset):
+class ChicagoCrimeDataset(HuggingFaceDataset):
     """
     Chicago Crime dataset.
 
@@ -22,45 +22,45 @@ class ChicagoCrime(HuggingFaceDataset):
     Police Department's CLEAR (Citizen Law Enforcement Analysis and Reporting) system.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    available_versions: list[str] = ["2020", "2021", "2022"]  # TODO: use
+
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/chicago_crime")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
             data: Data of Chicago Crime dataset.
-            data_version_name: version of dataset
+            version: version of a dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
         gdf = gpd.GeoDataFrame(
             df.drop(["Latitude", "Longitude", "X Coordinate", "Y Coordinate"], axis=1),
             geometry=gpd.points_from_xy(x=df["Longitude"], y=df["Latitude"]),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, dataset_version_name: str = "2020"
+        self, hf_token: Optional[str] = None, version: str | None = "2020"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
 
         Args:
-            dataset_version_name: Version name of dataset, e.g. "2020". \
-                Available: 2020, 2021, 2022.
-            hf_token: Token from Hugging Face
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available values: `2020`, `2021`, `2022`. Defaults to `2020`.
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: Loaded data.
         """
-        dataset_name = self.conf["dataset_name"]
-        data = HuggingFaceLoader(hf_token=hf_token).load(
-            dataset_name=dataset_name, name=dataset_version_name
-        )
-        processed_data = self._preprocessing(data)
-
-        return processed_data
+        return super().load(hf_token, version)

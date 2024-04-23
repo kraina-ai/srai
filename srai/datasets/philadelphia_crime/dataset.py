@@ -8,11 +8,11 @@ from typing import Optional
 
 import geopandas as gpd
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
-from srai.loaders import HuggingFaceLoader
 
 
-class PhiladelphiaCrime(HuggingFaceDataset):
+class PhiladelphiaCrimeDataset(HuggingFaceDataset):
     """
     Philadelphia Crime dataset.
 
@@ -21,46 +21,48 @@ class PhiladelphiaCrime(HuggingFaceDataset):
     prostitution, gambling, fraud, and other non-violent offenses.
     """
 
+    years_previous: list[int] = [2013, 2014, 2015, 2016, 2017, 2018, 2019]
+    years_current: list[int] = [2020, 2021, 2022, 2023]
+
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/philadelphia_crime")
+
     def _preprocessing(
-        self, data: gpd.GeoDataFrame, data_version_name: Optional[str] = None
+        self, data: gpd.GeoDataFrame, version: Optional[str] = None
     ) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of Philadelphia Crime dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
         gdf = gpd.GeoDataFrame(
             df.drop(["lng", "lat"], axis=1),
             geometry=gpd.points_from_xy(df["lng"], df["lat"]),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, dataset_version_name: str = "incidents_2023"
+        self, hf_token: Optional[str] = None, version: str | None = "incidents_2023"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
 
         Args:
-            dataset_version_name: Version name of dataset, e.g. "incidents_2013". \
-                Available: incidents_2013 - incidents_2023.
-            hf_token: Token from Hugging Face
-
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available: `incidents_2013` to `incidents_2023`. Defaults to `incidents_2023`.
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: Loaded data.
         """
-        dataset_name = self.conf["dataset_name"]
-        data = HuggingFaceLoader(hf_token=hf_token).load(
-            dataset_name=dataset_name, name=dataset_version_name
-        )
-        processed_data = self._preprocessing(data)
-
-        return processed_data
+        return super(hf_token, version)

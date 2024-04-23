@@ -10,11 +10,11 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import MultiPoint
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
-from srai.loaders import HuggingFaceLoader
 
 
-class NYCBike(HuggingFaceDataset):
+class NYCBikeDataset(HuggingFaceDataset):
     """
     New York City Bike dataset.
 
@@ -27,25 +27,31 @@ class NYCBike(HuggingFaceDataset):
     Policy.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, dataset_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    years_previous: list[int] = [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    years_current: list[int] = [2021, 2022, 2023]
+
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/nyc_bike")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of NYC dataset.
-            dataset_version_name: Version name of dataset, e.g. "nyc_bike_2013". \
-                Available: nyc_bike_2013 - nyc_bike_2023.
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset.
+                Available: from `nyc_bike_2013` to `nyc_bike_2023`.
 
         Returns:
-            GeoDataFrame of dataset, contatins location data - Multipoint(StartStation, EndStation).
+            gpd.GeoDataFrame: preprocessed data with  Multipoint(StartStation, EndStation)
         """
-        if dataset_version_name:
-            dataset_year = int(dataset_version_name[-4:])
+        if version:
+            dataset_year = int(version[-4:])
         else:
             raise ValueError("Dataset version name is not valid.")
-        if dataset_year in self.conf["years_previous"]:  # get a year from dataset version name
+
+        if dataset_year in self.years_previous:
             start_station_geometry = gpd.points_from_xy(
                 x=data["start station longitude"], y=data["start station latitude"]
             )
@@ -67,10 +73,10 @@ class NYCBike(HuggingFaceDataset):
                     axis=1,
                 ),
                 geometry=multi_point_stations_geometries,
-                crs="EPSG:4326",
+                crs=WGS84_CRS,
             )
 
-        elif dataset_year in self.conf["years_current"]:
+        elif dataset_year in self.years_current:
             start_station_geometry = gpd.points_from_xy(x=data["start_lng"], y=data["start_lat"])
             end_station_geometry = gpd.points_from_xy(x=data["end_lng"], y=data["end_lat"])
             multi_point_stations_geometries = [
@@ -88,7 +94,7 @@ class NYCBike(HuggingFaceDataset):
                     axis=1,
                 ),
                 geometry=multi_point_stations_geometries,
-                crs="EPSG:4326",
+                crs=WGS84_CRS,
             )
 
         else:
@@ -97,24 +103,19 @@ class NYCBike(HuggingFaceDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, dataset_version_name: str = "nyc_bike_2023"
+        self, hf_token: Optional[str] = None, version: str | None = "nyc_bike_2023"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
 
         Args:
-            dataset_version_name: Version name of dataset, e.g. "nyc_bike_2013". \
-                Available: nyc_bike_2013 - nyc_bike_2023.
-            hf_token: Token from Hugging Face
-
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available: from `nyc_bike_2013` to `nyc_bike_2023`. Defaults to `nyc_bike_2023`.
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: Loaded data.
         """
-        dataset_name = self.conf["dataset_name"]
-        data = HuggingFaceLoader(hf_token=hf_token).load(
-            dataset_name=dataset_name, name=dataset_version_name
-        )
-        processed_data = self._preprocessing(data, dataset_version_name)
-
-        return processed_data
+        return super().load(hf_token, version)

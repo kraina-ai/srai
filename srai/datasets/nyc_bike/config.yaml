@@ -1,3 +1,0 @@
-dataset_name: kraina/nyc_bike
-years_previous : [2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
-years_current : [2021, 2022, 2023]

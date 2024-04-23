@@ -10,10 +10,11 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import LineString
 
+from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class TDrive(HuggingFaceDataset):
+class TDriveDataset(HuggingFaceDataset):
     """
     T-Drive dataset.
 
@@ -33,24 +34,26 @@ class TDrive(HuggingFaceDataset):
     2010. ACM.
     """
 
-    def _preprocessing(
-        self, data: pd.DataFrame, data_version_name: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    def __init__(self) -> None:
+        """Create the dataset."""
+        super().__init__("kraina/t_drive")
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+        Preprocess the dataset from HuggingFace.
 
         Args:
-            data: Data of T-Drive dataset.
-            data_version_name: version of dataset
+            data (pd.DataFrame): a dataset to preprocess
+            version (str, optional): version of dataset
 
         Returns:
-            GeoDataFrame of dataset, contatins location data.
+            gpd.GeoDataFrame: preprocessed data.
         """
         data = data.copy()
         gdf = gpd.GeoDataFrame(
             data.drop(["arrays_geometry"], axis=1).set_index("taxi_id"),
             geometry=gpd.GeoSeries(data["arrays_geometry"].map(LineString)),
-            crs="EPSG:4326",
+            crs=WGS84_CRS,
         )
 
         return gdf
