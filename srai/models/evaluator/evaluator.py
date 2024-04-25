@@ -26,7 +26,6 @@ class Evaluator:
 
     def __init__(
         self,
-        model: nn.Module,
         task: str,
         device: Optional[str] = "cuda" if torch.cuda.is_available() else "cpu",
     ):
@@ -34,7 +33,6 @@ class Evaluator:
         Initialize Evaluator.
 
         Args:
-            model (nn.Module): Model intended for evaluation.
             task (str): Evaluation task type, possible values:
                      "trajectory_prediction", "regression", "poi_prediction".
             device (Optional[str], optional): Type of device used for evaluation.
@@ -43,7 +41,6 @@ class Evaluator:
         Raises:
             ValueError: If task type is not supported.
         """
-        self.model = model
         if task not in ["trajectory_prediction", "regression", "poi_prediction"]:
             raise ValueError(f"Task {task} not supported.")
         self.task = task
@@ -51,6 +48,7 @@ class Evaluator:
 
     def evaluate(
         self,
+        model: nn.Module,
         test_dataset: Dataset,
         data_loader_params: Optional[dict[str, Any]] = None,
         compute_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], dict[str, float]]] = None,
@@ -62,6 +60,7 @@ class Evaluator:
 
         Args:
             test_dataset (Dataset): The test split of dataset chosen for evaluation.
+            model (nn.Module): Model intended for evaluation.
             data_loader_params (Optional[dict], optional): Parameters passed to DataLoader.\
                 Batch size defaults to 64, shuffle defaults to False.
             compute_metrics (Optional[Callable]): function that computes metrics from model\
@@ -82,7 +81,7 @@ class Evaluator:
             **(data_loader_params if data_loader_params else {"batch_size": 64, "shuffle": False}),
         )
 
-        self.model.eval()
+        model.eval()
         metrics_per_batch = []
         eval_loss = []
         with torch.no_grad():
@@ -94,7 +93,7 @@ class Evaluator:
                 inputs = batch["X"].to(self.device)
                 labels = batch["y"].to(self.device)
 
-                outputs = self.model(inputs, labels=labels)
+                outputs = model(inputs, labels=labels)
                 if compute_loss:
                     if loss_fn is None:
                         loss_fn = nn.L1Loss()
