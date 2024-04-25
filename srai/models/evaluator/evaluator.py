@@ -5,7 +5,7 @@ This module contains implementation of evaluator for models.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import torch
@@ -53,7 +53,10 @@ class Evaluator:
         self,
         test_dataset: Dataset,
         data_loader_params: Optional[dict[str, Any]] = None,
-    ) -> None:
+        compute_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], dict[str, float]]] = None,
+        compute_loss: Optional[bool] = False,
+        loss_fn: Optional[Any] = None,
+    ) -> None | np.ndarray:
         """
         Evaluates model on a chosen dataset with task-dependent metrics.
 
@@ -61,6 +64,13 @@ class Evaluator:
             test_dataset (Dataset): The test split of dataset chosen for evaluation.
             data_loader_params (Optional[dict], optional): Parameters passed to DataLoader.\
                 Batch size defaults to 64, shuffle defaults to False.
+            compute_metrics (Optional[Callable]): function that computes metrics from model\
+                predictions and target labels. Has to return dictionary where keys are metrics's \
+                names and values are they results
+            compute_loss (Optional[bool]): Boolean if to compute loss together with metrics,\
+                f.e used in training
+            loss_fn (Optional[Any]): function (torch or any custom) that computes loss from\
+                model prediction and target labels
 
         Raises:
             ValueError: If test_dataset is not instance of torch.utils.data.Dataset.
@@ -74,6 +84,7 @@ class Evaluator:
 
         self.model.eval()
         metrics_per_batch = []
+        eval_loss = []
         with torch.no_grad():
             for i, batch in tqdm(
                 enumerate(data_loader),
@@ -84,8 +95,17 @@ class Evaluator:
                 labels = batch["y"].to(self.device)
 
                 outputs = self.model(inputs, labels=labels)
-                metrics = self.compute_metrics(predictions=outputs, labels=labels)
+                if compute_loss:
+                    if loss_fn is None:
+                        loss_fn = nn.L1Loss()
+                        logging.info("Loss function wasn't given. Using default nn.L1Loss()")
+                    loss = loss_fn(outputs, labels)
+                    eval_loss.append(float(loss.item()))
 
+                if compute_metrics is None:
+                    metrics = self.compute_metrics(predictions=outputs, labels=labels)
+                else:
+                    metrics = compute_metrics(outputs, labels)
                 metrics_per_batch.append({"Batch": i, **metrics})
 
         mean_metrics = {
@@ -95,6 +115,11 @@ class Evaluator:
         }
 
         log_metrics(metrics_per_batch, mean_metrics)
+        if compute_loss:
+            logging.info(f"Eval loss: {np.mean(eval_loss):.4f}")
+            return np.mean(eval_loss)
+        else:
+            return None
 
     def compute_metrics(self, predictions: torch.Tensor, labels: torch.Tensor) -> dict[str, float]:
         """
