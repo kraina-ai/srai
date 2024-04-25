@@ -9,13 +9,15 @@ import logging
 import os
 from typing import Any, Optional
 
+import geopandas as gpd
+import h3
 import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from srai.models.evaluator import Evaluator
+from srai.models import Evaluator, Vectorizer
 
 
 class Trainer:
@@ -34,7 +36,7 @@ class Trainer:
         # lr_scheduler: torch.optim.lr_scheduler.LambdaLR = None,
     ):
         """
-        _summary_.
+        Trainer class.
 
         Args:
             model (nn.Module): Model to train
@@ -152,11 +154,68 @@ class Trainer:
             torch.save(self.model, os.path.join(self.save_dir, f"best_{self.task}_model.pkl"))
         return self.model, loss_train, loss_eval
 
-    def predict(self) -> None:
+    def _h3_to_geometry(self, h3_indexes: list[str] | str, resolution: int) -> gpd.GeoDataFrame:
         """
-        Prediction for h3 index /test dataset.
+        _summary_.
 
-        Raises:
-            NotImplementedError: _description_
+        Args:
+            h3_indexes (list[str] | str): list or a single h3 index
+            resolution (int): h3 resolution
+
+        Returns:
+            gpd.GeoDataFrame: Geodataframe with geometries
         """
-        raise NotImplementedError
+        polygons = [
+            h3.h3_to_geo_boundary(h, geo_json=True, resolution=resolution) for h in h3_indexes
+        ]
+        gdf = gpd.GeoDataFrame(geometry=[gpd.Polygon(polygon) for polygon in polygons])
+        gdf.crs = {"init": "epsg:4326"}
+        return gdf
+
+    def predict(
+        self,
+        data: Dataset | str | list[str],
+        resolution: Optional[int] = None,
+        embedder_type: Optional[str] = "Hex2VecEmbedder",
+    ) -> tuple[list[str], list[Any]]:
+        """
+        Predict value for dataset, single hexagon or list of hexagons.
+
+        Args:
+            data (Datset | str | list[str]) : Test dataset, hexagon index \
+                or list of hexagons indexes to predict value for
+            resolution (Optional[int]): h3 resolution
+            embedder_type (str): If data is passed as hexagon or point, embedder\
+                used to encode it to vector
+        Returns:
+            tuple[list[str], list[Any]]: lists of hexagon indexes and predictions.
+        """
+        self.model.eval()
+
+        if isinstance(data, str) or isinstance(data, list):
+            # to get around mypy problem
+            res = resolution if resolution is not None else 9
+            gdf = self._h3_to_geometry(data, res)
+            gdf["y"] = None
+
+            vectorizer = Vectorizer(
+                gdf_dataset=gdf,
+                target_column_name="y",
+                embedder_type=str(embedder_type),
+                h3_resolution=res,
+            )
+            data = vectorizer.get_dataset()
+
+        if isinstance(data, Dataset):
+            dataloader = DataLoader(data, batch_size=self.batch_size, shuffle=False)
+
+        all_indexes = []
+        all_predictions = []
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc="Predicting...", total=len(dataloader)):
+                inputs = batch["X"].to(self.device)
+                indexes = batch["X_h3_idx"]
+                outputs = self.model(inputs)
+                all_indexes.extend(indexes)
+                all_predictions.extend(outputs.cpu().numpy())  # Assuming outputs is a tensor
+        return all_indexes, all_predictions
