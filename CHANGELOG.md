@@ -7,18 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added support for Python 3.12 after upgrading QuackOSM to `0.7.0` and DuckDB to `0.10.2`
+
 ## [0.7.3] - 2024-04-21
 
 ### Changed
 
-- make geofabrik the default download source for OSMPbfLoader
+- Make geofabrik the default download source for OSMPbfLoader
 
 ## [0.7.2] - 2024-04-20
 
 ### Changed
 
 - Update tooling
-- remove Black in favour of Ruff format
+- Remove Black in favour of Ruff format
 
 ### Added
 
