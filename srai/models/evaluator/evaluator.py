@@ -54,7 +54,7 @@ class Evaluator:
         compute_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], dict[str, float]]] = None,
         compute_loss: Optional[bool] = False,
         loss_fn: Optional[Any] = None,
-    ) -> None | np.ndarray:
+    ) -> tuple[dict[str, float], np.ndarray] | np.ndarray:
         """
         Evaluates model on a chosen dataset with task-dependent metrics.
 
@@ -122,9 +122,9 @@ class Evaluator:
         log_metrics(metrics_per_batch, mean_metrics)
         if compute_loss:
             logging.info(f"Eval loss: {np.mean(eval_loss):.4f}")
-            return np.mean(eval_loss)
+            return mean_metrics, np.mean(eval_loss)
         else:
-            return None
+            return mean_metrics
 
     def compute_metrics(self, predictions: torch.Tensor, labels: torch.Tensor) -> dict[str, float]:
         """
