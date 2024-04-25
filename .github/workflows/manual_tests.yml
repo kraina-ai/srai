@@ -13,6 +13,8 @@ jobs:
           include:
             - os: macos-latest
               python-version: "3.12"
+            - os: macos-13
+              python-version: "3.12"
             - os: windows-latest
               python-version: "3.12"
       env:
