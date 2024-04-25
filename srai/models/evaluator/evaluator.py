@@ -49,7 +49,7 @@ class Evaluator:
     def evaluate(
         self,
         model: nn.Module,
-        test_dataset: Dataset,
+        test_data: Dataset | DataLoader,
         data_loader_params: Optional[dict[str, Any]] = None,
         compute_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], dict[str, float]]] = None,
         compute_loss: Optional[bool] = False,
@@ -59,7 +59,8 @@ class Evaluator:
         Evaluates model on a chosen dataset with task-dependent metrics.
 
         Args:
-            test_dataset (Dataset): The test split of dataset chosen for evaluation.
+            test_data (Dataset | DataLoader): The test split of dataset chosen for evaluation.\
+                Should contain "X" column with vector embedding, and "y" with target label
             model (nn.Module): Model intended for evaluation.
             data_loader_params (Optional[dict], optional): Parameters passed to DataLoader.\
                 Batch size defaults to 64, shuffle defaults to False.
@@ -74,12 +75,17 @@ class Evaluator:
         Raises:
             ValueError: If test_dataset is not instance of torch.utils.data.Dataset.
         """
-        if not isinstance(test_dataset, Dataset):
-            raise ValueError("test_dataset should be instance of torch.utils.data.Dataset")
-        data_loader = DataLoader(
-            test_dataset,
-            **(data_loader_params if data_loader_params else {"batch_size": 64, "shuffle": False}),
-        )
+        if not isinstance(test_data, DataLoader):
+            data_loader = DataLoader(
+                test_data,
+                **(
+                    data_loader_params
+                    if data_loader_params
+                    else {"batch_size": 64, "shuffle": False}
+                ),
+            )
+        else:
+            data_loader = test_data
 
         model.eval()
         metrics_per_batch = []
