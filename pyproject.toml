@@ -264,5 +264,6 @@ ignore_packages = [
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
     'mkl',                      # uses Intel Simplified Software License
-    'tbb',                      # uses Intel Simplified Software License
+    'tbb',                      # uses Apache-2.0 license
+    'intel-openmp',             # uses BSD 3-Clause and Intel EULA license
 ]
