@@ -31,5 +31,5 @@ jobs:
           extra_args: --all-files --hook-stage manual --verbose
       - name: Show dependencies graph
         run: |
-          pdm install -d -G test --skip=post_install
+          pdm install -d -G license --skip=post_install
           pdm run pipdeptree --license
