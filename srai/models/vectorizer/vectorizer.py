@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import torch
 from datasets import Dataset
+from sklearn.preprocessing import StandardScaler
 
 from srai.embedders import GeoVexEmbedder, Hex2VecEmbedder  # noqa: F401
 from srai.joiners import IntersectionJoiner
@@ -117,6 +118,27 @@ class Vectorizer:
         """
         return np.concatenate([np.atleast_1d(val) for val in row.values])
 
+    def _standarize(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """
+        Method to standarize numerical columns.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame in which standarization will be performed.
+
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame with standarized numerical features.
+        """
+        gdf_standarized = gdf.copy()
+        if self.numerical_columns is not None:
+            scaler = (
+                StandardScaler()
+            )  # TODO: watch out for data leakage -> train test split must be before standarization!
+            gdf_standarized[self.numerical_columns] = scaler.fit_transform(
+                gdf_standarized[self.numerical_columns]
+            )
+
+            return gpd.GeoDataFrame(gdf_standarized)
+
     def get_dataset(self) -> Dataset:
         r"""
         Method to retur Hugging Face Dataset with input values to model \ (embeddings and numericalb
@@ -135,6 +157,7 @@ class Vectorizer:
         else:
             columns_to_add = [self.target_column_name]
 
+        joined_gdf = self._standarize(joined_gdf)
         averages_hex = joined_gdf.groupby("h3_index")[
             columns_to_add
         ].mean()  # compute mean value per hex for all numerical values
@@ -148,11 +171,12 @@ class Vectorizer:
             col for col in merged_gdf.columns if col not in (["h3"] + [self.target_column_name])
         ]
 
-        dataset_dict = {
-            "X": merged_gdf[merge_columns].apply(self._concat_columns, axis=1).values,
-            "X_h3_idx": merged_gdf["h3"].values,
-            "y": merged_gdf[self.target_column_name].values,
-        }
-        return Dataset.from_dict(dataset_dict).set_format(
-            type="torch", columns=["X", "X_h3_idx", "y"]
+        dataset_dict = Dataset.from_dict(
+            {
+                "X": merged_gdf[merge_columns].apply(self._concat_columns, axis=1).values,
+                "X_h3_idx": merged_gdf["h3"].values,
+                "y": merged_gdf[self.target_column_name].values,
+            }
         )  # set it to be compatibile with torch  # noqa: E501
+        dataset_dict.set_format(type="torch", columns=["X", "X_h3_idx", "y"])  #
+        return dataset_dict
