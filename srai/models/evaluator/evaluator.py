@@ -10,13 +10,14 @@ from typing import Any, Callable, Optional
 import numpy as np
 import torch
 import torch.nn as nn
-from metrics import (
-    mean_absolute_percentage_error,
-    symmetric_mean_absolute_percentage_error,
-)
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
+
+from .metrics import (
+    mean_absolute_percentage_error,
+    symmetric_mean_absolute_percentage_error,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
