@@ -17,7 +17,8 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from srai.models import Evaluator, Vectorizer
+from srai.models.evaluator import Evaluator
+from srai.models.vectorizer import Vectorizer
 
 
 class Trainer:
