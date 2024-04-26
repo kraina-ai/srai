@@ -37,10 +37,9 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
         gdf = gpd.GeoDataFrame(
-            df.drop(["Latitude", "Longitude"], axis=1),
-            geometry=gpd.points_from_xy(x=df["Longitude"], y=df["Latitude"]),
+            data.drop(["Latitude", "Longitude"], axis=1),
+            geometry=gpd.points_from_xy(x=data["Longitude"], y=data["Latitude"]),
             crs=WGS84_CRS,
         )
         return gdf

@@ -35,10 +35,9 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
         gdf = gpd.GeoDataFrame(
-            df.drop(["latitude", "longitude"], axis=1),
-            geometry=gpd.points_from_xy(x=df["longitude"], y=df["latitude"]),
+            data.drop(["latitude", "longitude"], axis=1),
+            geometry=gpd.points_from_xy(x=data["longitude"], y=data["latitude"]),
             crs=WGS84_CRS,
         )
 

@@ -48,6 +48,6 @@ class HuggingFaceDataset(abc.ABC):
         dataset_name = self.path
         version = version or self.version
         data = HuggingFaceLoader(hf_token=hf_token).load(dataset_name=dataset_name, name=version)
-        processed_data = self._preprocessing(data)
+        processed_data = self._preprocessing(data, version=version)
 
         return processed_data

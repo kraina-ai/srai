@@ -41,10 +41,9 @@ class FoursquareCheckinsDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
         gdf = gpd.GeoDataFrame(
-            data=df.drop(columns=["latitude", "longitude"]),
-            geometry=df.apply(
+            data=data.drop(columns=["latitude", "longitude"]),
+            geometry=data.apply(
                 lambda row: LineString(
                     list(itertools.starmap(Point, zip(row["longitude"], row["latitude"])))
                 ),

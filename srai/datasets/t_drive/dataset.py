@@ -49,7 +49,6 @@ class TDriveDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        data = data.copy()
         gdf = gpd.GeoDataFrame(
             data.drop(["arrays_geometry"], axis=1).set_index("taxi_id"),
             geometry=gpd.GeoSeries(data["arrays_geometry"].map(LineString)),

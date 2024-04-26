@@ -49,56 +49,40 @@ class NYCBikeDataset(HuggingFaceDataset):
         if version:
             dataset_year = int(version[-4:])
         else:
-            raise ValueError("Dataset version name is not valid.")
+            raise ValueError("Dataset version name can't be None")
 
         if dataset_year in self.years_previous:
-            start_station_geometry = gpd.points_from_xy(
-                x=data["start station longitude"], y=data["start station latitude"]
-            )
-            end_station_geometry = gpd.points_from_xy(
-                x=data["end station longitude"], y=data["end station latitude"]
-            )
-            multi_point_stations_geometries = [
-                MultiPoint([start, end])
-                for start, end in zip(start_station_geometry, end_station_geometry)
-            ]
-            gdf = gpd.GeoDataFrame(
-                data.drop(
-                    [
-                        "start station latitude",
-                        "start station longitude",
-                        "end station latitude",
-                        "end station longitude",
-                    ],
-                    axis=1,
-                ),
-                geometry=multi_point_stations_geometries,
-                crs=WGS84_CRS,
-            )
-
+            c_start_lng = "start station longitude"
+            c_start_lat = "start station latitude"
+            c_end_lng = "end station longitude"
+            c_end_lat = "end station latitude"
         elif dataset_year in self.years_current:
-            start_station_geometry = gpd.points_from_xy(x=data["start_lng"], y=data["start_lat"])
-            end_station_geometry = gpd.points_from_xy(x=data["end_lng"], y=data["end_lat"])
-            multi_point_stations_geometries = [
-                MultiPoint([start, end])
-                for start, end in zip(start_station_geometry, end_station_geometry)
-            ]
-            gdf = gpd.GeoDataFrame(
-                data.drop(
-                    [
-                        "start_lng",
-                        "start_lat",
-                        "end_lng",
-                        "end_lat",
-                    ],
-                    axis=1,
-                ),
-                geometry=multi_point_stations_geometries,
-                crs=WGS84_CRS,
-            )
-
+            c_start_lng = "start_lng"
+            c_start_lat = "start_lat"
+            c_end_lng = "end_lng"
+            c_end_lat = "end_lat"
         else:
-            raise ValueError("Dataset version name is not valid.")
+            raise ValueError(f"Dataset version name `{version}` is not valid.")
+
+        start_station_geometry = gpd.points_from_xy(x=data[c_start_lng], y=data[c_start_lat])
+        end_station_geometry = gpd.points_from_xy(x=data[c_end_lng], y=data[c_end_lat])
+        multi_point_stations_geometries = [
+            MultiPoint([start, end])
+            for start, end in zip(start_station_geometry, end_station_geometry)
+        ]
+        gdf = gpd.GeoDataFrame(
+            data.drop(
+                [
+                    c_start_lng,
+                    c_start_lat,
+                    c_end_lng,
+                    c_end_lat,
+                ],
+                axis=1,
+            ),
+            geometry=multi_point_stations_geometries,
+            crs=WGS84_CRS,
+        )
 
         return gdf
 

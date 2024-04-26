@@ -41,10 +41,9 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
         gdf = gpd.GeoDataFrame(
-            df.drop(["lng", "lat"], axis=1),
-            geometry=gpd.points_from_xy(df["lng"], df["lat"]),
+            data.drop(["lng", "lat"], axis=1),
+            geometry=gpd.points_from_xy(data["lng"], data["lat"]),
             crs=WGS84_CRS,
         )
         return gdf
@@ -65,4 +64,4 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: Loaded data.
         """
-        return super(hf_token, version)
+        return super().load(hf_token, version)
