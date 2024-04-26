@@ -102,7 +102,6 @@ build-backend = "pdm.backend"
 dev = [
     "bumpver",
     "types-requests",
-    "python-dotenv",
 ]
 # pdm add -dG lint <library>
 lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
@@ -118,6 +117,7 @@ test = [
     "pyogrio",
     "six",
     "pytest-snapshot",
+    "python-dotenv",
 ]
 # pdm add -dG visualization <library>
 visualization = ["matplotlib"]
