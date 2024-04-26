@@ -15,11 +15,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
       - uses: pdm-project/setup-pdm@v3
         name: Setup PDM
         with:
-          python-version: 3.11
+          python-version: 3.12
           architecture: x64
           enable-pep582: true
           cache: true

@@ -41,6 +41,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: Unix",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
@@ -62,7 +63,7 @@ osm = [
     "overpass",
     "pillow",
     "beautifulsoup4",
-    "quackosm>=0.4.2",
+    "quackosm>=0.7.1",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
@@ -122,7 +123,10 @@ docs = [
     "umap-learn",
 ]
 # performance = ["scalene"]
-license = ["licensecheck"]
+license = [
+    "licensecheck",
+    "pipdeptree",
+]
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
@@ -210,7 +214,7 @@ log_cli = true
 
 [tool.licensecheck]
 using = "requirements"
-zero = false
+zero = true
 ignore_licenses = ["UNKNOWN"]
 ignore_packages = [
     'srai',                     # skip self
@@ -243,4 +247,5 @@ ignore_packages = [
     'nvidia-nccl-cu12',         # uses NVIDIA license
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
+    'mkl',                      # Github Action artifact, uses Intel Simplified Software License
 ]
