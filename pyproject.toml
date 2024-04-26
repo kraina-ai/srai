@@ -213,7 +213,7 @@ markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 log_cli = true
 
 [tool.licensecheck]
-using = "PEP631:all"
+using = "requirements"
 zero = true
 ignore_licenses = ["UNKNOWN"]
 ignore_packages = [
@@ -247,4 +247,5 @@ ignore_packages = [
     'nvidia-nccl-cu12',         # uses NVIDIA license
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
+    'mkl',                      # Github Action artifact, uses Intel Simplified Software License
 ]
