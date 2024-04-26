@@ -31,5 +31,6 @@ jobs:
           extra_args: --all-files --hook-stage manual --verbose
       - name: Show dependencies graph
         run: |
-          pdm install -d -G license --skip=post_install
+          pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -dG:all
+          pdm install --lockfile pdm.newest.lock --skip=post_install
           pdm run pipdeptree --license
