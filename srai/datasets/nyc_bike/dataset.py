@@ -87,7 +87,7 @@ class NYCBikeDataset(HuggingFaceDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: str | None = "nyc_bike_2023"
+        self, hf_token: Optional[str] = None, version: Optional[str] = "nyc_bike_2023"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.

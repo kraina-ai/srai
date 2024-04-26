@@ -47,7 +47,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: str | None = "2020"
+        self, hf_token: Optional[str] = None, version: Optional[str] = "2020"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
