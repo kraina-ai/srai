@@ -115,7 +115,7 @@ class Trainer:
                 total=len(self.train_dataloader),
             ):
                 inputs = batch["X"].to(self.device)
-                labels = batch["y"].to(self.device)
+                labels = batch["y"].to(self.device).reshape(-1, 1)
 
                 outputs = self.model(inputs)
                 loss = self.loss_fn(outputs, labels)

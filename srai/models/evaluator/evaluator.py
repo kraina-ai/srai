@@ -98,7 +98,7 @@ class Evaluator:
                 total=len(data_loader),
             ):
                 inputs = batch["X"].to(self.device)
-                labels = batch["y"].to(self.device)
+                labels = batch["y"].to(self.device).reshape(-1, 1)
 
                 outputs = model(inputs)
                 if compute_loss:
