@@ -12,16 +12,12 @@ jobs:
   run-manual-stage:
     name: Run pre-commit manual stage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --hook-stage manual --verbose

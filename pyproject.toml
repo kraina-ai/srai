@@ -123,7 +123,10 @@ docs = [
     "umap-learn",
 ]
 # performance = ["scalene"]
-license = ["licensecheck"]
+license = [
+    "licensecheck",
+    "pipdeptree",
+]
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
@@ -210,8 +213,8 @@ markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 log_cli = true
 
 [tool.licensecheck]
-using = "requirements"
-zero = false
+using = "PEP631:all"
+zero = true
 ignore_licenses = ["UNKNOWN"]
 ignore_packages = [
     'srai',                     # skip self
