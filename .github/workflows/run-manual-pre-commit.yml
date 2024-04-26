@@ -29,5 +29,7 @@ jobs:
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --hook-stage manual --verbose
-      - name: Show dependencies graph
-        run: pdm run pipdeptree --license
+      - name: Install dependencies
+        run: |
+          pdm install -d -G license --skip=post_install
+          pdm run pipdeptree --license
