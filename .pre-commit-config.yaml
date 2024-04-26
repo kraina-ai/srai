@@ -62,7 +62,7 @@ repos:
     hooks:
       - id: licensecheck
         stages: [manual]
-        args: ["--zero", "-u", "requirements", "--skip-dependencies", "mkl"]
+        args: ["--zero", "-u", "requirements", "--ignore-packages", "mkl"]
 
 ci:
   autofix_commit_msg: |
