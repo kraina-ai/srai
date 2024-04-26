@@ -100,7 +100,7 @@ class Evaluator:
                 inputs = batch["X"].to(self.device)
                 labels = batch["y"].to(self.device)
 
-                outputs = model(inputs, labels=labels)
+                outputs = model(inputs)
                 if compute_loss:
                     if loss_fn is None:
                         loss_fn = nn.L1Loss()

@@ -117,7 +117,7 @@ class Trainer:
                 inputs = batch["X"].to(self.device)
                 labels = batch["y"].to(self.device)
 
-                outputs = self.model(inputs, labels=labels)
+                outputs = self.model(inputs)
                 loss = self.loss_fn(outputs, labels)
 
                 self.optimizer.zero_grad()
