@@ -21,6 +21,11 @@ from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
 from srai.regionalizers import H3Regionalizer
 
+# TODO: zdefiniowane w klasie jako metadane, żeby w metadanych datastu
+# TODO: testy napisać
+# TODO: można wczytać plik z load z pliku
+# TODO: add numerical columns to self in dataset base class. maybe categorical columns ?
+
 
 class Vectorizer:
     """
@@ -75,7 +80,9 @@ class Vectorizer:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         if embedder_type == "Hex2VecEmbedder":
-            self.embedder = Hex2VecEmbedder(embedder_hidden_sizes)
+            self.embedder = Hex2VecEmbedder(
+                embedder_hidden_sizes
+            )  # TODO: można wczytać plik z load z pliku
         elif embedder_type == "GeoVexEmbedder":
             raise NotImplementedError
         else:
@@ -133,6 +140,7 @@ class Vectorizer:
             scaler = (
                 StandardScaler()
             )  # TODO: watch out for data leakage -> train test split must be before standarization!
+            # TODO: add scaler to self
             gdf_standarized[self.numerical_columns] = scaler.fit_transform(
                 gdf_standarized[self.numerical_columns]
             )
@@ -148,6 +156,8 @@ class Vectorizer:
             Dataset: Hugging Face Dataset with X - input vectors, X_h3_idx - h3 indices, \
                 y - target value
         """  # noqa: D205
+        # TODO: load and save
+
         joined_gdf = gpd.sjoin(self.gdf, self.regions, how="left", op="within")
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         if self.numerical_columns is not None:
