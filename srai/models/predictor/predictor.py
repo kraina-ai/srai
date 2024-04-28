@@ -9,11 +9,12 @@ from typing import Any, Optional
 import geopandas as gpd
 import h3
 import torch
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
+from srai.h3 import h3_to_geoseries
 from srai.models.vectorizer import Vectorizer
 
 
@@ -94,19 +95,21 @@ class Predictor:
                 elif isinstance(data[0], Point):
                     gdf = gpd.GeoDataFrame(geometry=data)
                     gdf["point"] = data
-        gdf["y"] = None
-        vectorizer = Vectorizer(
-            gdf_dataset=gdf,
-            target_column_name="y",
-            embedder_type=str(embedder_type),
-            h3_resolution=res,
-            embedder_hidden_sizes=embedder_hidden_sizes,
-        )
-        data = vectorizer.get_dataset()
+
+                gdf["y"] = None
+                vectorizer = Vectorizer(
+                    gdf_dataset=gdf,
+                    target_column_name="y",
+                    embedder_type=str(embedder_type),
+                    h3_resolution=res,
+                    embedder_hidden_sizes=embedder_hidden_sizes,
+                )
+                data = vectorizer.get_dataset()
 
         first_parameter = next(model.parameters())
         input_shape = first_parameter.size()
-        if vectorizer.embedder_hidden_sizes[-1] != input_shape[1]:
+        if len(data[0]["X"]) != input_shape[1]:
+            # if vectorizer.embedder_hidden_sizes[-1] != input_shape[1]:
             raise ValueError(
                 f"Model input size {input_shape[1]} does not match \
                     embedding size {vectorizer.embedder_hidden_sizes[-1]}"
@@ -143,10 +146,8 @@ class Predictor:
         Returns:
             gpd.GeoDataFrame: Geodataframe with geometries
         """
-        polygons = [
-            h3.h3_to_geo_boundary(h, geo_json=True, resolution=resolution) for h in h3_indexes
-        ]
-        gdf = gpd.GeoDataFrame(geometry=[Polygon(polygon) for polygon in polygons])
+        polygons = h3_to_geoseries(h3_indexes)
+        gdf = gpd.GeoDataFrame(geometry=polygons)
         gdf.crs = {"init": "epsg:4326"}
         return gdf
 
