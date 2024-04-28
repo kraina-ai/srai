@@ -147,6 +147,8 @@ class Trainer:
                     if stop_counter == 5:
                         logging.info(f"Early stopping at epoch {epoch}")
                         break
+                else:
+                    stop_counter = 0
                 prev_eval_loss = eval_loss
 
             if self.metric2look4 is None:
