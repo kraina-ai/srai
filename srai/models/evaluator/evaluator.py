@@ -55,6 +55,8 @@ class Evaluator:
         compute_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], dict[str, float]]] = None,
         compute_loss: Optional[bool] = False,
         loss_fn: Optional[Any] = None,
+        return_metrics: Optional[bool] = False,
+        log_per_batch: bool = False,
     ) -> tuple[dict[str, float], np.ndarray] | np.ndarray:
         """
         Evaluates model on a chosen dataset with task-dependent metrics.
@@ -72,6 +74,14 @@ class Evaluator:
                 f.e used in training
             loss_fn (Optional[Any]): function (torch or any custom) that computes loss from\
                 model prediction and target labels
+            return_metrics (Optional[bool]): If True, returns metrics values.
+            log_per_batch (bool): If True, log metrics per batch.
+
+        Returns:
+            tuple[dict[str, float], np.ndarray] | np.ndarray | dict[str, float] | None:
+                If compute_loss is True returns evaluations loss, if return_metrics return\
+                dictionary with metrics values, if both returns tuple with metrics and loss\
+
 
         Raises:
             ValueError: If test_dataset is not instance of torch.utils.data.Dataset.
@@ -120,12 +130,17 @@ class Evaluator:
             if key != "Batch"
         }
 
-        log_metrics(metrics_per_batch, mean_metrics)
-        if compute_loss:
+        log_metrics(metrics_per_batch, mean_metrics, log_per_batch)
+        if compute_loss and return_metrics:
             logging.info(f"Eval loss: {np.mean(eval_loss):.4f}")
             return mean_metrics, np.mean(eval_loss)
-        else:
+        elif compute_loss and not return_metrics:
+            logging.info(f"Eval loss: {np.mean(eval_loss):.4f}")
+            return np.mean(eval_loss)
+        elif return_metrics and not compute_loss:
             return mean_metrics
+        else:
+            return None
 
     def compute_metrics(self, predictions: torch.Tensor, labels: torch.Tensor) -> dict[str, float]:
         """
@@ -209,21 +224,27 @@ class Evaluator:
         raise NotImplementedError
 
 
-def log_metrics(metrics_per_batch: list[dict[str, float]], mean_metrics: dict[str, float]) -> None:
+def log_metrics(
+    metrics_per_batch: list[dict[str, float]],
+    mean_metrics: dict[str, float],
+    log_per_batch: bool = False,
+) -> None:
     """
     _summary_.
 
     Args:
         metrics_per_batch (list): Metrics values per batch.
         mean_metrics (dict): Mean metrics values across all batches.
+        log_per_batch (bool): If True, log metrics per batch.
     """
-    logging.info("Metrics per batch:")
-    for batch_metrics in metrics_per_batch:
-        batch_info = ", ".join(
-            [f"{key}={value:.4f}" for key, value in batch_metrics.items() if key != "Batch"]
-        )
-        logging.info(f"Batch {batch_metrics['Batch']}: {batch_info}")
-    logging.info("-----")
+    if log_per_batch:
+        logging.info("Metrics per batch:")
+        for batch_metrics in metrics_per_batch:
+            batch_info = ", ".join(
+                [f"{key}={value:.4f}" for key, value in batch_metrics.items() if key != "Batch"]
+            )
+            logging.info(f"Batch {batch_metrics['Batch']}: {batch_info}")
+        logging.info("-----")
 
     logging.info("Mean metrics across all batches:")
     for key, value in mean_metrics.items():
