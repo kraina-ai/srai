@@ -84,26 +84,25 @@ class Predictor:
         else:
             gdf = gpd.GeoDataFrame()
 
-        if self.task == "regression":
-            if isinstance(data, list):
-                if isinstance(data[0], str):
-                    gdf = self._h3_indices_to_geometry(data, res)
-                elif isinstance(data[0], tuple):
-                    h3_indices = self._points_to_hexagon_indices(data, res)
-                    gdf = self._h3_indices_to_geometry(h3_indices, res)
-                    gdf["point"] = data
-                elif isinstance(data[0], Point):
-                    gdf = gpd.GeoDataFrame(geometry=data)
-                    gdf["point"] = data
-                gdf["y"] = None
-                vectorizer = Vectorizer(
-                    gdf_dataset=gdf,
-                    target_column_name="y",
-                    embedder_type=str(embedder_type),
-                    h3_resolution=res,
-                    embedder_hidden_sizes=embedder_hidden_sizes,
-                )
-                data = vectorizer.get_dataset()
+        if isinstance(data, list):
+            if isinstance(data[0], str):
+                gdf = self._h3_indices_to_geometry(data, res)
+            elif isinstance(data[0], tuple):
+                h3_indices = self._points_to_hexagon_indices(data, res)
+                gdf = self._h3_indices_to_geometry(h3_indices, res)
+                gdf["point"] = data
+            elif isinstance(data[0], Point):
+                gdf = gpd.GeoDataFrame(geometry=data)
+                gdf["point"] = data
+            gdf["y"] = None
+            vectorizer = Vectorizer(
+                gdf_dataset=gdf,
+                target_column_name="y",
+                embedder_type=str(embedder_type),
+                h3_resolution=res,
+                embedder_hidden_sizes=embedder_hidden_sizes,
+            )
+            data = vectorizer.get_dataset()
 
         first_parameter = next(model.parameters())
         input_shape = first_parameter.size()
