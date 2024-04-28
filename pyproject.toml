@@ -81,7 +81,11 @@ plotting = [
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 
 # pdm add -G torch <library>
-torch = ["pytorch-lightning", "torch"]
+torch = [
+    "pytorch-lightning",
+    "torch<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torch; sys_platform != 'darwin' or platform_machine == 'arm64'",
+]
 
 # pdm add -G datasets <library>
 datasets = [
@@ -143,6 +147,9 @@ license = [
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
+
+[tool.pdm.resolution]
+
 
 [tool.ruff]
 line-length = 100
