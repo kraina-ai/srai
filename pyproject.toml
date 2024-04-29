@@ -63,7 +63,7 @@ osm = [
     "overpass",
     "pillow",
     "beautifulsoup4",
-    "quackosm>=0.7.1",
+    "quackosm>=0.7.2",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
@@ -147,9 +147,6 @@ license = [
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
-
-[tool.pdm.resolution]
-
 
 [tool.ruff]
 line-length = 100
