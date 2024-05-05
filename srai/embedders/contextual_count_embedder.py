@@ -18,6 +18,7 @@ import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from tqdm import trange
 from tqdm.contrib.concurrent import process_map
 
 from srai.embedders.count_embedder import CountEmbedder
@@ -38,6 +39,8 @@ class ContextualCountEmbedder(CountEmbedder):
             Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
         count_subcategories: bool = False,
+        num_of_multiprocessing_workers: int = -1,
+        multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
         """
         Init ContextualCountEmbedder.
@@ -59,6 +62,13 @@ class ContextualCountEmbedder(CountEmbedder):
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.
+            num_of_multiprocessing_workers (int, optional): Number of workers used for
+                multiprocessing. Defaults to -1 which results in a total number of available
+                cpu threads. `0` and `1` values disable multiprocessing.
+                Similar to `n_jobs` parameter from `scikit-learn` library.
+            multiprocessing_activation_threshold (int, optional): Number of seeds required to start
+                processing on multiple processes. Activating multiprocessing for a small
+                amount of points might not be feasible. Defaults to 100.
 
         Raises:
             ValueError: If `neighbourhood_distance` is negative.
@@ -71,6 +81,13 @@ class ContextualCountEmbedder(CountEmbedder):
 
         if self.neighbourhood_distance < 0:
             raise ValueError("Neighbourhood distance must be positive.")
+
+        self.num_of_multiprocessing_workers = _parse_num_of_multiprocessing_workers(
+            num_of_multiprocessing_workers
+        )
+        self.multiprocessing_activation_threshold = _parse_multiprocessing_activation_threshold(
+            multiprocessing_activation_threshold
+        )
 
     def transform(
         self,
@@ -198,46 +215,95 @@ class ContextualCountEmbedder(CountEmbedder):
 
         number_of_base_columns = len(counts_df.columns)
 
-        num_of_multiprocessing_workers = cpu_count()
+        activate_multiprocessing = (
+            self.num_of_multiprocessing_workers > 1
+            and len(counts_df.index) >= self.multiprocessing_activation_threshold
+        )
 
-        for distance in range(1, self.neighbourhood_distance + 1):
+        for distance in trange(
+            1,
+            self.neighbourhood_distance + 1,
+            desc="Generating embeddings for neighbours",
+        ):
             if len(counts_df.index) == 0:
                 continue
 
-            fn_neighbours = partial(
-                _get_existing_neighbours_at_distance,
-                neighbour_distance=distance,
-                counts_index=counts_df.index,
-                neighbourhood=self.neighbourhood,
-            )
-            neighbours_series = process_map(
-                fn_neighbours,
-                counts_df.index,
-                desc=f"Getting neighbours at distance: {distance}",
-                max_workers=num_of_multiprocessing_workers,
-                chunksize=ceil(len(counts_df.index) / (4 * num_of_multiprocessing_workers)),
-            )
+            if activate_multiprocessing:
+                fn_neighbours = partial(
+                    _get_existing_neighbours_at_distance,
+                    neighbour_distance=distance,
+                    counts_index=counts_df.index,
+                    neighbourhood=self.neighbourhood,
+                )
+                neighbours_series = process_map(
+                    fn_neighbours,
+                    counts_df.index,
+                    max_workers=self.num_of_multiprocessing_workers,
+                    chunksize=ceil(
+                        len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
+                    ),
+                    disable=True,
+                )
+            else:
+                neighbours_series = counts_df.index.map(
+                    lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
+                        self.neighbourhood.get_neighbours_at_distance(
+                            region_id, neighbour_distance, include_center=False
+                        )
+                    ).values
+                )
 
             if len(neighbours_series) == 0:
                 continue
 
-            fn_embeddings = partial(
-                _get_embeddings_for_neighbours,
-                counts_df=counts_df,
-                number_of_base_columns=number_of_base_columns,
-            )
-
-            averaged_values_stacked = np.stack(
-                process_map(
-                    fn_embeddings,
-                    neighbours_series,
-                    desc=f"Getting embeddings for neighbours at distance: {distance}",
-                    max_workers=num_of_multiprocessing_workers,
-                    chunksize=ceil(len(neighbours_series) / (4 * num_of_multiprocessing_workers)),
+            if activate_multiprocessing:
+                fn_embeddings = partial(
+                    _get_embeddings_for_neighbours,
+                    counts_df=counts_df,
+                    number_of_base_columns=number_of_base_columns,
                 )
-            )
+
+                averaged_values_stacked = np.stack(
+                    process_map(
+                        fn_embeddings,
+                        neighbours_series,
+                        max_workers=self.num_of_multiprocessing_workers,
+                        chunksize=ceil(
+                            len(neighbours_series) / (4 * self.num_of_multiprocessing_workers)
+                        ),
+                        disable=True,
+                    )
+                )
+            else:
+                averaged_values_stacked = np.stack(
+                    neighbours_series.map(
+                        lambda region_ids: (
+                            np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
+                            if len(region_ids) > 0
+                            else np.zeros((number_of_base_columns,))
+                        )
+                    ).values
+                )
 
             yield distance, averaged_values_stacked
+
+
+def _parse_num_of_multiprocessing_workers(num_of_multiprocessing_workers: int) -> int:
+    if num_of_multiprocessing_workers == 0:
+        num_of_multiprocessing_workers = 1
+    elif num_of_multiprocessing_workers < 0:
+        num_of_multiprocessing_workers = cpu_count()
+
+    return num_of_multiprocessing_workers
+
+
+def _parse_multiprocessing_activation_threshold(
+    multiprocessing_activation_threshold: Optional[int],
+) -> int:
+    if not multiprocessing_activation_threshold:
+        multiprocessing_activation_threshold = 100
+
+    return multiprocessing_activation_threshold
 
 
 def _get_existing_neighbours_at_distance(

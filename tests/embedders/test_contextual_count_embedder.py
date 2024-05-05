@@ -1,20 +1,23 @@
 """ContextualCountEmbedder tests."""
 
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, Union
+from pathlib import Path
+from typing import Any, Union
 
+import geopandas as gpd
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 from parametrization import Parametrization as P
+from shapely.geometry import Polygon
 
-from srai.constants import REGIONS_INDEX
+from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.embedders import ContextualCountEmbedder
-from srai.loaders.osm_loaders.filters import OsmTagsFilter
+from srai.joiners import IntersectionJoiner
+from srai.loaders.osm_loaders import OSMPbfLoader
+from srai.loaders.osm_loaders.filters import GEOFABRIK_LAYERS, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-
-if TYPE_CHECKING:  # pragma: no cover
-    import geopandas as gpd
+from srai.regionalizers import H3Regionalizer
 
 
 def _create_features_dataframe(data: dict[str, Any]) -> pd.DataFrame:
@@ -721,7 +724,9 @@ def test_correct_embedding(
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
     assert_frame_equal(
-        embedding_df.sort_index(axis=1), expected_result_df.sort_index(axis=1), check_dtype=False
+        embedding_df.sort_index(axis=1),
+        expected_result_df.sort_index(axis=1),
+        check_dtype=False,
     )
 
 
@@ -873,3 +878,39 @@ def test_incorrect_indexes(
             concatenate_vectors=concatenate_features,
             neighbourhood_distance=neighbourhood_distance,
         ).transform(regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf)
+
+
+def test_bigger_example() -> None:
+    """Test bigger example to get multiprocessing in action."""
+    geometry = gpd.GeoDataFrame(
+        geometry=[
+            Polygon(
+                [
+                    (7.416769421059001, 43.7346112362936),
+                    (7.416769421059001, 43.730681304758946),
+                    (7.4218262821731, 43.730681304758946),
+                    (7.4218262821731, 43.7346112362936),
+                ]
+            )
+        ],
+        crs=WGS84_CRS,
+    )
+
+    regions = H3Regionalizer(resolution=13).transform(geometry)
+    features = OSMPbfLoader(
+        pbf_file=Path(__file__).parent.parent
+        / "loaders"
+        / "osm_loaders"
+        / "test_files"
+        / "monaco.osm.pbf"
+    ).load(area=regions, tags=GEOFABRIK_LAYERS)
+    joint = IntersectionJoiner().transform(regions=regions, features=features)
+    embeddings = ContextualCountEmbedder(
+        neighbourhood=H3Neighbourhood(),
+        neighbourhood_distance=10,
+        expected_output_features=GEOFABRIK_LAYERS,
+    ).transform(regions_gdf=regions, features_gdf=features, joint_gdf=joint)
+
+    assert len(embeddings) == len(
+        regions
+    ), f"Mismatched number of rows ({len(embeddings)}, {len(regions)})"
