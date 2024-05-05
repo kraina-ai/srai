@@ -8,13 +8,17 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from collections.abc import Iterator
-from typing import Optional, Union
+from collections.abc import Collection, Iterator
+from functools import partial
+from math import ceil
+from multiprocessing import cpu_count
+from typing import Any, Optional, Union
 
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+from tqdm.contrib.concurrent import process_map
 
 from srai.embedders.count_embedder import CountEmbedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
@@ -165,7 +169,8 @@ class ContextualCountEmbedder(CountEmbedder):
 
         for distance, averaged_values in self._get_averaged_values_for_distances(counts_df):
             result_array[
-                :, number_of_base_columns * distance : number_of_base_columns * (distance + 1)
+                :,
+                number_of_base_columns * distance : number_of_base_columns * (distance + 1),
             ] = averaged_values
 
         return pd.DataFrame(data=result_array, index=counts_df.index, columns=columns)
@@ -193,25 +198,68 @@ class ContextualCountEmbedder(CountEmbedder):
 
         number_of_base_columns = len(counts_df.columns)
 
+        num_of_multiprocessing_workers = cpu_count()
+
         for distance in range(1, self.neighbourhood_distance + 1):
-            neighbours_series = counts_df.index.map(
-                lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                    self.neighbourhood.get_neighbours_at_distance(
-                        region_id, neighbour_distance, include_center=False
-                    )
-                ).values
+            if len(counts_df.index) == 0:
+                continue
+
+            fn_neighbours = partial(
+                _get_existing_neighbours_at_distance,
+                neighbour_distance=distance,
+                counts_index=counts_df.index,
+                neighbourhood=self.neighbourhood,
             )
+            neighbours_series = process_map(
+                fn_neighbours,
+                counts_df.index,
+                desc=f"Getting neighbours at distance: {distance}",
+                max_workers=num_of_multiprocessing_workers,
+                chunksize=ceil(len(counts_df.index) / (4 * num_of_multiprocessing_workers)),
+            )
+
             if len(neighbours_series) == 0:
                 continue
 
+            fn_embeddings = partial(
+                _get_embeddings_for_neighbours,
+                counts_df=counts_df,
+                number_of_base_columns=number_of_base_columns,
+            )
+
             averaged_values_stacked = np.stack(
-                neighbours_series.map(
-                    lambda region_ids: (
-                        np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
-                        if len(region_ids) > 0
-                        else np.zeros((number_of_base_columns,))
-                    )
-                ).values
+                process_map(
+                    fn_embeddings,
+                    neighbours_series,
+                    desc=f"Getting embeddings for neighbours at distance: {distance}",
+                    max_workers=num_of_multiprocessing_workers,
+                    chunksize=ceil(len(neighbours_series) / (4 * num_of_multiprocessing_workers)),
+                )
             )
 
             yield distance, averaged_values_stacked
+
+
+def _get_existing_neighbours_at_distance(
+    region_id: IndexType,
+    neighbour_distance: int,
+    neighbourhood: Neighbourhood[IndexType],
+    counts_index: pd.Index,
+) -> Any:
+    return counts_index.intersection(
+        neighbourhood.get_neighbours_at_distance(
+            region_id, neighbour_distance, include_center=False
+        )
+    ).values
+
+
+def _get_embeddings_for_neighbours(
+    region_ids: Collection[IndexType],
+    counts_df: pd.DataFrame,
+    number_of_base_columns: int,
+) -> Any:
+    return (
+        np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
+        if len(region_ids) > 0
+        else np.zeros((number_of_base_columns,))
+    )
