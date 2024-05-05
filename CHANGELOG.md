@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for Python 3.12 after upgrading QuackOSM to `0.7.0` and DuckDB to `0.10.2`
 
+### Changed
+
+- Refactored `ContextualCountEmbedder` by adding multiprocessing for faster transformations
+
 ## [0.7.3] - 2024-04-21
 
 ### Changed
