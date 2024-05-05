@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4] - 2024-05-05
+
 ### Added
 
 - Support for Python 3.12 after upgrading QuackOSM to `0.7.0` and DuckDB to `0.10.2`
@@ -274,7 +276,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.3...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.4...HEAD
+
+[0.7.4]: https://github.com/kraina-ai/srai/compare/0.7.3...0.7.4
 
 [0.7.3]: https://github.com/kraina-ai/srai/compare/0.7.2...0.7.3
 
