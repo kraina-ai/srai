@@ -70,8 +70,9 @@ class Vectorizer:
             ValueError: If embedder type is not available.
         """
         if embedder_hidden_sizes is None:
-            embedder_hidden_sizes = [150, 75, 50]
-
+            self.embedder_hidden_sizes = [150, 75, 50]
+        else:
+            self.embedder_hidden_sizes = embedder_hidden_sizes
         self.gdf = gdf_dataset
         self.target_column_name = target_column_name
         self.numerical_columns = numerical_columns
