@@ -12,9 +12,17 @@ from srai.loaders import HuggingFaceLoader
 class HuggingFaceDataset(abc.ABC):
     """Abstract class for HuggingFace datasets."""
 
-    def __init__(self, path: str, version: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        path: str,
+        version: Optional[str] = None,
+        numerical_columns: Optional[list[str]] = None,
+        categorical_columns: Optional[list[str]] = None,
+    ) -> None:
         self.path = path
         self.version = version
+        self.numerical_columns = numerical_columns
+        self.categorical_columns = categorical_columns
 
     @abc.abstractmethod
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:

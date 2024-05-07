@@ -22,7 +22,20 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        super().__init__("kraina/airbnb_multicity")
+        categorical_columns = ["name", "host_name", "neighborhood", "room_type", "city"]
+        numerical_columns = [
+            "number_of_reviews",
+            "minimum_nights",
+            "availability_365",
+            "calculated_host_listings_count",
+            "number_of_reviews_ltm",
+        ]
+
+        super().__init__(
+            "kraina/airbnb_multicity",
+            numerical_columns=numerical_columns,
+            categorical_columns=categorical_columns,
+        )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
