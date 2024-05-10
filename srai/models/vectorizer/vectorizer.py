@@ -16,9 +16,10 @@ from sklearn.preprocessing import StandardScaler
 
 from srai.datasets._base import HuggingFaceDataset
 from srai.embedders import GeoVexEmbedder, Hex2VecEmbedder  # noqa: F401
+from srai.h3 import ring_buffer_h3_regions_gdf
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
-from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
+from srai.loaders.osm_loaders.filters import GEOFABRIK_LAYERS, HEX2VEC_FILTER
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
 from srai.regionalizers import H3Regionalizer
 
@@ -68,8 +69,8 @@ class Vectorizer:
             embedder_type (str, optional): Type of embedder. Available embedders: Hex2VecEmbedder,\
                   GeoVecEmbedder. Defaults to "Hex2VecEmbedder".
             h3_resolution (int, optional): Resolution in h3 regionalizer. Defaults to 8.
-            embedder_hidden_sizes (Optional[list[int]], optional): Hidden sizes of embedder. \
-                Defaults to None.
+            embedder_hidden_sizes (Optional[list[int]], int, optional): Hidden sizes of embedder. \
+                Defaults to None. If GeoVexEmbedder type, list consisting of 1 element should be provided.
 
         Raises:
             NotImplementedError: GeoVecEmbedder usage is not implemented.
@@ -92,15 +93,27 @@ class Vectorizer:
         self.target_column_name = target_column_name
 
         self.regions = H3Regionalizer(resolution=h3_resolution).transform(self.gdf)
-        self.osm_features = OSMPbfLoader().load(self.regions, HEX2VEC_FILTER)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
         if embedder_type == "Hex2VecEmbedder":
-            self.embedder = Hex2VecEmbedder(
-                embedder_hidden_sizes
-            )  # TODO: można wczytać plik z load z pliku
+            self.embedder = Hex2VecEmbedder(embedder_hidden_sizes)
+            self.osm_features = OSMPbfLoader().load(self.regions, HEX2VEC_FILTER)
+
         elif embedder_type == "GeoVexEmbedder":
-            raise NotImplementedError
+            k_ring_buffer_radius = 1
+            buffered_h3_regions = ring_buffer_h3_regions_gdf(
+                self.regions, distance=k_ring_buffer_radius
+            )
+            self.regions = buffered_h3_regions  # overwrite h3 regions
+            buffered_h3_geometry = self.regions.unary_union
+            self.osm_features = OSMPbfLoader().load(buffered_h3_geometry, GEOFABRIK_LAYERS)
+
+            self.embedder = GeoVexEmbedder(
+                target_features=GEOFABRIK_LAYERS,
+                batch_size=10,
+                neighbourhood_radius=k_ring_buffer_radius,
+                convolutional_layers=2,
+                embedding_size=self.embedder_hidden_sizes[-1],
+            )  # type: ignore
         else:
             raise ValueError(
                 "Incorrect embedder type. \
@@ -124,7 +137,7 @@ class Vectorizer:
                 self.osm_features,
                 joint,
                 neighbourhood,
-                batch_size=100,
+                # batch_size=100,
                 trainer_kwargs={"max_epochs": 10, "accelerator": self.device},
             )
         return embeddings
