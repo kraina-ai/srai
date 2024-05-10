@@ -28,7 +28,14 @@ class FoursquareCheckinsDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        super().__init__("kraina/foursquare_checkins", "tokyo_newyork")
+        categorical_columns = None
+        numerical_columns = None
+        super().__init__(
+            "kraina/foursquare_checkins",
+            "tokyo_newyork",
+            numerical_columns=numerical_columns,
+            categorical_columns=categorical_columns,
+        )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """

@@ -26,7 +26,13 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        super().__init__("kraina/chicago_crime")
+        numerical_columns = ["Ward", "Community Area", "Year"]
+        categorical_columns = ["Primary Type", "Description", "Location Description"]
+        super().__init__(
+            "kraina/chicago_crime",
+            numerical_columns=numerical_columns,
+            categorical_columns=categorical_columns,
+        )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """

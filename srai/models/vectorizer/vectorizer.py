@@ -59,7 +59,7 @@ class Vectorizer:
 
         Args:
             gdf_dataset (gpd.GeoDataFrame): GeoDataFrame which should be prepared to training.
-            HF_dataset_object (Optional[HuggingFaceDataset]): Dataset object from which gdf_dataset was loaded.
+            HF_dataset_object (Optional[HuggingFaceDataset], optional): Dataset object from which gdf_dataset was loaded.
             target_column_name (str, optional): Target column in regression. Defaults to "price".
             numerical_columns (Optional[list[str]], optional): Columns from gdf_dataset with \
                 numerical values that will be used to train model. If default, columns are inherited from HuggingFaceDataset.
@@ -75,15 +75,15 @@ class Vectorizer:
             NotImplementedError: GeoVecEmbedder usage is not implemented.
             ValueError: If embedder type is not available.
         """  # noqa: W505, E501
-        if HF_dataset_object is None:
-            raise ValueError("Dataset object not passed!")
         if embedder_hidden_sizes is None:
             self.embedder_hidden_sizes = [150, 75, 50]
         else:
             self.embedder_hidden_sizes = embedder_hidden_sizes
-        if numerical_columns is None:
+        if (
+            numerical_columns is None and HF_dataset_object is not None
+        ):  # get column names from dataset object  # noqa: E501
             numerical_columns = HF_dataset_object.numerical_columns
-        if categorical_columns is None:
+        if categorical_columns is None and HF_dataset_object is not None:
             categorical_columns = HF_dataset_object.numerical_columns
 
         self.categorical_columns = categorical_columns

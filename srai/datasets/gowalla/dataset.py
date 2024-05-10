@@ -27,7 +27,13 @@ class GowallaDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        super().__init__("kraina/gowalla")
+        numerical_columns = None
+        categorical_columns = None
+        super().__init__(
+            "kraina/gowalla",
+            numerical_columns=numerical_columns,
+            categorical_columns=categorical_columns,
+        )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
