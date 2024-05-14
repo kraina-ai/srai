@@ -84,10 +84,10 @@ class Trainer:
         self.save_best = save_best
         self.save_dir = save_dir
 
-        if not isinstance(train_dataset, Dataset):
-            raise ValueError("train_dataset should be instance of torch.utils.data.Dataset")
-        if not isinstance(eval_dataset, Dataset):
-            raise ValueError("eval_dataset should be instance of torch.utils.data.Dataset")
+        # if not isinstance(train_dataset, Dataset):
+        #     raise ValueError("train_dataset should be instance of torch.utils.data.Dataset")
+        # if not isinstance(eval_dataset, Dataset):
+        #     raise ValueError("eval_dataset should be instance of torch.utils.data.Dataset")
 
         self.train_dataloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.batch_size, shuffle=False)

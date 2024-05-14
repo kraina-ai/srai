@@ -98,7 +98,7 @@ class Predictor:
 
                 gdf["y"] = None
                 vectorizer = Vectorizer(
-                    gdf_dataset=gdf,
+                    gdf_train=gdf,
                     target_column_name="y",
                     embedder_type=str(embedder_type),
                     h3_resolution=res,
@@ -115,8 +115,8 @@ class Predictor:
                     embedding size {vectorizer.embedder_hidden_sizes[-1]}"
             )
 
-        if isinstance(data, Dataset):
-            dataloader = DataLoader(data, batch_size=self.batch_size, shuffle=False)
+        # if isinstance(data, Dataset):
+        dataloader = DataLoader(data, batch_size=self.batch_size, shuffle=False)
 
         h3_indexes = []
         xy_points = []

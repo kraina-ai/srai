@@ -30,11 +30,13 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
             "calculated_host_listings_count",
             "number_of_reviews_ltm",
         ]
+        target = "price"
 
         super().__init__(
             "kraina/airbnb_multicity",
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
+            target=target,
         )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
@@ -56,3 +58,13 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
         )
 
         return gdf
+
+    @staticmethod
+    def train_dev_test_split_spatial() -> None:
+        """
+        Train, dev, test split based on spatial approach.
+
+        Returns:
+            _type_: NotImplementedError
+        """
+        raise NotImplementedError

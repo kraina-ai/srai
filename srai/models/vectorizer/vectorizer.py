@@ -46,9 +46,9 @@ class Vectorizer:
 
     def __init__(
         self,
-        gdf_dataset: gpd.GeoDataFrame,
+        gdf_train: gpd.GeoDataFrame,
         HF_dataset_object: Optional[HuggingFaceDataset] = None,
-        target_column_name: str = "price",
+        target_column_name: Optional[str] = None,
         numerical_columns: Optional[list[str]] = None,
         categorical_columns: Optional[list[str]] = None,
         embedder_type: str = "Hex2VecEmbedder",
@@ -59,9 +59,10 @@ class Vectorizer:
         Initialization of Vectorizer.
 
         Args:
-            gdf_dataset (gpd.GeoDataFrame): GeoDataFrame which should be prepared to training.
+            gdf_train (gpd.GeoDataFrame): GeoDataFrame with training data.
             HF_dataset_object (Optional[HuggingFaceDataset], optional): Dataset object from which gdf_dataset was loaded.
-            target_column_name (str, optional): Target column in regression. Defaults to "price".
+            target_column_name (Optional[str], optional): Target column in regression. Defaults to None. \
+                If default, columns are inherited from HuggingFaceDataset.
             numerical_columns (Optional[list[str]], optional): Columns from gdf_dataset with \
                 numerical values that will be used to train model. If default, columns are inherited from HuggingFaceDataset.
             categorical_columns (Optional[list[str]], optional): Columns from gdf_dataset with \
@@ -86,14 +87,19 @@ class Vectorizer:
             numerical_columns = HF_dataset_object.numerical_columns
         if categorical_columns is None and HF_dataset_object is not None:
             categorical_columns = HF_dataset_object.numerical_columns
+        if target_column_name is None and HF_dataset_object is not None:
+            target_column_name = HF_dataset_object.target
 
         self.categorical_columns = categorical_columns
         self.numerical_columns = numerical_columns
-        self.gdf = gdf_dataset
+        self.gdf = gdf_train
         self.target_column_name = target_column_name
 
         self.regions = H3Regionalizer(resolution=h3_resolution).transform(self.gdf)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        self.scaler = StandardScaler().fit(self.gdf[self.numerical_columns])  # fit to trained data
+
         if embedder_type == "Hex2VecEmbedder":
             self.embedder = Hex2VecEmbedder(embedder_hidden_sizes)
             self.osm_features = OSMPbfLoader().load(self.regions, HEX2VEC_FILTER)
@@ -140,6 +146,8 @@ class Vectorizer:
                 # batch_size=100,
                 trainer_kwargs={"max_epochs": 10, "accelerator": self.device},
             )
+
+            # TOOD: we need to fit embedder only in init, we need to transform and download data, regions and features again.  # noqa: W505, E501
         return embeddings
 
     def _concat_columns(self, row: gpd.GeoSeries) -> np.ndarray:
@@ -166,11 +174,7 @@ class Vectorizer:
         """
         gdf_standardized = gdf.copy()
         if self.numerical_columns is not None:
-            scaler = (
-                StandardScaler()
-            )  # TODO: watch out for data leakage -> train test split must be before standarization!
-            # TODO: add scaler to self
-            gdf_standardized[self.numerical_columns] = scaler.fit_transform(
+            gdf_standardized[self.numerical_columns] = self.scaler.transform(
                 gdf_standardized[self.numerical_columns]
             )
 
@@ -191,18 +195,25 @@ class Vectorizer:
             pass
         raise NotImplementedError
 
-    def get_dataset(self) -> Dataset:
+    def get_dataset(self, gdf: Optional[gpd.GeoDataFrame] = None) -> Dataset:
         r"""
-        Method to retur Hugging Face Dataset with input values to model \ (embeddings and numericalb
+        Method to return Hugging Face Dataset with input values to model \ (embeddings and numerical
         features).
+
+        Args:
+            gdf: GeoDataFrame from which dataset should be created. If None, gdf from initialization is taken.
 
         Returns:
             Dataset: Hugging Face Dataset with X - input vectors, X_h3_idx - h3 indices, \
                 y - target value
-        """  # noqa: D205
-        # TODO: load and save
-
-        joined_gdf = gpd.sjoin(self.gdf, self.regions, how="left", op="within")
+        """  # noqa: D205, E501, W505
+        if gdf is None:
+            gdf_ = self.gdf
+        else:
+            gdf_ = gdf
+        joined_gdf = gpd.sjoin(
+            gdf_, self.regions, how="left", op="within"
+        )  # what if embedder didnt see training data?  # noqa: E501
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         if self.numerical_columns is not None:
             columns_to_add = self.numerical_columns + [
