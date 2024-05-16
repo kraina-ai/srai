@@ -34,6 +34,7 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
         super().__init__(
             "kraina/airbnb_multicity",
+            task="regression",
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
             target=target,

@@ -95,20 +95,20 @@ class Vectorizer:
         self.gdf = gdf_train
         self.target_column_name = target_column_name
 
-        self.regions = H3Regionalizer(resolution=h3_resolution).transform(self.gdf)
+        self.regionalizer = H3Regionalizer(resolution=h3_resolution)
+
+        # self.regions = self.regionalizer.transform(self.gdf)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.scaler = StandardScaler().fit(self.gdf[self.numerical_columns])  # fit to trained data
-
+        regions = self.regionalizer.transform(self.gdf)
         if embedder_type == "Hex2VecEmbedder":
             self.embedder = Hex2VecEmbedder(embedder_hidden_sizes)
-            self.osm_features = OSMPbfLoader().load(self.regions, HEX2VEC_FILTER)
+            self.osm_features = OSMPbfLoader().load(regions, HEX2VEC_FILTER)
 
         elif embedder_type == "GeoVexEmbedder":
             k_ring_buffer_radius = 1
-            buffered_h3_regions = ring_buffer_h3_regions_gdf(
-                self.regions, distance=k_ring_buffer_radius
-            )
+            buffered_h3_regions = ring_buffer_h3_regions_gdf(regions, distance=k_ring_buffer_radius)
             self.regions = buffered_h3_regions  # overwrite h3 regions
             buffered_h3_geometry = self.regions.unary_union
             self.osm_features = OSMPbfLoader().load(buffered_h3_geometry, GEOFABRIK_LAYERS)
@@ -126,28 +126,38 @@ class Vectorizer:
                              Avaliable embedder types: Hex2VecEmbedder, GeoVexEmbedder"
             )
 
-    def _get_embeddings(self) -> pd.DataFrame:
-        """
-        Method to get embeddings from geolocation.
-
-        Returns:
-            pd.DataFrame: geolocation embeddings
-        """
-        neighbourhood = H3Neighbourhood(self.regions)
-        joint = IntersectionJoiner().transform(self.regions, self.osm_features)
-
+        neighbourhood = H3Neighbourhood(regions)
+        joint = IntersectionJoiner().transform(regions, self.osm_features)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            embeddings = self.embedder.fit_transform(
-                self.regions,
-                self.osm_features,
-                joint,
-                neighbourhood,
-                # batch_size=100,
+            self.embedder.fit(
+                regions_gdf=regions,
+                features_gdf=self.osm_features,
+                joint_gdf=joint,
+                neighbourhood=neighbourhood,
                 trainer_kwargs={"max_epochs": 10, "accelerator": self.device},
             )
 
-            # TOOD: we need to fit embedder only in init, we need to transform and download data, regions and features again.  # noqa: W505, E501
+    def _get_embeddings(self, gdf: Optional[gpd.GeoDataFrame] = None) -> pd.DataFrame:
+        """
+        Method to get embeddings from geolocation.
+
+        Args:
+            gdf (Optional[gpd.GeoDataFrame], optional): GeoDataFrame from which embeddings should be extracted. Defaults to None.
+
+        Returns:
+            pd.DataFrame: geolocation embeddings
+        """  # noqa: W505, E501
+        if gdf is None:  # get training data
+            gdf_ = self.gdf
+        else:  # perform on trained embedders
+            gdf_ = gdf
+
+        regions = self.regionalizer.transform(gdf_)  # transform gdf to regions
+        joint = IntersectionJoiner().transform(regions, self.osm_features)
+        embeddings = self.embedder.transform(
+            regions_gdf=regions, features_gdf=self.osm_features, joint_gdf=joint
+        )
         return embeddings
 
     def _concat_columns(self, row: gpd.GeoSeries) -> np.ndarray:
@@ -211,10 +221,11 @@ class Vectorizer:
             gdf_ = self.gdf
         else:
             gdf_ = gdf
-        joined_gdf = gpd.sjoin(
-            gdf_, self.regions, how="left", op="within"
-        )  # what if embedder didnt see training data?  # noqa: E501
+        regions = self.regionalizer.transform(gdf_)  # get regions
+
+        joined_gdf = gpd.sjoin(gdf_, regions, how="left", op="within")  # noqa: E501
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+
         if self.numerical_columns is not None:
             columns_to_add = self.numerical_columns + [
                 self.target_column_name
@@ -227,7 +238,7 @@ class Vectorizer:
             columns_to_add
         ].mean()  # compute mean value per hex for all numerical values
 
-        embeddings = self._get_embeddings()
+        embeddings = self._get_embeddings(gdf_)
         embeddings["h3"] = embeddings.index
         merged_gdf = embeddings.merge(
             averages_hex, how="inner", left_on="region_id", right_on="h3_index"

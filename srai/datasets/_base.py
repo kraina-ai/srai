@@ -18,6 +18,7 @@ class HuggingFaceDataset(abc.ABC):
         self,
         path: str,
         version: Optional[str] = None,
+        task: Optional[str] = None,
         numerical_columns: Optional[list[str]] = None,
         categorical_columns: Optional[list[str]] = None,
         target: Optional[str] = None,
@@ -27,6 +28,7 @@ class HuggingFaceDataset(abc.ABC):
         self.numerical_columns = numerical_columns
         self.categorical_columns = categorical_columns
         self.target = target
+        self.task = task
 
     @abc.abstractmethod
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
@@ -82,6 +84,8 @@ class HuggingFaceDataset(abc.ABC):
         Returns:
             tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
         """  # noqa: E501, W505
+        if self.task != "regression":
+            raise ValueError("This split can be performed only on regression task!")
         if target_column is None:
             target_column = self.target
         gdf_ = gdf.copy()
