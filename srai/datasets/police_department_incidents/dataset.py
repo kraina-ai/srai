@@ -22,10 +22,21 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
     online reporting system.
     """
 
+    # TODO: add target and task
     def __init__(self) -> None:
         """Create the dataset."""
         numerical_columns = None
-        categorical_columns = None
+        categorical_columns = [
+            "Incdident Year",
+            "Incident Day of Week",
+            "Incident Category",
+            "Incident Subcategory",
+            "Police District",
+            "Analysis Neighborhood",
+            "Incident Description",
+            "Incident Time",
+            "Incident Code",
+        ]
         super().__init__(
             "kraina/police_department_incidents",
             numerical_columns=numerical_columns,

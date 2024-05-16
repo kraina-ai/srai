@@ -26,8 +26,15 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        numerical_columns = ["Ward", "Community Area", "Year"]
-        categorical_columns = ["Primary Type", "Description", "Location Description"]
+        numerical_columns = ["Ward", "Community Area"]
+        categorical_columns = [
+            "Primary Type",
+            "Description",
+            "Location Description",
+            "Arrest",
+            "Domestic",
+            "Year",
+        ]
         task = None
         super().__init__(
             "kraina/chicago_crime",

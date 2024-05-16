@@ -26,9 +26,10 @@ class FoursquareCheckinsDataset(HuggingFaceDataset):
     (represented by fine-grained venue-categories).
     """
 
+    # TODO: add target and task
     def __init__(self) -> None:
         """Create the dataset."""
-        categorical_columns = None
+        categorical_columns = ["venueCategoryId", "venueCategory", "venueId", "userId"]
         numerical_columns = None
         super().__init__(
             "kraina/foursquare_checkins",
