@@ -4,11 +4,14 @@ import abc
 from typing import Optional
 
 import geopandas as gpd
+import h3
 import numpy as np
 import pandas as pd
+from shapely.geometry import Polygon
 from sklearn.model_selection import train_test_split
 
 from srai.loaders import HuggingFaceLoader
+from srai.regionalizers import H3Regionalizer
 
 
 class HuggingFaceDataset(abc.ABC):
@@ -66,7 +69,7 @@ class HuggingFaceDataset(abc.ABC):
 
         return processed_data
 
-    def train_dev_test_split_bucket(
+    def train_dev_test_split_bucket_points(
         self,
         gdf: gpd.GeoDataFrame,
         target_column: Optional[str] = None,
@@ -105,7 +108,69 @@ class HuggingFaceDataset(abc.ABC):
         )
 
         dev_indices, test_indices = train_test_split(
-            range(len(test_indices)), test_size=0.5, stratify=gdf_.iloc[test_indices].bucket
+            range(len(test_indices)),
+            test_size=0.5,
+            stratify=gdf_.iloc[test_indices].bucket,
+        )
+
+        return gdf_.iloc[train_indices], gdf_.iloc[dev_indices], gdf_.iloc[test_indices]
+
+    def train_dev_test_split_spatial_points(
+        self,
+        gdf: gpd.GeoDataFrame,
+        test_size: float = 0.2,
+        resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
+        resolution_subsampling: int = 1,
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Method to generate train, dev and test split from GeoDataFrame, based on the spatial h3
+        resolution.
+
+        Args:
+            gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
+            test_size (float, optional): Percentage of test set.. Defaults to 0.2.
+            resolution (int, optional): h3 resolution to regionalize data. Defaults to 8.
+            resolution_subsampling (int, optional): h3 resolution difference to subsample \
+                data for stratification. Defaults to 1.
+
+        Raises:
+            ValueError: If type of data is not Points.
+
+        Returns:
+            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
+        """  # noqa: W505, E501, D205
+        if (
+            self.task != "regression"
+        ):  # TODO: zmienic self.task na self.type (np. Point, Linestring)
+            raise ValueError("This split can be performed only on Points data type!")
+        gdf_ = gdf.copy()
+
+        regionalizer = H3Regionalizer(resolution=resolution)
+        regions = regionalizer.transform(gdf_)
+
+        regions.index = regions.index.map(
+            lambda idx: h3.cell_to_parent(idx, resolution - resolution_subsampling)
+        )  # get parent h3 region
+        regions["geometry"] = regions.index.map(
+            lambda idx: Polygon([(lon, lat) for lat, lon in h3.cell_to_boundary(idx)])
+        )  # get localization of h3 region
+
+        joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")
+        joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+        joined_gdf.drop_duplicates(inplace=True)
+
+        train_indices, test_indices = train_test_split(
+            range(len(joined_gdf)),
+            test_size=test_size * 2,  # multiply for dev set also
+            stratify=joined_gdf.h3_index,  # stratify by spatial h3
+        )
+
+        dev_indices, test_indices = train_test_split(
+            range(len(test_indices)),
+            test_size=0.5,
+            stratify=joined_gdf.iloc[
+                test_indices
+            ].h3_index,  # perform spatial stratify (by h3 index)
         )
 
         return gdf_.iloc[train_indices], gdf_.iloc[dev_indices], gdf_.iloc[test_indices]

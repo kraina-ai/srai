@@ -223,7 +223,7 @@ class Vectorizer:
             gdf_ = gdf
         regions = self.regionalizer.transform(gdf_)  # get regions
 
-        joined_gdf = gpd.sjoin(gdf_, regions, how="left", op="within")  # noqa: E501
+        joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")  # noqa: E501
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
 
         if self.numerical_columns is not None:
