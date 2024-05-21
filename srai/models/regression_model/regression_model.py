@@ -40,9 +40,9 @@ class RegressionBaseModel(nn.Module):  # type: ignore
         Args:
             embeddings_size (int): size of input embedding
             linear_sizes (Optional[list[int]], optional): sizes of linear layers inside module. \
-                Defaults to None.
+                Defaults to [500, 1000].
             activation_function (Optional[nn.Module], optional): activation function from torch.nn \
-                Defaults to None.
+                Defaults to ReLU.
         """
         super().__init__()
         if linear_sizes is None:

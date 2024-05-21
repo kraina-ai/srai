@@ -28,10 +28,14 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         """Create the dataset."""
         numerical_columns = None
         categorical_columns = None
+        type = None
+        target = "text_general_code"
         super().__init__(
             "kraina/philadelphia_crime",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
+            target=target,
         )
 
     def _preprocessing(
@@ -71,4 +75,4 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         Returns:
             gpd.GeoDataFrame: Loaded data.
         """
-        return super(hf_token, version)
+        return super().load(hf_token, version)

@@ -29,8 +29,10 @@ class GeolifeDataset(HuggingFaceDataset):
         """Create the dataset."""
         categorical_columns = None
         numerical_columns = None
+        type = "linestring"
         super().__init__(
             "kraina/geolife",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
         )

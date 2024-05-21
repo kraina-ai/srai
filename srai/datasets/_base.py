@@ -21,7 +21,7 @@ class HuggingFaceDataset(abc.ABC):
         self,
         path: str,
         version: Optional[str] = None,
-        task: Optional[str] = None,
+        type: Optional[str] = None,
         numerical_columns: Optional[list[str]] = None,
         categorical_columns: Optional[list[str]] = None,
         target: Optional[str] = None,
@@ -31,7 +31,7 @@ class HuggingFaceDataset(abc.ABC):
         self.numerical_columns = numerical_columns
         self.categorical_columns = categorical_columns
         self.target = target
-        self.task = task
+        self.type = type
 
     @abc.abstractmethod
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
@@ -69,7 +69,7 @@ class HuggingFaceDataset(abc.ABC):
 
         return processed_data
 
-    def train_dev_test_split_bucket_points(
+    def train_dev_test_split_bucket_regression(
         self,
         gdf: gpd.GeoDataFrame,
         target_column: Optional[str] = None,
@@ -87,8 +87,8 @@ class HuggingFaceDataset(abc.ABC):
         Returns:
             tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
         """  # noqa: E501, W505
-        if self.task != "regression":
-            raise ValueError("This split can be performed only on regression task!")
+        if self.type != "point":
+            raise ValueError("This split can be performed only on point data type!")
         if target_column is None:
             target_column = self.target
         gdf_ = gdf.copy()
@@ -139,9 +139,7 @@ class HuggingFaceDataset(abc.ABC):
         Returns:
             tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
         """  # noqa: W505, E501, D205
-        if (
-            self.task != "regression"
-        ):  # TODO: zmienic self.task na self.type (np. Point, Linestring)
+        if self.type != "point":
             raise ValueError("This split can be performed only on Points data type!")
         gdf_ = gdf.copy()
 
@@ -158,6 +156,15 @@ class HuggingFaceDataset(abc.ABC):
         joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         joined_gdf.drop_duplicates(inplace=True)
+
+        if joined_gdf["h3_index"].isnull().sum() != 0:  # handle outliers
+            joined_gdf.loc[joined_gdf["h3_index"].isnull(), "h3_index"] = "fffffffffffffff"
+        # set outlier index fffffffffffffff
+        outlier_indices = joined_gdf["h3_index"].value_counts()
+        outlier_indices = outlier_indices[
+            outlier_indices <= 4
+        ].index  # if only 4 points are in hex, they're outliers
+        joined_gdf.loc[joined_gdf["h3_index"].isin(outlier_indices), "h3_index"] = "fffffffffffffff"
 
         train_indices, test_indices = train_test_split(
             range(len(joined_gdf)),

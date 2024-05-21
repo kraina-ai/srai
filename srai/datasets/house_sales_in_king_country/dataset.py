@@ -25,12 +25,27 @@ class HouseSalesInKingCountryDataset(HuggingFaceDataset):
 
     def __init__(self) -> None:
         """Create the dataset."""
-        numerical_columns = None
-        categorical_columns = None
+        numerical_columns = [
+            "bathrooms",
+            "sqft_living",
+            "sqft_lot",
+            "floors",
+            "condition",
+            "grade",
+            "sqft_above",
+            "sqft_basement",
+            "sqft_living15",
+            "sqft_lot15",
+        ]
+        categorical_columns = ["view", "yr_built", "yr_renovated", "waterfront"]
+        type = "point"
+        target = "price"
         super().__init__(
             "kraina/house_sales_in_king_country",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
+            target=target,
         )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:

@@ -34,8 +34,10 @@ class NYCBikeDataset(HuggingFaceDataset):
         """Create the dataset."""
         numerical_columns = None
         categorical_columns = None
+        type = None
         super().__init__(
             "kraina/nyc_bike",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
         )

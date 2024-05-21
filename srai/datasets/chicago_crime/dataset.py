@@ -35,12 +35,14 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
             "Domestic",
             "Year",
         ]
-        task = None
+        type = "crime_prediction"
+        target = "Primary Type"
         super().__init__(
             "kraina/chicago_crime",
-            task=task,
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
+            target=target,
         )
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:

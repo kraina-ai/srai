@@ -100,7 +100,11 @@ class Vectorizer:
         # self.regions = self.regionalizer.transform(self.gdf)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.scaler = StandardScaler().fit(self.gdf[self.numerical_columns])  # fit to trained data
+        self.scaler = (
+            StandardScaler().fit(self.gdf[self.numerical_columns])
+            if self.numerical_columns is not None
+            else None
+        )  # fit to trained data
         regions = self.regionalizer.transform(self.gdf)
         if embedder_type == "Hex2VecEmbedder":
             self.embedder = Hex2VecEmbedder(embedder_hidden_sizes)
@@ -233,7 +237,8 @@ class Vectorizer:
         else:
             columns_to_add = [self.target_column_name]
 
-        joined_gdf = self._standardize(joined_gdf)
+        if self.scaler is not None:
+            joined_gdf = self._standardize(joined_gdf)
         averages_hex = joined_gdf.groupby("h3_index")[
             columns_to_add
         ].mean()  # compute mean value per hex for all numerical values

@@ -38,8 +38,10 @@ class TDriveDataset(HuggingFaceDataset):
         """Create the dataset."""
         numerical_columns = None
         categorical_columns = None
+        type = None
         super().__init__(
             "kraina/t_drive",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
         )

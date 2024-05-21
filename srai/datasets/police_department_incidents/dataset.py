@@ -37,8 +37,10 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
             "Incident Time",
             "Incident Code",
         ]
+        type = None
         super().__init__(
             "kraina/police_department_incidents",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
         )
