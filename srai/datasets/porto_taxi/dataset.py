@@ -4,12 +4,12 @@ Porto Taxi dataset loader.
 This module contains Porto Taxi Dataset.
 """
 
+from datetime import datetime
 from typing import Optional
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString
-from tqdm.contrib.concurrent import process_map
+from shapely import Point
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.datasets import HuggingFaceDataset
@@ -52,7 +52,9 @@ class PortoTaxiDataset(HuggingFaceDataset):
             gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
-        df[GEOMETRY_COLUMN] = process_map(LineString, df[GEOMETRY_COLUMN], chunksize=1000)
-        gdf = gpd.GeoDataFrame(data=df, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS)
+        df["timestamp"] = df["timestamp"].apply(lambda x: datetime.fromtimestamp(x))
+        df[GEOMETRY_COLUMN] = df.apply(lambda row: Point(row["longitude"], row["latitude"]), axis=1)
+        df.drop(["longitude", "latitude"], axis=1, inplace=True)
 
+        gdf = gpd.GeoDataFrame(data=df, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS)
         return gdf
