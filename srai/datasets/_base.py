@@ -69,14 +69,14 @@ class HuggingFaceDataset(abc.ABC):
 
         return processed_data
 
-    def train_dev_test_split_bucket_regression(
+    def train_test_split_bucket_regression(
         self,
         gdf: gpd.GeoDataFrame,
         target_column: Optional[str] = None,
         test_size: float = 0.2,
         bucket_number: int = 7,
-    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
-        """Method to generate train, dev and test split from GeoDataFrame, based on the target_column values - its statistic.
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
@@ -85,7 +85,7 @@ class HuggingFaceDataset(abc.ABC):
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
 
         Returns:
-            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
+            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Test splits in GeoDataFrames
         """  # noqa: E501, W505
         if self.type != "point":
             raise ValueError("This split can be performed only on point data type!")
@@ -103,27 +103,27 @@ class HuggingFaceDataset(abc.ABC):
 
         train_indices, test_indices = train_test_split(
             range(len(gdf_)),
-            test_size=test_size * 2,  # multiply for dev set also
+            test_size=test_size,  # * 2 multiply for dev set also
             stratify=gdf_.bucket,  # stratify by bucket value
         )
 
-        dev_indices, test_indices = train_test_split(
-            range(len(test_indices)),
-            test_size=0.5,
-            stratify=gdf_.iloc[test_indices].bucket,
-        )
+        # dev_indices, test_indices = train_test_split(
+        #     range(len(test_indices)),
+        #     test_size=0.5,
+        #     stratify=gdf_.iloc[test_indices].bucket,
+        # )
 
-        return gdf_.iloc[train_indices], gdf_.iloc[dev_indices], gdf_.iloc[test_indices]
+        return gdf_.iloc[train_indices], gdf_.iloc[test_indices]  # , gdf_.iloc[dev_indices]
 
-    def train_dev_test_split_spatial_points(
+    def train_test_split_spatial_points(
         self,
         gdf: gpd.GeoDataFrame,
         test_size: float = 0.2,
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
-    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
-        Method to generate train, dev and test split from GeoDataFrame, based on the spatial h3
+        Method to generate train and test split from GeoDataFrame, based on the spatial h3
         resolution.
 
         Args:
@@ -137,7 +137,7 @@ class HuggingFaceDataset(abc.ABC):
             ValueError: If type of data is not Points.
 
         Returns:
-            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits in GeoDataFrames
+            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Test splits in GeoDataFrames
         """  # noqa: W505, E501, D205
         if self.type != "point":
             raise ValueError("This split can be performed only on Points data type!")
@@ -168,16 +168,16 @@ class HuggingFaceDataset(abc.ABC):
 
         train_indices, test_indices = train_test_split(
             range(len(joined_gdf)),
-            test_size=test_size * 2,  # multiply for dev set also
+            test_size=test_size,  # * 2,  # multiply for dev set also
             stratify=joined_gdf.h3_index,  # stratify by spatial h3
         )
 
-        dev_indices, test_indices = train_test_split(
-            range(len(test_indices)),
-            test_size=0.5,
-            stratify=joined_gdf.iloc[
-                test_indices
-            ].h3_index,  # perform spatial stratify (by h3 index)
-        )
+        # dev_indices, test_indices = train_test_split(
+        #     range(len(test_indices)),
+        #     test_size=0.5,
+        #     stratify=joined_gdf.iloc[
+        #         test_indices
+        #     ].h3_index,  # perform spatial stratify (by h3 index)
+        # )
 
-        return gdf_.iloc[train_indices], gdf_.iloc[dev_indices], gdf_.iloc[test_indices]
+        return gdf_.iloc[train_indices], gdf_.iloc[test_indices]  # , gdf_.iloc[dev_indices],

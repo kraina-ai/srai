@@ -35,7 +35,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
             "Domestic",
             "Year",
         ]
-        type = "crime_prediction"
+        type = "point"
         target = "Primary Type"
         super().__init__(
             "kraina/chicago_crime",
