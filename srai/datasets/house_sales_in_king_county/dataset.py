@@ -1,7 +1,7 @@
 """
-House Sales in King Country dataset loader.
+House Sales in King County dataset loader.
 
-This module contains House Sales in King Country Dataset.
+This module contains House Sales in King County Dataset.
 """
 
 from typing import Optional
@@ -13,9 +13,9 @@ from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class HouseSalesInKingCountryDataset(HuggingFaceDataset):
+class HouseSalesInKingCountyDataset(HuggingFaceDataset):
     """
-    House Sales in King Country dataset.
+    House Sales in King County dataset.
 
     This dataset contains house sale prices for King County, which includes Seattle. It includes
     homes sold between May 2014 and May 2015.
@@ -41,7 +41,7 @@ class HouseSalesInKingCountryDataset(HuggingFaceDataset):
         type = "point"
         target = "price"
         super().__init__(
-            "kraina/house_sales_in_king_country",
+            "kraina/house_sales_in_king_county",
             type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,

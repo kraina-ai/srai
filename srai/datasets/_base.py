@@ -75,6 +75,7 @@ class HuggingFaceDataset(abc.ABC):
         target_column: Optional[str] = None,
         test_size: float = 0.2,
         bucket_number: int = 7,
+        random_state: Optional[int] = None,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
@@ -83,6 +84,8 @@ class HuggingFaceDataset(abc.ABC):
             target_column (Optional[str], optional): Target column name. Defaults to "price".
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
+            random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
+                Pass an int for reproducible output across multiple function. Defaults to None.
 
         Returns:
             tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Test splits in GeoDataFrames
@@ -105,6 +108,7 @@ class HuggingFaceDataset(abc.ABC):
             range(len(gdf_)),
             test_size=test_size,  # * 2 multiply for dev set also
             stratify=gdf_.bucket,  # stratify by bucket value
+            random_state=random_state,
         )
 
         # dev_indices, test_indices = train_test_split(
@@ -121,6 +125,7 @@ class HuggingFaceDataset(abc.ABC):
         test_size: float = 0.2,
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
+        random_state: Optional[int] = None,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Method to generate train and test split from GeoDataFrame, based on the spatial h3
@@ -132,6 +137,8 @@ class HuggingFaceDataset(abc.ABC):
             resolution (int, optional): h3 resolution to regionalize data. Defaults to 8.
             resolution_subsampling (int, optional): h3 resolution difference to subsample \
                 data for stratification. Defaults to 1.
+            random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
+                Pass an int for reproducible output across multiple function. Defaults to None.
 
         Raises:
             ValueError: If type of data is not Points.
@@ -170,6 +177,7 @@ class HuggingFaceDataset(abc.ABC):
             range(len(joined_gdf)),
             test_size=test_size,  # * 2,  # multiply for dev set also
             stratify=joined_gdf.h3_index,  # stratify by spatial h3
+            random_state=random_state,
         )
 
         # dev_indices, test_indices = train_test_split(

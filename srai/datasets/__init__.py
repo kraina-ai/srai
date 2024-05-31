@@ -11,7 +11,7 @@ from .chicago_crime.dataset import ChicagoCrimeDataset
 from .foursquare_checkins.dataset import FoursquareCheckinsDataset
 from .geolife.dataset import GeolifeDataset
 from .gowalla.dataset import GowallaDataset
-from .house_sales_in_king_country.dataset import HouseSalesInKingCountryDataset
+from .house_sales_in_king_county.dataset import HouseSalesInKingCountyDataset
 from .nyc_bike.dataset import NYCBikeDataset
 from .philadelphia_crime.dataset import PhiladelphiaCrimeDataset
 from .police_department_incidents.dataset import PoliceDepartmentIncidentsDataset
@@ -26,7 +26,7 @@ __all__ = [
     "FoursquareCheckinsDataset",
     "GeolifeDataset",
     "GowallaDataset",
-    "HouseSalesInKingCountryDataset",
+    "HouseSalesInKingCountyDataset",
     "BrightkiteDataset",
     "PhiladelphiaCrimeDataset",
     "PoliceDepartmentIncidentsDataset",
