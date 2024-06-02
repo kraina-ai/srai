@@ -141,8 +141,8 @@ class HuggingFaceDataset(abc.ABC):
             test_hex_indexes = test["region_id"].unique()
             train = joined_gdf[joined_gdf["h3_index"].isin(train_hex_indexes)]
             test = joined_gdf[joined_gdf["h3_index"].isin(test_hex_indexes)]
-            train.drop(columns=["h3_index"], inplace=True)
-            test.drop(columns=["h3_index"], inplace=True)
+            train = train.drop(columns=["h3_index"])
+            test = test.drop(columns=["h3_index"])
 
         return train, test  # , gdf_.iloc[dev_indices]
 
