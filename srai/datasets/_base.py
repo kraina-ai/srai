@@ -73,6 +73,7 @@ class HuggingFaceDataset(abc.ABC):
         self,
         gdf: gpd.GeoDataFrame,
         target_column: Optional[str] = None,
+        resolution: int = 9,
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
@@ -81,7 +82,9 @@ class HuggingFaceDataset(abc.ABC):
 
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
-            target_column (Optional[str], optional): Target column name. Defaults to "price".
+            target_column (Optional[str], optional): Target column name. If None, split generated on basis of number \
+                of points within a hex ov given resolution.
+            resolution (int, optional): h3 resolution to regionalize data. Defaults to 9.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
             random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
@@ -93,11 +96,26 @@ class HuggingFaceDataset(abc.ABC):
         if self.type != "point":
             raise ValueError("This split can be performed only on point data type!")
         if target_column is None:
-            target_column = self.target
+            # target_column = self.target
+            target_column = "count"
+
         gdf_ = gdf.copy()
         splits = np.linspace(
             0, 1, num=bucket_number + 1
         )  # generate splits to bucket classification
+        if target_column == "count":
+            regionalizer = H3Regionalizer(resolution=resolution)
+            regions = regionalizer.transform(gdf)
+            joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
+            joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+
+            averages_hex = joined_gdf.groupby("h3_index").size().reset_index(name=target_column)
+            gdf_ = regions.merge(
+                averages_hex, how="inner", left_on="region_id", right_on="h3_index"
+            )
+            gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
+            gdf_.index = gdf_["region_id"]
+
         quantiles = gdf_[target_column].quantile(splits)  # compute quantiles
         bins = [quantiles[i] for i in splits]
         gdf_["bucket"] = pd.cut(gdf_[target_column], bins=bins, include_lowest=True).apply(
@@ -116,8 +134,17 @@ class HuggingFaceDataset(abc.ABC):
         #     test_size=0.5,
         #     stratify=gdf_.iloc[test_indices].bucket,
         # )
+        train = gdf_.iloc[train_indices]
+        test = gdf_.iloc[test_indices]
+        if target_column == "count":
+            train_hex_indexes = train["region_id"].unique()
+            test_hex_indexes = test["region_id"].unique()
+            train = joined_gdf[joined_gdf["h3_index"].isin(train_hex_indexes)]
+            test = joined_gdf[joined_gdf["h3_index"].isin(test_hex_indexes)]
+            train.drop(columns=["h3_index"], inplace=True)
+            test.drop(columns=["h3_index"], inplace=True)
 
-        return gdf_.iloc[train_indices], gdf_.iloc[test_indices]  # , gdf_.iloc[dev_indices]
+        return train, test  # , gdf_.iloc[dev_indices]
 
     def train_test_split_spatial_points(
         self,
