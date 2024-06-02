@@ -21,7 +21,7 @@ def mean_absolute_percentage_error(
     Returns:
         np.ndarray: mean absolute percentage error value
     """
-    return np.mean(np.abs((y_true - y_pred) / y_true + epsilon)) * 100
+    return 1 / (y_pred.shape[0]) * np.mean(np.abs((y_true - y_pred) / (y_true + epsilon))) * 100
 
 
 def symmetric_mean_absolute_percentage_error(
@@ -36,4 +36,10 @@ def symmetric_mean_absolute_percentage_error(
     Returns:
         np.ndarray: symmetric mean absolute percentage error value
     """
-    return 2.0 * np.mean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true))) * 100
+    return (
+        1
+        / (y_pred.shape[0])
+        * 2.0
+        * np.mean(np.abs(y_pred - y_true) / (np.abs(y_pred) + np.abs(y_true)))
+        * 100
+    )
