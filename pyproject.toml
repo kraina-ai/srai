@@ -25,7 +25,7 @@ dependencies = [
     "typeguard",
     "requests",
     "h3ronpy>=0.18.0",
-    "osmnx",
+    "osmnx"
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -63,12 +63,14 @@ osm = [
     "overpass",
     "pillow",
     "beautifulsoup4",
-    "quackosm>=0.7.1",
+    "quackosm>=0.7.2",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d", "haversine", "scipy", "spherical-geometry"]
+
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
+
 # pdm add -G plotting <library>
 plotting = [
     "folium",
@@ -77,9 +79,20 @@ plotting = [
     "plotly",
     "kaleido<=0.2.1",
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
+
 # pdm add -G torch <library>
-torch = ["pytorch-lightning", "torch"]
-all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
+torch = [
+    "pytorch-lightning",
+    "torch<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torch; sys_platform != 'darwin' or platform_machine == 'arm64'",
+]
+
+# pdm add -G datasets <library>
+datasets = [
+    "datasets",
+]
+
+all = ["srai[osm,voronoi,gtfs,plotting,torch,datasets]"]
 
 
 [build-system]
@@ -90,7 +103,10 @@ build-backend = "pdm.backend"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = ["bumpver", "types-requests"]
+dev = [
+    "bumpver",
+    "types-requests",
+]
 # pdm add -dG lint <library>
 lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
@@ -105,9 +121,10 @@ test = [
     "pyogrio",
     "six",
     "pytest-snapshot",
+    "python-dotenv",
 ]
 # pdm add -dG visualization <library>
-visualization = ["keplergl", "matplotlib"]
+visualization = ["matplotlib"]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs",
@@ -169,13 +186,13 @@ max-doc-length = 100
 [tool.ruff.format]
 docstring-code-format = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D103"]
+
 [tool.mypy]
 strict = true
 show_column_numbers = true
-disallow_untyped_defs = true
 no_implicit_optional = true
-check_untyped_defs = true
-warn_return_any = true
 ignore_missing_imports = true
 
 [tool.docformatter]
@@ -223,7 +240,6 @@ ignore_packages = [
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
-    'keplergl',                 # uses MIT license, has mismatched license in analysis
     'nvidia-cublas-cu11',       # uses NVIDIA license
     'nvidia-cuda-cupti-cu11',   # uses NVIDIA license
     'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license
@@ -247,5 +263,7 @@ ignore_packages = [
     'nvidia-nccl-cu12',         # uses NVIDIA license
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
-    'mkl',                      # Github Action artifact, uses Intel Simplified Software License
+    'mkl',                      # uses Intel Simplified Software License
+    'tbb',                      # uses Apache-2.0 license
+    'intel-openmp',             # uses BSD 3-Clause and Intel EULA license
 ]
