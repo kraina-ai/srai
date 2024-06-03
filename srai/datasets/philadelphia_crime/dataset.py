@@ -60,7 +60,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: str | None = "incidents_2023"
+        self, hf_token: Optional[str] = None, version: str | None = "res_8"
     ) -> gpd.GeoDataFrame:
         """
         Method to load dataset.
@@ -70,7 +70,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
             version (str, optional): version of a dataset.
-                Available: `incidents_2013` to `incidents_2023`. Defaults to `incidents_2023`.
+                Available: 'res_8', 'res_9, 'res_10. Defaults to `res_8`.
 
         Returns:
             gpd.GeoDataFrame: Loaded data.
