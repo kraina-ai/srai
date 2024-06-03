@@ -60,12 +60,21 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
         return gdf
 
-    @staticmethod
-    def train_dev_test_split_spatial() -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: str | None = "benchmark"
+    ) -> gpd.GeoDataFrame:
         """
-        Train, dev, test split based on spatial approach.
+        Method to load dataset.
+
+        Args:
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available: 'benchmark', 'all'. Defaults to 'benchmark'. Benchmark version comprises\
+                     six cities: Paris, Rome, London, Amsterdam, Melbourne, New York City.
 
         Returns:
-            _type_: NotImplementedError
+            gpd.GeoDataFrame: Loaded data.
         """
-        raise NotImplementedError
+        return super().load(hf_token, version)
