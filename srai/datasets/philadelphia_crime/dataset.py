@@ -28,7 +28,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         """Create the dataset."""
         numerical_columns = None
         categorical_columns = None
-        type = None
+        type = "point"
         target = "text_general_code"
         super().__init__(
             "kraina/philadelphia_crime",
