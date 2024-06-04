@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Changed H3 regionalization logic from `IntersectsBoundary` to `Covers` to properly assign H3 regions to geometries smaller than an H3 cell
+
 ## [0.7.4] - 2024-05-05
 
 ### Added

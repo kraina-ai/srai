@@ -1,5 +1,6 @@
 """H3 shapely conversion tests."""
 
+from pathlib import Path
 from typing import Any, Callable
 from unittest import TestCase
 
@@ -88,3 +89,16 @@ def test_shapely_geometry_to_h3_buffered(
         geometry=parsed_geometry, h3_resolution=resolution, buffer=True
     )
     ut.assertCountEqual(h3_cells, expected_h3_cells)
+
+
+def test_full_coverage() -> None:
+    """Test if h3 coverage works if geometry is smaller than single cell."""
+    gdf = gpd.read_file(Path(__file__).parent / "test_files" / "buildings.geojson")
+
+    intersections = {}
+    for geom, osm_id in zip(gdf.geometry, gdf.id):
+        intersections[osm_id] = shapely_geometry_to_h3(geom, h3_resolution=10)
+
+    assert all(len(value) > 0 for value in intersections.values())
+    assert len(intersections["way/843232154"]) == 1
+    assert "8a2ab5760167fff" in intersections["way/843232154"]

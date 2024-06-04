@@ -62,9 +62,7 @@ def shapely_geometry_to_h3(
     else:
         wkb = [geometry.wkb]
 
-    containment_mode = (
-        ContainmentMode.IntersectsBoundary if buffer else ContainmentMode.ContainsCentroid
-    )
+    containment_mode = ContainmentMode.Covers if buffer else ContainmentMode.ContainsCentroid
     h3_indexes = wkb_to_cells(
         wkb, resolution=h3_resolution, containment_mode=containment_mode, flatten=True
     ).unique()
