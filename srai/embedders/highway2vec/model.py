@@ -60,7 +60,7 @@ class Highway2VecModel(Model):
         Args:
             x (torch.Tensor): Input tensor.
         """
-        z: "torch.Tensor" = self.encoder(x)
+        z: torch.Tensor = self.encoder(x)
         return z
 
     def training_step(self, batch: "torch.Tensor", batch_idx: int) -> "torch.Tensor":
