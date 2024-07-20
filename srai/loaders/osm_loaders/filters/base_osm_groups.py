@@ -11,7 +11,7 @@ References:
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter
 
 BASE_OSM_GROUPS_FILTER: GroupedOsmTagsFilter = {
-    "water": {"natual": ["water", "bay", "beach", "coastline"], "waterway": ["riverbank"]},
+    "water": {"natural": ["water", "bay", "beach", "coastline"], "waterway": ["riverbank"]},
     "aerialway": {
         "aerialway": [
             "cable_car",
