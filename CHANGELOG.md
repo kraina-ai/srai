@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Changed a typo in the `BASE_OSM_GROUPS_FILTER`.
+
 ## [0.7.5] - 2024-06-04
 
 ### Fixed
