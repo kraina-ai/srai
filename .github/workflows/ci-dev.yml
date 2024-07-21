@@ -58,8 +58,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-      - name: Install required osmium dependencies
-        run: sudo apt-get install build-essential cmake libboost-dev libexpat1-dev zlib1g-dev libbz2-dev
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
@@ -68,6 +66,8 @@ jobs:
             ${{ runner.os }}-pip-dev-
       - name: Install pdm
         run: pip install pdm
+      - name: Regenerate lock with environment markers
+        run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
         run: pdm export --no-default -G docs -G visualization -f requirements -o requirements.txt
       - name: Install dependencies
