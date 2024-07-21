@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by @starsep).
+- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep)).
 
 ## [0.7.5] - 2024-06-04
 
