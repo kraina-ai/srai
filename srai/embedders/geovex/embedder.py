@@ -8,6 +8,8 @@ References:
 """
 
 from typing import Any, Optional, TypeVar, Union
+import json
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -259,3 +261,45 @@ class GeoVexEmbedder(CountEmbedder):
             raise ValueError(
                 f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."
             )
+
+    def save(self, path: Union[str, Any]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Union[str, Any]): Path to the directory.
+        """
+        import torch
+
+        # target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
+        # batch_size: Optional[int] = 32,
+        # neighbourhood_radius: int = 4,
+        # convolutional_layers: int = 2,
+        # embedding_size: int = 32,
+        # convolutional_layer_size: int = 256,
+        embedder_config = {
+            "target_features": self.expected_output_features.to_json(),
+            "batch_size": self._batch_size,
+            "neighbourhood_radius": self._r,
+            "convolutional_layers": self._convolutional_layers,
+            "embedding_size": self._embedding_size,
+            "convolutional_layer_size": self._convolutional_layer_size,
+        }
+        self._save(path, embedder_config)
+    
+    def _save(self, path: Union[str, Any], embedder_config: dict[str, Any]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        self._check_is_fitted()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        self._model.save(path / "model.pt")  # type: ignore
+
+        config = {
+            "model_config": self._model.get_config(),  # type: ignore
+            "embedder_config": embedder_config,
+        }
+        with (path / "config.json").open("w") as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)

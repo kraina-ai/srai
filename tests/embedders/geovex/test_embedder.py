@@ -104,3 +104,11 @@ def test_embedder() -> None:
         print(result_df.head())
         print(expected.head())
         assert_frame_equal(result_df, expected, atol=1e-1)
+
+        # test that model can be saved and loaded
+
+        embedder.save("test_model.pt")
+        # check file was successfully saved and can be loaded
+        embedder.load("test_model.pt")
+        os.remove("test_model.pt")
+
