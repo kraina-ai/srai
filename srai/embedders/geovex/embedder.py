@@ -17,7 +17,7 @@ import pandas as pd
 
 from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
-from srai.embedders import CountEmbedder
+from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
@@ -286,7 +286,7 @@ class GeoVexEmbedder(CountEmbedder):
             "convolutional_layer_size": self._convolutional_layer_size,
         }
         self._save(path, embedder_config)
-    
+   
     def _save(self, path: Union[str, Any], embedder_config: dict[str, Any]) -> None:
         if isinstance(path, str):
             path = Path(path)
@@ -301,5 +301,41 @@ class GeoVexEmbedder(CountEmbedder):
             "model_config": self._model.get_config(),  # type: ignore
             "embedder_config": embedder_config,
         }
+        config["model_config"]["radius"] = config["model_config"]["R"]
+        config["model_config"]["learning_rate"] = config["model_config"]["lr"]
+        del config["model_config"]["R"]
+        del config["model_config"]["lr"]
+        del config["model_config"]["M"]
+
         with (path / "config.json").open("w") as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
+
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder":
+        """
+        Load the model from a directory.
+
+        Args:
+            path (Union[Path, str]): Path to the directory.
+            model_module (type[ModelT]): Model class.
+
+        Returns:
+            GeoVexEmbedder: GeoVexEmbedder object.
+        """
+        return cls._load(path, GeoVexModel)
+
+    @classmethod
+    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "GeoVexEmbedder":
+        if isinstance(path, str):
+            path = Path(path)
+        with (path / "config.json").open("r") as f:
+            config = json.load(f)
+
+        config["embedder_config"]["target_features"] = json.loads(config["embedder_config"]["target_features"])
+        embedder = cls(**config["embedder_config"])
+        model_path = path / "model.pt"
+        model = model_module.load(model_path, **config["model_config"])
+        embedder._model = model
+        embedder._is_fitted = True
+        return embedder

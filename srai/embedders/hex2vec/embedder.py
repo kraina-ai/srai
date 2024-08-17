@@ -258,7 +258,12 @@ class Hex2VecEmbedder(CountEmbedder):
 
         with (path / "config.json").open("r") as f:
             config = json.load(f)
+        print("_load => config")
+        print(config)
         embedder = cls(**config["embedder_config"])
+        print("_load => embedder")
+        print(embedder)
+        print("====================")
         model_path = path / "model.pt"
         model = model_module.load(model_path, **config["model_config"])
         embedder._model = model
