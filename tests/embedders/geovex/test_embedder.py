@@ -110,7 +110,6 @@ def test_embedder_save_load() -> None:
     """Test GeoVexEmbedder on predefined test cases."""
     test_files_path = Path(__file__).parent / "test_files"
     for test_case in PREDEFINED_TEST_CASES:
-        # 
         name = test_case["test_case_name"]
         seed = test_case["seed"]
         radius: int = test_case["model_radius"]  # type: ignore
@@ -162,13 +161,15 @@ def test_embedder_save_load() -> None:
         assert_frame_equal(result_df, expected, atol=1e-1)
 
         # test that model can be saved and loaded
-
+        # save
         embedder.save("test_model.pt")
-        # check file was successfully saved and can be loaded
+        # load
         loaded_embedder = GeoVexEmbedder.load("test_model.pt")
         # verify that the model was loaded correctly
+        # TODO: fix this test - currently it fails
         # assert_frame_equal(result_df, embedder.transform(regions_gdf, features_gdf, joint_gdf), atol=1e-1)
         # check type of model
         assert isinstance(loaded_embedder._model, GeoVexModel)
-
-        os.remove("test_model.pt")
+        # force deletion of the directory test_model.pt
+        from shutil import rmtree
+        rmtree("test_model.pt")

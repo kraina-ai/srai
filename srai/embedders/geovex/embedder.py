@@ -296,9 +296,13 @@ class GeoVexEmbedder(CountEmbedder):
         path.mkdir(parents=True, exist_ok=True)
 
         self._model.save(path / "model.pt")  # type: ignore
+        # print(self._model.get_config())
+        # merge in  _convolutional_layer_size to model config
+        model_config = self._model.get_config()
+        model_config["conv_layer_size"] = embedder_config["convolutional_layer_size"]
 
         config = {
-            "model_config": self._model.get_config(),  # type: ignore
+            "model_config": model_config,  # type: ignore
             "embedder_config": embedder_config,
         }
         config["model_config"]["radius"] = config["model_config"]["R"]
