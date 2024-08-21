@@ -162,11 +162,13 @@ def test_embedder_save_load() -> None:
             learning_rate=0.001,
         )
 
+        tmp_models_dir = Path(__file__).parent / "test_files" / "tmp_models"
+
         # test model saving functionality
-        embedder.save("test_model.pt")
+        embedder.save(tmp_models_dir / "test_model")
 
         # load the saved model
-        loaded_embedder = GeoVexEmbedder.load("test_model.pt")
+        loaded_embedder = GeoVexEmbedder.load(tmp_models_dir / "test_model")
 
         # get embeddings from the loaded model
         loaded_result_df = loaded_embedder.fit_transform(
@@ -183,6 +185,9 @@ def test_embedder_save_load() -> None:
 
         # check type of model
         assert isinstance(loaded_embedder._model, GeoVexModel)
-        # force deletion of the directory test_model.pt
-        from shutil import rmtree
-        rmtree("test_model.pt")
+        
+        # safely clean up tmp_models directory
+        os.remove(tmp_models_dir / "test_model" / "model.pt")
+        os.remove(tmp_models_dir / "test_model" / "config.json")
+        os.rmdir(tmp_models_dir / "test_model")
+        os.rmdir(tmp_models_dir)
