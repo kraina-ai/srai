@@ -590,5 +590,5 @@ class GeoVexModel(Model):
             "conv_layers": self.conv_layers,
             "emb_size": self.emb_size,
             "learning_rate": self.lr,
-            "conv_layer_size": self.conv_layer_size
+            "conv_layer_size": self.conv_layer_size,
         }

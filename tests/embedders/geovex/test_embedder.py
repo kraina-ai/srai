@@ -177,7 +177,7 @@ def test_embedder_save_load() -> None:
             joint_gdf,
             neighbourhood,
             trainer_kwargs=TRAINER_KWARGS,
-            learning_rate=0.001
+            learning_rate=0.001,
         )
 
         # verify that the model was loaded correctly
@@ -185,7 +185,7 @@ def test_embedder_save_load() -> None:
 
         # check type of model
         assert isinstance(loaded_embedder._model, GeoVexModel)
-        
+
         # safely clean up tmp_models directory
         os.remove(tmp_models_dir / "test_model" / "model.pt")
         os.remove(tmp_models_dir / "test_model" / "config.json")
