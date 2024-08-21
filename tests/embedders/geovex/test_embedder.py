@@ -107,28 +107,32 @@ def test_embedder() -> None:
 
 
 def test_embedder_save_load() -> None:
-    """Test GeoVexEmbedder on predefined test cases."""
+    # Test GeoVexEmbedder model saving and loading.
     test_files_path = Path(__file__).parent / "test_files"
     for test_case in PREDEFINED_TEST_CASES:
         name = test_case["test_case_name"]
         seed = test_case["seed"]
         radius: int = test_case["model_radius"]  # type: ignore
-        print(name, seed)
 
-        expected = pd.read_parquet(test_files_path / f"{name}_result.parquet")
+        # Load  data from parquet files
         regions_gdf = gpd.read_parquet(test_files_path / f"{name}_regions.parquet")
         features_gdf = gpd.read_parquet(test_files_path / f"{name}_features.parquet")
         joint_gdf = pd.read_parquet(test_files_path / f"{name}_joint.parquet")
+
+        # Set seed for reproducibility
         seed_everything(seed, workers=True)
         os.environ["PYTHONHASHSEED"] = str(seed)
         torch.use_deterministic_algorithms(True)
 
+        # Initialize neighbourhood and target features for the embedder
         neighbourhood = H3Neighbourhood(regions_gdf)
         target_features = [
             f"{st}_{t}"
             for st in test_case["tags"]  # type: ignore
             for t in test_case["tags"][st]  # type: ignore
         ]
+
+        # Initialize GeoVexEmbedder with the given parameters
         embedder = GeoVexEmbedder(
             target_features=target_features,
             batch_size=10,
@@ -138,12 +142,14 @@ def test_embedder_save_load() -> None:
             convolutional_layer_size=test_case["convolutional_layer_size"],  # type: ignore
         )
 
+        # Prepare dataset for the embedder
         counts_df, _, _ = embedder._prepare_dataset(
             regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
         )
 
         embedder._prepare_model(counts_df, 0.001)
 
+        # Initialize model parameters to a constant value for reproducibility
         for _, param in cast(GeoVexModel, embedder._model).named_parameters():
             param.data.fill_(0.01)
 
@@ -155,22 +161,26 @@ def test_embedder_save_load() -> None:
             trainer_kwargs=TRAINER_KWARGS,
             learning_rate=0.001,
         )
-        #result_df.columns = result_df.columns.astype(str)
-        #print(result_df.head())
-        #print(expected.head())
-        #assert_frame_equal(result_df, expected, atol=1e-1)
 
-        # test that model can be saved and loaded
-        # save
+        # test model saving functionality
         embedder.save("test_model.pt")
-        # load
+
+        # load the saved model
         loaded_embedder = GeoVexEmbedder.load("test_model.pt")
+
+        # get embeddings from the loaded model
+        loaded_result_df = loaded_embedder.fit_transform(
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            trainer_kwargs=TRAINER_KWARGS,
+            learning_rate=0.001
+        )
+
         # verify that the model was loaded correctly
-        # TODO: fix this test - currently it fails
-        loaded_result_df = loaded_embedder.fit_transform(regions_gdf, features_gdf, joint_gdf, neighbourhood, trainer_kwargs=TRAINER_KWARGS, learning_rate=0.001)
-        print(loaded_result_df.head())
-        print(result_df.head())
         assert_frame_equal(result_df, loaded_result_df, atol=1e-1)
+
         # check type of model
         assert isinstance(loaded_embedder._model, GeoVexModel)
         # force deletion of the directory test_model.pt

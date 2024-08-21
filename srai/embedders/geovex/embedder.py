@@ -271,6 +271,7 @@ class GeoVexEmbedder(CountEmbedder):
         """
         import torch
 
+        # embedder_config must match the constructor signature:
         # target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
         # batch_size: Optional[int] = 32,
         # neighbourhood_radius: int = 4,
@@ -295,21 +296,15 @@ class GeoVexEmbedder(CountEmbedder):
 
         path.mkdir(parents=True, exist_ok=True)
 
+        # save model and config
         self._model.save(path / "model.pt")  # type: ignore
-        # print(self._model.get_config())
-        # merge in  _convolutional_layer_size to model config
+        # combine model config and embedder config
         model_config = self._model.get_config()
-        model_config["conv_layer_size"] = embedder_config["convolutional_layer_size"]
 
         config = {
             "model_config": model_config,  # type: ignore
             "embedder_config": embedder_config,
         }
-        config["model_config"]["radius"] = config["model_config"]["R"]
-        config["model_config"]["learning_rate"] = config["model_config"]["lr"]
-        del config["model_config"]["R"]
-        del config["model_config"]["lr"]
-        del config["model_config"]["M"]
 
         with (path / "config.json").open("w") as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
