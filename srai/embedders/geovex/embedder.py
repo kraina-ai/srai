@@ -297,7 +297,8 @@ class GeoVexEmbedder(CountEmbedder):
         # save model and config
         self._model.save(path / "model.pt")  # type: ignore
         # combine model config and embedder config
-        model_config = self._model.get_config()
+        if self._model is not None:
+            model_config = self._model.get_config()
 
         config = {
             "model_config": model_config,
