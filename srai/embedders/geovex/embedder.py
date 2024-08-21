@@ -7,9 +7,9 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
-from typing import Any, Optional, TypeVar, Union
 import json
 from pathlib import Path
+from typing import Any, Optional, TypeVar, Union
 
 import geopandas as gpd
 import numpy as np
@@ -269,8 +269,6 @@ class GeoVexEmbedder(CountEmbedder):
         Args:
             path (Union[str, Any]): Path to the directory.
         """
-        import torch
-
         # embedder_config must match the constructor signature:
         # target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
         # batch_size: Optional[int] = 32,
@@ -287,7 +285,7 @@ class GeoVexEmbedder(CountEmbedder):
             "convolutional_layer_size": self._convolutional_layer_size,
         }
         self._save(path, embedder_config)
-   
+
     def _save(self, path: Union[str, Any], embedder_config: dict[str, Any]) -> None:
         if isinstance(path, str):
             path = Path(path)
@@ -308,7 +306,6 @@ class GeoVexEmbedder(CountEmbedder):
 
         with (path / "config.json").open("w") as f:
             json.dump(config, f, ensure_ascii=False, indent=4)
-
 
     @classmethod
     def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder":
@@ -331,7 +328,9 @@ class GeoVexEmbedder(CountEmbedder):
         with (path / "config.json").open("r") as f:
             config = json.load(f)
 
-        config["embedder_config"]["target_features"] = json.loads(config["embedder_config"]["target_features"])
+        config["embedder_config"]["target_features"] = json.loads(
+            config["embedder_config"]["target_features"]
+        )
         embedder = cls(**config["embedder_config"])
         model_path = path / "model.pt"
         model = model_module.load(model_path, **config["model_config"])
