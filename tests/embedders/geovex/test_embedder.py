@@ -107,7 +107,7 @@ def test_embedder() -> None:
 
 
 def test_embedder_save_load() -> None:
-    # Test GeoVexEmbedder model saving and loading.
+    """Test GeoVexEmbedder model saving and loading."""
     test_files_path = Path(__file__).parent / "test_files"
     for test_case in PREDEFINED_TEST_CASES:
         name = test_case["test_case_name"]
