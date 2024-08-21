@@ -577,12 +577,12 @@ class GeoVexModel(Model):
         return [opt]
 
     # override get_config to return the model configuration
-    def get_config(self) -> dict[str, int]:
+    def get_config(self) -> dict[str, int | float]:
         """
         Get the model configuration.
 
         Returns:
-            Dict[str, int]: The model configuration.
+            Dict[str, int | float]: The model configuration.
         """
         return {
             "k_dim": self.k_dim,

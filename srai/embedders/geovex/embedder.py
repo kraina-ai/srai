@@ -300,7 +300,7 @@ class GeoVexEmbedder(CountEmbedder):
         model_config = self._model.get_config()
 
         config = {
-            "model_config": model_config,  # type: ignore
+            "model_config": model_config,
             "embedder_config": embedder_config,
         }
 
