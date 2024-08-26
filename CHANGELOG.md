@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2024-08-26
+
 ### Fixed
 
 - Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep)).
@@ -290,7 +292,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.5...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.6...HEAD
+
+[0.7.6]: https://github.com/kraina-ai/srai/compare/0.7.5...0.7.6
 
 [0.7.5]: https://github.com/kraina-ai/srai/compare/0.7.4...0.7.5
 
