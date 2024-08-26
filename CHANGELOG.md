@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep)).
 
+### Added
+
+- Added methods for saving and loading fittable `GeoVexEmbedder` (implemented by [@sabman](https://github.com/sabman) and [@mhassanch](https://github.com/mhassanch)). #457
+
 ## [0.7.5] - 2024-06-04
 
 ### Fixed

@@ -7,6 +7,8 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
+import json
+from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 import geopandas as gpd
@@ -15,7 +17,7 @@ import pandas as pd
 
 from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
-from srai.embedders import CountEmbedder
+from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
@@ -259,3 +261,79 @@ class GeoVexEmbedder(CountEmbedder):
             raise ValueError(
                 f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."
             )
+
+    def save(self, path: Union[str, Any]) -> None:
+        """
+        Save the model to a directory.
+
+        Args:
+            path (Union[str, Any]): Path to the directory.
+        """
+        # embedder_config must match the constructor signature:
+        # target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
+        # batch_size: Optional[int] = 32,
+        # neighbourhood_radius: int = 4,
+        # convolutional_layers: int = 2,
+        # embedding_size: int = 32,
+        # convolutional_layer_size: int = 256,
+        embedder_config = {
+            "target_features": self.expected_output_features.to_json(),
+            "batch_size": self._batch_size,
+            "neighbourhood_radius": self._r,
+            "convolutional_layers": self._convolutional_layers,
+            "embedding_size": self._embedding_size,
+            "convolutional_layer_size": self._convolutional_layer_size,
+        }
+        self._save(path, embedder_config)
+
+    def _save(self, path: Union[str, Any], embedder_config: dict[str, Any]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        self._check_is_fitted()
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        # save model and config
+        self._model.save(path / "model.pt")  # type: ignore
+        # combine model config and embedder config
+        model_config = self._model.get_config()  # type: ignore
+
+        config = {
+            "model_config": model_config,
+            "embedder_config": embedder_config,
+        }
+
+        with (path / "config.json").open("w") as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+
+    @classmethod
+    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder":
+        """
+        Load the model from a directory.
+
+        Args:
+            path (Union[Path, str]): Path to the directory.
+            model_module (type[ModelT]): Model class.
+
+        Returns:
+            GeoVexEmbedder: GeoVexEmbedder object.
+        """
+        return cls._load(path, GeoVexModel)
+
+    @classmethod
+    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "GeoVexEmbedder":
+        if isinstance(path, str):
+            path = Path(path)
+        with (path / "config.json").open("r") as f:
+            config = json.load(f)
+
+        config["embedder_config"]["target_features"] = json.loads(
+            config["embedder_config"]["target_features"]
+        )
+        embedder = cls(**config["embedder_config"])
+        model_path = path / "model.pt"
+        model = model_module.load(model_path, **config["model_config"])
+        embedder._model = model
+        embedder._is_fitted = True
+        return embedder

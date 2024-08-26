@@ -8,7 +8,7 @@ References:
 """
 
 import math
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Union
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
@@ -439,6 +439,8 @@ class GeoVexModel(Model):
         self.R = radius
         self.lr = learning_rate
         self.emb_size = emb_size
+        self.conv_layer_size = conv_layer_size
+        self.conv_layers = conv_layers
 
         # input size is 2R + 2
         self.M = get_shape(self.R)
@@ -573,3 +575,20 @@ class GeoVexModel(Model):
             lr=self.lr,
         )
         return [opt]
+
+    # override get_config to return the model configuration
+    def get_config(self) -> dict[str, Union[int, float]]:
+        """
+        Get the model configuration.
+
+        Returns:
+            Dict[str, Union[int, float]]: The model configuration.
+        """
+        return {
+            "k_dim": self.k_dim,
+            "radius": self.R,
+            "conv_layers": self.conv_layers,
+            "emb_size": self.emb_size,
+            "learning_rate": self.lr,
+            "conv_layer_size": self.conv_layer_size,
+        }
