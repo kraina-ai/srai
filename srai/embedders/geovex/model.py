@@ -8,7 +8,7 @@ References:
 """
 
 import math
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Union
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
@@ -577,12 +577,12 @@ class GeoVexModel(Model):
         return [opt]
 
     # override get_config to return the model configuration
-    def get_config(self) -> dict[str, int | float]:
+    def get_config(self) -> dict[str, Union[int, float]]:
         """
         Get the model configuration.
 
         Returns:
-            Dict[str, int | float]: The model configuration.
+            Dict[str, Union[int, float]]: The model configuration.
         """
         return {
             "k_dim": self.k_dim,
