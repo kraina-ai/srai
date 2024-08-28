@@ -3,7 +3,7 @@ on: [workflow_dispatch, workflow_call]
 
 jobs:
   run-tests-newest:
-    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions
+    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (newest dependencies)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -20,6 +20,7 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      COLUMNS: 120
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python ${{ matrix.python-version }}
@@ -29,27 +30,20 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate lock with newest dependencies
-        run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -dG:all
+        run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -G osm -G voronoi -G gtfs -G plotting -G torch -dG test
       - name: Install srai and tests dependencies
-        run: pdm install --lockfile pdm.newest.lock -dG:all
+        run: pdm install --lockfile pdm.newest.lock -G osm -G voronoi -G gtfs -G plotting -G torch -dG test
       - name: Run tests with pytest
         run: pdm run pytest -v --durations=20 tests
 
   run-tests-oldest:
-    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions
+    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (oldest dependencies)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-        include:
-          - os: macos-latest
-            python-version: "3.12"
-          - os: macos-13
-            python-version: "3.12"
-          - os: windows-latest
-            python-version: "3.12"
+        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        python-version: ["3.9"]
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -62,8 +56,8 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate lock with oldest dependencies
-        run: pdm lock --lockfile pdm.oldest.lock --strategy no_cross_platform,direct_minimal_versions -dG:all
+        run: pdm lock --lockfile pdm.oldest.lock --strategy no_cross_platform,direct_minimal_versions -G osm -G voronoi -G gtfs -G plotting -G torch -dG test
       - name: Install srai and tests dependencies
-        run: pdm install --lockfile pdm.oldest.lock -dG:all
+        run: pdm install --lockfile pdm.oldest.lock -G osm -G voronoi -G gtfs -G plotting -G torch -dG test
       - name: Run tests with pytest
         run: pdm run pytest -v --durations=20 tests
