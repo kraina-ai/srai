@@ -103,6 +103,7 @@ class Hex2VecEmbedder(CountEmbedder):
         batch_size: int = 32,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None
     ) -> None:
         """
         Fit the model to the data.
@@ -141,7 +142,13 @@ class Hex2VecEmbedder(CountEmbedder):
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
         )
         dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        dataloader_kwargs = dataloader_kwargs or {}
+        if "batch_size" not in dataloader_kwargs:
+            dataloader_kwargs["batch_size"] = batch_size
+        if "shuffle" not in dataloader_kwargs:
+            dataloader_kwargs["shuffle"] = True
+
+        dataloader = DataLoader(dataset, **dataloader_kwargs)
 
         trainer = pl.Trainer(**trainer_kwargs)
         trainer.fit(self._model, dataloader)
@@ -157,6 +164,7 @@ class Hex2VecEmbedder(CountEmbedder):
         batch_size: int = 32,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit the model to the data and return the embeddings.
@@ -192,6 +200,7 @@ class Hex2VecEmbedder(CountEmbedder):
             batch_size,
             learning_rate,
             trainer_kwargs,
+            dataloader_kwargs
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
 
