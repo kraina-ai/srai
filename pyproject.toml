@@ -17,7 +17,7 @@ dependencies = [
     "numpy>=1.26.0",
     "pyfunctional>=1.0.0",
     "pyarrow>=13.0.0",
-    "topojson",
+    "topojson>=1.6",
     "tqdm>=4.42.0",
     "s2>=0.1.9",
     "typeguard>=3.0.0",
