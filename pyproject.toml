@@ -77,7 +77,7 @@ plotting = [
     "kaleido<=0.2.1",
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
-torch = ["pytorch-lightning>=1.0.0", "torch"]
+torch = ["pytorch-lightning>=2.0.0", "torch"]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
 
 
@@ -94,7 +94,7 @@ dev = ["bumpver", "types-requests"]
 lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
 test = [
-    "pytest>=7.0.0",
+    "pytest>=8.0.0",
     "tox-pdm>=0.7.2",
     "pytest-mock>=3.3.0",
     "requests-mock>=1.12.1",
