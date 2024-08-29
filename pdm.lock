@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:0020dfc002cbdeb9a4b62ff389a1e3c391b41f83eea96e7224c3086c6013040a"
+content_hash = "sha256:1f2ac5f52128156ec808dcb7127670c5956e46f82844350fcb77a10beb47ea20"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -4650,39 +4650,40 @@ files = [
 
 [[package]]
 name = "spherical-geometry"
-version = "1.3.1"
+version = "1.3.2"
 requires_python = ">=3.9"
 summary = "Python based tools for spherical geometry"
 groups = ["all", "voronoi"]
 dependencies = [
     "astropy>=5.0.4",
-    "numpy>=1.20",
+    "numpy>=1.23",
 ]
 files = [
-    {file = "spherical_geometry-1.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:93e64e538fcb814ce821cd1a05e7e13b5dde4fab3e14779e18cac34f1b650298"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6394224c2938b9d3bb5068a5d58bb6a37315cdbe64917e54b7f35b78ac714c87"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:302f8ea5ffa2cd10d109118398c2623c606fe0f94fc769106a11c272d8fdc122"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:f232b15777167a9904a067325f8ef4c1399a358e8e5c6298abd5cb2616aa3afd"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-win32.whl", hash = "sha256:c2bdbbdbba8a5a2301436b50f25f21d34c84148939b59d1275cf5e66f6c59f7f"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:2e3f5bf88484ca0023e9bfdbab8668b20f3cc2c27828b2c1e8ca986ecbbc22f5"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:e6d1d9296425783da61fe35edcc7eafe3e2ac7c3a33f78e97d7facc2f8455d72"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d26c9d9025147f35c4037510443699bcd97e0dc4e9d724d33df8982cabc90b6e"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a37a6d2bcc8c934c18a852ec46f2c57e80100552bccfe92607ef8ad6e157690c"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:9c3e98f938d50ced4a2cc45f80e20fe48e8cba55f1cd3097fedbdd30b59fae63"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-win32.whl", hash = "sha256:9352c0d4e346f790ff246c62f1e8ec45bef3dbfab571b89714b2254215398ac1"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:8830c6aec19a6dd08ccfca3c8124410abfb91ffde21a9864e72457aff8a42a97"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:e1720436661064f27412e282f212e35152a8cde695af354baff18cd88eaf3381"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fc000c80c3d95c0fec2d67276f5cdbdfce66925dd32d8758acbc3b366d01ba43"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7d500cd3c062fda38c379b482f1a0a24f067ad13d3012aaa375f20d5f16e6cff"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:69ff867b910df3316e8757db4483fbb83033fbedb4bbfeeb71d368ae070c9979"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-win32.whl", hash = "sha256:54f29a04420184f78d83e9e45be040365c8b62496f22fdd89332a17193c357ae"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:12100c3f48c314fdf787a059d2f974ecada89f025c7f84ac36cd4f2a75624268"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:705ef94de2d531192907536deb7549c4d382a8645803940bbe5d0fe2188a5702"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:d0630d1e546647ddcd4fcabe318e8f32124ffa7a43394cf936e82c89a83919e4"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:12505d745796f51060c8e43a6016c099fd8ea6c846fb47938920d29f03e1691b"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:72f519d035671d7ccc199c372f098a53fdff473fb0c8ab1a41d8f5992c5c90e4"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-win32.whl", hash = "sha256:cb8f7c26e3d7aa03131b65f33ae966167506aec8f6efbf7653960041a5f39786"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:b1ffef47e76b2edeb44f3a3a93edeb524329d81ae9c19603d6c3cff40ebd656c"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:06cb0965aed16f4247dee04df5a177cff24076b40bf752fc3c6885d2f0006185"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b87668f88f0a16cff4061f8d4d6099b800316888e27824db3d1892fb4d0b97fb"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:005e2e529ed6c21609c77fed787efbd5731fe0f86d729fb6ed9f1ac9ae7ab2b7"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:0c09f8caba44873398dbe1a5dfbefd9d70e17140125593ec9ec4eef753f2f111"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-win32.whl", hash = "sha256:06cd418fb475fb6a51b2b62dbc35a5e828ae00fd6e7f1c08dc902f8a97faa52a"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-win_amd64.whl", hash = "sha256:1513841201510a071168cb6bbaaf03a5054878d373a3f8fe9a3aa38c4edf4b63"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:03e010efaa470d708201262cf8f1ac94b26775e8e039f6ea77559c798a3cf697"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:0e27786b7509aa16f15809a1ed2d2fcca7570a65e7376c5b867bc0c726557322"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6ebefd216e64bfdbe150036c117593b5cb22f75ecf552598e35aa3cd1b822310"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:6b125ac4dc9ed8cab0325a84b6d2c676fc3a32c9f8c1d5055a053c30413f67fb"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-win32.whl", hash = "sha256:e3c01f2074c2b36f803311180d1a78b914bb30283f6eea1644c93928e7782c20"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-win_amd64.whl", hash = "sha256:54d178c3cddc271ae5e0f1e4c49cd99e22358f8047a12804fcf201979172de9c"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:ce5ceef9902e2564d44b5c22c11a7e4590918acf149c06f99611e10b6a76a3f7"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5173f56001b8721181adc12b377898c58afca76159937a3391aafcfc756d2a05"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:728e1cda8ad1ebebf60cbb48d763946813169133f12640bc1c11b49ea838b8db"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:8fd68dffe3fc33ea6e1c50730ed59ffcd433d609a51daf599fd4ec1848652901"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-win32.whl", hash = "sha256:0c59cae46ede5a0c1352edebffef8651620c6ab2e863f1dd35043b74ac298b77"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-win_amd64.whl", hash = "sha256:a3090d10f67ad0cb9497fe2517028c7241de32e97e5d6cf5042d7cd85a2db4c2"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:accab32117fdaf7aa94b3ffe7568b9f5fe9cb0d519a59d15f44ddab6030a277e"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:b0a1ff01e0c7f2f749c0c038ba91fa0096069ae243febda2c980f455fb99e886"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8c6e34806b25f965e4564ef11e4c487df6afc71e25605772e2d56244cc57cb62"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:bc9e125bd75014f8ad6c677ca2913e70b039c14125680811336ba0247956a54e"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-win32.whl", hash = "sha256:c910d4767b73a2c9f695135aefb7ff5eca6263c1b4cfba2a2d366e5ab30d9e15"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-win_amd64.whl", hash = "sha256:caf55117b9fbb130cb1ca090d395bb89bd032bd449534a74f095e9490dbcec50"},
+    {file = "spherical_geometry-1.3.2.tar.gz", hash = "sha256:bed481a8b080748bf93434c3b113eae53609a61d0c0694db83c07685b52c3d23"},
 ]
 
 [[package]]
