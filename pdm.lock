@@ -4,8 +4,11 @@
 [metadata]
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform"]
-lock_version = "4.4.1"
-content_hash = "sha256:98257fb1e201c54e9287cab914d04c62126ab122acdb5bc225d20a4fb79cfc77"
+lock_version = "4.5.0"
+content_hash = "sha256:8158e1195a630d93b21b8d503a2edce657f75108870b9003e4a4f16266102c0f"
+
+[[metadata.targets]]
+requires_python = ">=3.9"
 
 [[package]]
 name = "aiohttp"
@@ -139,6 +142,7 @@ requires_python = ">=3.7"
 summary = "Argon2 for Python"
 dependencies = [
     "argon2-cffi-bindings",
+    "typing-extensions; python_version < \"3.8\"",
 ]
 files = [
     {file = "argon2_cffi-23.1.0-py3-none-any.whl", hash = "sha256:c670642b78ba29641818ab2e68bd4e6a78ba53b7eff7b4c3815ae16abf91c7ea"},
@@ -251,6 +255,7 @@ version = "2.4.1"
 summary = "Annotate AST trees with source code positions"
 dependencies = [
     "six>=1.12.0",
+    "typing; python_version < \"3.5\"",
 ]
 files = [
     {file = "asttokens-2.4.1-py2.py3-none-any.whl", hash = "sha256:051ed49c3dcae8913ea7cd08e46a606dba30b79993209636c4875bc1d637bc24"},
@@ -275,6 +280,9 @@ name = "async-timeout"
 version = "4.0.3"
 requires_python = ">=3.7"
 summary = "Timeout context manager for asyncio programs"
+dependencies = [
+    "typing-extensions>=3.6.5; python_version < \"3.8\"",
+]
 files = [
     {file = "async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f"},
     {file = "async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028"},
@@ -285,6 +293,9 @@ name = "attrs"
 version = "23.2.0"
 requires_python = ">=3.7"
 summary = "Classes Without Boilerplate"
+dependencies = [
+    "importlib-metadata; python_version < \"3.8\"",
+]
 files = [
     {file = "attrs-23.2.0-py3-none-any.whl", hash = "sha256:99b87a485a5820b23b879f04c2305b44b951b502fd64be915879d77a7e8fc6f1"},
     {file = "attrs-23.2.0.tar.gz", hash = "sha256:935dc3b529c262f6cf76e50877d35a4bd3c1de194fd41f47a2b7ae8f19971f30"},
@@ -295,6 +306,9 @@ name = "babel"
 version = "2.14.0"
 requires_python = ">=3.7"
 summary = "Internationalization utilities"
+dependencies = [
+    "pytz>=2015.7; python_version < \"3.9\"",
+]
 files = [
     {file = "Babel-2.14.0-py3-none-any.whl", hash = "sha256:efb1a25b7118e67ce3a259bed20545c29cb68be8ad2c784c83689981b7a57287"},
     {file = "Babel-2.14.0.tar.gz", hash = "sha256:6919867db036398ba21eb5c7a0f6b28ab8cbc3ae7a73a44ebe34ae74a4e7d363"},
@@ -357,10 +371,15 @@ requires_python = ">=2.7"
 summary = "Bump version numbers in project files."
 dependencies = [
     "click; python_version >= \"3.6\"",
+    "click<8.0; python_version < \"3.6\"",
     "colorama>=0.4",
+    "enum34; python_version < \"3.4\"",
     "lexid",
     "looseversion; python_version >= \"3.5\"",
+    "pathlib2; python_version < \"3.4\"",
+    "setuptools<45.0.0; python_version < \"3.5\"",
     "toml",
+    "typing; python_version < \"3.5\"",
 ]
 files = [
     {file = "bumpver-2023.1129-py2.py3-none-any.whl", hash = "sha256:b2a55c0224215b6ca1c3a0c99827749927b7c61cbb5dfef75565dbda8e75f687"},
@@ -554,6 +573,7 @@ requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
 dependencies = [
     "colorama; platform_system == \"Windows\"",
+    "importlib-metadata; python_version < \"3.8\"",
 ]
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
@@ -977,6 +997,9 @@ name = "fqdn"
 version = "1.5.1"
 requires_python = ">=2.7, !=3.0, !=3.1, !=3.2, !=3.3, !=3.4, <4"
 summary = "Validates fully-qualified domain names against RFC 1123, so that they are acceptable to modern bowsers"
+dependencies = [
+    "cached-property>=1.3.0; python_version < \"3.8\"",
+]
 files = [
     {file = "fqdn-1.5.1-py3-none-any.whl", hash = "sha256:3a179af3761e4df6eb2e026ff9e1a3033d3587bf980a0b1b2e1e5d08d7358014"},
     {file = "fqdn-1.5.1.tar.gz", hash = "sha256:105ed3677e767fb5ca086a0c1f4bb66ebc3c100be518f0e0d755d9eae164d89f"},
@@ -1141,6 +1164,21 @@ files = [
 ]
 
 [[package]]
+name = "geoarrow-pandas"
+version = "0.1.1"
+requires_python = ">=3.8"
+summary = ""
+dependencies = [
+    "geoarrow-pyarrow",
+    "pandas",
+    "pyarrow",
+]
+files = [
+    {file = "geoarrow-pandas-0.1.1.tar.gz", hash = "sha256:feb909eb5f5b98addc9bbb7e34d73208a43ec74df68d02f94aa2b54bab52aa50"},
+    {file = "geoarrow_pandas-0.1.1-py3-none-any.whl", hash = "sha256:85413f2a9fb8468f04d02bb7c167ebb1caa6b78c683997bcdf89b3274713be44"},
+]
+
+[[package]]
 name = "geoarrow-pyarrow"
 version = "0.1.2"
 requires_python = ">=3.8"
@@ -1153,6 +1191,30 @@ dependencies = [
 files = [
     {file = "geoarrow-pyarrow-0.1.2.tar.gz", hash = "sha256:318b3bd42e865b7b2cd7bcb0947c4053f07be15296153c297e94150a4be7357e"},
     {file = "geoarrow_pyarrow-0.1.2-py3-none-any.whl", hash = "sha256:c0be5545374fde7ded77f5aef2013cf1ab0e9001cbe4e3b489f55530c6f12c45"},
+]
+
+[[package]]
+name = "geoarrow-rust-core"
+version = "0.2.0"
+requires_python = ">=3.8"
+summary = "Efficient, vectorized geospatial operations in Python."
+files = [
+    {file = "geoarrow_rust_core-0.2.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:1b16edae465bd39a274918a42f052ec8ff279650d45e48923b2f05eb52480fd1"},
+    {file = "geoarrow_rust_core-0.2.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:68f0be67f362dcb97bc3ef48a741a2d3549a311e4489e8df38ef9efc23dd513c"},
+    {file = "geoarrow_rust_core-0.2.0-cp38-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:824e184a3d5e29f652ef024fc34bcebc8aea8ae454d9999ed65aa1f2551ed3c1"},
+    {file = "geoarrow_rust_core-0.2.0-cp38-abi3-win32.whl", hash = "sha256:834eb61ae91aa6bdf402f4e924b1019526661d5e7d7efefff153c9c86a2272c1"},
+    {file = "geoarrow_rust_core-0.2.0-cp38-abi3-win_amd64.whl", hash = "sha256:80e2c773235e50e2bee1819c7b44cf3d298c37e334c47111ed58345804f09319"},
+    {file = "geoarrow_rust_core-0.2.0.tar.gz", hash = "sha256:4f293c7e36ff2206d3e7dd96342897c1b2634618c2cfb9175574ef2705ea825f"},
+]
+
+[[package]]
+name = "geographiclib"
+version = "2.0"
+requires_python = ">=3.7"
+summary = "The geodesic routines from GeographicLib"
+files = [
+    {file = "geographiclib-2.0-py3-none-any.whl", hash = "sha256:6b7225248e45ff7edcee32becc4e0a1504c606ac5ee163a5656d482e0cd38734"},
+    {file = "geographiclib-2.0.tar.gz", hash = "sha256:f7f41c85dc3e1c2d3d935ec86660dc3b2c848c83e17f9a9e51ba9d5146a15859"},
 ]
 
 [[package]]
@@ -1192,6 +1254,19 @@ files = [
 ]
 
 [[package]]
+name = "geopy"
+version = "2.4.1"
+requires_python = ">=3.7"
+summary = "Python Geocoding Toolbox"
+dependencies = [
+    "geographiclib<3,>=1.52",
+]
+files = [
+    {file = "geopy-2.4.1-py3-none-any.whl", hash = "sha256:ae8b4bc5c1131820f4d75fce9d4aaaca0c85189b3aa5d64c3dcaf5e3b7b882a7"},
+    {file = "geopy-2.4.1.tar.gz", hash = "sha256:50283d8e7ad07d89be5cb027338c6365a32044df3ae2556ad3f52f4840b3d0d1"},
+]
+
+[[package]]
 name = "ghp-import"
 version = "2.1.0"
 summary = "Copy your docs directly to the gh-pages branch."
@@ -1209,6 +1284,7 @@ version = "0.42.2"
 requires_python = ">=3.8"
 summary = "Signatures for entire Python programs. Extract the structure, the frame, the skeleton of your project, to generate API documentation or find breaking changes in your API."
 dependencies = [
+    "astunparse>=1.6; python_version < \"3.9\"",
     "colorama>=0.4",
 ]
 files = [
@@ -1242,6 +1318,9 @@ name = "h11"
 version = "0.14.0"
 requires_python = ">=3.7"
 summary = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
+dependencies = [
+    "typing-extensions; python_version < \"3.8\"",
+]
 files = [
     {file = "h11-0.14.0-py3-none-any.whl", hash = "sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"},
     {file = "h11-0.14.0.tar.gz", hash = "sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d"},
@@ -1364,6 +1443,7 @@ version = "7.1.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
 dependencies = [
+    "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=0.5",
 ]
 files = [
@@ -1458,6 +1538,7 @@ summary = "IPython HTML widgets for Jupyter"
 dependencies = [
     "comm>=0.1.3",
     "ipython-genutils~=0.2.0",
+    "ipython<6.0.0,>=4.0.0; python_version < \"3.3\"",
     "ipython>=4.0.0; python_version >= \"3.3\"",
     "jupyterlab-widgets<3,>=1.0.0; python_version >= \"3.6\"",
     "traitlets>=4.3.1",
@@ -1564,7 +1645,9 @@ requires_python = ">=3.8"
 summary = "An implementation of JSON Schema validation for Python"
 dependencies = [
     "attrs>=22.2.0",
+    "importlib-resources>=1.4.0; python_version < \"3.9\"",
     "jsonschema-specifications>=2023.03.6",
+    "pkgutil-resolve-name>=1.3.10; python_version < \"3.9\"",
     "referencing>=0.28.4",
     "rpds-py>=0.7.1",
 ]
@@ -1579,6 +1662,7 @@ version = "2023.12.1"
 requires_python = ">=3.8"
 summary = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
 dependencies = [
+    "importlib-resources>=1.4.0; python_version < \"3.9\"",
     "referencing>=0.31.0",
 ]
 files = [
@@ -1728,6 +1812,7 @@ dependencies = [
     "async-lru>=1.0.0",
     "httpx>=0.25.0",
     "importlib-metadata>=4.8.3; python_version < \"3.10\"",
+    "importlib-resources>=1.4; python_version < \"3.9\"",
     "ipykernel>=6.5.0",
     "jinja2>=3.0.3",
     "jupyter-core",
@@ -1807,6 +1892,9 @@ files = [
 name = "kaleido"
 version = "0.2.1"
 summary = "Static image export for web-based visualization libraries with zero dependencies"
+dependencies = [
+    "pathlib; python_version < \"3.4\"",
+]
 files = [
     {file = "kaleido-0.2.1-py2.py3-none-macosx_10_11_x86_64.whl", hash = "sha256:ca6f73e7ff00aaebf2843f73f1d3bacde1930ef5041093fe76b83a15785049a7"},
     {file = "kaleido-0.2.1-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:bb9a5d1f710357d5d432ee240ef6658a6d124c3e610935817b4b42da9c787c05"},
@@ -1836,6 +1924,9 @@ name = "kiwisolver"
 version = "1.4.5"
 requires_python = ">=3.7"
 summary = "A fast implementation of the Cassowary constraint solver"
+dependencies = [
+    "typing-extensions; python_version < \"3.8\"",
+]
 files = [
     {file = "kiwisolver-1.4.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:05703cf211d585109fcd72207a31bb170a0f22144d68298dc5e61b3c946518af"},
     {file = "kiwisolver-1.4.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:146d14bebb7f1dc4d5fbf74f8a6cb15ac42baadee8912eb84ac0b3b2a3dc6ac3"},
@@ -1920,6 +2011,9 @@ name = "lexid"
 version = "2021.1006"
 requires_python = ">=2.7"
 summary = "Variable width build numbers with lexical ordering."
+dependencies = [
+    "typing; python_version < \"3.5\"",
+]
 files = [
     {file = "lexid-2021.1006-py2.py3-none-any.whl", hash = "sha256:5526bb5606fd74c7add23320da5f02805bddd7c77916f2dc1943e6bada8605ed"},
     {file = "lexid-2021.1006.tar.gz", hash = "sha256:509a3a4cc926d3dbf22b203b18a4c66c25e6473fb7c0e0d30374533ac28bafe5"},
@@ -1952,6 +2046,7 @@ version = "0.11.2"
 requires_python = ">=3.8"
 summary = "Lightning toolbox for across the our ecosystem."
 dependencies = [
+    "importlib-metadata>=4.0.0; python_version < \"3.8\"",
     "packaging>=17.1",
     "setuptools",
     "typing-extensions",
@@ -1996,6 +2091,7 @@ version = "0.7.2"
 requires_python = ">=3.5"
 summary = "Python logging made (stupidly) simple"
 dependencies = [
+    "aiocontextvars>=0.2.0; python_version < \"3.7\"",
     "colorama>=0.3.4; sys_platform == \"win32\"",
     "win32-setctime>=1.0.0; sys_platform == \"win32\"",
 ]
@@ -2243,6 +2339,7 @@ dependencies = [
     "platformdirs>=2.2.0",
     "pyyaml-env-tag>=0.1",
     "pyyaml>=5.1",
+    "typing-extensions>=3.10; python_version < \"3.8\"",
     "watchdog>=2.0",
 ]
 files = [
@@ -2912,6 +3009,9 @@ name = "overrides"
 version = "7.7.0"
 requires_python = ">=3.6"
 summary = "A decorator to automatically detect mismatch when overriding a method."
+dependencies = [
+    "typing; python_version < \"3.5\"",
+]
 files = [
     {file = "overrides-7.7.0-py3-none-any.whl", hash = "sha256:c7ed9d062f78b8e4c1a7b70bd8796b35ead4d9f510227ef9c5dc7626c60d7e49"},
     {file = "overrides-7.7.0.tar.gz", hash = "sha256:55158fa3d93b98cc75299b1e67078ad9003ca27945c76162c1c0766d6f91820a"},
@@ -3148,6 +3248,20 @@ files = [
 ]
 
 [[package]]
+name = "polars"
+version = "1.6.0"
+requires_python = ">=3.8"
+summary = "Blazingly fast DataFrame library"
+files = [
+    {file = "polars-1.6.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:6d1665c23e3574ebd47a26a5d7b619e6e73e53718c3b0bfd7d08b6a0a4ae7daa"},
+    {file = "polars-1.6.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:d7f3abf085adf034720b358119c4c8e144bcc2d96010b7e7d0afa11b80da383c"},
+    {file = "polars-1.6.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a166adb429f8ee099c9d803e7470a80c76368437a8b272c67cef9eef6d5e9da1"},
+    {file = "polars-1.6.0-cp38-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:1c811b772c9476f7f0bb4445a8387d2ab6d86f5e79140b1bfba914a32788d261"},
+    {file = "polars-1.6.0-cp38-abi3-win_amd64.whl", hash = "sha256:ffae15ffa80fda5cc3af44a340b565bcf7f2ab6d7854d3f967baf505710c78e2"},
+    {file = "polars-1.6.0.tar.gz", hash = "sha256:d7e8d5e577883a9755bc3be92ecbf6f20bced68267bdb8bdb440120e905cc19c"},
+]
+
+[[package]]
 name = "pooch"
 version = "1.8.1"
 requires_python = ">=3.7"
@@ -3237,42 +3351,42 @@ files = [
 
 [[package]]
 name = "pyarrow"
-version = "15.0.2"
+version = "17.0.0"
 requires_python = ">=3.8"
 summary = "Python library for Apache Arrow"
 dependencies = [
-    "numpy<2,>=1.16.6",
+    "numpy>=1.16.6",
 ]
 files = [
-    {file = "pyarrow-15.0.2-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:88b340f0a1d05b5ccc3d2d986279045655b1fe8e41aba6ca44ea28da0d1455d8"},
-    {file = "pyarrow-15.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:eaa8f96cecf32da508e6c7f69bb8401f03745c050c1dd42ec2596f2e98deecac"},
-    {file = "pyarrow-15.0.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:23c6753ed4f6adb8461e7c383e418391b8d8453c5d67e17f416c3a5d5709afbd"},
-    {file = "pyarrow-15.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f639c059035011db8c0497e541a8a45d98a58dbe34dc8fadd0ef128f2cee46e5"},
-    {file = "pyarrow-15.0.2-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:290e36a59a0993e9a5224ed2fb3e53375770f07379a0ea03ee2fce2e6d30b423"},
-    {file = "pyarrow-15.0.2-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:06c2bb2a98bc792f040bef31ad3e9be6a63d0cb39189227c08a7d955db96816e"},
-    {file = "pyarrow-15.0.2-cp310-cp310-win_amd64.whl", hash = "sha256:f7a197f3670606a960ddc12adbe8075cea5f707ad7bf0dffa09637fdbb89f76c"},
-    {file = "pyarrow-15.0.2-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:5f8bc839ea36b1f99984c78e06e7a06054693dc2af8920f6fb416b5bca9944e4"},
-    {file = "pyarrow-15.0.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f5e81dfb4e519baa6b4c80410421528c214427e77ca0ea9461eb4097c328fa33"},
-    {file = "pyarrow-15.0.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3a4f240852b302a7af4646c8bfe9950c4691a419847001178662a98915fd7ee7"},
-    {file = "pyarrow-15.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e7d9cfb5a1e648e172428c7a42b744610956f3b70f524aa3a6c02a448ba853e"},
-    {file = "pyarrow-15.0.2-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:2d4f905209de70c0eb5b2de6763104d5a9a37430f137678edfb9a675bac9cd98"},
-    {file = "pyarrow-15.0.2-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:90adb99e8ce5f36fbecbbc422e7dcbcbed07d985eed6062e459e23f9e71fd197"},
-    {file = "pyarrow-15.0.2-cp311-cp311-win_amd64.whl", hash = "sha256:b116e7fd7889294cbd24eb90cd9bdd3850be3738d61297855a71ac3b8124ee38"},
-    {file = "pyarrow-15.0.2-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:25335e6f1f07fdaa026a61c758ee7d19ce824a866b27bba744348fa73bb5a440"},
-    {file = "pyarrow-15.0.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:90f19e976d9c3d8e73c80be84ddbe2f830b6304e4c576349d9360e335cd627fc"},
-    {file = "pyarrow-15.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a22366249bf5fd40ddacc4f03cd3160f2d7c247692945afb1899bab8a140ddfb"},
-    {file = "pyarrow-15.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c2a335198f886b07e4b5ea16d08ee06557e07db54a8400cc0d03c7f6a22f785f"},
-    {file = "pyarrow-15.0.2-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:3e6d459c0c22f0b9c810a3917a1de3ee704b021a5fb8b3bacf968eece6df098f"},
-    {file = "pyarrow-15.0.2-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:033b7cad32198754d93465dcfb71d0ba7cb7cd5c9afd7052cab7214676eec38b"},
-    {file = "pyarrow-15.0.2-cp312-cp312-win_amd64.whl", hash = "sha256:29850d050379d6e8b5a693098f4de7fd6a2bea4365bfd073d7c57c57b95041ee"},
-    {file = "pyarrow-15.0.2-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:89722cb64286ab3d4daf168386f6968c126057b8c7ec3ef96302e81d8cdb8ae4"},
-    {file = "pyarrow-15.0.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:cd0ba387705044b3ac77b1b317165c0498299b08261d8122c96051024f953cd5"},
-    {file = "pyarrow-15.0.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ad2459bf1f22b6a5cdcc27ebfd99307d5526b62d217b984b9f5c974651398832"},
-    {file = "pyarrow-15.0.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:58922e4bfece8b02abf7159f1f53a8f4d9f8e08f2d988109126c17c3bb261f22"},
-    {file = "pyarrow-15.0.2-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:adccc81d3dc0478ea0b498807b39a8d41628fa9210729b2f718b78cb997c7c91"},
-    {file = "pyarrow-15.0.2-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:8bd2baa5fe531571847983f36a30ddbf65261ef23e496862ece83bdceb70420d"},
-    {file = "pyarrow-15.0.2-cp39-cp39-win_amd64.whl", hash = "sha256:6669799a1d4ca9da9c7e06ef48368320f5856f36f9a4dd31a11839dda3f6cc8c"},
-    {file = "pyarrow-15.0.2.tar.gz", hash = "sha256:9c9bc803cb3b7bfacc1e96ffbfd923601065d9d3f911179d81e72d99fd74a3d9"},
+    {file = "pyarrow-17.0.0-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:a5c8b238d47e48812ee577ee20c9a2779e6a5904f1708ae240f53ecbee7c9f07"},
+    {file = "pyarrow-17.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:db023dc4c6cae1015de9e198d41250688383c3f9af8f565370ab2b4cb5f62655"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:da1e060b3876faa11cee287839f9cc7cdc00649f475714b8680a05fd9071d545"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:75c06d4624c0ad6674364bb46ef38c3132768139ddec1c56582dbac54f2663e2"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:fa3c246cc58cb5a4a5cb407a18f193354ea47dd0648194e6265bd24177982fe8"},
+    {file = "pyarrow-17.0.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:f7ae2de664e0b158d1607699a16a488de3d008ba99b3a7aa5de1cbc13574d047"},
+    {file = "pyarrow-17.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:5984f416552eea15fd9cee03da53542bf4cddaef5afecefb9aa8d1010c335087"},
+    {file = "pyarrow-17.0.0-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:1c8856e2ef09eb87ecf937104aacfa0708f22dfeb039c363ec99735190ffb977"},
+    {file = "pyarrow-17.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:2e19f569567efcbbd42084e87f948778eb371d308e137a0f97afe19bb860ccb3"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6b244dc8e08a23b3e352899a006a26ae7b4d0da7bb636872fa8f5884e70acf15"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0b72e87fe3e1db343995562f7fff8aee354b55ee83d13afba65400c178ab2597"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:dc5c31c37409dfbc5d014047817cb4ccd8c1ea25d19576acf1a001fe07f5b420"},
+    {file = "pyarrow-17.0.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:e3343cb1e88bc2ea605986d4b94948716edc7a8d14afd4e2c097232f729758b4"},
+    {file = "pyarrow-17.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:a27532c38f3de9eb3e90ecab63dfda948a8ca859a66e3a47f5f42d1e403c4d03"},
+    {file = "pyarrow-17.0.0-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:9b8a823cea605221e61f34859dcc03207e52e409ccf6354634143e23af7c8d22"},
+    {file = "pyarrow-17.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f1e70de6cb5790a50b01d2b686d54aaf73da01266850b05e3af2a1bc89e16053"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0071ce35788c6f9077ff9ecba4858108eebe2ea5a3f7cf2cf55ebc1dbc6ee24a"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:757074882f844411fcca735e39aae74248a1531367a7c80799b4266390ae51cc"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:9ba11c4f16976e89146781a83833df7f82077cdab7dc6232c897789343f7891a"},
+    {file = "pyarrow-17.0.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:b0c6ac301093b42d34410b187bba560b17c0330f64907bfa4f7f7f2444b0cf9b"},
+    {file = "pyarrow-17.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:392bc9feabc647338e6c89267635e111d71edad5fcffba204425a7c8d13610d7"},
+    {file = "pyarrow-17.0.0-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:13d7a460b412f31e4c0efa1148e1d29bdf18ad1411eb6757d38f8fbdcc8645fb"},
+    {file = "pyarrow-17.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9b564a51fbccfab5a04a80453e5ac6c9954a9c5ef2890d1bcf63741909c3f8df"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:32503827abbc5aadedfa235f5ece8c4f8f8b0a3cf01066bc8d29de7539532687"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a155acc7f154b9ffcc85497509bcd0d43efb80d6f733b0dc3bb14e281f131c8b"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:dec8d129254d0188a49f8a1fc99e0560dc1b85f60af729f47de4046015f9b0a5"},
+    {file = "pyarrow-17.0.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:a48ddf5c3c6a6c505904545c25a4ae13646ae1f8ba703c4df4a1bfe4f4006bda"},
+    {file = "pyarrow-17.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:42bf93249a083aca230ba7e2786c5f673507fa97bbd9725a1e2754715151a204"},
+    {file = "pyarrow-17.0.0.tar.gz", hash = "sha256:4beca9521ed2c0921c1023e68d097d0299b62c362639ea315572a58f3f50fd28"},
 ]
 
 [[package]]
@@ -3302,6 +3416,9 @@ name = "pycountry"
 version = "23.12.11"
 requires_python = ">=3.8"
 summary = "ISO country, subdivision, language, currency and script definitions and their translations"
+dependencies = [
+    "importlib-resources<6.0.0,>=5.12.0; python_version < \"3.9\"",
+]
 files = [
     {file = "pycountry-23.12.11-py3-none-any.whl", hash = "sha256:2ff91cff4f40ff61086e773d61e72005fe95de4a57bfc765509db05695dc50ab"},
     {file = "pycountry-23.12.11.tar.gz", hash = "sha256:00569d82eaefbc6a490a311bfa84a9c571cff9ddbf8b0a4f4e7b4f868b4ad925"},
@@ -3392,6 +3509,7 @@ name = "pynndescent"
 version = "0.5.12"
 summary = "Nearest Neighbor Descent"
 dependencies = [
+    "importlib-metadata>=4.8.1; python_version < \"3.8\"",
     "joblib>=0.11",
     "llvmlite>=0.30",
     "numba>=0.51.2",
@@ -3527,6 +3645,21 @@ dependencies = [
 files = [
     {file = "pytest_check-2.3.1-py3-none-any.whl", hash = "sha256:c54c18f0b890cac1c610c78ef2bb3d8ecb29cf33d1cf09fc1166802d6ab88e28"},
     {file = "pytest_check-2.3.1.tar.gz", hash = "sha256:51b8f18a8ccaa426c5d913c4e0e46f014aaa7579481ea03d22d7e1f498f689b2"},
+]
+
+[[package]]
+name = "pytest-doctestplus"
+version = "1.2.1"
+requires_python = ">=3.8"
+summary = "Pytest plugin with advanced doctest features."
+dependencies = [
+    "packaging>=17.0",
+    "pytest>=4.6",
+    "setuptools>=30.3.0",
+]
+files = [
+    {file = "pytest-doctestplus-1.2.1.tar.gz", hash = "sha256:2472a8a2c8cea34d2f65f6499543faeb748eecb59c597852fd98839b47307679"},
+    {file = "pytest_doctestplus-1.2.1-py3-none-any.whl", hash = "sha256:103705daee8d4468eb59d444c29b0d71eb85b8f6d582295c8bc3d68ee1d88911"},
 ]
 
 [[package]]
@@ -3800,26 +3933,31 @@ files = [
 
 [[package]]
 name = "quackosm"
-version = "0.7.1"
+version = "0.9.1"
 requires_python = ">=3.9"
 summary = "An open-source tool for reading OpenStreetMap PBF files using DuckDB"
 dependencies = [
     "beautifulsoup4",
     "duckdb>=0.10.2",
+    "geoarrow-pandas>=0.1.1",
     "geoarrow-pyarrow>=0.1.2",
-    "geopandas",
-    "pooch",
-    "psutil",
+    "geoarrow-rust-core>=0.2.0",
+    "geopandas>=0.6",
+    "geopy>=2.0.0",
+    "polars>=0.19.4",
+    "pooch>=1.6.0",
+    "psutil>=5.6.2",
     "pyarrow-ops",
-    "pyarrow>=13.0.0",
+    "pyarrow>=16.0.0",
     "requests",
+    "rich>=12.0.0",
     "shapely>=2",
-    "tqdm",
-    "typeguard",
+    "tqdm>=4.42.0",
+    "typeguard>=3.0.0",
 ]
 files = [
-    {file = "quackosm-0.7.1-py3-none-any.whl", hash = "sha256:864f3ea752f74baa27c673846c47121689f69040deea7cd23921dc5d14bcd8b4"},
-    {file = "quackosm-0.7.1.tar.gz", hash = "sha256:8d6bcdf5b71540d7bee2393cab465153737ab1f2fd0ea25aad5cf02ffcc08585"},
+    {file = "quackosm-0.9.1-py3-none-any.whl", hash = "sha256:2092ddaedde2fc9d9d5bb5148d5b937983d2076861e60067d558bd42c62fe5ce"},
+    {file = "quackosm-0.9.1.tar.gz", hash = "sha256:92477f55798f58693c564613d89fbc4b34711da455db0d10b14a7ac941bbdae4"},
 ]
 
 [[package]]
@@ -3985,6 +4123,7 @@ summary = "Render rich text, tables, progress bars, syntax highlighting, markdow
 dependencies = [
     "markdown-it-py>=2.2.0",
     "pygments<3.0.0,>=2.13.0",
+    "typing-extensions<5.0,>=4.0.0; python_version < \"3.9\"",
 ]
 files = [
     {file = "rich-13.7.1-py3-none-any.whl", hash = "sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222"},
@@ -4529,6 +4668,7 @@ dependencies = [
     "numpy>1.20.0",
     "packaging>17.1",
     "torch>=1.10.0",
+    "typing-extensions; python_version < \"3.9\"",
 ]
 files = [
     {file = "torchmetrics-1.3.2-py3-none-any.whl", hash = "sha256:44ca3a9f86dc050cb3f554836ef291698ea797778457195b4f685fce8e2e64a3"},
@@ -4564,11 +4704,13 @@ dependencies = [
     "chardet>=5.2",
     "colorama>=0.4.6",
     "filelock>=3.13.1",
+    "importlib-metadata>=7.0.1; python_version < \"3.8\"",
     "packaging>=23.2",
     "platformdirs>=4.1",
     "pluggy>=1.3",
     "pyproject-api>=1.6.1",
     "tomli>=2.0.1; python_version < \"3.11\"",
+    "typing-extensions>=4.9; python_version < \"3.8\"",
     "virtualenv>=20.25",
 ]
 files = [
@@ -4779,6 +4921,7 @@ summary = "Virtual Python Environment builder"
 dependencies = [
     "distlib<1,>=0.3.7",
     "filelock<4,>=3.12.2",
+    "importlib-metadata>=6.6; python_version < \"3.8\"",
     "platformdirs<5,>=3.9.1",
 ]
 files = [
@@ -4837,6 +4980,9 @@ files = [
 name = "wcwidth"
 version = "0.2.13"
 summary = "Measures the displayed width of unicode strings in a terminal"
+dependencies = [
+    "backports-functools-lru-cache>=1.2.1; python_version < \"3.2\"",
+]
 files = [
     {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
     {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
@@ -4911,6 +5057,7 @@ summary = "Yet another URL library"
 dependencies = [
     "idna>=2.0",
     "multidict>=4.0",
+    "typing-extensions>=3.7.4; python_version < \"3.8\"",
 ]
 files = [
     {file = "yarl-1.9.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a8c1df72eb746f4136fe9a2e72b0c9dc1da1cbd23b5372f94b5820ff8ae30e0e"},
