@@ -73,8 +73,8 @@ plotting = [
     "folium>=0.10.0",
     "mapclassify",
     "matplotlib>=3.2.0",
-    "plotly>=4.0.0",
-    "kaleido<=0.2.1",
+    "plotly>=4.4.0",
+    "kaleido<=0.2.1,>=0.2.0",
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
 torch = ["pytorch-lightning>=2.0.0", "torch"]
