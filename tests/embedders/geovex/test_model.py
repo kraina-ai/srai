@@ -9,7 +9,7 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 import torch
-from lightning_fabric import seed_everything
+from pytorch_lightning import seed_everything
 
 from srai.embedders.geovex.embedder import GeoVexEmbedder
 from srai.embedders.geovex.model import GeoVexModel
