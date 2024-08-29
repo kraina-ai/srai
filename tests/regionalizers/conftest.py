@@ -122,8 +122,9 @@ def gdf_earth_poles(earth_poles) -> gpd.GeoDataFrame:
 @pytest.fixture  # type: ignore
 def gdf_poland() -> gpd.GeoDataFrame:
     """Get Poland GeoDataFrame."""
-    world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-    area = world[world.name == "Poland"]
+    area = gpd.read_file(
+        "https://raw.githubusercontent.com/johan/world.geo.json/master/countries/POL.geo.json"
+    )
     return area
 
 
