@@ -70,7 +70,7 @@ gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
 plotting = [
     "folium>=0.10.0",
-    "mapclassify>=2.0.0",
+    "mapclassify>=2.4.0",
     "matplotlib>=3.2.0",
     "plotly>=4.4.0",
     "kaleido<=0.2.1,>=0.2.0",
