@@ -71,6 +71,7 @@ gtfs = ["gtfs-kit"]
 plotting = [
     "folium>=0.10.0",
     "mapclassify>=2.4.0",
+    "scikit-learn>=1.0.0",
     "matplotlib>=3.2.0",
     "plotly>=4.4.0",
     "kaleido<=0.2.1,>=0.2.0",
@@ -116,7 +117,7 @@ docs = [
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
     "mike>=1,<2",
-    "scikit-learn>=1.5.1",
+    "scikit-learn>=1.0.0",
     "umap-learn",
 ]
 # performance = ["scalene"]
