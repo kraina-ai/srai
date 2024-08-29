@@ -116,7 +116,7 @@ docs = [
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
     "mike>=1,<2",
-    "scikit-learn",
+    "scikit-learn>=1.5.1",
     "umap-learn",
 ]
 # performance = ["scalene"]
