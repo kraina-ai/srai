@@ -187,7 +187,7 @@ def test_embedder_save_load() -> None:
         assert isinstance(loaded_embedder._model, GeoVexModel)
 
         # safely clean up tmp_models directory
-        os.remove(tmp_models_dir / "test_model" / "model.pt")
-        os.remove(tmp_models_dir / "test_model" / "config.json")
+        (tmp_models_dir / "test_model" / "model.pt").unlink()
+        (tmp_models_dir / "test_model" / "config.json").unlink()
         os.rmdir(tmp_models_dir / "test_model")
         os.rmdir(tmp_models_dir)
