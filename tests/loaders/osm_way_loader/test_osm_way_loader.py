@@ -240,7 +240,7 @@ def test_contract(
     area_gdf = request.getfixturevalue(area_gdf_fixture)
     nodes_expected_len, edges_expected_len = expected_result or (None, None)
 
-    def patched_graph_from_polygon(f_name: str, *args, **kwargs) -> Any:  # type: ignore
+    def patched_graph_from_polygon(f_name: Optional[str], *args, **kwargs) -> Any:  # type: ignore
         if f_name == "type_error":
             raise TypeError
         elif f_name == "empty_overpass_response":
@@ -254,7 +254,7 @@ def test_contract(
                 raise osmnx._errors.EmptyOverpassResponse
 
         files_path = Path(__file__).parent / "test_files"
-        file_name = f_name + ".pkl"
+        file_name = (f_name or "") + ".pkl"
         file_path = files_path / file_name
 
         with file_path.open("rb") as f:
