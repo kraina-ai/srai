@@ -56,7 +56,7 @@ class GTFS2VecModel(Model):
         Args:
             x (torch.Tensor): Input tensor.
         """
-        embedding: "torch.Tensor" = self.encoder(x)
+        embedding: torch.Tensor = self.encoder(x)
         return embedding
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
