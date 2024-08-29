@@ -15,8 +15,7 @@ dependencies = [
     "shapely>=2",
     "h3>=4.0.0b1",
     "numpy>=1.26.0",
-    "geoparquet",
-    "pyfunctional",
+    "pyfunctional>=1.0.0",
     "pyarrow>=13.0.0",
     "topojson",
     "tqdm>=4.42.0",
@@ -59,7 +58,7 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 # pdm add -G osm <library>
 osm = [
-    "overpass",
+    "overpass>=0.7",
     "pillow>=8.0.0",
     "beautifulsoup4",
     "quackosm>=0.9.1",
@@ -101,7 +100,7 @@ test = [
     "pytest-check>=2.3.1",
     "pytest-parametrization>=2022.2.1",
     "pytest-doctestplus>=1.2.1",
-    "six",
+    "six>=1.9.0",
     "pytest-snapshot>=0.9.0",
 ]
 # pdm add -dG visualization <library>

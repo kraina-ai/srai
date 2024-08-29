@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e2e6524f1839087a1d7feed15b06b2def72d2722acbc263503ad572ae04acfc4"
+content_hash = "sha256:c845dc1b0c3e72f59df714a3434fafc4ff16e7c4653f53a06c2e12da256794a0"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1298,16 +1298,6 @@ dependencies = [
 files = [
     {file = "geopandas-0.14.3-py3-none-any.whl", hash = "sha256:41b31ad39e21bc9e8c4254f78f8dc4ce3d33d144e22e630a00bb336c83160204"},
     {file = "geopandas-0.14.3.tar.gz", hash = "sha256:748af035d4a068a4ae00cab384acb61d387685c833b0022e0729aa45216b23ac"},
-]
-
-[[package]]
-name = "geoparquet"
-version = "0.0.3"
-summary = "GeoPandas API for Parquet file format."
-groups = ["default"]
-files = [
-    {file = "geoparquet-0.0.3-py3-none-any.whl", hash = "sha256:6aaee13d802d02d73c14a981bc73482c0074a5af671557971187890070fc7da9"},
-    {file = "geoparquet-0.0.3.tar.gz", hash = "sha256:2968c0cd65fe5781abc057252e71bb364b5d18ecbf26c32d753a98df01196a65"},
 ]
 
 [[package]]
