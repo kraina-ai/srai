@@ -64,14 +64,14 @@ osm = [
     "quackosm>=0.9.1",
 ]
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d>=3.0.0", "haversine>=2.0.0", "scipy>=1.6.0", "spherical-geometry>=1.3.2"]
+voronoi = ["pymap3d>=3.0.0", "haversine>=2.0.0", "scipy>=1.10.0", "spherical-geometry>=1.3.2"]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
 plotting = [
     "folium>=0.14.0",
     "mapclassify>=2.4.0",
-    "scikit-learn>=1.0.0",
+    "scikit-learn>=1.2.0",
     "matplotlib>=3.2.0",
     "plotly>=4.6.0",
     "kaleido<=0.2.1,>=0.2.0",
@@ -117,7 +117,7 @@ docs = [
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
     "mike>=1,<2",
-    "scikit-learn>=1.0.0",
+    "scikit-learn>=1.2.0",
     "umap-learn",
 ]
 # performance = ["scalene"]
