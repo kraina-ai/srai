@@ -57,12 +57,13 @@ def _generate_sphere_parts() -> None:
         POINT_LEFT = (0.0, -1.0, 0.0)  # LON: -90; LAT: 0
         POINT_RIGHT = (0.0, 1.0, 0.0)  # LON: 90; LAT: 0
 
-        SPHERE_PARTS = [
-            SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
-            SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
-            SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
-            SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
-        ]
+        with np.errstate(invalid="ignore"):
+            SPHERE_PARTS = [
+                SphericalPolygon([POINT_FRONT, POINT_TOP, POINT_BACK, POINT_RIGHT, POINT_FRONT]),
+                SphericalPolygon([POINT_FRONT, POINT_RIGHT, POINT_BACK, POINT_BOTTOM, POINT_FRONT]),
+                SphericalPolygon([POINT_FRONT, POINT_BOTTOM, POINT_BACK, POINT_LEFT, POINT_FRONT]),
+                SphericalPolygon([POINT_FRONT, POINT_LEFT, POINT_BACK, POINT_TOP, POINT_FRONT]),
+            ]
         SPHERE_PARTS_BOUNDING_BOXES = [
             box(minx=0, miny=0, maxx=180, maxy=90),
             box(minx=0, miny=-90, maxx=180, maxy=0),
@@ -185,7 +186,11 @@ def generate_voronoi_regions(
 
         regions_parts: dict[int, list[tuple[int, list[EdgeHash]]]] = {}
 
-        for region_id, sphere_part_id, spherical_polygon_points in spherical_polygons_parts:
+        for (
+            region_id,
+            sphere_part_id,
+            spherical_polygon_points,
+        ) in spherical_polygons_parts:
             if region_id not in regions_parts:
                 regions_parts[region_id] = []
 
@@ -326,7 +331,9 @@ def _parse_multiprocessing_activation_threshold(
     return multiprocessing_activation_threshold
 
 
-def _parse_geodataframe_seeds(gdf: gpd.GeoDataFrame) -> tuple[list[Point], list[Hashable]]:
+def _parse_geodataframe_seeds(
+    gdf: gpd.GeoDataFrame,
+) -> tuple[list[Point], list[Hashable]]:
     """Transform GeoDataFrame into list of Points with index."""
     seeds_wgs84 = gdf.to_crs(crs=WGS84_CRS)
     region_ids: list[Hashable] = []

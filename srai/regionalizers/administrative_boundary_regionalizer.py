@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import geopandas as gpd
+import numpy as np
 import topojson as tp
 from shapely import union
 from shapely.geometry import GeometryCollection, MultiPolygon, Point, Polygon
@@ -188,7 +189,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
             empty_region = self._generate_empty_region(mask=gdf_wgs84, regions_gdf=regions_gdf)
             if not empty_region.is_empty:
                 regions_gdf.loc[
-                    AdministrativeBoundaryRegionalizer.EMPTY_REGION_NAME, GEOMETRY_COLUMN
+                    AdministrativeBoundaryRegionalizer.EMPTY_REGION_NAME,
+                    GEOMETRY_COLUMN,
                 ] = empty_region
 
         return regions_gdf
@@ -205,7 +207,9 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         with tqdm(desc="Loading boundaries: 0", total=len(all_geometries)) as pbar:
             for geometry in all_geometries:
-                if not geometry.covered_by(unary_geometry):
+                with np.errstate(invalid="ignore"):
+                    is_covered = geometry.covered_by(unary_geometry)
+                if not is_covered:
                     query = self._generate_query_for_single_geometry(geometry)
                     boundaries_list = self._query_overpass(query)
                     for boundary in boundaries_list:
@@ -366,7 +370,9 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         )
 
     def _calculate_intersection_area_fraction(
-        self, region_geometry: BaseGeometry, clipping_polygon_area: Optional[BaseGeometry]
+        self,
+        region_geometry: BaseGeometry,
+        clipping_polygon_area: Optional[BaseGeometry],
     ) -> float:
         """Calculate intersection area fraction to check if it's big enough."""
         if clipping_polygon_area is None or clipping_polygon_area.is_empty:

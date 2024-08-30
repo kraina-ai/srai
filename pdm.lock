@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:8158e1195a630d93b21b8d503a2edce657f75108870b9003e4a4f16266102c0f"
+content_hash = "sha256:292e810889867764300205e564e183c4a3a9bb5b081857d5401324739d08563b"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -894,17 +894,6 @@ files = [
 ]
 
 [[package]]
-name = "execnet"
-version = "2.1.1"
-requires_python = ">=3.8"
-summary = "execnet: rapid multi-Python deployment"
-groups = ["test"]
-files = [
-    {file = "execnet-2.1.1-py3-none-any.whl", hash = "sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc"},
-    {file = "execnet-2.1.1.tar.gz", hash = "sha256:5189b52c6121c24feae288166ab41b32549c7e2348652736540b9e6e7d4e72e3"},
-]
-
-[[package]]
 name = "executing"
 version = "2.0.1"
 requires_python = ">=3.5"
@@ -1309,16 +1298,6 @@ dependencies = [
 files = [
     {file = "geopandas-0.14.3-py3-none-any.whl", hash = "sha256:41b31ad39e21bc9e8c4254f78f8dc4ce3d33d144e22e630a00bb336c83160204"},
     {file = "geopandas-0.14.3.tar.gz", hash = "sha256:748af035d4a068a4ae00cab384acb61d387685c833b0022e0729aa45216b23ac"},
-]
-
-[[package]]
-name = "geoparquet"
-version = "0.0.3"
-summary = "GeoPandas API for Parquet file format."
-groups = ["default"]
-files = [
-    {file = "geoparquet-0.0.3-py3-none-any.whl", hash = "sha256:6aaee13d802d02d73c14a981bc73482c0074a5af671557971187890070fc7da9"},
-    {file = "geoparquet-0.0.3.tar.gz", hash = "sha256:2968c0cd65fe5781abc057252e71bb364b5d18ecbf26c32d753a98df01196a65"},
 ]
 
 [[package]]
@@ -2962,7 +2941,7 @@ name = "numpy"
 version = "1.26.4"
 requires_python = ">=3.9"
 summary = "Fundamental package for array computing in Python"
-groups = ["default", "all", "docs", "gtfs", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
+groups = ["default", "all", "docs", "gtfs", "osm", "plotting", "torch", "visualization", "voronoi"]
 files = [
     {file = "numpy-1.26.4-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9ff0f4f29c51e2803569d7a51c2304de5554655a60c5d776e35b4a41413830d0"},
     {file = "numpy-1.26.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:2e4ee3380d6de9c9ec04745830fd9e2eccb3e6cf790d39d7b98ffd19b0dd754a"},
@@ -3742,40 +3721,6 @@ files = [
 ]
 
 [[package]]
-name = "pyogrio"
-version = "0.7.2"
-requires_python = ">=3.8"
-summary = "Vectorized spatial vector file format I/O using GDAL/OGR"
-groups = ["test"]
-dependencies = [
-    "certifi",
-    "numpy",
-    "packaging",
-]
-files = [
-    {file = "pyogrio-0.7.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ba386a02c9b5934c568b40acc95c9863f92075f6990167635e51368976569c66"},
-    {file = "pyogrio-0.7.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:860b04ddf23b8c253ceb3621e4b0e0dc0f293eab66cb14f799a5c9f9fe0a882c"},
-    {file = "pyogrio-0.7.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:caaf61d473ac207f170082e602ea57c096e8dd4c4be51de58fba96f1a5944096"},
-    {file = "pyogrio-0.7.2-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:bee556ca305b7e8c68aada259d925c612131205074fb2373badafacbef610b77"},
-    {file = "pyogrio-0.7.2-cp310-cp310-win_amd64.whl", hash = "sha256:7e2c856961efdc6cb3809b97b49016cbbcee17c8a1e85fc4000b5fcb3cfcb9b1"},
-    {file = "pyogrio-0.7.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:5654e7c33442cbd98e7a56f705e160415d7503b2420d724d4f81b8cc88360b3e"},
-    {file = "pyogrio-0.7.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:b9a8a4854c7af2c76683ce5666ee765b207901b362576465219d75deb6159821"},
-    {file = "pyogrio-0.7.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a23136d1bffa9d811263807b850c6e9854201710276f09de650131e89f2486aa"},
-    {file = "pyogrio-0.7.2-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:234b0d1d22e9680229b0618c25077a0cb2428cbbc2939b4bb9bdd8ee77e0f3e0"},
-    {file = "pyogrio-0.7.2-cp311-cp311-win_amd64.whl", hash = "sha256:33ae5aafcf3a557e107a33f5b3e878750d2e467b8cc911dc4bf261c1a602b534"},
-    {file = "pyogrio-0.7.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:73577fecebeecf0d06e78c1a4bddd460a4d57c6d918affab7594c0bc72f5fa14"},
-    {file = "pyogrio-0.7.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:f2ff58184020da39540a2f5d4a5412005a01b0c4cd03c7b8294bc670d1f3fe50"},
-    {file = "pyogrio-0.7.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:31112bb0b6a4a3f80ec3252d7eeb7be81045860d49fd76e297c073759450652b"},
-    {file = "pyogrio-0.7.2-cp312-cp312-win_amd64.whl", hash = "sha256:1b7197c72f034ac7187da2a8d50a063a5f1256aab732b154f11f887a7652dc3d"},
-    {file = "pyogrio-0.7.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:9cc6db2e5dc50dfe23554d10502920eafa0648c365725e552aaa523432a9bf35"},
-    {file = "pyogrio-0.7.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:be46be43c4148a3ad09da38670411485ec544a51cbd6b7d004a0eca5035023fc"},
-    {file = "pyogrio-0.7.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3001efd5dfee36459d0cfdafbe91ed88fc5ae734353d771cdb75546ef1427735"},
-    {file = "pyogrio-0.7.2-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:892fdab0e1c44c0125254d92928081c14f93ac553f371addc2c9a1d4bde41cad"},
-    {file = "pyogrio-0.7.2-cp39-cp39-win_amd64.whl", hash = "sha256:d5fc2304aeb927564f77caaa4da9a47e2d77a8ceb1c624ea84c505140886b221"},
-    {file = "pyogrio-0.7.2.tar.gz", hash = "sha256:33afb7d211c6434613f24174722347a5cb11d22a212f28c817f67c89d30d0c0d"},
-]
-
-[[package]]
 name = "pyparsing"
 version = "3.1.2"
 requires_python = ">=3.6.8"
@@ -3929,21 +3874,6 @@ dependencies = [
 files = [
     {file = "pytest-snapshot-0.9.0.tar.gz", hash = "sha256:c7013c3abc3e860f9feff899f8b4debe3708650d8d8242a61bf2625ff64db7f3"},
     {file = "pytest_snapshot-0.9.0-py3-none-any.whl", hash = "sha256:4b9fe1c21c868fe53a545e4e3184d36bc1c88946e3f5c1d9dd676962a9b3d4ab"},
-]
-
-[[package]]
-name = "pytest-xdist"
-version = "3.5.0"
-requires_python = ">=3.7"
-summary = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
-groups = ["test"]
-dependencies = [
-    "execnet>=1.1",
-    "pytest>=6.2.0",
-]
-files = [
-    {file = "pytest-xdist-3.5.0.tar.gz", hash = "sha256:cbb36f3d67e0c478baa57fa4edc8843887e0f6cfc42d677530a36d7472b32d8a"},
-    {file = "pytest_xdist-3.5.0-py3-none-any.whl", hash = "sha256:d075629c7e00b611df89f490a5063944bee7a4362a5ff11c7cc7824a03dfce24"},
 ]
 
 [[package]]
@@ -4551,7 +4481,7 @@ files = [
 
 [[package]]
 name = "scikit-learn"
-version = "1.4.2"
+version = "1.5.1"
 requires_python = ">=3.9"
 summary = "A set of python modules for machine learning and data mining"
 groups = ["all", "docs", "plotting"]
@@ -4559,30 +4489,30 @@ dependencies = [
     "joblib>=1.2.0",
     "numpy>=1.19.5",
     "scipy>=1.6.0",
-    "threadpoolctl>=2.0.0",
+    "threadpoolctl>=3.1.0",
 ]
 files = [
-    {file = "scikit-learn-1.4.2.tar.gz", hash = "sha256:daa1c471d95bad080c6e44b4946c9390a4842adc3082572c20e4f8884e39e959"},
-    {file = "scikit_learn-1.4.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:8539a41b3d6d1af82eb629f9c57f37428ff1481c1e34dddb3b9d7af8ede67ac5"},
-    {file = "scikit_learn-1.4.2-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:68b8404841f944a4a1459b07198fa2edd41a82f189b44f3e1d55c104dbc2e40c"},
-    {file = "scikit_learn-1.4.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:81bf5d8bbe87643103334032dd82f7419bc8c8d02a763643a6b9a5c7288c5054"},
-    {file = "scikit_learn-1.4.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36f0ea5d0f693cb247a073d21a4123bdf4172e470e6d163c12b74cbb1536cf38"},
-    {file = "scikit_learn-1.4.2-cp310-cp310-win_amd64.whl", hash = "sha256:87440e2e188c87db80ea4023440923dccbd56fbc2d557b18ced00fef79da0727"},
-    {file = "scikit_learn-1.4.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:45dee87ac5309bb82e3ea633955030df9bbcb8d2cdb30383c6cd483691c546cc"},
-    {file = "scikit_learn-1.4.2-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:1d0b25d9c651fd050555aadd57431b53d4cf664e749069da77f3d52c5ad14b3b"},
-    {file = "scikit_learn-1.4.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b0203c368058ab92efc6168a1507d388d41469c873e96ec220ca8e74079bf62e"},
-    {file = "scikit_learn-1.4.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44c62f2b124848a28fd695db5bc4da019287abf390bfce602ddc8aa1ec186aae"},
-    {file = "scikit_learn-1.4.2-cp311-cp311-win_amd64.whl", hash = "sha256:5cd7b524115499b18b63f0c96f4224eb885564937a0b3477531b2b63ce331904"},
-    {file = "scikit_learn-1.4.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:90378e1747949f90c8f385898fff35d73193dfcaec3dd75d6b542f90c4e89755"},
-    {file = "scikit_learn-1.4.2-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:ff4effe5a1d4e8fed260a83a163f7dbf4f6087b54528d8880bab1d1377bd78be"},
-    {file = "scikit_learn-1.4.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:671e2f0c3f2c15409dae4f282a3a619601fa824d2c820e5b608d9d775f91780c"},
-    {file = "scikit_learn-1.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d36d0bc983336bbc1be22f9b686b50c964f593c8a9a913a792442af9bf4f5e68"},
-    {file = "scikit_learn-1.4.2-cp312-cp312-win_amd64.whl", hash = "sha256:d762070980c17ba3e9a4a1e043ba0518ce4c55152032f1af0ca6f39b376b5928"},
-    {file = "scikit_learn-1.4.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:d9993d5e78a8148b1d0fdf5b15ed92452af5581734129998c26f481c46586d68"},
-    {file = "scikit_learn-1.4.2-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:426d258fddac674fdf33f3cb2d54d26f49406e2599dbf9a32b4d1696091d4256"},
-    {file = "scikit_learn-1.4.2-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5460a1a5b043ae5ae4596b3126a4ec33ccba1b51e7ca2c5d36dac2169f62ab1d"},
-    {file = "scikit_learn-1.4.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:49d64ef6cb8c093d883e5a36c4766548d974898d378e395ba41a806d0e824db8"},
-    {file = "scikit_learn-1.4.2-cp39-cp39-win_amd64.whl", hash = "sha256:c97a50b05c194be9146d61fe87dbf8eac62b203d9e87a3ccc6ae9aed2dfaf361"},
+    {file = "scikit_learn-1.5.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:781586c414f8cc58e71da4f3d7af311e0505a683e112f2f62919e3019abd3745"},
+    {file = "scikit_learn-1.5.1-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:f5b213bc29cc30a89a3130393b0e39c847a15d769d6e59539cd86b75d276b1a7"},
+    {file = "scikit_learn-1.5.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1ff4ba34c2abff5ec59c803ed1d97d61b036f659a17f55be102679e88f926fac"},
+    {file = "scikit_learn-1.5.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:161808750c267b77b4a9603cf9c93579c7a74ba8486b1336034c2f1579546d21"},
+    {file = "scikit_learn-1.5.1-cp310-cp310-win_amd64.whl", hash = "sha256:10e49170691514a94bb2e03787aa921b82dbc507a4ea1f20fd95557862c98dc1"},
+    {file = "scikit_learn-1.5.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:154297ee43c0b83af12464adeab378dee2d0a700ccd03979e2b821e7dd7cc1c2"},
+    {file = "scikit_learn-1.5.1-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:b5e865e9bd59396220de49cb4a57b17016256637c61b4c5cc81aaf16bc123bbe"},
+    {file = "scikit_learn-1.5.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:909144d50f367a513cee6090873ae582dba019cb3fca063b38054fa42704c3a4"},
+    {file = "scikit_learn-1.5.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:689b6f74b2c880276e365fe84fe4f1befd6a774f016339c65655eaff12e10cbf"},
+    {file = "scikit_learn-1.5.1-cp311-cp311-win_amd64.whl", hash = "sha256:9a07f90846313a7639af6a019d849ff72baadfa4c74c778821ae0fad07b7275b"},
+    {file = "scikit_learn-1.5.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:5944ce1faada31c55fb2ba20a5346b88e36811aab504ccafb9f0339e9f780395"},
+    {file = "scikit_learn-1.5.1-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:0828673c5b520e879f2af6a9e99eee0eefea69a2188be1ca68a6121b809055c1"},
+    {file = "scikit_learn-1.5.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:508907e5f81390e16d754e8815f7497e52139162fd69c4fdbd2dfa5d6cc88915"},
+    {file = "scikit_learn-1.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:97625f217c5c0c5d0505fa2af28ae424bd37949bb2f16ace3ff5f2f81fb4498b"},
+    {file = "scikit_learn-1.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:da3f404e9e284d2b0a157e1b56b6566a34eb2798205cba35a211df3296ab7a74"},
+    {file = "scikit_learn-1.5.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:88e0672c7ac21eb149d409c74cc29f1d611d5158175846e7a9c2427bd12b3956"},
+    {file = "scikit_learn-1.5.1-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:7b073a27797a283187a4ef4ee149959defc350b46cbf63a84d8514fe16b69855"},
+    {file = "scikit_learn-1.5.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b59e3e62d2be870e5c74af4e793293753565c7383ae82943b83383fdcf5cc5c1"},
+    {file = "scikit_learn-1.5.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1bd8d3a19d4bd6dc5a7d4f358c8c3a60934dc058f363c34c0ac1e9e12a31421d"},
+    {file = "scikit_learn-1.5.1-cp39-cp39-win_amd64.whl", hash = "sha256:5f57428de0c900a98389c4a433d4a3cf89de979b3aa24d1c1d251802aa15e44d"},
+    {file = "scikit_learn-1.5.1.tar.gz", hash = "sha256:0ea5d40c0e3951df445721927448755d3fe1d80833b0b7308ebff5d2a45e6414"},
 ]
 
 [[package]]
@@ -4720,39 +4650,40 @@ files = [
 
 [[package]]
 name = "spherical-geometry"
-version = "1.3.1"
+version = "1.3.2"
 requires_python = ">=3.9"
 summary = "Python based tools for spherical geometry"
 groups = ["all", "voronoi"]
 dependencies = [
     "astropy>=5.0.4",
-    "numpy>=1.20",
+    "numpy>=1.23",
 ]
 files = [
-    {file = "spherical_geometry-1.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:93e64e538fcb814ce821cd1a05e7e13b5dde4fab3e14779e18cac34f1b650298"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6394224c2938b9d3bb5068a5d58bb6a37315cdbe64917e54b7f35b78ac714c87"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:302f8ea5ffa2cd10d109118398c2623c606fe0f94fc769106a11c272d8fdc122"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:f232b15777167a9904a067325f8ef4c1399a358e8e5c6298abd5cb2616aa3afd"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-win32.whl", hash = "sha256:c2bdbbdbba8a5a2301436b50f25f21d34c84148939b59d1275cf5e66f6c59f7f"},
-    {file = "spherical_geometry-1.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:2e3f5bf88484ca0023e9bfdbab8668b20f3cc2c27828b2c1e8ca986ecbbc22f5"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:e6d1d9296425783da61fe35edcc7eafe3e2ac7c3a33f78e97d7facc2f8455d72"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d26c9d9025147f35c4037510443699bcd97e0dc4e9d724d33df8982cabc90b6e"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a37a6d2bcc8c934c18a852ec46f2c57e80100552bccfe92607ef8ad6e157690c"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:9c3e98f938d50ced4a2cc45f80e20fe48e8cba55f1cd3097fedbdd30b59fae63"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-win32.whl", hash = "sha256:9352c0d4e346f790ff246c62f1e8ec45bef3dbfab571b89714b2254215398ac1"},
-    {file = "spherical_geometry-1.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:8830c6aec19a6dd08ccfca3c8124410abfb91ffde21a9864e72457aff8a42a97"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:e1720436661064f27412e282f212e35152a8cde695af354baff18cd88eaf3381"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:fc000c80c3d95c0fec2d67276f5cdbdfce66925dd32d8758acbc3b366d01ba43"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7d500cd3c062fda38c379b482f1a0a24f067ad13d3012aaa375f20d5f16e6cff"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:69ff867b910df3316e8757db4483fbb83033fbedb4bbfeeb71d368ae070c9979"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-win32.whl", hash = "sha256:54f29a04420184f78d83e9e45be040365c8b62496f22fdd89332a17193c357ae"},
-    {file = "spherical_geometry-1.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:12100c3f48c314fdf787a059d2f974ecada89f025c7f84ac36cd4f2a75624268"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:705ef94de2d531192907536deb7549c4d382a8645803940bbe5d0fe2188a5702"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:d0630d1e546647ddcd4fcabe318e8f32124ffa7a43394cf936e82c89a83919e4"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:12505d745796f51060c8e43a6016c099fd8ea6c846fb47938920d29f03e1691b"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:72f519d035671d7ccc199c372f098a53fdff473fb0c8ab1a41d8f5992c5c90e4"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-win32.whl", hash = "sha256:cb8f7c26e3d7aa03131b65f33ae966167506aec8f6efbf7653960041a5f39786"},
-    {file = "spherical_geometry-1.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:b1ffef47e76b2edeb44f3a3a93edeb524329d81ae9c19603d6c3cff40ebd656c"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:06cb0965aed16f4247dee04df5a177cff24076b40bf752fc3c6885d2f0006185"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b87668f88f0a16cff4061f8d4d6099b800316888e27824db3d1892fb4d0b97fb"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:005e2e529ed6c21609c77fed787efbd5731fe0f86d729fb6ed9f1ac9ae7ab2b7"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:0c09f8caba44873398dbe1a5dfbefd9d70e17140125593ec9ec4eef753f2f111"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-win32.whl", hash = "sha256:06cd418fb475fb6a51b2b62dbc35a5e828ae00fd6e7f1c08dc902f8a97faa52a"},
+    {file = "spherical_geometry-1.3.2-cp310-cp310-win_amd64.whl", hash = "sha256:1513841201510a071168cb6bbaaf03a5054878d373a3f8fe9a3aa38c4edf4b63"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:03e010efaa470d708201262cf8f1ac94b26775e8e039f6ea77559c798a3cf697"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:0e27786b7509aa16f15809a1ed2d2fcca7570a65e7376c5b867bc0c726557322"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6ebefd216e64bfdbe150036c117593b5cb22f75ecf552598e35aa3cd1b822310"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:6b125ac4dc9ed8cab0325a84b6d2c676fc3a32c9f8c1d5055a053c30413f67fb"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-win32.whl", hash = "sha256:e3c01f2074c2b36f803311180d1a78b914bb30283f6eea1644c93928e7782c20"},
+    {file = "spherical_geometry-1.3.2-cp311-cp311-win_amd64.whl", hash = "sha256:54d178c3cddc271ae5e0f1e4c49cd99e22358f8047a12804fcf201979172de9c"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:ce5ceef9902e2564d44b5c22c11a7e4590918acf149c06f99611e10b6a76a3f7"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5173f56001b8721181adc12b377898c58afca76159937a3391aafcfc756d2a05"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:728e1cda8ad1ebebf60cbb48d763946813169133f12640bc1c11b49ea838b8db"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:8fd68dffe3fc33ea6e1c50730ed59ffcd433d609a51daf599fd4ec1848652901"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-win32.whl", hash = "sha256:0c59cae46ede5a0c1352edebffef8651620c6ab2e863f1dd35043b74ac298b77"},
+    {file = "spherical_geometry-1.3.2-cp312-cp312-win_amd64.whl", hash = "sha256:a3090d10f67ad0cb9497fe2517028c7241de32e97e5d6cf5042d7cd85a2db4c2"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:accab32117fdaf7aa94b3ffe7568b9f5fe9cb0d519a59d15f44ddab6030a277e"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:b0a1ff01e0c7f2f749c0c038ba91fa0096069ae243febda2c980f455fb99e886"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8c6e34806b25f965e4564ef11e4c487df6afc71e25605772e2d56244cc57cb62"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:bc9e125bd75014f8ad6c677ca2913e70b039c14125680811336ba0247956a54e"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-win32.whl", hash = "sha256:c910d4767b73a2c9f695135aefb7ff5eca6263c1b4cfba2a2d366e5ab30d9e15"},
+    {file = "spherical_geometry-1.3.2-cp39-cp39-win_amd64.whl", hash = "sha256:caf55117b9fbb130cb1ca090d395bb89bd032bd449534a74f095e9490dbcec50"},
+    {file = "spherical_geometry-1.3.2.tar.gz", hash = "sha256:bed481a8b080748bf93434c3b113eae53609a61d0c0694db83c07685b52c3d23"},
 ]
 
 [[package]]
