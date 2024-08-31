@@ -91,6 +91,7 @@ class GeoVexEmbedder(CountEmbedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Create region embeddings.
@@ -116,6 +117,7 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood,
             self._batch_size,
             shuffle=False,
+            dataloader_kwargs=dataloader_kwargs,
         )
 
         return self._transform(dataset=self._dataset, dataloader=dataloader)
@@ -124,9 +126,15 @@ class GeoVexEmbedder(CountEmbedder):
         self,
         dataset: HexagonalDataset[T],
         dataloader: Optional[DataLoader] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
+        dataloader_kwargs = dataloader_kwargs or {}
+        if "batch_size" not in dataloader_kwargs:
+            dataloader_kwargs["batch_size"] = self._batch_size
+        if "shuffle" not in dataloader_kwargs:
+            dataloader_kwargs["shuffle"] = False
         if dataloader is None:
-            dataloader = DataLoader(dataset, batch_size=self._batch_size, shuffle=False)
+            dataloader = DataLoader(dataset, **dataloader_kwargs)
 
         embeddings = [
             self._model.encoder(batch).detach().numpy()  # type: ignore
@@ -149,6 +157,7 @@ class GeoVexEmbedder(CountEmbedder):
         neighbourhood: H3Neighbourhood,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit the model to the data.
@@ -167,7 +176,13 @@ class GeoVexEmbedder(CountEmbedder):
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
         counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            self._batch_size,
+            shuffle=True,
+            dataloader_kwargs=dataloader_kwargs,
         )
 
         self._prepare_model(counts_df, learning_rate)
@@ -196,6 +211,7 @@ class GeoVexEmbedder(CountEmbedder):
         neighbourhood: H3Neighbourhood,
         batch_size: Optional[int],
         shuffle: bool = True,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[T]]:
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
         dataset: HexagonalDataset[T] = HexagonalDataset(
@@ -203,7 +219,12 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood,
             neighbor_k_ring=self._r,
         )
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        dataloader_kwargs = dataloader_kwargs or {}
+        if "batch_size" not in dataloader_kwargs:
+            dataloader_kwargs["batch_size"] = batch_size
+        if "shuffle" not in dataloader_kwargs:
+            dataloader_kwargs["shuffle"] = shuffle
+        dataloader = DataLoader(dataset, **dataloader_kwargs)
         return counts_df, dataloader, dataset
 
     def fit_transform(
@@ -214,6 +235,7 @@ class GeoVexEmbedder(CountEmbedder):
         neighbourhood: H3Neighbourhood,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit the model to the data and create region embeddings.
@@ -236,6 +258,7 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood=neighbourhood,
             learning_rate=learning_rate,
             trainer_kwargs=trainer_kwargs,
+            dataloader_kwargs=dataloader_kwargs,
         )
         assert self._dataset is not None  # for mypy
         return self._transform(dataset=self._dataset)
