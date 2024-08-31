@@ -103,7 +103,7 @@ class Hex2VecEmbedder(CountEmbedder):
         batch_size: int = 32,
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
-        dataloader_kwargs: Optional[dict[str, Any]] = None
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit the model to the data.
@@ -200,7 +200,7 @@ class Hex2VecEmbedder(CountEmbedder):
             batch_size,
             learning_rate,
             trainer_kwargs,
-            dataloader_kwargs
+            dataloader_kwargs,
         )
         return self.transform(regions_gdf, features_gdf, joint_gdf)
 

@@ -83,7 +83,7 @@ class GTFS2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        dataloader_kwargs: Optional[dict[str, Any]] = None
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit model to a given data.
@@ -102,14 +102,14 @@ class GTFS2VecEmbedder(Embedder):
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
         if not self._skip_autoencoder:
-            self._model = self._train_model_unsupervised(features,dataloader_kwargs)
+            self._model = self._train_model_unsupervised(features, dataloader_kwargs)
 
     def fit_transform(
         self,
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        dataloader_kwargs: Optional[dict[str, Any]] = None
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit model and transform a given data.
@@ -133,7 +133,7 @@ class GTFS2VecEmbedder(Embedder):
         if self._skip_autoencoder:
             return features
         else:
-            self._model = self._train_model_unsupervised(features,dataloader_kwargs)
+            self._model = self._train_model_unsupervised(features, dataloader_kwargs)
             return self._embed(features)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
@@ -230,7 +230,9 @@ class GTFS2VecEmbedder(Embedder):
 
         return features
 
-    def _train_model_unsupervised(self, features: pd.DataFrame, dataloader_kwargs:Optional[dict[str, Any]] = None) -> GTFS2VecModel:
+    def _train_model_unsupervised(
+        self, features: pd.DataFrame, dataloader_kwargs: Optional[dict[str, Any]] = None
+    ) -> GTFS2VecModel:
         """
         Train model unsupervised.
 

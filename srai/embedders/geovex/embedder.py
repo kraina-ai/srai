@@ -128,7 +128,6 @@ class GeoVexEmbedder(CountEmbedder):
         dataloader: Optional[DataLoader] = None,
         dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
-
         dataloader_kwargs = dataloader_kwargs or {}
         if "batch_size" not in dataloader_kwargs:
             dataloader_kwargs["batch_size"] = self._batch_size
@@ -177,7 +176,13 @@ class GeoVexEmbedder(CountEmbedder):
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
         counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True,dataloader_kwargs = dataloader_kwargs
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            self._batch_size,
+            shuffle=True,
+            dataloader_kwargs=dataloader_kwargs,
         )
 
         self._prepare_model(counts_df, learning_rate)
@@ -253,7 +258,7 @@ class GeoVexEmbedder(CountEmbedder):
             neighbourhood=neighbourhood,
             learning_rate=learning_rate,
             trainer_kwargs=trainer_kwargs,
-            dataloader_kwargs=dataloader_kwargs
+            dataloader_kwargs=dataloader_kwargs,
         )
         assert self._dataset is not None  # for mypy
         return self._transform(dataset=self._dataset)
