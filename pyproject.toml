@@ -61,7 +61,7 @@ osm = [
     "overpass>=0.7",
     "pillow>=8.0.0",
     "beautifulsoup4",
-    "quackosm>=0.9.1",
+    "quackosm>=0.11.0",
 ]
 # pdm add -G voronoi <library>
 voronoi = ["pymap3d>=3.0.0", "haversine>=2.0.0", "scipy>=1.10.0", "spherical-geometry>=1.3.2"]
