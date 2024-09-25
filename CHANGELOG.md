@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped minimal QuackOSM version to `0.11.0`
+
 ## [0.7.6] - 2024-08-29
 
 ### Fixed
