@@ -83,6 +83,7 @@ class GTFS2VecEmbedder(Embedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit model to a given data.
@@ -101,13 +102,14 @@ class GTFS2VecEmbedder(Embedder):
         features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
 
         if not self._skip_autoencoder:
-            self._model = self._train_model_unsupervised(features)
+            self._model = self._train_model_unsupervised(features, dataloader_kwargs)
 
     def fit_transform(
         self,
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
+        dataloader_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Fit model and transform a given data.
@@ -131,7 +133,7 @@ class GTFS2VecEmbedder(Embedder):
         if self._skip_autoencoder:
             return features
         else:
-            self._model = self._train_model_unsupervised(features)
+            self._model = self._train_model_unsupervised(features, dataloader_kwargs)
             return self._embed(features)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
@@ -228,7 +230,9 @@ class GTFS2VecEmbedder(Embedder):
 
         return features
 
-    def _train_model_unsupervised(self, features: pd.DataFrame) -> GTFS2VecModel:
+    def _train_model_unsupervised(
+        self, features: pd.DataFrame, dataloader_kwargs: Optional[dict[str, Any]] = None
+    ) -> GTFS2VecModel:
         """
         Train model unsupervised.
 
@@ -244,7 +248,14 @@ class GTFS2VecEmbedder(Embedder):
             n_embed=self._embedding_size,
         )
         X = features.to_numpy().astype(np.float32)
-        x_dataloader = DataLoader(X, batch_size=24, shuffle=True, num_workers=4)
+        dataloader_kwargs = dataloader_kwargs or {}
+        if "num_workers" not in dataloader_kwargs:
+            dataloader_kwargs["num_workers"] = 4
+        if "batch_size" not in dataloader_kwargs:
+            dataloader_kwargs["batch_size"] = 24
+        if "shuffle" not in dataloader_kwargs:
+            dataloader_kwargs["shuffle"] = True
+        x_dataloader = DataLoader(X, **dataloader_kwargs)
         trainer = pl.Trainer(max_epochs=10)
 
         trainer.fit(model, x_dataloader)
