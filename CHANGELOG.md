@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.8] - 2024-12-24
+
 ### Changed
 
 - Set max `h3ronpy` version to `<0.22.0` (implemented by [@bouzaghrane](https://github.com/bouzaghrane)).
@@ -306,7 +308,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.7...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.8...HEAD
+
+[0.7.8]: https://github.com/kraina-ai/srai/compare/0.7.7...0.7.8
 
 [0.7.7]: https://github.com/kraina-ai/srai/compare/0.7.6...0.7.7
 
