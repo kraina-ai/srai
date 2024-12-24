@@ -1,5 +1,9 @@
 name: "Run tests with newest and oldest dependencies"
-on: [workflow_dispatch, workflow_call]
+on: 
+  workflow_dispatch:
+  workflow_call:
+  schedule:
+    - cron: "0 4 * * 1" # every monday at 04:00 UTC
 
 jobs:
   run-tests-newest:
