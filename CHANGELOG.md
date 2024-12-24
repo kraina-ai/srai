@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed a list comprehension in geometry related operations (implemented by [@ebonnal](https://github.com/ebonnal)).
+
 ## [0.7.7] - 2024-09-25
 
 ### Changed
