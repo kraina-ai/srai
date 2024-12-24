@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Set max `h3ronpy` version to `<0.22.0` (implemented by [@bouzaghrane](https://github.com/bouzaghrane)).
+
 ### Fixed
 
 - Removed a list comprehension in geometry related operations (implemented by [@ebonnal](https://github.com/ebonnal)).
