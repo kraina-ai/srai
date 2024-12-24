@@ -24,18 +24,14 @@ __all__ = [
 
 def flatten_geometry_series(geometry_series: gpd.GeoSeries) -> list[BaseGeometry]:
     """Flatten all geometries from a series into a list of BaseGeometries."""
-    geometries: list[BaseGeometry] = (
-        seq(geometry_series).flat_map(flatten_geometry).to_list()
-    )
+    geometries: list[BaseGeometry] = seq(geometry_series).flat_map(flatten_geometry).to_list()
     return geometries
 
 
 def flatten_geometry(geometry: BaseGeometry) -> list[BaseGeometry]:
     """Flatten all geometries into a list of BaseGeometries."""
     if isinstance(geometry, BaseMultipartGeometry):
-        geometries: list[BaseGeometry] = (
-            seq(geometry.geoms).flat_map(flatten_geometry).to_list()
-        )
+        geometries: list[BaseGeometry] = seq(geometry.geoms).flat_map(flatten_geometry).to_list()
         return geometries
     return [geometry]
 
