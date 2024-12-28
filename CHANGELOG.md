@@ -9,11 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Set max `h3ronpy` version to `<0.22.0` (implemented by [@bouzaghrane](https://github.com/bouzaghrane)).
+- Set max `h3ronpy` version to `<0.22.0` (implemented by [@bouzaghrane](https://github.com/bouzaghrane))
+- Set max `osmnx` version to `<2.0.0`
 
 ### Fixed
 
-- Removed a list comprehension in geometry related operations (implemented by [@ebonnal](https://github.com/ebonnal)).
+- Removed a list comprehension in geometry related operations (implemented by [@ebonnal](https://github.com/ebonnal))
 
 ## [0.7.7] - 2024-09-25
 
@@ -25,11 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep)).
+- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep))
 
 ### Added
 
-- Added methods for saving and loading fittable `GeoVexEmbedder` (implemented by [@sabman](https://github.com/sabman) and [@mhassanch](https://github.com/mhassanch)). #457
+- Added methods for saving and loading fittable `GeoVexEmbedder` (implemented by [@sabman](https://github.com/sabman) and [@mhassanch](https://github.com/mhassanch)) [#457](https://github.com/kraina-ai/srai/issues/457)
 
 ## [0.7.5] - 2024-06-04
 
