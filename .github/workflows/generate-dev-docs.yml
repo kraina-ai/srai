@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
