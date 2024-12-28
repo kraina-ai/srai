@@ -31,11 +31,11 @@ repos:
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.17.3
+    rev: 2.22.0
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
-        args: ["-o", "requirements.txt", "--without-hashes", "-d", "-G", "all"]
+        args: ["-o", "requirements.txt", "--without-hashes", "-dG:all"]
         files: ^pdm.lock$
         stages: [manual]
   - repo: https://github.com/kynan/nbstripout
@@ -43,7 +43,7 @@ repos:
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -61,9 +61,10 @@ repos:
         language: python
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "2024.2"
+    rev: "2024.3"
     hooks:
       - id: licensecheck
+        args: ["-u", "requirements.txt"]
         stages: [manual]
 
 ci:
