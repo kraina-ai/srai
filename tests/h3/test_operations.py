@@ -14,6 +14,8 @@ from srai.regionalizers.h3_regionalizer import H3Regionalizer
 from tests.h3.conftest import _gdf_noop, _gdf_to_geometry_list, _gdf_to_geoseries
 from tests.regionalizers.test_h3_regionalizer import H3_RESOLUTION
 
+# TODO: add expected values, now only checks if runs without errors
+
 
 @pytest.mark.parametrize(
     "geometry_fixture, resolution, distance",
