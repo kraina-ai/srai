@@ -7,12 +7,25 @@ import geopandas as gpd
 import h3
 import numpy as np
 import numpy.typing as npt
-from h3ronpy.arrow import cells_to_string, grid_disk
-from h3ronpy.arrow.vector import ContainmentMode, cells_to_wkb_polygons, wkb_to_cells
+from h3ronpy import __version__ as h3ronpy_version
+from packaging import version
 from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+
+is_new_h3ronpy_api = version.parse(h3ronpy_version) >= version.parse("0.22.0")
+
+if is_new_h3ronpy_api:
+    from h3ronpy import ContainmentMode, cells_to_string, grid_disk
+    from h3ronpy.vector import cells_to_wkb_polygons, wkb_to_cells
+else:
+    from h3ronpy.arrow import cells_to_string, grid_disk
+    from h3ronpy.arrow.vector import (
+        ContainmentMode,
+        cells_to_wkb_polygons,
+        wkb_to_cells,
+    )
 
 __all__ = [
     "shapely_geometry_to_h3",
@@ -65,7 +78,12 @@ def shapely_geometry_to_h3(
     containment_mode = ContainmentMode.Covers if buffer else ContainmentMode.ContainsCentroid
     h3_indexes = wkb_to_cells(
         wkb, resolution=h3_resolution, containment_mode=containment_mode, flatten=True
-    ).unique()
+    )
+
+    if is_new_h3ronpy_api:
+        h3_indexes = np.unique(h3_indexes.to_numpy())
+    else:
+        h3_indexes = h3_indexes.unique()
 
     return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
 
