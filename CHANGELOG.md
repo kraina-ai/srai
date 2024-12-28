@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Made code compliant with `osmnx`'s new `2.0.0` release [#473](https://github.com/kraina-ai/srai/issues/473)
+- Made code compliant with `h3ronpy`'s new `0.22.0` release [#471](https://github.com/kraina-ai/srai/issues/471)
 
 ## [0.7.8] - 2024-12-28
 
