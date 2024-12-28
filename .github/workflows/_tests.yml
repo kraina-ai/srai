@@ -39,6 +39,8 @@ jobs:
           path: cache
           key: overpass-cache-${{ matrix.os }}-${{ matrix.python-version }}
       - name: Cache tox runner
+        # Cache only on the main branch
+        if: github.ref == 'refs/heads/main'
         uses: actions/cache@v3
         with:
           path: .tox
