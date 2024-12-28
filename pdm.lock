@@ -3,7 +3,7 @@
 
 [metadata]
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
-strategy = ["cross_platform", "inherit_metadata"]
+strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
 content_hash = "sha256:dca93450755a212ac41722498ec8ef0e4e3b36504fb7675f8307a579b4930819"
 
