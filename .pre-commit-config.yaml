@@ -35,7 +35,7 @@ repos:
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
-        args: ["-o", "requirements.txt", "--without-hashes", "-dG:all"]
+        args: ["-o", "requirements.txt", "--without-hashes", "-G", "all", "-dG:all"]
         files: ^pdm.lock$
         stages: [manual]
   - repo: https://github.com/kynan/nbstripout
@@ -64,7 +64,7 @@ repos:
     rev: "2024.3"
     hooks:
       - id: licensecheck
-        args: ["-u", "requirements.txt"]
+        args: ["-u", "requirements:requirements.txt"]
         stages: [manual]
 
 ci:
