@@ -3,8 +3,9 @@
 import geopandas as gpd
 import pytest
 from shapely import geometry
+from shapely.geometry.base import BaseGeometry
 
-from srai.constants import WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 
 
 @pytest.fixture  # type: ignore
@@ -106,3 +107,19 @@ def expected_unbuffered_h3_indexes() -> list[str]:
     return [
         "83754efffffffff",
     ]
+
+
+def _gdf_noop(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    return gdf_fixture
+
+
+def _gdf_to_geoseries(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoSeries:  # noqa: FURB118
+    return gdf_fixture[GEOMETRY_COLUMN]
+
+
+def _gdf_to_geometry_list(gdf_fixture: gpd.GeoDataFrame) -> list[BaseGeometry]:
+    return list(gdf_fixture[GEOMETRY_COLUMN])
+
+
+def _gdf_to_single_geometry(gdf_fixture: gpd.GeoDataFrame) -> BaseGeometry:
+    return gdf_fixture[GEOMETRY_COLUMN][0]

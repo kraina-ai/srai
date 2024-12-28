@@ -103,7 +103,7 @@ def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd
     if isinstance(h3_index, (str, int)):
         return h3_to_geoseries([h3_index])
     else:
-        h3_int_indexes = (
+        h3_int_indexes = list(
             h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_index
         )
         return gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_int_indexes), crs=WGS84_CRS)
@@ -210,10 +210,19 @@ def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int)
         h3.is_valid_cell(h3_cell) for h3_cell in h3_indexes
     ), "Not all values in h3_indexes are valid H3 cells."
 
-    h3_int_indexes = (
+    h3_int_indexes = list(
         h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_indexes
     )
-    buffered_h3s = set(cells_to_string(grid_disk(h3_int_indexes, distance, flatten=True)).tolist())
+
+    if is_new_h3ronpy_api:
+        buffered_h3s = np.unique(
+            cells_to_string(grid_disk(h3_int_indexes, distance, flatten=True)).to_numpy()
+        )
+    else:
+        buffered_h3s = set(
+            cells_to_string(grid_disk(h3_int_indexes, distance, flatten=True)).tolist()
+        )
+
     return list(buffered_h3s)
 
 
