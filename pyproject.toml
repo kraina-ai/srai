@@ -122,7 +122,7 @@ docs = [
 ]
 # performance = ["scalene"]
 license = [
-    "licensecheck",
+    "licensecheck==2024.3",
     "pipdeptree",
 ]
 

@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:5c5288249ca5100d71559bba54ffd6a570db2a3d8fbfd6cf7967b10b8e7185e5"
+content_hash = "sha256:d1ffd1d863da17fcb5dbd36d4c3fa89f25dd3e009638728e173d745d4e27def0"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1707,7 +1707,7 @@ files = [
 
 [[package]]
 name = "licensecheck"
-version = "2024.2"
+version = "2024.3"
 requires_python = "<4.0,>=3.8"
 summary = "Output the licenses used by dependencies and check if these are compatible with the project license"
 groups = ["license"]
@@ -1719,12 +1719,14 @@ dependencies = [
     "packaging<25,>=24.0",
     "requests-cache<2,>=1.2.0",
     "requests<3,>=2.31.0",
+    "requirements-parser<2,>=0.11.0",
     "rich<14,>=13.7.1",
     "tomli<3,>=2.0.1",
+    "uv<2,>=0.3.3",
 ]
 files = [
-    {file = "licensecheck-2024.2-py3-none-any.whl", hash = "sha256:09a9759a767e0a289ef5e7aa9a4f5c8e13ab813eb0189de9d9d5cbc523116821"},
-    {file = "licensecheck-2024.2.tar.gz", hash = "sha256:25c57d26a48a5a1dcf66171aa9d3dcadef84491fb128f4935a702a85f70c91e3"},
+    {file = "licensecheck-2024.3-py3-none-any.whl", hash = "sha256:0baef4c1865e0325a35ff25ed12a0c7094035b7dcfbab9a1abfe43d7735adebe"},
+    {file = "licensecheck-2024.3.tar.gz", hash = "sha256:e838e1c87a7ede553df376ad35a69d7c4b02676df0fba9dd1c6a6866eb0e0ee5"},
 ]
 
 [[package]]
@@ -3766,6 +3768,21 @@ files = [
 ]
 
 [[package]]
+name = "requirements-parser"
+version = "0.11.0"
+requires_python = "<4.0,>=3.8"
+summary = "This is a small Python module for parsing Pip requirement files."
+groups = ["license"]
+dependencies = [
+    "packaging>=23.2",
+    "types-setuptools>=69.1.0",
+]
+files = [
+    {file = "requirements_parser-0.11.0-py3-none-any.whl", hash = "sha256:50379eb50311834386c2568263ae5225d7b9d0867fb55cf4ecc93959de2c2684"},
+    {file = "requirements_parser-0.11.0.tar.gz", hash = "sha256:35f36dc969d14830bf459803da84f314dc3d17c802592e9e970f63d0359e5920"},
+]
+
+[[package]]
 name = "rich"
 version = "13.7.1"
 requires_python = ">=3.7.0"
@@ -4446,6 +4463,17 @@ files = [
 ]
 
 [[package]]
+name = "types-setuptools"
+version = "75.6.0.20241223"
+requires_python = ">=3.8"
+summary = "Typing stubs for setuptools"
+groups = ["license"]
+files = [
+    {file = "types_setuptools-75.6.0.20241223-py3-none-any.whl", hash = "sha256:7cbfd3bf2944f88bbcdd321b86ddd878232a277be95d44c78a53585d78ebc2f6"},
+    {file = "types_setuptools-75.6.0.20241223.tar.gz", hash = "sha256:d9478a985057ed48a994c707f548e55aababa85fe1c9b212f43ab5a1fffd3211"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.11.0"
 requires_python = ">=3.8"
@@ -4526,6 +4554,32 @@ summary = "Bidirectional UTM-WGS84 converter for python"
 groups = ["all", "gtfs"]
 files = [
     {file = "utm-0.7.0.tar.gz", hash = "sha256:3c9a3650e98bb6eecec535418d0dfd4db8f88c8ceaca112a0ff0787e116566e2"},
+]
+
+[[package]]
+name = "uv"
+version = "0.5.13"
+requires_python = ">=3.8"
+summary = "An extremely fast Python package and project manager, written in Rust."
+groups = ["license"]
+files = [
+    {file = "uv-0.5.13-py3-none-linux_armv6l.whl", hash = "sha256:45301cb355fc0525e692d220ea7cb196e8378a53162b27d6eea6e65c7635ed3d"},
+    {file = "uv-0.5.13-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ff96602b7d391f35dc25122c2661e680a9e94864e96801611ef05c853826c82c"},
+    {file = "uv-0.5.13-py3-none-macosx_11_0_arm64.whl", hash = "sha256:941c13f15a8726a2f5ad3fffa0bbe98e221c98fbe73adbca62cf327bd3fb029c"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:642d7e62c376487a63a03fb830749fb24dd7653f715864df2fb8788f29dfb85e"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:b5aab53db952f7f4505cfc2f62ecedb4a7977d746622f67cbadf052bef0d916e"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f57250f46914affab4e4ca50822f1fbc7910df01818a22b7d91d4f5ccc5eb80c"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:6fb26d2b6d4b6467b98acc22b67bbdd16360a1b843842d7cd77ff4df70884567"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:414dd7083bd7e06ab2db0ee6cfe81b0810c416e79ff1643701e15e2df5e1db2b"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:01fc5e928efba822ff28007f827c3c274b644508253fe358ec79085bae1da0c9"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:82479440765e507af1f2732bd496ec6ed849488f5ce310b8556cfe8c12da1c5f"},
+    {file = "uv-0.5.13-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:18f2141e71f6cb4c0ab44f1a100838d336f14c1d7a1c62444c79c2c2554331be"},
+    {file = "uv-0.5.13-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:4c2e75845c9c5adae3e8274967f70023b740488d732f88100baeef70090b60a0"},
+    {file = "uv-0.5.13-py3-none-musllinux_1_1_i686.whl", hash = "sha256:6de38097d5efa86ae62a71ff268e16f7eab86f4afa63c32b546cb7f5a182874f"},
+    {file = "uv-0.5.13-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:30440409a28f1d5d34af8839a48ba9c26da06fc295f363ba9b12689b796453d4"},
+    {file = "uv-0.5.13-py3-none-win32.whl", hash = "sha256:df2a751e8319e11ef2d8bec30d549ee13949027aaa936ab2a0ab126602f4232b"},
+    {file = "uv-0.5.13-py3-none-win_amd64.whl", hash = "sha256:4219f1ed370bb2cec5f10dcc93fa9ecf5615fa67e0b71eef4817d571291f0bfc"},
+    {file = "uv-0.5.13.tar.gz", hash = "sha256:58a66786f2e95c89539bafd819cf2959f56199457301eac8faa920c1872c4f36"},
 ]
 
 [[package]]

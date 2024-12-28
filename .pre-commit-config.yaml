@@ -61,9 +61,10 @@ repos:
         language: python
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "2024.2"
+    rev: "2024.3"
     hooks:
       - id: licensecheck
+        args: ["-u", "requirements.txt"]
         stages: [manual]
 
 ci:
