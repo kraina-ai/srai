@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -120,7 +120,7 @@ jobs:
         with:
           repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
