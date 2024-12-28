@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Made code compliant with `osmnx`'s new `2.0.0` release [#473](https://github.com/kraina-ai/srai/issues/473)
+
 ## [0.7.8] - 2024-12-28
 
 ### Changed

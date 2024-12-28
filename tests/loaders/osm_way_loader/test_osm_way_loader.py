@@ -132,7 +132,12 @@ def valid_and_empty_polygons_area_gdf(
     "area_gdf_fixture", "expected_result", "loader_params", "file_name", "expectation"
 )
 @P.case(  # type: ignore
-    "Raise when no geometry", "empty_area_gdf", None, None, None, pytest.raises(ValueError)
+    "Raise when no geometry",
+    "empty_area_gdf",
+    None,
+    None,
+    None,
+    pytest.raises(ValueError),
 )
 @P.case(  # type: ignore
     "Raise when no CRS",
@@ -232,6 +237,8 @@ def test_contract(
     mocker: MockerFixture,
 ):
     """Test `OSMWayLoader.load`'s contract."""
+    from packaging import version
+
     if not loader_params:
         loader_params = {"network_type": OSMNetworkType.DRIVE}
 
@@ -244,8 +251,6 @@ def test_contract(
         if f_name == "type_error":
             raise TypeError
         elif f_name == "empty_overpass_response":
-            from packaging import version
-
             osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("1.6.0")
 
             if osmnx_new_api:
@@ -263,8 +268,9 @@ def test_contract(
         return res
 
     with expectation:
+        osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("2.0.0")
         mocker.patch(
-            "osmnx.graph_from_polygon",
+            ("osmnx.graph.graph_from_polygon" if osmnx_new_api else "osmnx.graph_from_polygon"),
             wraps=partial(patched_graph_from_polygon, file_name),
         )
         nodes, edges = loader.load(area_gdf)
@@ -425,7 +431,9 @@ def test_contract(
     ],
 )  # type: ignore
 def test_preprocessing(
-    column_name: str, input: Union[Any, Sequence[Any]], expected: Union[Any, Sequence[Any]]
+    column_name: str,
+    input: Union[Any, Sequence[Any]],
+    expected: Union[Any, Sequence[Any]],
 ) -> None:
     """Test `OSMWayLoader._sanitize_and_normalize()` preprocessing."""
     loader = OSMWayLoader(network_type=OSMNetworkType.DRIVE)

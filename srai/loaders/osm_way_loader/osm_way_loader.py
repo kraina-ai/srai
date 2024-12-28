@@ -195,13 +195,16 @@ class OSMWayLoader(Loader):
         import osmnx as ox
         from packaging import version
 
-        osmnx_new_api = version.parse(ox.__version__) >= version.parse("1.6.0")
+        current_osmnx_version = version.parse(ox.__version__)
 
-        response_error = (
-            ox._errors.InsufficientResponseError
-            if osmnx_new_api
-            else ox._errors.EmptyOverpassResponse
-        )
+        if current_osmnx_version >= version.parse("1.6.0"):
+            from osmnx._errors import InsufficientResponseError
+
+            response_error = InsufficientResponseError
+        else:
+            from osmnx._errors import EmptyOverpassResponse
+
+            response_error = EmptyOverpassResponse
 
         try:
             return self._graph_from_polygon(polygon)
@@ -225,16 +228,28 @@ class OSMWayLoader(Loader):
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
         """
         import osmnx as ox
+        from packaging import version
 
-        G_directed = ox.graph_from_polygon(
-            polygon,
-            network_type=self.network_type,
-            retain_all=True,
-            clean_periphery=True,
-            truncate_by_edge=(not self.contain_within_area),
-        )
+        current_osmnx_version = version.parse(ox.__version__)
 
-        G_undirected = ox.utils_graph.get_undirected(G_directed)
+        if current_osmnx_version >= version.parse("2.0.0"):
+            G_directed = ox.graph.graph_from_polygon(
+                polygon,
+                network_type=self.network_type,
+                retain_all=True,
+                truncate_by_edge=(not self.contain_within_area),
+            )
+            G_undirected = ox.convert.to_undirected(G_directed)
+        else:
+            G_directed = ox.graph_from_polygon(
+                polygon,
+                network_type=self.network_type,
+                retain_all=True,
+                clean_periphery=True,
+                truncate_by_edge=(not self.contain_within_area),
+            )
+            G_undirected = ox.utils_graph.get_undirected(G_directed)
+
         gdf_n, gdf_e = ox.graph_to_gdfs(G_undirected)
 
         return gdf_n, gdf_e
