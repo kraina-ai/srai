@@ -31,11 +31,11 @@ repos:
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.17.3
+    rev: 2.22.0
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
-        args: ["-o", "requirements.txt", "--without-hashes", "-d", "-G", "all"]
+        args: ["-o", "requirements.txt", "--without-hashes", "-dG:all"]
         files: ^pdm.lock$
         stages: [manual]
   - repo: https://github.com/kynan/nbstripout
