@@ -25,8 +25,7 @@ jobs:
           python-version: 3.12
           architecture: x64
           enable-pep582: true
-          cache: true
-          cache-dependency-path: "**/pdm.lock"
+          cache: false
       - name: Publish distribution 📦 to PyPI
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
 
