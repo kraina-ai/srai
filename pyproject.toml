@@ -218,6 +218,7 @@ ignore_packages = [
     'srai',                     # skip self
     'scalene',                  # uses Apache-2.0 license, takes time to analyse
     'docformatter',             # uses MIT license, has mismatched license in analysis
+    'gtfs-kit',                 # uses MIT license, has mismatched license in analysis
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
