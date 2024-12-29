@@ -42,7 +42,7 @@ jobs:
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Run tests with pytest
         run: pytest -v --durations=20 tests
 

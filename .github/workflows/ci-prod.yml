@@ -55,19 +55,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-prod-
       - name: Install pdm
-        run: pip install pdm
+        run: pip install pdm uv
       - name: Regenerate lock with environment markers
         run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
         run: pdm export --no-default -G all -dG docs -dG visualization -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pip install --no-deps -r requirements.txt
+        run: uv pip install --no-deps -r requirements.txt --system
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat black
+        run: uv pip install jupyter nbconvert nbformat black --system
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
