@@ -33,10 +33,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
         run: pip install pdm
-      - name: Generate lock with newest dependencies
-        run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -G all -dG test
-      - name: Install srai and tests dependencies
-        run: pdm install --lockfile pdm.newest.lock -G all -dG test --skip=post_install
+      - name: Generate requirements.txt
+        run: pdm export --pyproject -G all -dG test -f requirements -o requirements.txt
+      - name: Install dependencies
+        run: pdm run uv pip install --no-deps -r requirements.txt
       - name: Run tests with pytest
         run: pdm run pytest -v --durations=20 tests
 
