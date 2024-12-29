@@ -34,9 +34,11 @@ jobs:
       - name: Install pdm
         run: pip install pdm uv
       - name: Generate requirements.txt
-        run: pdm export --pyproject -G all -dG test -f requirements -o requirements.txt
+        run: |
+          pdm export --pyproject -G all -f requirements -o requirements.srai.txt
+          pdm export -dG test -f requirements -o requirements.test.txt
       - name: Install dependencies
-        run: uv pip install --no-deps -r requirements.txt --system
+        run: uv pip install --no-deps -r requirements.srai.txt -r requirements.test.txt --system
       - name: Run tests with pytest
         run: pytest -v --durations=20 tests
 
