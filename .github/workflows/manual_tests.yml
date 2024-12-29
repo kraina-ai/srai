@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
-        run: uv pip install pdm
+        run: pip install pdm uv
       - name: Generate requirements.txt
         run: pdm export --pyproject -G all -dG test -f requirements -o requirements.txt
       - name: Install dependencies
