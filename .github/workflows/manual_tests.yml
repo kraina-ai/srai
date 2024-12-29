@@ -32,13 +32,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
-        run: pip install pdm
+        run: uv pip install pdm
       - name: Generate requirements.txt
         run: pdm export --pyproject -G all -dG test -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pdm run uv pip install --no-deps -r requirements.txt
+        run: uv pip install --no-deps -r requirements.txt
       - name: Run tests with pytest
-        run: pdm run pytest -v --durations=20 tests
+        run: pytest -v --durations=20 tests
 
   run-tests-oldest:
     name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (oldest dependencies)
