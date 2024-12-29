@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-12-28
+
 ### Fixed
 
 - Made code compliant with `osmnx`'s new `2.0.0` release [#473](https://github.com/kraina-ai/srai/issues/473)
@@ -314,7 +316,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.8...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.0...HEAD
+
+[0.8.0]: https://github.com/kraina-ai/srai/compare/0.7.8...0.8.0
 
 [0.7.8]: https://github.com/kraina-ai/srai/compare/0.7.7...0.7.8
 

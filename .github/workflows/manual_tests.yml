@@ -32,13 +32,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
-        run: pip install pdm
-      - name: Generate lock with newest dependencies
-        run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -G all -dG test
-      - name: Install srai and tests dependencies
-        run: pdm install --lockfile pdm.newest.lock -G all -dG test --skip=post_install
+        run: pip install pdm uv
+      - name: Generate requirements.txt
+        run: pdm export -dG test -f requirements -o requirements.test.txt
+      - name: Install srai
+        run: |
+          pdm build -v -d dist
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" -r requirements.test.txt --system
       - name: Run tests with pytest
-        run: pdm run pytest -v --durations=20 tests
+        run: pytest -v --durations=20 tests
 
   run-tests-oldest:
     name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (oldest dependencies)
