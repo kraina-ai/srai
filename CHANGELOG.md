@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Changed polygon creation in spherical voronoi algorithm to avoid rounding error on vertices
+
 ## [0.8.1] - 2024-12-30
 
 ### Fixed
