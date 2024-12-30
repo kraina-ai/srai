@@ -45,7 +45,21 @@ def two_polygons_area_gdf() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def amenities_gdf() -> gpd.GeoDataFrame:
+def osmnx_fixture_result_index_names() -> list[str]:
+    """Get index names of OSMnx features gdf result."""
+    import osmnx
+    from packaging import version
+
+    osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("2.0.0")
+
+    if osmnx_new_api:
+        return ["element", "id"]
+    else:
+        return ["element_type", "osmid"]
+
+
+@pytest.fixture  # type: ignore
+def amenities_gdf(osmnx_fixture_result_index_names: list[str]) -> gpd.GeoDataFrame:
     """Get an example gdf representing OSM objects with amenity tag."""
     return gpd.GeoDataFrame(
         {"amenity": ["restaurant", "restaurant", "bar"], "address": ["a", "b", "c"]},
@@ -55,14 +69,14 @@ def amenities_gdf() -> gpd.GeoDataFrame:
                 ["node", "node", "way"],
                 [1, 2, 3],
             ],
-            names=["element_type", "osmid"],
+            names=osmnx_fixture_result_index_names,
         ),
         crs=WGS84_CRS,
     )
 
 
 @pytest.fixture  # type: ignore
-def building_gdf() -> gpd.GeoDataFrame:
+def building_gdf(osmnx_fixture_result_index_names: list[str]) -> gpd.GeoDataFrame:
     """Get an example gdf representing OSM objects with building tag."""
     return gpd.GeoDataFrame(
         {"building": ["commercial", "retail"], "address": ["a", "c"]},
@@ -72,7 +86,7 @@ def building_gdf() -> gpd.GeoDataFrame:
                 ["node", "way"],
                 [1, 3],
             ],
-            names=["element_type", "osmid"],
+            names=osmnx_fixture_result_index_names,
         ),
         crs=WGS84_CRS,
     )
