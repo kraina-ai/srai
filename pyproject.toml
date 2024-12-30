@@ -110,7 +110,10 @@ test = [
     "pytest-snapshot>=0.9.0",
 ]
 # pdm add -dG visualization <library>
-visualization = ["matplotlib"]
+visualization = [
+    "matplotlib",
+    "lonboard",
+]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs",
