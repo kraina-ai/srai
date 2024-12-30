@@ -50,12 +50,12 @@ def osmnx_fixture_result_index_names() -> list[str]:
     import osmnx
     from packaging import version
 
-    osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("2.0.0")
+    osmnx_old_api = version.parse(osmnx.__version__) < version.parse("2.0.0")
 
-    if osmnx_new_api:
-        return ["element", "id"]
-    else:
+    if osmnx_old_api:
         return ["element_type", "osmid"]
+
+    return ["element", "id"]
 
 
 @pytest.fixture  # type: ignore
