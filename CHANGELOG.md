@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2025-01-01
+
 ### Fixed
 
 - Removed GTFS feed validation for `gtfs-kit` versions >= `10.0.0`
@@ -335,7 +337,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.2...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.3...HEAD
+
+[0.8.3]: https://github.com/kraina-ai/srai/compare/0.8.2...0.8.3
 
 [0.8.2]: https://github.com/kraina-ai/srai/compare/0.8.1...0.8.2
 
