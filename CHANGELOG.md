@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed GTFS feed validation for `gtfs-kit` versions >= `10.0.0`
+
 ## [0.8.2] - 2024-12-30
 
 ### Fixed

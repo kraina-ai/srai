@@ -150,6 +150,13 @@ class GTFSLoader(Loader):
             feed (gk.Feed): GTFS feed.
             fail (bool): Fail if feed is invalid.
         """
+        from gtfs_kit import __version__ as gtfs_kit_version
+        from packaging import version
+
+        # New gtfs-kit doesn't have validation capabilities
+        if version.parse(gtfs_kit_version) >= version.parse("10.0.0"):
+            return
+
         validation_result = feed.validate()
 
         if (validation_result["type"] == "error").sum() > 0:
