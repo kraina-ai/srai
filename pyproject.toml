@@ -124,7 +124,7 @@ docs = [
     "ipykernel",
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
-    "mike>=1,<2",
+    "mike>=2",
     "scikit-learn>=1.2.0",
     "umap-learn",
 ]

@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:baa0900aa94496b850c76c5d1ee6e8277d0ea483032aef56e6cf0f27a3e700d1"
+content_hash = "sha256:74755c36478585ebfc0977c1e0cf7bbbcbeb987d8aeaa6607a5f096883697a5f"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1650,7 +1650,6 @@ version = "8.5.0"
 requires_python = ">=3.8"
 summary = "Read metadata from Python packages"
 groups = ["default", "all", "docs", "license", "osm"]
-marker = "python_version < \"3.10\""
 dependencies = [
     "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=3.20",
@@ -1665,8 +1664,7 @@ name = "importlib-resources"
 version = "6.4.5"
 requires_python = ">=3.8"
 summary = "Read resources from Python packages"
-groups = ["all", "plotting", "visualization"]
-marker = "python_version < \"3.10\""
+groups = ["all", "docs", "plotting", "visualization"]
 dependencies = [
     "zipp>=3.1.0; python_version < \"3.10\"",
 ]
@@ -2396,18 +2394,22 @@ files = [
 
 [[package]]
 name = "mike"
-version = "1.1.2"
+version = "2.1.3"
 summary = "Manage multiple versions of your MkDocs-powered documentation"
 groups = ["docs"]
 dependencies = [
-    "jinja2",
+    "importlib-metadata",
+    "importlib-resources",
+    "jinja2>=2.7",
     "mkdocs>=1.0",
+    "pyparsing>=3.0",
+    "pyyaml-env-tag",
     "pyyaml>=5.1",
     "verspec",
 ]
 files = [
-    {file = "mike-1.1.2-py3-none-any.whl", hash = "sha256:4c307c28769834d78df10f834f57f810f04ca27d248f80a75f49c6fa2d1527ca"},
-    {file = "mike-1.1.2.tar.gz", hash = "sha256:56c3f1794c2d0b5fdccfa9b9487beb013ca813de2e3ad0744724e9d34d40b77b"},
+    {file = "mike-2.1.3-py3-none-any.whl", hash = "sha256:d90c64077e84f06272437b464735130d380703a76a5738b152932884c60c062a"},
+    {file = "mike-2.1.3.tar.gz", hash = "sha256:abd79b8ea483fb0275b7972825d3082e5ae67a41820f8d8a0dc7a3f49944e810"},
 ]
 
 [[package]]
@@ -3889,7 +3891,7 @@ name = "pyparsing"
 version = "3.2.0"
 requires_python = ">=3.9"
 summary = "pyparsing module - Classes and methods to define and execute parsing grammars"
-groups = ["all", "plotting", "visualization"]
+groups = ["all", "docs", "plotting", "visualization"]
 files = [
     {file = "pyparsing-3.2.0-py3-none-any.whl", hash = "sha256:93d9577b88da0bbea8cc8334ee8b918ed014968fd2ec383e868fb8afb1ccef84"},
     {file = "pyparsing-3.2.0.tar.gz", hash = "sha256:cbf74e27246d595d9a74b186b810f6fbb86726dbf3b9532efb343f6d7294fe9c"},
@@ -5561,7 +5563,6 @@ version = "3.21.0"
 requires_python = ">=3.9"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 groups = ["default", "all", "docs", "license", "osm", "plotting", "visualization"]
-marker = "python_version < \"3.10\""
 files = [
     {file = "zipp-3.21.0-py3-none-any.whl", hash = "sha256:ac1bbe05fd2991f160ebce24ffbac5f6d11d83dc90891255885223d42b3cd931"},
     {file = "zipp-3.21.0.tar.gz", hash = "sha256:2c9958f6430a2040341a52eb608ed6dd93ef4392e02ffe219417c1b28b5dd1f4"},
