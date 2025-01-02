@@ -3,3 +3,5 @@ nav:
   - Getting Started: getting_started
   - Examples: examples
   - ...
+  - Releases: releases
+  - Contributing: CONTRIBUTING.md

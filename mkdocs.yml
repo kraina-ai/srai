@@ -110,6 +110,7 @@ plugins:
       alias_type: symlink
   - gen-files:
       scripts:
+        - docs/copy_markdown_files.py
         - docs/copy_examples.py
         - docs/generate_api.py
         - docs/gen_ref_pages.py
