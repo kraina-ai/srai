@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Default OSM download source from Geofabrik to `any`
+
 ## [0.8.3] - 2025-01-01
 
 ### Fixed
