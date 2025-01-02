@@ -5,9 +5,11 @@ Datasets can be loaded using .load() method. Some of them may need name of versi
 """
 
 from ._base import HuggingFaceDataset
+from .chicago_crime.dataset import ChicagoCrimeDataset
 from .philadelphia_crime.dataset import PhiladelphiaCrimeDataset
 
 __all__ = [
     "HuggingFaceDataset",
     "PhiladelphiaCrimeDataset",
+    "ChicagoCrimeDataset",
 ]
