@@ -94,8 +94,11 @@ jobs:
         run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
+      - name: Get minor version
+        id: get-minor-version
+        run: python -c "print('MINOR_VERSION=' + '.'.join('${{github.ref_name}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
       - name: Publish latest documentation
-        run: mike deploy --remote origin-srai-docs --push --update-aliases ${{github.ref_name}} latest
+        run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
 
   deploy-docs:
     name: Deploy documentation 📄 to Github Pages 🌐
