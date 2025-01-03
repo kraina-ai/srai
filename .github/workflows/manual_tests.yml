@@ -37,8 +37,7 @@ jobs:
         run: pdm export -dG test -f requirements -o requirements.test.txt
       - name: Install srai
         run: |
-          pdm build -v -d dist
-          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" -r requirements.test.txt --system
+          uv pip install -e "srai[all] @ ." -r requirements.test.txt --system
       - name: Run tests with pytest
         run: pytest -v --durations=20 tests
 
