@@ -7,6 +7,7 @@ on:
       - completed
 jobs:
   deploy-docs:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     name: Deploy documentation 📄 to Github Pages 🌐
     runs-on: ubuntu-latest
     permissions:
