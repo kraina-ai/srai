@@ -7,10 +7,10 @@ import geopandas as gpd
 import h3
 import numpy as np
 import pandas as pd
+from datasets import load_dataset
 from shapely.geometry import Polygon
 from sklearn.model_selection import train_test_split
 
-from srai.loaders import HuggingFaceLoader
 from srai.regionalizers import H3Regionalizer
 
 
@@ -64,7 +64,7 @@ class HuggingFaceDataset(abc.ABC):
         """
         dataset_name = self.path
         version = version or self.version
-        data = HuggingFaceLoader(hf_token=hf_token).load(dataset_name=dataset_name, version=version)
+        data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         processed_data = self._preprocessing(data)
 
         return processed_data
