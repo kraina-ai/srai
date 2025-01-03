@@ -40,3 +40,28 @@
 .jupyter-wrapper .zeroclipboard-container {
   z-index: 3 !important;
 }
+
+div.highlight pre code,
+div.jp-RenderedText.jp-OutputArea-output>pre,
+div.jp-RenderedText.jp-OutputArea-output.jp-OutputArea-executeResult>pre {
+  font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace, SFMono-Regular, Consolas, Menlo,
+    monospace;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: normal;
+}
+
+.jupyter-wrapper .jp-Notebook {
+  overflow: hidden !important;
+}
+
+div.admonition p {
+  margin-top: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.jupyter-wrapper .jp-RenderedText pre .ansi-bold {
+  font-weight: normal !important;
+  text-shadow: calc(-0.06ex) 0 0 currentColor, calc(0.06ex) 0 0 currentColor;
+}
