@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to pass `verbosity_mode` to `OsmPbfLoader`
+
 ### Changed
 
 - Default OSM download source from Geofabrik to `any`
