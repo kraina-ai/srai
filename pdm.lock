@@ -4272,7 +4272,7 @@ files = [
 
 [[package]]
 name = "quackosm"
-version = "0.12.0"
+version = "0.12.1"
 requires_python = ">=3.9"
 summary = "An open-source tool for reading OpenStreetMap PBF files using DuckDB"
 groups = ["all", "osm"]
@@ -4295,8 +4295,8 @@ dependencies = [
     "typeguard>=3.0.0",
 ]
 files = [
-    {file = "quackosm-0.12.0-py3-none-any.whl", hash = "sha256:106dbc899e8b7e503f59e8ed582e318c33f41514aeb8af7b2fb92e913e475340"},
-    {file = "quackosm-0.12.0.tar.gz", hash = "sha256:15bce5ee19d57cc8287dab67eb331e29d573b313716c2a362586268f906b10bc"},
+    {file = "quackosm-0.12.1-py3-none-any.whl", hash = "sha256:df3e57a40b8d3aee49ed052d224cbb4412c07ed72ad3bfda046e28424d621e99"},
+    {file = "quackosm-0.12.1.tar.gz", hash = "sha256:9de70e90a2fee00686aea34fd8e70add07f2297d9a20637354b2e2c62e490d1d"},
 ]
 
 [[package]]
