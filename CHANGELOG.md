@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Default OSM download source from Geofabrik to `any`
+- Replaced deprecated function calls from the `QuackOSM` library
 
 ## [0.8.3] - 2025-01-01
 

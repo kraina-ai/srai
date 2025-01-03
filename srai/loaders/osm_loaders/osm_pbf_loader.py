@@ -124,14 +124,14 @@ class OSMPbfLoader(OSMLoader):
         pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
 
         if self.pbf_file is not None:
-            features_gdf = pbf_reader.get_features_gdf(
+            features_gdf = pbf_reader.convert_pbf_to_geodataframe(
                 file_paths=self.pbf_file,
                 keep_all_tags=keep_all_tags,
                 explode_tags=explode_tags,
                 ignore_cache=ignore_cache,
             )
         else:
-            features_gdf = pbf_reader.get_features_gdf_from_geometry(
+            features_gdf = pbf_reader.convert_geometry_to_geodataframe(
                 keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
             )
 
@@ -187,14 +187,14 @@ class OSMPbfLoader(OSMLoader):
         geoparquet_file_path: Path
 
         if self.pbf_file is not None:
-            geoparquet_file_path = pbf_reader.convert_pbf_to_gpq(
+            geoparquet_file_path = pbf_reader.convert_pbf_to_parquet(
                 pbf_path=self.pbf_file,
                 keep_all_tags=keep_all_tags,
                 explode_tags=explode_tags,
                 ignore_cache=ignore_cache,
             )
         else:
-            geoparquet_file_path = pbf_reader.convert_geometry_filter_to_gpq(
+            geoparquet_file_path = pbf_reader.convert_geometry_to_parquet(
                 keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
             )
 
