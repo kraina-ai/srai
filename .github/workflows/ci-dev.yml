@@ -6,41 +6,6 @@ on:
       - completed
 
 jobs:
-  build-n-publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    name: Build and publish Python 🐍 distributions 📦 to TestPyPI
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-      - uses: pdm-project/setup-pdm@v3
-        name: Setup PDM
-        with:
-          python-version: 3.12
-          architecture: x64
-          enable-pep582: true
-          cache: true
-          cache-dependency-path: "**/pdm.lock"
-      - run: pip install toml
-      - uses: jannekem/run-python-script-action@v1
-        name: Rename test version
-        with:
-          script: |
-            import time
-            import toml
-            data = toml.load("pyproject.toml")
-            current_date = time.strftime("%Y%m%d%H%M%S")
-            data['project']['version']=f"{data['project']['version']}-{current_date}"
-            data['tool']['bumpver']['current_version']=f"{data['tool']['bumpver']['current_version']}-{current_date}"
-            f = open("pyproject.toml",'w')
-            toml.dump(data, f)
-            f.close()
-      - name: Publish distribution 📦 to Test PyPI
-        run: pdm publish --repository testpypi --username __token__ --password ${{ secrets.PYPI_TEST_API_TOKEN }} --comment ${{ github.sha }} --verbose
-
   generate-docs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Generate latest library 📚 documentation 📄
@@ -51,9 +16,9 @@ jobs:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
       MKDOCS_DEV: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -65,19 +30,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-dev-
       - name: Install pdm
-        run: pip install pdm
+        run: pip install pdm uv
       - name: Regenerate lock with environment markers
         run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
         run: pdm export --no-default -G all -dG docs -dG visualization -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pip install --no-deps -r requirements.txt
+        run: uv pip install --no-deps -r requirements.txt --system
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat black
+        run: uv pip install jupyter nbconvert nbformat black --system
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -105,7 +70,7 @@ jobs:
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
-        run: mike deploy --remote origin-srai-docs --rebase --push dev
+        run: mike deploy --remote origin-srai-docs --push dev
 
   deploy-docs:
     name: Deploy documentation 📄 to Github Pages 🌐
@@ -116,16 +81,16 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
           path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4

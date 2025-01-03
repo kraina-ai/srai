@@ -14,7 +14,7 @@ jobs:
     needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -25,8 +25,7 @@ jobs:
           python-version: 3.12
           architecture: x64
           enable-pep582: true
-          cache: true
-          cache-dependency-path: "**/pdm.lock"
+          cache: false
       - name: Publish distribution 📦 to PyPI
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
 
@@ -42,9 +41,9 @@ jobs:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
       MKDOCS_DEV: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -56,19 +55,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-prod-
       - name: Install pdm
-        run: pip install pdm
+        run: pip install pdm uv
       - name: Regenerate lock with environment markers
         run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
         run: pdm export --no-default -G all -dG docs -dG visualization -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pip install --no-deps -r requirements.txt
+        run: uv pip install --no-deps -r requirements.txt --system
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat black
+        run: uv pip install jupyter nbconvert nbformat black --system
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -95,8 +94,11 @@ jobs:
         run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
+      - name: Get minor version
+        id: get-minor-version
+        run: python -c "print('MINOR_VERSION=' + '.'.join('${{github.ref_name}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
       - name: Publish latest documentation
-        run: mike deploy --remote origin-srai-docs --rebase --push --update-aliases ${{github.ref_name}} latest
+        run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
 
   deploy-docs:
     name: Deploy documentation 📄 to Github Pages 🌐
@@ -107,16 +109,16 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
           path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4

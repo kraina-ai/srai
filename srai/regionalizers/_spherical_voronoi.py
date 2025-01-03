@@ -270,7 +270,8 @@ def generate_voronoi_regions(
             for sphere_part_id, region_polygon_edges in regions_parts[region_id]:
                 polygon_points: list[tuple[float, float]] = []
 
-                for edge_start, edge_end in region_polygon_edges:
+                total_polygon_edges = len(region_polygon_edges)
+                for edge_id, (edge_start, edge_end) in enumerate(region_polygon_edges):
                     if (edge_start, edge_end) in interpolated_edges:
                         interpolated_edge = interpolated_edges[(edge_start, edge_end)]
                     else:
@@ -283,7 +284,17 @@ def generate_voronoi_regions(
                         prev_lat=polygon_points[-1][1] if polygon_points else None,
                     )
 
-                    polygon_points.extend(interpolated_edge)
+                    if edge_id == 0:
+                        # Add whole edge
+                        polygon_points.extend(interpolated_edge)
+                    elif edge_id == (total_polygon_edges - 1):
+                        # Add last edge without start and end point
+                        polygon_points.extend(interpolated_edge[1:-1])
+                        # Close the loop
+                        polygon_points.append(polygon_points[0])
+                    else:
+                        # Add middle edge without start and end point
+                        polygon_points.extend(interpolated_edge[1:-1])
 
                 polygon = Polygon(polygon_points)
                 polygon = make_valid(polygon)

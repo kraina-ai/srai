@@ -1,6 +1,6 @@
 [project]
 name = "srai"
-version = "0.7.7"
+version = "0.8.3"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
     { name = "Piotr Gramacki", email = "pgramacki@kraina.ai" },
@@ -57,14 +57,14 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = [
-    "overpass>=0.7",
-    "pillow>=8.0.0",
-    "beautifulsoup4",
-    "quackosm>=0.11.0",
-]
+osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.11.0"]
 # pdm add -G voronoi <library>
-voronoi = ["pymap3d>=3.0.0", "haversine>=2.0.0", "scipy>=1.10.0", "spherical-geometry>=1.3.2"]
+voronoi = [
+    "pymap3d>=3.0.0",
+    "haversine>=2.0.0",
+    "scipy>=1.10.0",
+    "spherical-geometry>=1.3.2",
+]
 # pdm add -G gtfs <library>
 gtfs = ["gtfs-kit"]
 # pdm add -G plotting <library>
@@ -77,7 +77,12 @@ plotting = [
     "kaleido<=0.2.1,>=0.2.0",
 ] # kaleido<=0.2.1 because installation breaks on 0.2.1.post1
 # pdm add -G torch <library>
-torch = ["pytorch-lightning>=2.0.0", "torch"]
+torch = [
+    "pytorch-lightning>=2.0.0",
+    # Torch 2.2.* is the last oficially supported torch version on macOS x86_64
+    "torch<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torch",
+]
 all = ["srai[osm,voronoi,gtfs,plotting,torch]"]
 
 
@@ -105,7 +110,10 @@ test = [
     "pytest-snapshot>=0.9.0",
 ]
 # pdm add -dG visualization <library>
-visualization = ["keplergl", "matplotlib"]
+visualization = [
+    "matplotlib",
+    "lonboard",
+]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs",
@@ -116,15 +124,12 @@ docs = [
     "ipykernel",
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",
-    "mike>=1,<2",
+    "mike>=2",
     "scikit-learn>=1.2.0",
     "umap-learn",
 ]
 # performance = ["scalene"]
-license = [
-    "licensecheck",
-    "pipdeptree",
-]
+license = ["licensecheck==2024.3", "pipdeptree"]
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
@@ -190,7 +195,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.7.7"
+current_version = "0.8.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore(CI/CD): bump version {old_version} -> {new_version}"
 commit = true
@@ -218,10 +223,10 @@ ignore_packages = [
     'srai',                     # skip self
     'scalene',                  # uses Apache-2.0 license, takes time to analyse
     'docformatter',             # uses MIT license, has mismatched license in analysis
+    'gtfs-kit',                 # uses MIT license, has mismatched license in analysis
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
-    'keplergl',                 # uses MIT license, has mismatched license in analysis
     'nvidia-cublas-cu11',       # uses NVIDIA license
     'nvidia-cuda-cupti-cu11',   # uses NVIDIA license
     'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license

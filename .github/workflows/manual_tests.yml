@@ -1,5 +1,9 @@
 name: "Run tests with newest and oldest dependencies"
-on: [workflow_dispatch, workflow_call]
+on:
+  workflow_dispatch:
+  workflow_call:
+  schedule:
+    - cron: "0 4 * * 1" # every monday at 04:00 UTC
 
 jobs:
   run-tests-newest:
@@ -22,19 +26,20 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
       COLUMNS: 120
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
-        run: pip install pdm
-      - name: Generate lock with newest dependencies
-        run: pdm lock --lockfile pdm.newest.lock --strategy no_cross_platform -G all -dG test
-      - name: Install srai and tests dependencies
-        run: pdm install --lockfile pdm.newest.lock -G all -dG test --skip=post_install
+        run: pip install pdm uv
+      - name: Generate requirements.txt
+        run: pdm export -dG test -f requirements -o requirements.test.txt
+      - name: Install srai
+        run: |
+          uv pip install -e "srai[all] @ ." -r requirements.test.txt --system
       - name: Run tests with pytest
-        run: pdm run pytest -v --durations=20 tests
+        run: pytest -v --durations=20 tests
 
   run-tests-oldest:
     name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (oldest dependencies)
@@ -48,7 +53,7 @@ jobs:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:

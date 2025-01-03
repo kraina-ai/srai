@@ -11,9 +11,9 @@ jobs:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
       MKDOCS_DEV: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DOCS_PAT }}
+          token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -25,19 +25,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-dev-
       - name: Install pdm
-        run: pip install pdm
+        run: pip install pdm uv
       - name: Regenerate lock with environment markers
         run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
         run: pdm export --no-default -dG docs -dG visualization -f requirements -o requirements.txt
       - name: Install dependencies
-        run: pip install --no-deps -r requirements.txt
+        run: uv pip install --no-deps -r requirements.txt --system
       - name: Install nbconvert dependency
-        run: pip install jupyter nbconvert nbformat black
+        run: uv pip install jupyter nbconvert nbformat black --system
       - name: Install srai
         run: |
           pdm build -v -d dist
-          pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')"
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Configure Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -65,7 +65,7 @@ jobs:
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
       - name: Publish dev documentation
-        run: mike deploy --remote origin-srai-docs --rebase --push dev
+        run: mike deploy --remote origin-srai-docs --push dev
 
   deploy-docs-test:
     name: Deploy documentation 📄 to Github Pages 🌐
@@ -76,16 +76,16 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
           token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
           path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4

@@ -46,7 +46,7 @@ class OSMPbfLoader(OSMLoader):
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
-        download_source: "OsmExtractSource" = "geofabrik",
+        download_source: "OsmExtractSource" = "any",
         download_directory: Union[str, Path] = "files",
     ) -> None:
         """

@@ -6,29 +6,12 @@ from unittest import TestCase
 
 import geopandas as gpd
 import pytest
-from shapely.geometry.base import BaseGeometry
 
-from srai.constants import GEOMETRY_COLUMN
 from srai.h3 import shapely_geometry_to_h3
+from tests.h3.conftest import _gdf_noop, _gdf_to_geometry_list, _gdf_to_geoseries
 from tests.regionalizers.test_h3_regionalizer import H3_RESOLUTION
 
 ut = TestCase()
-
-
-def _gdf_noop(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    return gdf_fixture
-
-
-def _gdf_to_geoseries(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoSeries:  # noqa: FURB118
-    return gdf_fixture[GEOMETRY_COLUMN]
-
-
-def _gdf_to_geometry_list(gdf_fixture: gpd.GeoDataFrame) -> list[BaseGeometry]:
-    return list(gdf_fixture[GEOMETRY_COLUMN])
-
-
-def _gdf_to_single_geometry(gdf_fixture: gpd.GeoDataFrame) -> BaseGeometry:
-    return gdf_fixture[GEOMETRY_COLUMN][0]
 
 
 @pytest.mark.parametrize(

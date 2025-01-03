@@ -42,13 +42,27 @@ class OSMOnlineLoader(OSMLoader):
     """
 
     _PBAR_FORMAT = "Downloading {}: {}"
-    _ELEMENT_TYPE_INDEX_NAME = "element_type"
-    _OSMID_INDEX_NAME = "osmid"
-    _RESULT_INDEX_NAMES = [_ELEMENT_TYPE_INDEX_NAME, _OSMID_INDEX_NAME]
 
     def __init__(self) -> None:
         """Initialize OSMOnlineLoader."""
         import_optional_dependencies(dependency_group="osm", modules=["osmnx"])
+
+        import osmnx
+
+        osmnx_new_api = version.parse(osmnx.__version__) >= version.parse("2.0.0")
+
+        if osmnx_new_api:
+            self._ELEMENT_TYPE_INDEX_NAME = "element"
+            self._OSMID_INDEX_NAME = "id"
+
+        else:
+            self._ELEMENT_TYPE_INDEX_NAME = "element_type"
+            self._OSMID_INDEX_NAME = "osmid"
+
+        self._RESULT_INDEX_NAMES = [
+            self._ELEMENT_TYPE_INDEX_NAME,
+            self._OSMID_INDEX_NAME,
+        ]
 
     def load(
         self,

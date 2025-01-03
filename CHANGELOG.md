@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Default OSM download source from Geofabrik to `any`
+
+## [0.8.3] - 2025-01-01
+
+### Fixed
+
+- Removed GTFS feed validation for `gtfs-kit` versions >= `10.0.0`
+
+## [0.8.2] - 2024-12-30
+
+### Fixed
+
+- Changed polygon creation in spherical voronoi algorithm to avoid rounding error on vertices
+
+## [0.8.1] - 2024-12-30
+
+### Fixed
+
+- Made code compliant with `osmnx`'s new `2.0.0` release in `OsmOnlineLoader`
+
+## [0.8.0] - 2024-12-28
+
+> \[!WARNING]
+> This release was yanked. Please use the [0.8.1](https://github.com/kraina-ai/srai/releases/tag/0.8.1) release instead.
+
+### Fixed
+
+- Made code compliant with `osmnx`'s new `2.0.0` release [#473](https://github.com/kraina-ai/srai/issues/473)
+- Made code compliant with `h3ronpy`'s new `0.22.0` release [#471](https://github.com/kraina-ai/srai/issues/471)
+
+## [0.7.8] - 2024-12-28
+
+### Changed
+
+- Set max `h3ronpy` version to `<0.22.0` (implemented by [@bouzaghrane](https://github.com/bouzaghrane))
+- Set max `osmnx` version to `<2.0.0`
+
+### Fixed
+
+- Removed a list comprehension in geometry related operations (implemented by [@ebonnal](https://github.com/ebonnal))
+
 ## [0.7.7] - 2024-09-25
 
 ### Changed
@@ -17,11 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep)).
+- Changed a typo in the `BASE_OSM_GROUPS_FILTER` (implemented by [@starsep](https://github.com/starsep))
 
 ### Added
 
-- Added methods for saving and loading fittable `GeoVexEmbedder` (implemented by [@sabman](https://github.com/sabman) and [@mhassanch](https://github.com/mhassanch)). #457
+- Added methods for saving and loading fittable `GeoVexEmbedder` (implemented by [@sabman](https://github.com/sabman) and [@mhassanch](https://github.com/mhassanch)) [#457](https://github.com/kraina-ai/srai/issues/457)
 
 ## [0.7.5] - 2024-06-04
 
@@ -298,7 +341,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.7.7...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.3...HEAD
+
+[0.8.3]: https://github.com/kraina-ai/srai/compare/0.8.2...0.8.3
+
+[0.8.2]: https://github.com/kraina-ai/srai/compare/0.8.1...0.8.2
+
+[0.8.1]: https://github.com/kraina-ai/srai/compare/0.8.0...0.8.1
+
+[0.8.0]: https://github.com/kraina-ai/srai/compare/0.7.8...0.8.0
+
+[0.7.8]: https://github.com/kraina-ai/srai/compare/0.7.7...0.7.8
 
 [0.7.7]: https://github.com/kraina-ai/srai/compare/0.7.6...0.7.7
 

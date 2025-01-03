@@ -1,5 +1,5 @@
 site_name: srai
-site_url: null
+site_url: https://kraina-ai.github.io/srai/
 
 repo_url: https://github.com/kraina-ai/srai
 repo_name: kraina-ai/srai
@@ -86,6 +86,8 @@ extra:
       - accept
       - manage
   version:
+    alias: true
+    default: latest
     provider: mike
 
 extra_css:
@@ -105,8 +107,10 @@ plugins:
   - mike:
       canonical_version: "latest"
       version_selector: true
+      alias_type: symlink
   - gen-files:
       scripts:
+        - docs/copy_markdown_files.py
         - docs/copy_examples.py
         - docs/generate_api.py
         - docs/gen_ref_pages.py
