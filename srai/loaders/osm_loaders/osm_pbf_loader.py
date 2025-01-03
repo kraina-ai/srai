@@ -6,7 +6,7 @@ This module contains loader capable of loading OpenStreetMap features from `*.os
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
@@ -48,6 +48,7 @@ class OSMPbfLoader(OSMLoader):
         pbf_file: Optional[Union[str, Path]] = None,
         download_source: "OsmExtractSource" = "any",
         download_directory: Union[str, Path] = "files",
+        verbosity_mode: Literal["silent", "transient", "verbose"] = "transient",
     ) -> None:
         """
         Initialize OSMPbfLoader.
@@ -61,11 +62,16 @@ class OSMPbfLoader(OSMLoader):
                 Defaults to "any".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files".
+            verbosity_mode (Literal["silent", "transient", "verbose"], optional): Set progress
+                verbosity mode. Can be one of: silent, transient and verbose. Silent disables
+                output completely. Transient tracks progress, but removes output after finished.
+                Verbose leaves all progress outputs in the stdout. Defaults to "transient".
         """
         import_optional_dependencies(dependency_group="osm", modules=["quackosm"])
         self.pbf_file = pbf_file
         self.download_source = download_source
         self.download_directory = download_directory
+        self.verbosity_mode = verbosity_mode
 
     def load(
         self,
@@ -205,5 +211,6 @@ class OSMPbfLoader(OSMLoader):
             geometry_filter=area_wgs84.unary_union,
             working_directory=self.download_directory,
             osm_extract_source=OsmExtractSource(self.download_source),
+            verbosity_mode=self.verbosity_mode,
         )
         return pbf_reader
