@@ -74,8 +74,8 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
                 Defaults to None.
             version (str, optional): version of a dataset.
                 Available: Official spatial train-test split from year 2022 in chosen h3 resolution:
-                'res_8', 'res_9, 'res_10'. Defaults to 'res_9'. Data from other years available with
-                random train-test split: '2020', '2021', '2022'.
+                'res_8', 'res_9, 'res_10'. Defaults to 'res_9'. Raw data from other years available
+                as: '2020', '2021', '2022'.
 
         Returns:
             gpd.GeoDataFrame: Loaded data.

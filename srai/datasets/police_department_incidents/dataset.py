@@ -45,7 +45,9 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
             categorical_columns=categorical_columns,
         )
 
-    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
+    def _preprocessing(
+        self, data: pd.DataFrame, version: Optional[str] = "res_9"
+    ) -> gpd.GeoDataFrame:
         """
         Preprocess the dataset from HuggingFace.
 
