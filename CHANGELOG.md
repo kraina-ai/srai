@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2025-01-04
+
 ### Added
 
 - Option to pass `verbosity_mode` to `OsmPbfLoader`
@@ -346,7 +348,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.3...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.4...HEAD
+
+[0.8.4]: https://github.com/kraina-ai/srai/compare/0.8.3...0.8.4
 
 [0.8.3]: https://github.com/kraina-ai/srai/compare/0.8.2...0.8.3
 
