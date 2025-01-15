@@ -5,11 +5,11 @@ Datasets can be loaded using .load() method. Some of them may need name of versi
 """
 
 from ._base import HuggingFaceDataset
-from .airbnb_multicity.dataset import AirbnbMulticityDataset
-from .chicago_crime.dataset import ChicagoCrimeDataset
-from .house_sales_in_king_county.dataset import HouseSalesInKingCountyDataset
-from .philadelphia_crime.dataset import PhiladelphiaCrimeDataset
-from .police_department_incidents.dataset import PoliceDepartmentIncidentsDataset
+from .airbnb_multicity import AirbnbMulticityDataset
+from .chicago_crime import ChicagoCrimeDataset
+from .house_sales_in_king_county import HouseSalesInKingCountyDataset
+from .philadelphia_crime import PhiladelphiaCrimeDataset
+from .police_department_incidents import PoliceDepartmentIncidentsDataset
 
 __all__ = [
     "HuggingFaceDataset",
