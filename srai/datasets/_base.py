@@ -117,6 +117,7 @@ class HuggingFaceDataset(abc.ABC):
         if target_column == "count":
             regionalizer = H3Regionalizer(resolution=resolution)
             regions = regionalizer.transform(gdf)
+
             joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
             joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
 
