@@ -49,7 +49,7 @@ class HuggingFaceDataset(abc.ABC):
 
     def load(
         self, hf_token: Optional[str] = None, version: Optional[str] = None
-    ) -> gpd.GeoDataFrame:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Method to load dataset.
 
@@ -60,14 +60,20 @@ class HuggingFaceDataset(abc.ABC):
             version (str, optional): version of a dataset
 
         Returns:
-            gpd.GeoDataFrame: Loaded data.
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
         """
         dataset_name = self.path
         version = version or self.version
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
-        processed_data = self._preprocessing(data)
+        train = data["train"].to_pandas()
+        processed_train = self._preprocessing(train)
+        if "test" in data:
+            test = data["test"].to_pandas()
+            processed_test = self._preprocessing(test)
+        else:
+            processed_test = None
 
-        return processed_data
+        return processed_train, processed_test
 
     def train_test_split_bucket_regression(
         self,

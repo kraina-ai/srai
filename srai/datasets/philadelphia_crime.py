@@ -27,7 +27,13 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
     def __init__(self) -> None:
         """Create the dataset."""
         numerical_columns = None
-        categorical_columns = None
+        categorical_columns = [
+            "hour",
+            "dispatch_date",
+            "dispatch_time",
+            "dc_dist",
+            "psa",
+        ]
         type = "point"
         target = "text_general_code"
         super().__init__(
@@ -69,7 +75,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
 
     def load(
         self, hf_token: Optional[str] = None, version: Optional[str] = "res_8"
-    ) -> gpd.GeoDataFrame:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Method to load dataset.
 
@@ -84,6 +90,6 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
                 '2022', '2023'.
 
         Returns:
-            gpd.GeoDataFrame: Loaded data.
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
         """
         return super().load(hf_token, version)

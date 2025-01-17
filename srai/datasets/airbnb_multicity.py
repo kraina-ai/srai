@@ -31,10 +31,10 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
             "number_of_reviews_ltm",
         ]
         target = "price"
-
+        type = "point"
         super().__init__(
             "kraina/airbnb_multicity",
-            type="point",
+            type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
             target=target,
@@ -62,7 +62,7 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
     def load(
         self, hf_token: Optional[str] = None, version: Optional[str] = "res_8"
-    ) -> gpd.GeoDataFrame:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Method to load dataset.
 
@@ -76,6 +76,6 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
                     Raw, full data from ~80 cities available as 'all'.
 
         Returns:
-            gpd.GeoDataFrame: Loaded data.
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
         """
         return super().load(hf_token, version)

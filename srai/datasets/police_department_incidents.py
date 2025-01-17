@@ -22,27 +22,29 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
     online reporting system.
     """
 
-    # TODO: add target and task
     def __init__(self) -> None:
         """Create the dataset."""
         numerical_columns = None
         categorical_columns = [
             "Incdident Year",
             "Incident Day of Week",
-            "Incident Category",
-            "Incident Subcategory",
             "Police District",
             "Analysis Neighborhood",
             "Incident Description",
             "Incident Time",
             "Incident Code",
+            "Report Type Code",
+            "Police District",
+            "Analysis Neighborhood",
         ]
-        type = None
+        type = "point"
+        target = "Incident Category"
         super().__init__(
             "kraina/police_department_incidents",
             type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
+            target=target,
         )
 
     def _preprocessing(
@@ -68,3 +70,22 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
             crs=WGS84_CRS,
         )
         return gdf
+
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = "res_9"
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+        """
+        Method to load dataset.
+
+        Args:
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_9'. \
+                    Raw, full data available as 'all'.
+
+        Returns:
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
+        """
+        return super().load(hf_token, version)

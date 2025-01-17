@@ -32,6 +32,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
             "Arrest",
             "Domestic",
             "Year",
+            "FBI Code",
         ]
         type = "point"
         target = "Primary Type"
@@ -64,7 +65,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
 
     def load(
         self, hf_token: Optional[str] = None, version: Optional[str] = "res_9"
-    ) -> gpd.GeoDataFrame:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Method to load dataset.
 
@@ -78,6 +79,6 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
                 as: '2020', '2021', '2022'.
 
         Returns:
-            gpd.GeoDataFrame: Loaded data.
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
         """
         return super().load(hf_token, version)

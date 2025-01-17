@@ -69,3 +69,22 @@ class HouseSalesInKingCountyDataset(HuggingFaceDataset):
             crs=WGS84_CRS,
         )
         return gdf
+
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = "res_8"
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+        """
+        Method to load dataset.
+
+        Args:
+            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
+                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
+                Defaults to None.
+            version (str, optional): version of a dataset.
+                Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_8'. \
+                    Raw, full data available as 'all'.
+
+        Returns:
+            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
+        """
+        return super().load(hf_token, version)
