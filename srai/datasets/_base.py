@@ -113,12 +113,13 @@ class HuggingFaceDataset(abc.ABC):
             regionalizer = H3Regionalizer(resolution=resolution)
             regions = regionalizer.transform(gdf)
             joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
+            joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
 
-            averages_hex = joined_gdf.groupby("region_id").size().reset_index(name=target_column)
+            averages_hex = joined_gdf.groupby("h3_index").size().reset_index(name=target_column)
             gdf_ = regions.merge(
-                averages_hex, how="inner", left_on="region_id", right_on="region_id"
+                averages_hex, how="inner", left_on="region_id", right_on="h3_index"
             )
-
+            gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
             gdf_.index = gdf_["region_id"]
 
         quantiles = gdf_[target_column].quantile(splits)  # compute quantiles
@@ -144,10 +145,10 @@ class HuggingFaceDataset(abc.ABC):
         if target_column == "count":
             train_hex_indexes = train["region_id"].unique()
             test_hex_indexes = test["region_id"].unique()
-            train = joined_gdf[joined_gdf["region_id"].isin(train_hex_indexes)]
-            test = joined_gdf[joined_gdf["region_id"].isin(test_hex_indexes)]
-            train = train.drop(columns=["region_id"])
-            test = test.drop(columns=["region_id"])
+            train = joined_gdf[joined_gdf["h3_index"].isin(train_hex_indexes)]
+            test = joined_gdf[joined_gdf["h3_index"].isin(test_hex_indexes)]
+            train = train.drop(columns=["h3_index"])
+            test = test.drop(columns=["h3_index"])
 
         return train, test  # , gdf_.iloc[dev_indices]
 
