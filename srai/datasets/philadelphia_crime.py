@@ -35,7 +35,8 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
             "psa",
         ]
         type = "point"
-        target = "text_general_code"
+        # target = "text_general_code"
+        target = None
         super().__init__(
             "kraina/philadelphia_crime",
             type=type,

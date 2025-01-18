@@ -35,7 +35,8 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
             "FBI Code",
         ]
         type = "point"
-        target = "Primary Type"
+        # target = "Primary Type"
+        target = None
         super().__init__(
             "kraina/chicago_crime",
             type=type,
