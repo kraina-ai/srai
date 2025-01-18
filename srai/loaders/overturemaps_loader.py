@@ -137,7 +137,7 @@ class OvertureMapsLoader(Loader):
                 max_workers=self.max_workers,
             )
 
-        features_gdf = features_gdf.set_crs(WGS84_CRS)
+        features_gdf = features_gdf.to_crs(WGS84_CRS)
 
         features_columns = [
             column
