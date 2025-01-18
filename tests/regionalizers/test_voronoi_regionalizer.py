@@ -176,9 +176,9 @@ def test_regions_edge_resolution(
     assert check_if_seeds_match_regions(
         seeds=gdf_earth_poles, regions=result_gdf
     ), "Seeds don't match generated regions"
-    assert result_gdf.geometry.unary_union.difference(
-        earth_bbox
-    ).is_empty, "Result doesn't cover bounding box"
+    assert (
+        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
+    ), "Result doesn't cover bounding box"
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
@@ -196,9 +196,9 @@ def test_multiple_seeds_regions(
     assert check_if_seeds_match_regions(
         seeds=gpd.GeoDataFrame(geometry=seeds, crs=WGS84_CRS), regions=result_gdf
     ), f"Seeds don't match generated regions (seed: {seed})"
-    assert result_gdf.geometry.unary_union.difference(
-        earth_bbox
-    ).is_empty, f"Result doesn't cover bounding box (seed: {seed})"
+    assert (
+        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
+    ), f"Result doesn't cover bounding box (seed: {seed})"
     assert check_if_disjoint(result_gdf), f"Result isn't disjoint (seed: {seed})"
 
 
@@ -222,9 +222,9 @@ def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Po
     assert check_if_seeds_match_regions(
         seeds=seeds_gdf, regions=result_gdf
     ), "Seeds don't match generated regions"
-    assert result_gdf.geometry.unary_union.difference(
-        earth_bbox
-    ).is_empty, "Result doesn't cover bounding box"
+    assert (
+        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
+    ), "Result doesn't cover bounding box"
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
@@ -236,7 +236,7 @@ def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygo
     assert check_if_seeds_match_regions(
         seeds=gdf_earth_poles, regions=result_gdf
     ), "Seeds don't match generated regions"
-    assert result_gdf.unary_union.difference(earth_bbox).is_empty
+    assert result_gdf.union_all().difference(earth_bbox).is_empty
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 

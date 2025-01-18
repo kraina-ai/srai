@@ -49,7 +49,7 @@ def generate_test_case(
     regions_gdf.index.name = REGIONS_INDEX
 
     regions_gdf = ring_buffer_h3_regions_gdf(regions_gdf, distance=model_radius).sort_index()
-    buffered_geometry = regions_gdf.unary_union
+    buffered_geometry = regions_gdf.union_all()
 
     loader = OSMPbfLoader()
     features_gdf = loader.load(buffered_geometry, tags)
@@ -127,7 +127,7 @@ def generate_test_case_batches(
     regions_gdf.index.name = REGIONS_INDEX
 
     regions_gdf = ring_buffer_h3_regions_gdf(regions_gdf, distance=model_radius).sort_index()
-    buffered_geometry = regions_gdf.unary_union
+    buffered_geometry = regions_gdf.union_all()
 
     loader = OSMPbfLoader()
     features_gdf = loader.load(buffered_geometry, tags)

@@ -166,10 +166,10 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         if self.remove_artefact_regions:
             points_collection: Optional[BaseGeometry] = gdf_wgs84[
                 gdf_wgs84.geom_type == "Point"
-            ].geometry.unary_union
+            ].geometry.union_all()
             clipping_polygon_area: Optional[BaseGeometry] = gdf_wgs84[
                 gdf_wgs84.geom_type != "Point"
-            ].geometry.unary_union
+            ].geometry.union_all()
 
             regions_to_keep = [
                 region_id
@@ -335,8 +335,8 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         self, mask: gpd.GeoDataFrame, regions_gdf: gpd.GeoDataFrame
     ) -> BaseGeometry:
         """Generate a region filling the space between regions and full clipping mask."""
-        joined_mask = mask.geometry.unary_union
-        joined_geometry = regions_gdf.geometry.unary_union
+        joined_mask = mask.geometry.union_all()
+        joined_geometry = regions_gdf.geometry.union_all()
         return joined_mask.difference(joined_geometry)
 
     def _get_empty_geodataframe(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -344,7 +344,7 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
         if self.return_empty_region:
             regions_gdf = gpd.GeoDataFrame(
                 data={
-                    GEOMETRY_COLUMN: [gdf.geometry.unary_union],
+                    GEOMETRY_COLUMN: [gdf.geometry.union_all()],
                     REGIONS_INDEX: [AdministrativeBoundaryRegionalizer.EMPTY_REGION_NAME],
                 },
                 crs=WGS84_CRS,

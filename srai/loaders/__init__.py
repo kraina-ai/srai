@@ -12,6 +12,7 @@ from .geoparquet_loader import GeoparquetLoader
 from .gtfs_loader import GTFSLoader
 from .osm_loaders import OSMLoader, OSMOnlineLoader, OSMPbfLoader, OSMTileLoader
 from .osm_way_loader import OSMNetworkType, OSMWayLoader
+from .overturemaps_loader import OvertureMapsLoader
 
 __all__ = [
     "Loader",
@@ -23,5 +24,6 @@ __all__ = [
     "OSMPbfLoader",
     "OSMTileLoader",
     "OSMNetworkType",
+    "OvertureMapsLoader",
     "download_file",
 ]

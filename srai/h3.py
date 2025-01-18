@@ -260,7 +260,7 @@ def ring_buffer_geometry(
     # buffer all the h3
     buffered_h3s = ring_buffer_h3_indexes(h3s, distance=distance)
     # get the bounding geometry
-    return h3_to_geoseries(buffered_h3s).unary_union
+    return h3_to_geoseries(buffered_h3s).union_all()
 
 
 def ring_buffer_h3_regions_gdf(regions_gdf: gpd.GeoDataFrame, distance: int) -> gpd.GeoDataFrame:

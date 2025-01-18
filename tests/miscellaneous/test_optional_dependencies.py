@@ -17,7 +17,7 @@ def optional_packages() -> list[str]:
     """Get a list with optional packages."""
     return [
         "quackosm",
-        "osmnx",
+        "overturemaestro",
         "overpass",
         "beautifulsoup4",
         "pymap3d",
@@ -120,6 +120,12 @@ def _test_osm() -> None:
     OSMTileLoader("https://tile.openstreetmap.de", 9)
 
 
+def _test_overturemaps() -> None:
+    from srai.loaders import OvertureMapsLoader
+
+    OvertureMapsLoader()
+
+
 def _test_gtfs() -> None:
     from srai.loaders import GTFSLoader
 
@@ -150,6 +156,7 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_plotting),
         (_test_torch),
         (_test_osm),
+        (_test_overturemaps),
         (_test_gtfs),
     ],
 )
@@ -166,6 +173,7 @@ def test_optional_available(test_fn):
         (_test_plotting),
         (_test_torch),
         (_test_osm),
+        (_test_overturemaps),
         (_test_gtfs),
     ],
 )
