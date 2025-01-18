@@ -38,7 +38,8 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
             "Analysis Neighborhood",
         ]
         type = "point"
-        target = "Incident Category"
+        # target = "Incident Category"
+        target = None
         super().__init__(
             "kraina/police_department_incidents",
             type=type,
