@@ -7,7 +7,8 @@ This module contains loader capable of loading OpenStreetMap features from `*.os
 """
 
 from collections.abc import Iterable
-from typing import Union
+from pathlib import Path
+from typing import Literal, Optional, Union
 
 import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
@@ -37,9 +38,48 @@ class OvertureMapsLoader(Loader):
         4. https://duckdb.org/
     """
 
-    def __init__(self) -> None:
-        """Initialize Overture Maps loader."""
+    def __init__(
+        self,
+        theme_type_pairs: Optional[list[tuple[str, str]]] = None,
+        release: Optional[str] = None,
+        include_all_possible_columns: bool = True,
+        hierarchy_depth: Optional[int] = None,
+        download_directory: Union[str, Path] = "files",
+        verbosity_mode: Literal["silent", "transient", "verbose"] = "transient",
+        max_workers: Optional[int] = None,
+    ) -> None:
+        """
+        Initialize Overture Maps loader.
+
+        Args:
+            theme_type_pairs (Optional[list[tuple[str, str]]], optional): List of theme type pairs
+                to download. If None, will download all available datasets. Defaults to None.
+            release (Optional[str], optional): Release version. If not provided, will automatically
+                load newest available release version. Defaults to None.
+            include_all_possible_columns (bool, optional): Whether to have always the same list of
+                columns in the resulting file. This ensures that always the same set of columns is
+                returned for a given release for different regions. This also means, that some
+                columns might be all filled with a False value. Defaults to True.
+            hierarchy_depth (Optional[int]): Depth used to calculate how many hierarchy columns
+                should be used to generate the wide form of the data. If None, will use all
+                available columns. Defaults to None.
+            download_directory (Union[str, Path], optional): Directory where to save the downloaded
+                GeoParquet files. Defaults to "files".
+            verbosity_mode (Literal["silent", "transient", "verbose"], optional): Set progress
+                verbosity mode. Can be one of: silent, transient and verbose. Silent disables
+                output completely. Transient tracks progress, but removes output after finished.
+                Verbose leaves all progress outputs in the stdout. Defaults to "transient".
+            max_workers (Optional[int], optional): Max number of multiprocessing workers used to
+                process the dataset. Defaults to None.
+        """
         import_optional_dependencies(dependency_group="overturemaps", modules=["overturemaestro"])
+        self.theme_type_pairs = theme_type_pairs
+        self.release = release
+        self.include_all_possible_columns = include_all_possible_columns
+        self.hierarchy_depth = hierarchy_depth
+        self.download_directory = download_directory
+        self.verbosity_mode = verbosity_mode
+        self.max_workers = max_workers
 
     def load(
         self,
@@ -47,11 +87,11 @@ class OvertureMapsLoader(Loader):
         ignore_cache: bool = False,
     ) -> gpd.GeoDataFrame:
         """
-        Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
+        Load Overture Maps features for a given area in a wide format.
 
-        The loader will use provided `*.osm.pbf` file, or download extracts
-        automatically. Later it will parse and filter features from files
-        using `PbfFileReader` from `QuackOSM` library. It will return a GeoDataFrame
+        The loader will automatically download matching GeoParquet files from
+        the S3 bucket provided by the Overture Maps Foundation. Later it will filter
+        features and transform them into a wide format. It will return a GeoDataFrame
         containing the `geometry` column and columns for tag keys.
 
         Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
@@ -60,45 +100,42 @@ class OvertureMapsLoader(Loader):
         Args:
             area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
                 Area for which to download objects.
-            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
-                specifying which tags to download.
-                The keys should be OSM tags (e.g. `building`, `amenity`).
-                The values should either be `True` for retrieving all objects with the tag,
-                string for retrieving a single tag-value pair
-                or list of strings for retrieving all values specified in the list.
-                `tags={'leisure': 'park}` would return parks from the area.
-                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
-                would return parks, all amenity types, bakeries and bicycle shops.
             ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
-            explode_tags: (bool, optional): Whether to split OSM tags into multiple columns or keep
-                them in a single dict. Defaults to True.
-            keep_all_tags: (bool, optional): Whether to keep all tags related to the element,
-                or return only those defined in the `tags_filter`. When True, will override
-                the optional grouping defined in the `tags_filter`. Defaults to False.
-
-        Raises:
-            ValueError: If PBF file is expected to be downloaded and provided geometries
-                aren't shapely.geometry.Polygons.
 
         Returns:
             gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
         """
         from overturemaestro.advanced_functions import (
             convert_geometry_to_wide_form_geodataframe_for_all_types,
+            convert_geometry_to_wide_form_geodataframe_for_multiple_types,
         )
 
         area_wgs84 = self._prepare_area_gdf(area)
 
-        features_gdf = convert_geometry_to_wide_form_geodataframe_for_all_types(
-            geometry_filter=area_wgs84.union_all(),
-            include_all_possible_columns=True,
-            hierarchy_depth=None,
-            ignore_cache=ignore_cache,
-            working_directory="files",
-            verbosity_mode="transient",
-            max_workers=None,
-        )
+        if self.theme_type_pairs:
+            features_gdf = convert_geometry_to_wide_form_geodataframe_for_multiple_types(
+                theme_type_pairs=self.theme_type_pairs,
+                geometry_filter=area_wgs84.union_all(),
+                release=self.release,
+                include_all_possible_columns=self.include_all_possible_columns,
+                hierarchy_depth=self.hierarchy_depth,
+                ignore_cache=ignore_cache,
+                working_directory=self.download_directory,
+                verbosity_mode=self.verbosity_mode,
+                max_workers=self.max_workers,
+            )
+        else:
+            features_gdf = convert_geometry_to_wide_form_geodataframe_for_all_types(
+                geometry_filter=area_wgs84.union_all(),
+                release=self.release,
+                include_all_possible_columns=self.include_all_possible_columns,
+                hierarchy_depth=self.hierarchy_depth,
+                ignore_cache=ignore_cache,
+                working_directory=self.download_directory,
+                verbosity_mode=self.verbosity_mode,
+                max_workers=self.max_workers,
+            )
 
         features_gdf = features_gdf.set_crs(WGS84_CRS)
 
