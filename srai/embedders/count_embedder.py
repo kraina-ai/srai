@@ -87,8 +87,15 @@ class CountEmbedder(Embedder):
         features_df = self._remove_geometry_if_present(features_gdf)
         joint_df = self._remove_geometry_if_present(joint_gdf)
 
+        are_all_columns_bool = (features_df.dtypes.loc[features_df.columns] == "bool").all()
+
         if self.count_subcategories:
+            if are_all_columns_bool:
+                raise ValueError("Cannot count subcategories with boolean columns.")
+
             feature_encodings = pd.get_dummies(features_df)
+        elif are_all_columns_bool:
+            feature_encodings = features_df.astype(int)
         else:
             feature_encodings = features_df.notna().astype(int)
         joint_with_encodings = joint_df.join(feature_encodings)
