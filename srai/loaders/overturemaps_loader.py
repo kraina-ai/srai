@@ -14,7 +14,7 @@ import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders._base import Loader
 
 
@@ -150,6 +150,7 @@ class OvertureMapsLoader(Loader):
                 places_use_primary_category_only=self.places_use_primary_category_only,
             )
 
+        features_gdf.index.name = FEATURES_INDEX
         features_gdf = features_gdf.to_crs(WGS84_CRS)
 
         features_columns = [
