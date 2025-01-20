@@ -43,10 +43,12 @@ class OvertureMapsLoader(Loader):
         theme_type_pairs: Optional[list[tuple[str, str]]] = None,
         release: Optional[str] = None,
         include_all_possible_columns: bool = True,
-        hierarchy_depth: Optional[int] = None,
+        hierarchy_depth: Optional[int] = 1,
         download_directory: Union[str, Path] = "files",
         verbosity_mode: Literal["silent", "transient", "verbose"] = "transient",
         max_workers: Optional[int] = None,
+        places_use_primary_category_only: bool = False,
+        places_minimal_confidence: float = 0.75,
     ) -> None:
         """
         Initialize Overture Maps loader.
@@ -62,7 +64,7 @@ class OvertureMapsLoader(Loader):
                 columns might be all filled with a False value. Defaults to True.
             hierarchy_depth (Optional[int]): Depth used to calculate how many hierarchy columns
                 should be used to generate the wide form of the data. If None, will use all
-                available columns. Defaults to None.
+                available columns. Must be a non-negative integer. Defaults to 1.
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 GeoParquet files. Defaults to "files".
             verbosity_mode (Literal["silent", "transient", "verbose"], optional): Set progress
@@ -71,6 +73,10 @@ class OvertureMapsLoader(Loader):
                 Verbose leaves all progress outputs in the stdout. Defaults to "transient".
             max_workers (Optional[int], optional): Max number of multiprocessing workers used to
                 process the dataset. Defaults to None.
+            places_use_primary_category_only (bool, optional): Whether to use only the primary
+                category for places. Defaults to False.
+            places_minimal_confidence (float, optional): Minimal confidence level for the places
+                dataset. Defaults to 0.75.
         """
         import_optional_dependencies(dependency_group="overturemaps", modules=["overturemaestro"])
         self.theme_type_pairs = theme_type_pairs
@@ -80,6 +86,8 @@ class OvertureMapsLoader(Loader):
         self.download_directory = download_directory
         self.verbosity_mode = verbosity_mode
         self.max_workers = max_workers
+        self.places_minimal_confidence = places_minimal_confidence
+        self.places_use_primary_category_only = places_use_primary_category_only
 
     def load(
         self,
@@ -124,6 +132,8 @@ class OvertureMapsLoader(Loader):
                 working_directory=self.download_directory,
                 verbosity_mode=self.verbosity_mode,
                 max_workers=self.max_workers,
+                places_minimal_confidence=self.places_minimal_confidence,
+                places_use_primary_category_only=self.places_use_primary_category_only,
             )
         else:
             features_gdf = convert_geometry_to_wide_form_geodataframe_for_all_types(
@@ -135,6 +145,8 @@ class OvertureMapsLoader(Loader):
                 working_directory=self.download_directory,
                 verbosity_mode=self.verbosity_mode,
                 max_workers=self.max_workers,
+                places_minimal_confidence=self.places_minimal_confidence,
+                places_use_primary_category_only=self.places_use_primary_category_only,
             )
 
         features_gdf = features_gdf.to_crs(WGS84_CRS)
