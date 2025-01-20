@@ -71,6 +71,7 @@ class CountEmbedder(Embedder):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
+            ValueError: If features_gdf contains boolean columns and count_subcategories is True.
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         if features_gdf.empty:

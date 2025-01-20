@@ -100,10 +100,11 @@ class OvertureMapsLoader(Loader):
         The loader will automatically download matching GeoParquet files from
         the S3 bucket provided by the Overture Maps Foundation. Later it will filter
         features and transform them into a wide format. It will return a GeoDataFrame
-        containing the `geometry` column and columns for tag keys.
+        containing the `geometry` column and boolean columns for each category.
 
-        Note: Some key/value pairs might be missing from the resulting GeoDataFrame,
-            simply because there are no such objects in the given area.
+        Note: If used with `include_all_possible_columns`=`False`, some key/value pairs might be
+            missing from the resulting GeoDataFrame, simply because there are no such objects in
+            the given area.
 
         Args:
             area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):

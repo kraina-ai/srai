@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Replaced all `union_all` calls with `unary_union()` in GeoPandas context
+- Transform logic in `CountEmbedder` to work with new boolean based features dataframes from Overture Maps Loader
 
 ## [0.8.4] - 2025-01-04
 
