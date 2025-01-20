@@ -7,3 +7,4 @@ Here you can find usage examples for all of the functionality provided by `srai`
 * [Joiners](./joiners)
 * [Embedders](./embedders)
 * [Neighbourhoods](./neighbourhoods)
+* [Use cases](./use_cases)

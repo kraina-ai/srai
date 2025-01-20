@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:eb942bb71060f4e1ee8bfe442dc7bea4a72f898251c988d3ff9dfccf7f4480a9"
+content_hash = "sha256:5c62a2f6811183b874a49bc6099a109673e693e94c5007e09daafddc00168ac5"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1798,7 +1798,7 @@ name = "jinja2"
 version = "3.1.5"
 requires_python = ">=3.7"
 summary = "A very fast and expressive template engine."
-groups = ["all", "docs", "gtfs", "plotting", "torch"]
+groups = ["all", "docs", "gtfs", "plotting", "torch", "visualization"]
 dependencies = [
     "MarkupSafe>=2.0",
 ]
@@ -2242,7 +2242,7 @@ name = "markupsafe"
 version = "3.0.2"
 requires_python = ">=3.9"
 summary = "Safely add untrusted strings to HTML/XML markup."
-groups = ["all", "docs", "gtfs", "plotting", "torch"]
+groups = ["all", "docs", "gtfs", "plotting", "torch", "visualization"]
 files = [
     {file = "MarkupSafe-3.0.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:7e94c425039cde14257288fd61dcfb01963e658efbc0ff54f5306b06054700f8"},
     {file = "MarkupSafe-3.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:9e2d922824181480953426608b81967de705c3cef4d1af983af849d7bd619158"},
@@ -3816,6 +3816,21 @@ marker = "implementation_name == \"pypy\""
 files = [
     {file = "pycparser-2.22-py3-none-any.whl", hash = "sha256:c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc"},
     {file = "pycparser-2.22.tar.gz", hash = "sha256:491c8be9c040f5390f5bf44a5b07752bd07f56edf992381b05c701439eec10f6"},
+]
+
+[[package]]
+name = "pydeck"
+version = "0.9.1"
+requires_python = ">=3.8"
+summary = "Widget for deck.gl maps"
+groups = ["visualization"]
+dependencies = [
+    "jinja2>=2.10.1",
+    "numpy>=1.16.4",
+]
+files = [
+    {file = "pydeck-0.9.1-py2.py3-none-any.whl", hash = "sha256:b3f75ba0d273fc917094fa61224f3f6076ca8752b93d46faf3bcfd9f9d59b038"},
+    {file = "pydeck-0.9.1.tar.gz", hash = "sha256:f74475ae637951d63f2ee58326757f8d4f9cd9f2a457cf42950715003e2cb605"},
 ]
 
 [[package]]
