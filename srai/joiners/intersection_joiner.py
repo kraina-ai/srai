@@ -20,7 +20,10 @@ class IntersectionJoiner(Joiner):
     """
 
     def transform(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame, return_geom: bool = False
+        self,
+        regions: gpd.GeoDataFrame,
+        features: gpd.GeoDataFrame,
+        return_geom: bool = False,
     ) -> gpd.GeoDataFrame:
         """
         Join features to regions based on an 'intersects' predicate.
@@ -97,14 +100,13 @@ class IntersectionJoiner(Joiner):
             GeoDataFrame with an intersection of regions and features, which contains
             a MultiIndex
         """
-        joint = (
-            gpd.sjoin(
-                regions.reset_index(names=REGIONS_INDEX),
-                features[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
-                how="inner",
-                predicate="intersects",
-            )
-            .set_index([REGIONS_INDEX, FEATURES_INDEX])
-            .drop(columns=["index_right", GEOMETRY_COLUMN])
+        features_idx, region_idx = regions.sindex.query(
+            features[GEOMETRY_COLUMN], predicate="intersects"
         )
+        joint = gpd.GeoDataFrame(
+            {
+                REGIONS_INDEX: regions.index[region_idx],
+                FEATURES_INDEX: features.index[features_idx],
+            }
+        ).set_index([REGIONS_INDEX, FEATURES_INDEX])
         return joint
