@@ -112,7 +112,7 @@ test = [
     "pytest-snapshot>=0.9.0",
 ]
 # pdm add -dG visualization <library>
-visualization = ["matplotlib", "lonboard", "pydeck"]
+visualization = ["matplotlib", "lonboard", "pydeck", "pypalettes", "contextily", "seaborn"]
 # pdm add -dG docs <library>
 docs = [
     "mkdocs",
@@ -126,6 +126,7 @@ docs = [
     "mike>=2",
     "scikit-learn>=1.2.0",
     "umap-learn",
+    "xgboost",
 ]
 # performance = ["scalene"]
 license = ["licensecheck==2024.3", "pipdeptree"]
