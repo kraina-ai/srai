@@ -43,7 +43,7 @@ class OvertureMapsLoader(Loader):
         theme_type_pairs: Optional[list[tuple[str, str]]] = None,
         release: Optional[str] = None,
         include_all_possible_columns: bool = True,
-        hierarchy_depth: Optional[int] = 1,
+        hierarchy_depth: Optional[Union[int, list[Optional[int]]]] = 1,
         download_directory: Union[str, Path] = "files",
         verbosity_mode: Literal["silent", "transient", "verbose"] = "transient",
         max_workers: Optional[int] = None,
@@ -62,8 +62,9 @@ class OvertureMapsLoader(Loader):
                 columns in the resulting file. This ensures that always the same set of columns is
                 returned for a given release for different regions. This also means, that some
                 columns might be all filled with a False value. Defaults to True.
-            hierarchy_depth (Optional[int]): Depth used to calculate how many hierarchy columns
-                should be used to generate the wide form of the data. If None, will use all
+            hierarchy_depth (Optional[Union[int, list[Optional[int]]]], optional): Depth used to
+                calculate how many hierarchy columns should be used to generate the wide form of
+                the data. Can be a single integer or a list of integers. If None, will use all
                 available columns. Must be a non-negative integer. Defaults to 1.
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 GeoParquet files. Defaults to "files".
