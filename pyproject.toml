@@ -24,6 +24,7 @@ dependencies = [
     "requests",
     "h3ronpy>=0.20.1",
     "osmnx>=1.3.0",
+    "polars>=0.19.4",
 ]
 requires-python = ">=3.9"
 readme = "README.md"

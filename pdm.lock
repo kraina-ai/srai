@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:f47c984bfeb1ccb6f8a0b1a07d04b0b96027f987b0c54e9fd70cd897b08317e7"
+content_hash = "sha256:239a091c72cdd57231e65134209e295cedf3a134d8849abac24f24de4d022e7b"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -3587,7 +3587,7 @@ name = "polars"
 version = "1.18.0"
 requires_python = ">=3.9"
 summary = "Blazingly fast DataFrame library"
-groups = ["all", "osm"]
+groups = ["default", "all", "osm"]
 files = [
     {file = "polars-1.18.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:27a6c7e5d2d15afb5f06291433019411c9a28e59e49741442d11a6a945f21daa"},
     {file = "polars-1.18.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:6431563aee2dfa6787b0debbed3f565ebb4322da32317d95c8eac3e48330bc28"},
