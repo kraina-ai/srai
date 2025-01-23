@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:c67f75855bf2676a5717d092bedabf93d19d010e63713a82d635e5e47cabdedc"
+content_hash = "sha256:f47c984bfeb1ccb6f8a0b1a07d04b0b96027f987b0c54e9fd70cd897b08317e7"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -3267,7 +3267,7 @@ files = [
 
 [[package]]
 name = "overturemaestro"
-version = "0.2.4"
+version = "0.2.5"
 requires_python = ">=3.9"
 summary = "An open-source tool for downloading Overture Maps data with quality of life features"
 groups = ["all", "overturemaps"]
@@ -3286,8 +3286,8 @@ dependencies = [
     "shapely>=2.0.6",
 ]
 files = [
-    {file = "overturemaestro-0.2.4-py3-none-any.whl", hash = "sha256:581a8e12d8a63076ed8218ab581611d5b358109f43e7bd0b1ef9438b212b76ab"},
-    {file = "overturemaestro-0.2.4.tar.gz", hash = "sha256:6aa5af752f57243f35967acd0ba5230f966b0eb489897cbcb4d6e1832f6ebb2d"},
+    {file = "overturemaestro-0.2.5-py3-none-any.whl", hash = "sha256:f3870fe0f9c1c718019ace62e8814b5766c59567783cce306b4e2b40b0053e9b"},
+    {file = "overturemaestro-0.2.5.tar.gz", hash = "sha256:c6acf39cc07909e344152767635a73e78c1ab6f2edd37efa1efa354a0c322937"},
 ]
 
 [[package]]
