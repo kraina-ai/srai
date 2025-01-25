@@ -1,9 +1,8 @@
 """
-TODO.
+Overture Maps Loader.
 
-OSM PBF Loader.
-
-This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
+This module contains loader capable of loading Overture Maps features from the public dataset hosted
+on the s3 bucket.
 """
 
 from collections.abc import Iterable
