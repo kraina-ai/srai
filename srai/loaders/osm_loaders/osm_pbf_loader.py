@@ -208,7 +208,7 @@ class OSMPbfLoader(OSMLoader):
 
         pbf_reader = PbfFileReader(
             tags_filter=tags,
-            geometry_filter=area_wgs84.unary_union,
+            geometry_filter=area_wgs84.union_all(),
             working_directory=self.download_directory,
             osm_extract_source=OsmExtractSource(self.download_source),
             verbosity_mode=self.verbosity_mode,

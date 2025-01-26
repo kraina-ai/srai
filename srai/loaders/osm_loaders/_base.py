@@ -11,38 +11,8 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai._typing import is_expected_type
-from srai.constants import WGS84_CRS
 from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
-
-
-def prepare_area_gdf_for_loader(
-    area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-) -> gpd.GeoDataFrame:
-    """
-    Prepare an area for the loader.
-
-    Loader expects a GeoDataFrame input, but users shouldn't be limited by this requirement.
-    All Shapely geometries will by transformed into GeoDataFrame with proper CRS.
-
-    Args:
-        area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-            Area to be parsed into GeoDataFrame.
-
-    Returns:
-        gpd.GeoDataFrame: Sanitized GeoDataFrame.
-    """
-    if isinstance(area, gpd.GeoDataFrame):
-        # Return a GeoDataFrame with changed CRS
-        return area.to_crs(WGS84_CRS)
-    elif isinstance(area, gpd.GeoSeries):
-        # Create a GeoDataFrame with GeoSeries
-        return gpd.GeoDataFrame(geometry=area, crs=WGS84_CRS)
-    elif isinstance(area, Iterable):
-        # Create a GeoSeries with a list of geometries
-        return prepare_area_gdf_for_loader(gpd.GeoSeries(area, crs=WGS84_CRS))
-    # Wrap a single geometry with a list
-    return prepare_area_gdf_for_loader([area])
 
 
 class OSMLoader(Loader, abc.ABC):
@@ -68,11 +38,6 @@ class OSMLoader(Loader, abc.ABC):
             gpd.GeoDataFrame: GeoDataFrame with the downloaded data.
         """
         raise NotImplementedError
-
-    def _prepare_area_gdf(
-        self, area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]
-    ) -> gpd.GeoDataFrame:
-        return prepare_area_gdf_for_loader(area)
 
     def _parse_features_gdf_to_groups(
         self, features_gdf: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]

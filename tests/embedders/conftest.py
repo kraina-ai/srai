@@ -107,7 +107,8 @@ def gdf_regions() -> gpd.GeoDataFrame:
             ),
         ],
         index=pd.Index(
-            data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"], name=REGIONS_INDEX
+            data=["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            name=REGIONS_INDEX,
         ),
         crs=WGS84_CRS,
     )
@@ -169,6 +170,65 @@ def gdf_features() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
+def gdf_features_boolean() -> gpd.GeoDataFrame:
+    """Get GeoDataFrame with example OvertureMaps-like features."""
+    features_gdf = gpd.GeoDataFrame(
+        {
+            "leisure": [True, False, True, False],
+            "amenity": [False, True, True, False],
+        },
+        geometry=[
+            geometry.Polygon(
+                shell=[
+                    (17.0360858, 51.1103927),
+                    (17.0358804, 51.1104389),
+                    (17.0357855, 51.1105503),
+                    (17.0359451, 51.1105907),
+                    (17.0361589, 51.1105402),
+                    (17.0360858, 51.1103927),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0317168, 51.1114868),
+                    (17.0320, 51.1114868),
+                    (17.0320, 51.1117503),
+                    (17.0317168, 51.1117503),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0317168, 51.1124868),
+                    (17.0320, 51.1124868),
+                    (17.0320, 51.1127503),
+                    (17.0317168, 51.1127503),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0307168, 51.1104868),
+                    (17.0310, 51.1104868),
+                    (17.0310, 51.1107503),
+                    (17.0307168, 51.1107503),
+                ]
+            ),
+        ],
+        index=pd.Index(
+            data=[
+                "08b1e20413d93fff0001b800472ebc77",
+                "08b1e20414ac2fff0001ad7039286361",
+                "08b1e20414ac2fff0001babbc20fb8eb",
+                "08b1e20414ac1fff0001bad7c31922fa",
+            ],
+            name=FEATURES_INDEX,
+        ),
+        crs=WGS84_CRS,
+    )
+
+    return features_gdf
+
+
+@pytest.fixture  # type: ignore
 def gdf_joint() -> gpd.GeoDataFrame:
     """Get joint GeoDataFrame for matching regions and features from this module."""
     joint_gdf = gpd.GeoDataFrame(
@@ -213,8 +273,78 @@ def gdf_joint() -> gpd.GeoDataFrame:
         ],
         index=pd.MultiIndex.from_arrays(
             arrays=[
-                ["891e2040d4bffff", "891e2040897ffff", "891e2040897ffff", "891e2040d5bffff"],
+                [
+                    "891e2040d4bffff",
+                    "891e2040897ffff",
+                    "891e2040897ffff",
+                    "891e2040d5bffff",
+                ],
                 ["way/312457804", "way/1533817161", "way/312457834", "way/312457812"],
+            ],
+            names=[REGIONS_INDEX, FEATURES_INDEX],
+        ),
+        crs=WGS84_CRS,
+    )
+    return joint_gdf
+
+
+@pytest.fixture  # type: ignore
+def gdf_joint_boolean() -> gpd.GeoDataFrame:
+    """Get joint GeoDataFrame for matching regions and features from this module."""
+    joint_gdf = gpd.GeoDataFrame(
+        geometry=[
+            geometry.Polygon(
+                shell=[
+                    (17.0358804, 51.1104389),
+                    (17.0357855, 51.1105503),
+                    (17.0359451, 51.1105907),
+                    (17.0361589, 51.1105402),
+                    (17.0360858, 51.1103927),
+                    (17.0358804, 51.1104389),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0317168, 51.1117503),
+                    (17.032, 51.1117503),
+                    (17.032, 51.1114868),
+                    (17.0317168, 51.1114868),
+                    (17.0317168, 51.1117503),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0307168, 51.1107503),
+                    (17.031, 51.1107503),
+                    (17.031, 51.1104868),
+                    (17.0307168, 51.1104868),
+                    (17.0307168, 51.1107503),
+                ]
+            ),
+            geometry.Polygon(
+                shell=[
+                    (17.0317168, 51.1127503),
+                    (17.032, 51.1127503),
+                    (17.032, 51.1124868),
+                    (17.0317168, 51.1124868),
+                    (17.0317168, 51.1127503),
+                ]
+            ),
+        ],
+        index=pd.MultiIndex.from_arrays(
+            arrays=[
+                [
+                    "891e2040d4bffff",
+                    "891e2040897ffff",
+                    "891e2040897ffff",
+                    "891e2040d5bffff",
+                ],
+                [
+                    "08b1e20413d93fff0001b800472ebc77",
+                    "08b1e20414ac2fff0001ad7039286361",
+                    "08b1e20414ac1fff0001bad7c31922fa",
+                    "08b1e20414ac2fff0001babbc20fb8eb",
+                ],
             ],
             names=[REGIONS_INDEX, FEATURES_INDEX],
         ),
