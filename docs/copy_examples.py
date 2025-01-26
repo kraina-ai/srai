@@ -15,8 +15,8 @@ Run this notebook in Google Colab:
 </a>
 
 Remember to install the `srai` library before running the notebook:
-```bash
-!pip install srai[all]
+```python
+%pip install srai[all]
 ```
 """
 
