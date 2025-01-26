@@ -260,7 +260,7 @@ class ContextualCountEmbedder(CountEmbedder):
                         neighbours_series.append(result)
                         pbar.update()
 
-                if not neighbours_series: 
+                if not neighbours_series:
                     continue
 
                 values_to_stack = []
