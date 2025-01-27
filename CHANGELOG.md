@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2025-01-27
+
 ### Changed
 
 - Refactored `ContextualCountEmbedder` progress bar and multiprocessing implementation
@@ -365,7 +367,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.1...HEAD
+
+[0.9.1]: https://github.com/kraina-ai/srai/compare/0.9.0...0.9.1
 
 [0.9.0]: https://github.com/kraina-ai/srai/compare/0.8.4...0.9.0
 
