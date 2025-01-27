@@ -20,7 +20,7 @@ from shapely.validation import make_valid
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+from srai.constants import FORCE_TERMINAL, GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
 from srai.geometry import flatten_geometry_series
 from srai.regionalizers import Regionalizer
 
@@ -205,7 +205,9 @@ class AdministrativeBoundaryRegionalizer(Regionalizer):
 
         all_geometries = flatten_geometry_series(gdf_wgs84.geometry)
 
-        with tqdm(desc="Loading boundaries: 0", total=len(all_geometries)) as pbar:
+        with tqdm(
+            desc="Loading boundaries: 0", total=len(all_geometries), disable=FORCE_TERMINAL
+        ) as pbar:
             for geometry in all_geometries:
                 with np.errstate(invalid="ignore"):
                     is_covered = geometry.covered_by(unary_geometry)

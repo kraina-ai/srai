@@ -15,6 +15,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
+from srai.constants import FORCE_TERMINAL
 from srai.neighbourhoods import Neighbourhood
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -100,7 +101,9 @@ class NeighbourDataset(Dataset[NeighbourDatasetItem], Generic[T]):  # type: igno
         anchor_df_locs_lookup: list[int] = []
         positive_df_locs_lookup: list[int] = []
 
-        for region_df_loc, region_index in tqdm(enumerate(data.index), total=len(data)):
+        for region_df_loc, region_index in tqdm(
+            enumerate(data.index), total=len(data), disable=FORCE_TERMINAL
+        ):
             region_direct_neighbours = neighbourhood.get_neighbours(region_index)
             neighbours_df_locs: set[int] = {
                 self._region_index_to_df_loc[neighbour_index]

@@ -34,7 +34,7 @@ from spherical_geometry.polygon import SphericalPolygon
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
 
 SPHERE_PARTS: list[SphericalPolygon] = []
 SPHERE_PARTS_BOUNDING_BOXES: list[Polygon] = []
@@ -167,13 +167,16 @@ def generate_voronoi_regions(
                     desc="Generating spherical polygons",
                     max_workers=num_of_multiprocessing_workers,
                     chunksize=ceil(total_regions / (4 * num_of_multiprocessing_workers)),
+                    disable=FORCE_TERMINAL,
                 )
                 for polygon_part_tuple in polygon_part_tuples
             ]
         else:
             spherical_polygons_parts = [
                 polygon_part_tuple
-                for region_id in tqdm(region_ids, desc="Generating spherical polygons")
+                for region_id in tqdm(
+                    region_ids, desc="Generating spherical polygons", disable=FORCE_TERMINAL
+                )
                 for polygon_part_tuple in generate_spherical_polygons_parts_func(
                     region_id=region_id
                 )
@@ -250,13 +253,16 @@ def generate_voronoi_regions(
                         desc="Interpolating edges",
                         max_workers=num_of_multiprocessing_workers,
                         chunksize=ceil(len(hashed_edges) / (4 * num_of_multiprocessing_workers)),
+                        disable=FORCE_TERMINAL,
                     ),
                 )
             }
         else:
             interpolated_edges = {
                 hashed_edge: interpolate_polygon_edge_func(hashed_edge)
-                for hashed_edge in tqdm(hashed_edges, desc="Interpolating edges")
+                for hashed_edge in tqdm(
+                    hashed_edges, desc="Interpolating edges", disable=FORCE_TERMINAL
+                )
             }
 
         # use interpolated edges to map spherical polygons into regions
@@ -264,7 +270,7 @@ def generate_voronoi_regions(
         generated_regions: list[MultiPolygon] = []
         _generate_sphere_parts()
 
-        for region_id in tqdm(region_ids, desc="Generating polygons"):
+        for region_id in tqdm(region_ids, desc="Generating polygons", disable=FORCE_TERMINAL):
             multi_polygon_parts: list[Polygon] = []
 
             for sphere_part_id, region_polygon_edges in regions_parts[region_id]:

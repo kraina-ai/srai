@@ -15,6 +15,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
+from srai.constants import FORCE_TERMINAL
 from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import H3Neighbourhood
 
@@ -88,7 +89,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         invalid_h3s = set()
         valid_h3s = []
 
-        for h3_index in tqdm(data.index, total=len(data)):
+        for h3_index in tqdm(data.index, total=len(data), disable=FORCE_TERMINAL):
             neighbors = neighbourhood.get_neighbours_up_to_distance(
                 h3_index, neighbor_k_ring, include_center=False, unchecked=True
             )

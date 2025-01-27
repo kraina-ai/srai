@@ -11,6 +11,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai._typing import is_expected_type
+from srai.constants import FORCE_TERMINAL
 from srai.loaders import Loader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
@@ -81,7 +82,10 @@ class OSMLoader(Loader, abc.ABC):
         matching_columns = []
 
         for group_name, osm_filter in tqdm(
-            group_filter.items(), desc="Grouping features", total=len(group_filter)
+            group_filter.items(),
+            desc="Grouping features",
+            total=len(group_filter),
+            disable=FORCE_TERMINAL,
         ):
             mask = self._get_matching_mask(features_gdf, osm_filter)
             if mask.any():

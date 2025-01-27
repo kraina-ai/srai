@@ -16,7 +16,7 @@ from functional import seq
 from tqdm.auto import tqdm
 
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FEATURES_INDEX, FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
 from srai.loaders import Loader
 
@@ -152,7 +152,9 @@ class OSMWayLoader(Loader):
         """
         nodes = []
         edges = []
-        for polygon in tqdm(gdf["geometry"], desc="Downloading graphs", leave=False):
+        for polygon in tqdm(
+            gdf["geometry"], desc="Downloading graphs", leave=False, disable=FORCE_TERMINAL
+        ):
             gdf_n, gdf_e = self._try_graph_from_polygon(polygon)
 
             if not gdf_e.empty and not self.contain_within_area:
@@ -291,7 +293,7 @@ class OSMWayLoader(Loader):
             gdf = gdf.copy()
 
         max_osm_keys_str_len = max(map(len, self.osm_keys))
-        for col in (pbar := tqdm(self.osm_keys, leave=False)):
+        for col in (pbar := tqdm(self.osm_keys, leave=False, disable=FORCE_TERMINAL)):
             pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
             gdf[col] = gdf[col].apply(
                 lambda x, c=col: self._sanitize_and_normalize(x, c)  # noqa: FURB111
