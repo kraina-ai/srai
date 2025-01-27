@@ -9,6 +9,7 @@ References:
 """
 
 from collections.abc import Collection, Iterator
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
@@ -18,8 +19,7 @@ import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from tqdm import trange
-from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 
 from srai.embedders.count_embedder import CountEmbedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
@@ -220,72 +220,79 @@ class ContextualCountEmbedder(CountEmbedder):
             and len(counts_df.index) >= self.multiprocessing_activation_threshold
         )
 
-        for distance in trange(
-            1,
-            self.neighbourhood_distance + 1,
-            desc="Generating embeddings for neighbours",
+        with (
+            tqdm(total=self.neighbourhood_distance * len(counts_df.index) * 2) as pbar,
+            ProcessPoolExecutor(max_workers=self.num_of_multiprocessing_workers) as executor,
         ):
-            if len(counts_df.index) == 0:
-                continue
+            pbar.set_description_str("Generating embeddings for neighbours", refresh=False)
+            for distance in range(1, self.neighbourhood_distance + 1):
+                pbar.set_postfix_str(f"Distance: {distance}", refresh=True)
+                if len(counts_df.index) == 0:
+                    continue
 
-            if activate_multiprocessing:
-                fn_neighbours = partial(
-                    _get_existing_neighbours_at_distance,
-                    neighbour_distance=distance,
-                    counts_index=counts_df.index,
-                    neighbourhood=self.neighbourhood,
-                )
-                neighbours_series = process_map(
-                    fn_neighbours,
-                    counts_df.index,
-                    max_workers=self.num_of_multiprocessing_workers,
-                    chunksize=ceil(
-                        len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
-                    ),
-                    disable=True,
-                )
-            else:
-                neighbours_series = counts_df.index.map(
-                    lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                        self.neighbourhood.get_neighbours_at_distance(
-                            region_id, neighbour_distance, include_center=False
-                        )
-                    ).values
-                )
+                neighbours_series = []
 
-            if len(neighbours_series) == 0:
-                continue
+                if activate_multiprocessing:
+                    fn_neighbours = partial(
+                        _get_existing_neighbours_at_distance,
+                        neighbour_distance=distance,
+                        counts_index=counts_df.index,
+                        neighbourhood=self.neighbourhood,
+                    )
 
-            if activate_multiprocessing:
-                fn_embeddings = partial(
-                    _get_embeddings_for_neighbours,
-                    counts_df=counts_df,
-                    number_of_base_columns=number_of_base_columns,
-                )
+                    for result in executor.map(
+                        fn_neighbours,
+                        counts_df.index,
+                        chunksize=ceil(
+                            len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
+                        ),
+                    ):
+                        neighbours_series.append(result)
+                        pbar.update()
+                else:
+                    for result in counts_df.index.map(
+                        lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
+                            self.neighbourhood.get_neighbours_at_distance(
+                                region_id, neighbour_distance, include_center=False
+                            )
+                        ).values
+                    ):
+                        neighbours_series.append(result)
+                        pbar.update()
 
-                averaged_values_stacked = np.stack(
-                    process_map(
+                if not neighbours_series:
+                    continue
+
+                values_to_stack = []
+
+                if activate_multiprocessing:
+                    fn_embeddings = partial(
+                        _get_embeddings_for_neighbours,
+                        counts_df=counts_df,
+                        number_of_base_columns=number_of_base_columns,
+                    )
+
+                    for result in executor.map(
                         fn_embeddings,
                         neighbours_series,
-                        max_workers=self.num_of_multiprocessing_workers,
                         chunksize=ceil(
                             len(neighbours_series) / (4 * self.num_of_multiprocessing_workers)
                         ),
-                        disable=True,
-                    )
-                )
-            else:
-                averaged_values_stacked = np.stack(
-                    neighbours_series.map(
-                        lambda region_ids: (
-                            np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
-                            if len(region_ids) > 0
+                    ):
+                        values_to_stack.append(result)
+                        pbar.update()
+                else:
+                    for neighbours in neighbours_series:
+                        values_to_stack.append(
+                            np.nan_to_num(np.nanmean(counts_df.loc[neighbours].values, axis=0))
+                            if len(neighbours) > 0
                             else np.zeros((number_of_base_columns,))
                         )
-                    ).values
-                )
+                        pbar.update()
 
-            yield distance, averaged_values_stacked
+                averaged_values_stacked = np.stack(values_to_stack)
+
+                yield distance, averaged_values_stacked
 
 
 def _parse_num_of_multiprocessing_workers(num_of_multiprocessing_workers: int) -> int:
