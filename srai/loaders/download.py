@@ -6,6 +6,8 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
+from srai.constants import FORCE_TERMINAL
+
 
 def download_file(
     url: str, fname: str, chunk_size: int = 1024, force_download: bool = True
@@ -41,6 +43,7 @@ def download_file(
             unit="iB",
             unit_scale=True,
             unit_divisor=1024,
+            disable=FORCE_TERMINAL,
         ) as bar,
     ):
         for data in resp.iter_content(chunk_size=chunk_size):

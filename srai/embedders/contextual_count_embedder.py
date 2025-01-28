@@ -21,6 +21,7 @@ import numpy.typing as npt
 import pandas as pd
 from tqdm import tqdm
 
+from srai.constants import FORCE_TERMINAL
 from srai.embedders.count_embedder import CountEmbedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
@@ -221,10 +222,13 @@ class ContextualCountEmbedder(CountEmbedder):
         )
 
         with (
-            tqdm(total=self.neighbourhood_distance * len(counts_df.index) * 2) as pbar,
+            tqdm(
+                total=self.neighbourhood_distance * len(counts_df.index) * 2,
+                desc="Generating embeddings for neighbours",
+                disable=FORCE_TERMINAL,
+            ) as pbar,
             ProcessPoolExecutor(max_workers=self.num_of_multiprocessing_workers) as executor,
         ):
-            pbar.set_description_str("Generating embeddings for neighbours", refresh=False)
             for distance in range(1, self.neighbourhood_distance + 1):
                 pbar.set_postfix_str(f"Distance: {distance}", refresh=True)
                 if len(counts_df.index) == 0:
