@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `OvertureMapsLoader` docstring with regards to `count_subcategories` parameter
+- Reduced memory footprint in `CountEmbedder` by using Arrow's zero-copy protocol
 
 ## [0.9.1] - 2025-01-27
 

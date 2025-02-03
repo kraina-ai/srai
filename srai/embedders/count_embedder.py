@@ -9,6 +9,7 @@ from typing import Optional, Union, cast
 import geopandas as gpd
 import pandas as pd
 import polars as pl
+import pyarrow as pa
 
 from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
@@ -86,11 +87,24 @@ class CountEmbedder(Embedder):
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
 
-        regions_df = pl.from_pandas(regions_gdf.reset_index()[[REGIONS_INDEX]]).lazy()
-        features_df = pl.from_pandas(
-            features_gdf.drop(columns=GEOMETRY_COLUMN).reset_index()
+        regions_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                regions_gdf[[]],
+            ),
+            schema={REGIONS_INDEX: pl.String()},
         ).lazy()
-        joint_df = pl.from_pandas(joint_gdf.reset_index()[[REGIONS_INDEX, FEATURES_INDEX]]).lazy()
+        features_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                features_gdf,
+                columns=[c for c in features_gdf.columns if c != GEOMETRY_COLUMN],
+            )
+        ).lazy()
+        joint_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                joint_gdf[[]],
+            ),
+            schema={REGIONS_INDEX: pl.String(), FEATURES_INDEX: pl.String()},
+        ).lazy()
 
         features_schema = features_df.collect_schema()
         feature_columns = [col for col in features_schema.names() if col != FEATURES_INDEX]
@@ -114,7 +128,10 @@ class CountEmbedder(Embedder):
             feature_encodings = feature_encodings.select([FEATURES_INDEX, *feature_columns])
         elif are_all_columns_bool:
             feature_encodings = features_df.with_columns(
-                [pl.col(FEATURES_INDEX), *(pl.col(col).cast(pl.Int32) for col in feature_columns)]
+                [
+                    pl.col(FEATURES_INDEX),
+                    *(pl.col(col).cast(pl.Int32) for col in feature_columns),
+                ]
             )
         else:
             feature_encodings = features_df.with_columns(
