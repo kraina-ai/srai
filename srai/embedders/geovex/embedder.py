@@ -39,6 +39,7 @@ class GeoVexEmbedder(CountEmbedder):
     def __init__(
         self,
         target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
+        count_subcategories: bool = True,
         batch_size: Optional[int] = 32,
         neighbourhood_radius: int = 4,
         convolutional_layers: int = 2,
@@ -52,6 +53,9 @@ class GeoVexEmbedder(CountEmbedder):
             target_features (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter]): The features
                 that are to be used in the embedding. Should be in "flat" format,
                 i.e. "<super-tag>_<sub-tag>", or use OsmTagsFilter object.
+            count_subcategories (bool, optional): Whether to count all subcategories individually
+                or count features only on the highest level based on features column name.
+                Defaults to False.
             batch_size (int, optional): Batch size. Defaults to 32.
             convolutional_layers (int, optional): Number of convolutional layers. Defaults to 2.
             neighbourhood_radius (int, optional): Radius of the neighbourhood. Defaults to 4.
@@ -64,6 +68,7 @@ class GeoVexEmbedder(CountEmbedder):
 
         super().__init__(
             expected_output_features=target_features,
+            count_subcategories=count_subcategories,
         )
 
         self._assert_feature_length(self.expected_output_features, convolutional_layer_size)
@@ -167,7 +172,12 @@ class GeoVexEmbedder(CountEmbedder):
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
         counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, self._batch_size, shuffle=True
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            self._batch_size,
+            shuffle=True,
         )
 
         self._prepare_model(counts_df, learning_rate)
@@ -241,7 +251,10 @@ class GeoVexEmbedder(CountEmbedder):
         return self._transform(dataset=self._dataset)
 
     def _get_raw_counts(
-        self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
+        self,
+        regions_gdf: pd.DataFrame,
+        features_gdf: pd.DataFrame,
+        joint_gdf: pd.DataFrame,
     ) -> pd.DataFrame:
         return super().transform(regions_gdf, features_gdf, joint_gdf).astype(np.float32)
 

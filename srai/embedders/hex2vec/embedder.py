@@ -37,6 +37,7 @@ class Hex2VecEmbedder(CountEmbedder):
         expected_output_features: Optional[
             Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
+        count_subcategories: bool = True,
     ) -> None:
         """
         Initialize Hex2VecEmbedder.
@@ -48,9 +49,13 @@ class Hex2VecEmbedder(CountEmbedder):
             expected_output_features
                 (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter], optional):
                 List of expected output features. Defaults to None.
+            count_subcategories (bool, optional): Whether to count all subcategories individually
+                or count features only on the highest level based on features column name.
+                Defaults to False.
         """
         super().__init__(
-            expected_output_features=expected_output_features, count_subcategories=True
+            expected_output_features=expected_output_features,
+            count_subcategories=count_subcategories,
         )
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
@@ -133,10 +138,10 @@ class Hex2VecEmbedder(CountEmbedder):
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
 
-        if self.expected_output_features is None:  # type: ignore[has-type]
+        if self.expected_output_features is None:
             self.expected_output_features = pd.Series(counts_df.columns)
 
-        num_features = len(self.expected_output_features)  # type: ignore[arg-type]
+        num_features = len(self.expected_output_features)
         self._model = Hex2VecModel(
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
         )
