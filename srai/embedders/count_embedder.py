@@ -119,7 +119,9 @@ class CountEmbedder(Embedder):
             if are_all_columns_bool:
                 raise ValueError("Cannot count subcategories with boolean columns.")
 
-            feature_encodings = features_df.collect().to_dummies(columns=feature_columns).lazy()
+            feature_encodings = (
+                features_df.collect(streaming=True).to_dummies(columns=feature_columns).lazy()
+            )
             feature_columns = [
                 col
                 for col in feature_encodings.collect_schema().names()
@@ -158,7 +160,7 @@ class CountEmbedder(Embedder):
                     ]
                 )
             )
-            .collect()
+            .collect(streaming=True)
             .to_pandas()
             .set_index(REGIONS_INDEX)
         )
