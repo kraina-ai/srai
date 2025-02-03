@@ -25,7 +25,6 @@ class OvertureMapsLoader(Loader):
     s3 bucket. It can download multiple data types for different release versions and it can filter
     features using PyArrow[2] filters.
 
-
     This loader is a wrapper around `OvertureMaestro`[3] library.
     It utilizes the PyArrow streaming capabilities as well as `duckdb`[4] engine for transforming
     the data into the required format.
@@ -101,6 +100,8 @@ class OvertureMapsLoader(Loader):
         the S3 bucket provided by the Overture Maps Foundation. Later it will filter
         features and transform them into a wide format. It will return a GeoDataFrame
         containing the `geometry` column and boolean columns for each category.
+
+        Note: Remember to set `count_categories` to `False` in `CountEmbedder` and its descendants.
 
         Note: If used with `include_all_possible_columns`=`False`, some key/value pairs might be
             missing from the resulting GeoDataFrame, simply because there are no such objects in
