@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to change inherited parameter `count_subcategories` in `Hex2VecEmbedder` and `GeoVexEmbedder`
+
+### Changed
+
+- `OvertureMapsLoader` docstring with regards to `count_subcategories` parameter
+
 ## [0.9.1] - 2025-01-27
 
 ### Changed
