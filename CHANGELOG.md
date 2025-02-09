@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to change default aggregation in `ContextualCountEmbedder` from `average` to `median`, `sum`, `min` or `max`
+
 ## [0.9.2] - 2025-02-03
 
 ### Added
