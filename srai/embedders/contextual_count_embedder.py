@@ -288,9 +288,11 @@ class ContextualCountEmbedder(CountEmbedder):
                 else:
                     for neighbours in neighbours_series:
                         values_to_stack.append(
-                            np.nan_to_num(np.nanmean(counts_df.loc[neighbours].values, axis=0))
-                            if len(neighbours) > 0
-                            else np.zeros((number_of_base_columns,))
+                            _get_embeddings_for_neighbours(
+                                region_ids=neighbours,
+                                counts_df=counts_df,
+                                number_of_base_columns=number_of_base_columns,
+                            )
                         )
                         pbar.update()
 
