@@ -2,7 +2,7 @@
 
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -111,6 +111,86 @@ def expected_embedding_df_concatenated_distance_2() -> pd.DataFrame:
 
 
 @pytest.fixture  # type: ignore
+def expected_embedding_df_concatenated_distance_2_median() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count without subcategories. Concatenated features, distance 2. Aggregation median.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_0": [0, 1, 1],
+            "amenity_0": [1, 0, 1],
+            "leisure_1": [1, 0.5, 0.5],
+            "amenity_1": [0.5, 1, 0.5],
+            "leisure_2": [0, 0, 0],
+            "amenity_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_embedding_df_concatenated_distance_2_sum() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count without subcategories. Concatenated features, distance 2. Aggregation sum.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_0": [0, 1, 1],
+            "amenity_0": [1, 0, 1],
+            "leisure_1": [2, 1, 1],
+            "amenity_1": [1, 2, 1],
+            "leisure_2": [0, 0, 0],
+            "amenity_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_embedding_df_concatenated_distance_2_min() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count without subcategories. Concatenated features, distance 2. Aggregation min.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_0": [0, 1, 1],
+            "amenity_0": [1, 0, 1],
+            "leisure_1": [1, 0, 0],
+            "amenity_1": [0, 1, 0],
+            "leisure_2": [0, 0, 0],
+            "amenity_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_embedding_df_concatenated_distance_2_max() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count without subcategories. Concatenated features, distance 2. Aggregation max.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_0": [0, 1, 1],
+            "amenity_0": [1, 0, 1],
+            "leisure_1": [1, 1, 1],
+            "amenity_1": [1, 1, 1],
+            "leisure_2": [0, 0, 0],
+            "amenity_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
 def expected_subcategories_embedding_df_squashed_distance_0() -> pd.DataFrame:
     """
     Get expected ContextualCountEmbedder output.
@@ -197,6 +277,98 @@ def expected_subcategories_embedding_df_concatenated_distance_2() -> pd.DataFram
             "leisure_adult_gaming_centre_1": [0.5, 0.5, 0],
             "leisure_playground_1": [0.5, 0, 0.5],
             "amenity_pub_1": [0.5, 1, 0.5],
+            "leisure_adult_gaming_centre_2": [0, 0, 0],
+            "leisure_playground_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_subcategories_embedding_df_concatenated_distance_2_median() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count with subcategories. Concatenated features, distance 2. Aggregation median.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_adult_gaming_centre_0": [0, 0, 1],
+            "leisure_playground_0": [0, 1, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "leisure_adult_gaming_centre_1": [0.5, 0.5, 0],
+            "leisure_playground_1": [0.5, 0, 0.5],
+            "amenity_pub_1": [0.5, 1, 0.5],
+            "leisure_adult_gaming_centre_2": [0, 0, 0],
+            "leisure_playground_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_subcategories_embedding_df_concatenated_distance_2_sum() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count with subcategories. Concatenated features, distance 2. Aggregation sum.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_adult_gaming_centre_0": [0, 0, 1],
+            "leisure_playground_0": [0, 1, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "leisure_adult_gaming_centre_1": [1, 1, 0],
+            "leisure_playground_1": [1, 0, 1],
+            "amenity_pub_1": [1, 2, 1],
+            "leisure_adult_gaming_centre_2": [0, 0, 0],
+            "leisure_playground_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_subcategories_embedding_df_concatenated_distance_2_min() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count with subcategories. Concatenated features, distance 2. Aggregation min.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_adult_gaming_centre_0": [0, 0, 1],
+            "leisure_playground_0": [0, 1, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "leisure_adult_gaming_centre_1": [0, 0, 0],
+            "leisure_playground_1": [0, 0, 0],
+            "amenity_pub_1": [0, 1, 0],
+            "leisure_adult_gaming_centre_2": [0, 0, 0],
+            "leisure_playground_2": [0, 0, 0],
+            "amenity_pub_2": [0, 0, 0],
+        },
+    )
+
+
+@pytest.fixture  # type: ignore
+def expected_subcategories_embedding_df_concatenated_distance_2_max() -> pd.DataFrame:
+    """
+    Get expected ContextualCountEmbedder output.
+
+    Count with subcategories. Concatenated features, distance 2. Aggregation max.
+    """
+    return _create_features_dataframe(
+        {
+            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            "leisure_adult_gaming_centre_0": [0, 0, 1],
+            "leisure_playground_0": [0, 1, 0],
+            "amenity_pub_0": [1, 0, 1],
+            "leisure_adult_gaming_centre_1": [1, 1, 0],
+            "leisure_playground_1": [1, 0, 1],
+            "amenity_pub_1": [1, 1, 1],
             "leisure_adult_gaming_centre_2": [0, 0, 0],
             "leisure_playground_2": [0, 0, 0],
             "amenity_pub_2": [0, 0, 0],
@@ -403,6 +575,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     "neighbourhood_distance",
     "concatenate_features",
     "count_subcategories",
+    "aggregation_function",
     "expected_features_fixture",
 )  # type: ignore
 @P.case(  # type: ignore
@@ -411,6 +584,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -419,6 +593,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -427,6 +602,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -435,6 +611,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -443,6 +620,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -451,6 +629,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     False,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -459,6 +638,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -467,6 +647,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -475,6 +656,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -483,6 +665,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -491,6 +674,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -499,6 +683,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     True,
+    "average",
     None,
 )
 @P.case(  # type: ignore
@@ -507,6 +692,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -515,6 +701,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -523,6 +710,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -531,6 +719,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -539,6 +728,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -547,6 +737,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -555,6 +746,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -563,6 +755,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -571,6 +764,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     False,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -579,6 +773,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -587,6 +782,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -595,6 +791,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     True,
+    "average",
     "expected_feature_names",
 )
 @P.case(  # type: ignore
@@ -603,6 +800,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -611,6 +809,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -619,6 +818,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -627,6 +827,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     False,
     True,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -635,6 +836,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     False,
     True,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -643,6 +845,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     False,
     True,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -651,6 +854,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -659,6 +863,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -667,6 +872,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     False,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -675,6 +881,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     0,
     True,
     True,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -683,6 +890,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     1,
     True,
     True,
+    "average",
     "osm_tags_filter",
 )
 @P.case(  # type: ignore
@@ -691,13 +899,87 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     2,
     True,
     True,
+    "average",
     "osm_tags_filter",
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, median",
+    "expected_embedding_df_concatenated_distance_2_median",
+    2,
+    True,
+    False,
+    "median",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, median",
+    "expected_subcategories_embedding_df_concatenated_distance_2_median",
+    2,
+    True,
+    True,
+    "median",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, sum",
+    "expected_embedding_df_concatenated_distance_2_sum",
+    2,
+    True,
+    False,
+    "sum",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, sum",
+    "expected_subcategories_embedding_df_concatenated_distance_2_sum",
+    2,
+    True,
+    True,
+    "sum",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, min",
+    "expected_embedding_df_concatenated_distance_2_min",
+    2,
+    True,
+    False,
+    "min",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, min",
+    "expected_subcategories_embedding_df_concatenated_distance_2_min",
+    2,
+    True,
+    True,
+    "min",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, without subcategories, max",
+    "expected_embedding_df_concatenated_distance_2_max",
+    2,
+    True,
+    False,
+    "max",
+    None,
+)
+@P.case(  # type: ignore
+    "Concatenated features, distance 2, with subcategories, max",
+    "expected_subcategories_embedding_df_concatenated_distance_2_max",
+    2,
+    True,
+    True,
+    "max",
+    None,
 )
 def test_correct_embedding(
     expected_embedding_fixture: str,
     neighbourhood_distance: int,
     concatenate_features: bool,
     count_subcategories: bool,
+    aggregation_function: Literal["average", "median", "sum", "min", "max"],
     expected_features_fixture: Union[str, None],
     request: Any,
 ) -> None:
@@ -717,6 +999,7 @@ def test_correct_embedding(
         expected_output_features=expected_output_features,
         count_subcategories=count_subcategories,
         concatenate_vectors=concatenate_features,
+        aggregation_function=aggregation_function,
     )
     embedding_df = embedder.transform(
         regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
