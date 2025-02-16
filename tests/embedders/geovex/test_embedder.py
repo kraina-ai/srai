@@ -135,15 +135,10 @@ def test_embedder_save_load() -> None:
 
         # Initialize neighbourhood and target features for the embedder
         neighbourhood = H3Neighbourhood(regions_gdf)
-        target_features = [
-            f"{st}_{t}"
-            for st in test_case["tags"]  # type: ignore
-            for t in test_case["tags"][st]  # type: ignore
-        ]
 
         # Initialize GeoVexEmbedder with the given parameters
         embedder = GeoVexEmbedder(
-            target_features=target_features,
+            target_features=test_case["tags"],  # type: ignore[arg-type]
             batch_size=10,
             neighbourhood_radius=radius,
             embedding_size=EMBEDDING_SIZE,
