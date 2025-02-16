@@ -290,7 +290,7 @@ class GeoVexEmbedder(CountEmbedder):
         # embedding_size: int = 32,
         # convolutional_layer_size: int = 256,
         embedder_config = {
-            "target_features": self.expected_output_features.tolist(),
+            "target_features": self.expected_output_features.to_json(orient="records"),
             "batch_size": self._batch_size,
             "neighbourhood_radius": self._r,
             "convolutional_layers": self._convolutional_layers,
