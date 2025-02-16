@@ -9,7 +9,7 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 import torch
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from pytorch_lightning import seed_everything
 
 from srai.embedders.geovex.embedder import GeoVexEmbedder
@@ -17,7 +17,11 @@ from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods import H3Neighbourhood
-from tests.embedders.geovex.constants import EMBEDDING_SIZE, PREDEFINED_TEST_CASES, TRAINER_KWARGS
+from tests.embedders.geovex.constants import (
+    EMBEDDING_SIZE,
+    PREDEFINED_TEST_CASES,
+    TRAINER_KWARGS,
+)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -84,7 +88,12 @@ def test_embedder() -> None:
         )
 
         counts_df, _, _ = embedder._prepare_dataset(
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            embedder._batch_size,
+            shuffle=True,
         )
 
         embedder._prepare_model(counts_df, 0.001)
@@ -144,7 +153,12 @@ def test_embedder_save_load() -> None:
 
         # Prepare dataset for the embedder
         counts_df, _, _ = embedder._prepare_dataset(
-            regions_gdf, features_gdf, joint_gdf, neighbourhood, embedder._batch_size, shuffle=True
+            regions_gdf,
+            features_gdf,
+            joint_gdf,
+            neighbourhood,
+            embedder._batch_size,
+            shuffle=True,
         )
 
         embedder._prepare_model(counts_df, 0.001)
@@ -171,17 +185,17 @@ def test_embedder_save_load() -> None:
         loaded_embedder = GeoVexEmbedder.load(tmp_models_dir / "test_model")
 
         # get embeddings from the loaded model
-        loaded_result_df = loaded_embedder.fit_transform(
+        loaded_result_df = loaded_embedder.transform(
             regions_gdf,
             features_gdf,
             joint_gdf,
-            neighbourhood,
-            trainer_kwargs=TRAINER_KWARGS,
-            learning_rate=0.001,
         )
 
         # verify that the model was loaded correctly
-        assert_frame_equal(result_df, loaded_result_df, atol=1e-1)
+        assert_series_equal(
+            embedder.expected_output_features, loaded_embedder.expected_output_features
+        )
+        assert_frame_equal(result_df, loaded_result_df, atol=1e-5)
 
         # check type of model
         assert isinstance(loaded_embedder._model, GeoVexModel)
