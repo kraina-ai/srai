@@ -115,14 +115,27 @@ class OSMOnlineLoader(OSMLoader):
             ox.features_from_polygon if osmnx_new_api else ox.geometries_from_polygon
         )
 
+        osmnx_new_exception_api = version.parse(ox.__version__) >= version.parse("1.6.0")
+        if osmnx_new_exception_api:
+            from osmnx._errors import InsufficientResponseError
+
+            response_error = InsufficientResponseError
+        else:
+            from osmnx._errors import EmptyOverpassResponse
+
+            response_error = EmptyOverpassResponse
+
         pbar = tqdm(
             product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries, disable=FORCE_TERMINAL
         )
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            geometries = osmnx_download_function(polygon, {key: value})
-            if not geometries.empty:
-                results.append(geometries[[GEOMETRY_COLUMN, key]])
+            try:
+                geometries = osmnx_download_function(polygon, {key: value})
+                if not geometries.empty:
+                    results.append(geometries[[GEOMETRY_COLUMN, key]])
+            except response_error:
+                pass
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
         result_gdf = self._flatten_index(result_gdf)
