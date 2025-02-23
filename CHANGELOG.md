@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Catched OSMnx `InsufficientResponseError` in `OSMOnlineLoader`
+
 ## [0.9.4] - 2025-02-16
 
 ### Fixed
