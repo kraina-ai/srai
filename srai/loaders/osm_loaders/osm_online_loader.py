@@ -5,6 +5,7 @@ This module contains loader capable of loading OpenStreetMap features from Overp
 """
 
 from collections.abc import Iterable
+from contextlib import suppress
 from itertools import product
 from typing import Union
 
@@ -130,12 +131,10 @@ class OSMOnlineLoader(OSMLoader):
         )
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            try:
+            with suppress(response_error):
                 geometries = osmnx_download_function(polygon, {key: value})
                 if not geometries.empty:
                     results.append(geometries[[GEOMETRY_COLUMN, key]])
-            except response_error:
-                pass
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
         result_gdf = self._flatten_index(result_gdf)
