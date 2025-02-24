@@ -60,7 +60,7 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "res_8") -> None:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "8") -> None:
         """
         Method to load dataset.
 
@@ -69,9 +69,9 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
             version (str, optional): version of a dataset.
-                Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_8'. Benchmark version \
-                    comprises six cities: Paris, Rome, London, Amsterdam, Melbourne, New York City.
-                    Raw, full data from ~80 cities available as 'all'.
+                Available: '8', '9', '10', where number is a h3 resolution used in train-test \
+                    split. Benchmark version comprises six cities: Paris, Rome, London, Amsterdam, \
+                        Melbourne, New York City. Raw, full data from ~80 cities available as 'all'.
 
         Returns:
             None

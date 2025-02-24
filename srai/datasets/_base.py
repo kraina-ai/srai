@@ -26,6 +26,7 @@ class HuggingFaceDataset(abc.ABC):
         numerical_columns: Optional[list[str]] = None,
         categorical_columns: Optional[list[str]] = None,
         target: Optional[str] = None,
+        resolution: Optional[int] = None,
     ) -> None:
         self.path = path
         self.version = version
@@ -65,6 +66,8 @@ class HuggingFaceDataset(abc.ABC):
         """
         dataset_name = self.path
         version = version or self.version
+        if version is not None and len(version) == 1:
+            self.resolution = int(version)
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
@@ -85,9 +88,9 @@ class HuggingFaceDataset(abc.ABC):
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
             target_column (Optional[str], optional): Target column name. If None, split generated on basis of number \
-                of points within a hex ov given resolution.
+                of points within a hex ov given resolution. In this case values are normalized to [0,1] scale. \
+                      Defaults to preset dataset target column.
             resolution (int, optional): h3 resolution to regionalize data. Defaults to 9.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
@@ -99,6 +102,8 @@ class HuggingFaceDataset(abc.ABC):
         """  # noqa: E501, W505
         if self.type != "point":
             raise ValueError("This split can be performed only on point data type!")
+
+        target_column = target_column if target_column is not None else self.target
         if target_column is None:
             # target_column = self.target
             target_column = "count"
@@ -155,6 +160,7 @@ class HuggingFaceDataset(abc.ABC):
         # return train, test  # , gdf_.iloc[dev_indices]
         self.train_gdf = train
         self.test_gdf = test
+        self.resolution = resolution
 
     def train_test_split_spatial_points(
         self,
@@ -168,7 +174,6 @@ class HuggingFaceDataset(abc.ABC):
         resolution.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
             test_size (float, optional): Percentage of test set.. Defaults to 0.2.
             resolution (int, optional): h3 resolution to regionalize data. Defaults to 8.
             resolution_subsampling (int, optional): h3 resolution difference to subsample \
@@ -234,11 +239,12 @@ class HuggingFaceDataset(abc.ABC):
         # )
         self.train_gdf = gdf_.iloc[train_indices]
         self.test_gdf = gdf_.iloc[test_indices]
+        self.resolution = resolution
         # , gdf_.iloc[dev_indices],
 
     def get_h3_with_labels(
         self,
-        resolution: int,
+        resolution: Optional[int] = None,
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
@@ -252,7 +258,8 @@ class HuggingFaceDataset(abc.ABC):
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
             target_column (Optional[str], optional): Target column name. If None, aggregates h3 \
-                on basis of number of points within a hex ov given resolution. Defaults to None.
+                on basis of number of points within a hex of given resolution. In this case values \
+                     are normalized to [0,1] scale. Defaults to None.
 
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes with target \
@@ -260,6 +267,21 @@ class HuggingFaceDataset(abc.ABC):
         """
         # if target_column is None:
         #     target_column = "count"
+
+        resolution = resolution if resolution is not None else self.resolution
+
+        # If resolution is still None, raise an error
+        if resolution is None:
+            raise ValueError(
+                "No preset resolution for the dataset in self.resolution. Please \
+                             provide a resolution."
+            )
+        elif self.resolution is not None and resolution != self.resolution:
+            raise ValueError(
+                "Resolution provided is different from the preset resolution for the \
+                             dataset. This may result in a data leak between splits."
+            )
+
         if target_column is None:
             target_column = getattr(self, "target", None) or "count"
 
@@ -284,7 +306,7 @@ class HuggingFaceDataset(abc.ABC):
         self,
         gdf: gpd.GeoDataFrame,
         resolution: int,
-        target_column: Optional[str] = None,
+        target_column: str,
     ) -> gpd.GeoDataFrame:
         """
         Aggregates points and calculates them or the mean of their target column within each hex.
@@ -292,7 +314,7 @@ class HuggingFaceDataset(abc.ABC):
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame with data.
             resolution (int): h3 resolution to regionalize data.
-            target_column (Optional[str], optional): Target column name. If None, aggregates h3 on \
+            target_column (str): Target column name. If None, aggregates h3 on \
                 basis of number of points within a hex ov given resolution. Defaults to None.
 
         Returns:

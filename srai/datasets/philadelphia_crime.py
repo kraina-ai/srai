@@ -74,7 +74,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
 
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "res_8") -> None:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "8") -> None:
         """
         Method to load dataset.
 
@@ -84,7 +84,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
                 Defaults to None.
             version (str, optional): version of a dataset.
                 Available: Official spatial train-test split from year 2023 in chosen h3 resolution:
-                'res_8', 'res_9, 'res_10'. Defaults to 'res_8'. Raw data from other years available
+                '8', '9, '10'. Defaults to '8'. Raw data from other years available
                 as: '2013', '2014', '2015', '2016', '2017', '2018','2019', '2020', '2021',
                 '2022', '2023'.
 

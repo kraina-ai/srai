@@ -48,18 +48,13 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
             target=target,
         )
 
-    def _preprocessing(
-        self, data: pd.DataFrame, version: Optional[str] = "res_9"
-    ) -> gpd.GeoDataFrame:
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocess the dataset from HuggingFace.
+        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
             data (pd.DataFrame): a dataset to preprocess
             version (str, optional): version of dataset.
-            Available: Official spatial train-test split in chosen h3 resolution:
-            'res_8', 'res_9, 'res_10'. Defaults to 'res_9'. All data available
-            as 'all'.
 
         Returns:
             gpd.GeoDataFrame: preprocessed data.
@@ -72,7 +67,7 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "res_9") -> None:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "9") -> None:
         """
         Method to load dataset.
 
@@ -81,8 +76,8 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
             version (str, optional): version of a dataset.
-                Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_9'. \
-                    Raw, full data available as 'all'.
+                Available: '8', '9', '10', where number is a h3 resolution used in train-test \
+                    split. Defaults to '9'. Raw, full data available as 'all'.
 
         Returns:
             None

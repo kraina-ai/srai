@@ -48,17 +48,14 @@ class HouseSalesInKingCountyDataset(HuggingFaceDataset):
             target=target,
         )
 
-    def _preprocessing(
-        self, data: pd.DataFrame, version: Optional[str] = "res_8"
-    ) -> gpd.GeoDataFrame:
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
-        Preprocess the dataset from HuggingFace.
+        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
             data (pd.DataFrame): a dataset to preprocess
             version (str, optional): version of dataset.
-            Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_8'.
-                    Raw data available as 'all'.
+
 
         Returns:
             gpd.GeoDataFrame: preprocessed data.
@@ -70,7 +67,7 @@ class HouseSalesInKingCountyDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "res_8") -> None:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "8") -> None:
         """
         Method to load dataset.
 
@@ -79,8 +76,8 @@ class HouseSalesInKingCountyDataset(HuggingFaceDataset):
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
             version (str, optional): version of a dataset.
-                Available: 'res_8', 'res_9', 'res_10'. Defaults to 'res_8'. \
-                    Raw, full data available as 'all'.
+                Available: '8', '9', '10', where number is a h3 resolution used in train-test \
+                    split. Defaults to '8'. Raw, full data available as 'all'.
 
         Returns:
             None
