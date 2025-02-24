@@ -36,6 +36,7 @@ class HuggingFaceDataset(abc.ABC):
         self.type = type
         self.train_gdf = None
         self.test_gdf = None
+        self.resolution = resolution
 
     @abc.abstractmethod
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
