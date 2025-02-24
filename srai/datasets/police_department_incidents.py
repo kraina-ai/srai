@@ -72,9 +72,7 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "res_9"
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "res_9") -> None:
         """
         Method to load dataset.
 
@@ -87,6 +85,6 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
                     Raw, full data available as 'all'.
 
         Returns:
-            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
+            None
         """
-        return super().load(hf_token, version)
+        super().load(hf_token, version)
