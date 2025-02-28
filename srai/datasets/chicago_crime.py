@@ -64,9 +64,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "res_9"
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "9") -> None:
         """
         Method to load dataset.
 
@@ -76,10 +74,10 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
                 Defaults to None.
             version (str, optional): version of a dataset.
                 Available: Official spatial train-test split from year 2022 in chosen h3 resolution:
-                'res_8', 'res_9, 'res_10'. Defaults to 'res_9'. Raw data from other years available
+                '8', '9, '10'. Defaults to '9'. Raw data from other years available
                 as: '2020', '2021', '2022'.
 
         Returns:
-            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
+            None
         """
-        return super().load(hf_token, version)
+        super().load(hf_token, version)

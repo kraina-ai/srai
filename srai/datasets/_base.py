@@ -26,6 +26,7 @@ class HuggingFaceDataset(abc.ABC):
         numerical_columns: Optional[list[str]] = None,
         categorical_columns: Optional[list[str]] = None,
         target: Optional[str] = None,
+        resolution: Optional[int] = None,
     ) -> None:
         self.path = path
         self.version = version
@@ -33,6 +34,9 @@ class HuggingFaceDataset(abc.ABC):
         self.categorical_columns = categorical_columns
         self.target = target
         self.type = type
+        self.train_gdf = None
+        self.test_gdf = None
+        self.resolution = resolution
 
     @abc.abstractmethod
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
@@ -48,9 +52,7 @@ class HuggingFaceDataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = None
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    def load(self, hf_token: Optional[str] = None, version: Optional[str] = None) -> None:
         """
         Method to load dataset.
 
@@ -61,36 +63,35 @@ class HuggingFaceDataset(abc.ABC):
             version (str, optional): version of a dataset
 
         Returns:
-            gpd.GeoDataFrame, gpd.Geodataframe | None : Loaded train data and test data if exist.
+            None
         """
         dataset_name = self.path
         version = version or self.version
+        if version is not None and len(version) == 1:
+            self.resolution = int(version)
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
+        self.train_gdf = processed_train
         if "test" in data:
             test = data["test"].to_pandas()
             processed_test = self._preprocessing(test)
-        else:
-            processed_test = None
-
-        return processed_train, processed_test
+            self.test_gdf = processed_test
 
     def train_test_split_bucket_regression(
         self,
-        gdf: gpd.GeoDataFrame,
         target_column: Optional[str] = None,
         resolution: int = 9,
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
-    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    ) -> None:
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
             target_column (Optional[str], optional): Target column name. If None, split generated on basis of number \
-                of points within a hex ov given resolution.
+                of points within a hex ov given resolution. In this case values are normalized to [0,1] scale. \
+                      Defaults to preset dataset target column.
             resolution (int, optional): h3 resolution to regionalize data. Defaults to 9.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
@@ -98,14 +99,19 @@ class HuggingFaceDataset(abc.ABC):
                 Pass an int for reproducible output across multiple function. Defaults to None.
 
         Returns:
-            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Test splits in GeoDataFrames
+            None
         """  # noqa: E501, W505
         if self.type != "point":
             raise ValueError("This split can be performed only on point data type!")
+
+        target_column = target_column if target_column is not None else self.target
         if target_column is None:
             # target_column = self.target
             target_column = "count"
 
+        if self.train_gdf is None:
+            raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
+        gdf = self.train_gdf
         gdf_ = gdf.copy()
 
         if target_column == "count":
@@ -153,22 +159,23 @@ class HuggingFaceDataset(abc.ABC):
             train = train.drop(columns=["h3_index"])
             test = test.drop(columns=["h3_index"])
 
-        return train, test  # , gdf_.iloc[dev_indices]
+        # return train, test  # , gdf_.iloc[dev_indices]
+        self.train_gdf = train
+        self.test_gdf = test
+        self.resolution = resolution
 
     def train_test_split_spatial_points(
         self,
-        gdf: gpd.GeoDataFrame,
         test_size: float = 0.2,
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
         random_state: Optional[int] = None,
-    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    ) -> None:
         """
         Method to generate train and test split from GeoDataFrame, based on the spatial h3
         resolution.
 
         Args:
-            gdf (gpd.GeoDataFrame): GeoDataFrame on which train, dev, test split will be performed.
             test_size (float, optional): Percentage of test set.. Defaults to 0.2.
             resolution (int, optional): h3 resolution to regionalize data. Defaults to 8.
             resolution_subsampling (int, optional): h3 resolution difference to subsample \
@@ -180,10 +187,14 @@ class HuggingFaceDataset(abc.ABC):
             ValueError: If type of data is not Points.
 
         Returns:
-            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Test splits in GeoDataFrames
+            None
         """  # noqa: W505, E501, D205
         if self.type != "point":
             raise ValueError("This split can be performed only on Points data type!")
+
+        if self.train_gdf is None:
+            raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
+        gdf = self.train_gdf
         gdf_ = gdf.copy()
 
         regionalizer = H3Regionalizer(resolution=resolution)
@@ -224,16 +235,19 @@ class HuggingFaceDataset(abc.ABC):
         #     ].h3_index,  # perform spatial stratify (by h3 index)
         # )
 
-        return (
-            gdf_.iloc[train_indices],
-            gdf_.iloc[test_indices],
-        )  # , gdf_.iloc[dev_indices],
 
-    def get_h3_with_labels(
+        # return (
+        #    gdf_.iloc[train_indices],
+        #   gdf_.iloc[test_indices],
+        # )
+        self.train_gdf = gdf_.iloc[train_indices]
+        self.test_gdf = gdf_.iloc[test_indices]
+        self.resolution = resolution
+        # , gdf_.iloc[dev_indices],
+
+  def get_h3_with_labels(
         self,
-        resolution: int,
-        train_gdf: gpd.GeoDataFrame,
-        test_gdf: Optional[gpd.GeoDataFrame],
+        resolution: Optional[int] = None,
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
@@ -247,7 +261,8 @@ class HuggingFaceDataset(abc.ABC):
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
             target_column (Optional[str], optional): Target column name. If None, aggregates h3 \
-                on basis of number of points within a hex ov given resolution. Defaults to None.
+                on basis of number of points within a hex of given resolution. In this case values \
+                     are normalized to [0,1] scale. Defaults to None.
 
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes with target \
@@ -255,13 +270,28 @@ class HuggingFaceDataset(abc.ABC):
         """
         # if target_column is None:
         #     target_column = "count"
+
+        resolution = resolution if resolution is not None else self.resolution
+
+        # If resolution is still None, raise an error
+        if resolution is None:
+            raise ValueError(
+                "No preset resolution for the dataset in self.resolution. Please \
+                             provide a resolution."
+            )
+        elif self.resolution is not None and resolution != self.resolution:
+            raise ValueError(
+                "Resolution provided is different from the preset resolution for the \
+                             dataset. This may result in a data leak between splits."
+            )
+
         if target_column is None:
             target_column = getattr(self, "target", None) or "count"
 
-        _train_gdf = self._aggregate_hexes(train_gdf, resolution, target_column)
+        _train_gdf = self._aggregate_hexes(self.train_gdf, resolution, target_column)
 
-        if test_gdf is not None:
-            _test_gdf = self._aggregate_hexes(test_gdf, resolution, target_column)
+        if self.test_gdf is not None:
+            _test_gdf = self._aggregate_hexes(self.test_gdf, resolution, target_column)
         else:
             _test_gdf = None
 
@@ -279,7 +309,7 @@ class HuggingFaceDataset(abc.ABC):
         self,
         gdf: gpd.GeoDataFrame,
         resolution: int,
-        target_column: Optional[str] = None,
+        target_column: str,
     ) -> gpd.GeoDataFrame:
         """
         Aggregates points and calculates them or the mean of their target column within each hex.
@@ -287,7 +317,7 @@ class HuggingFaceDataset(abc.ABC):
         Args:
             gdf (gpd.GeoDataFrame): GeoDataFrame with data.
             resolution (int): h3 resolution to regionalize data.
-            target_column (Optional[str], optional): Target column name. If None, aggregates h3 on \
+            target_column (str): Target column name. If None, aggregates h3 on \
                 basis of number of points within a hex ov given resolution. Defaults to None.
 
         Returns:
