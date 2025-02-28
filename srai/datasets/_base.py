@@ -235,6 +235,7 @@ class HuggingFaceDataset(abc.ABC):
         #     ].h3_index,  # perform spatial stratify (by h3 index)
         # )
 
+
         # return (
         #    gdf_.iloc[train_indices],
         #   gdf_.iloc[test_indices],
@@ -244,7 +245,7 @@ class HuggingFaceDataset(abc.ABC):
         self.resolution = resolution
         # , gdf_.iloc[dev_indices],
 
-    def get_h3_with_labels(
+  def get_h3_with_labels(
         self,
         resolution: Optional[int] = None,
         target_column: Optional[str] = None,

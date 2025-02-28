@@ -2,6 +2,7 @@
 
 import abc
 import logging
+
 from typing import Any, Literal, Optional
 
 import numpy as np
@@ -9,6 +10,7 @@ import numpy as np
 import srai.datasets as sds
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 
 class BaseEvaluator(abc.ABC):
@@ -27,6 +29,7 @@ class BaseEvaluator(abc.ABC):
         log_metrics: bool = True,
         hf_token: Optional[str] = None,
         **kwargs: Any,
+
     ) -> dict[str, float]:
         """
         Evaluate predictions againts test set.
@@ -86,6 +89,7 @@ class BaseEvaluator(abc.ABC):
         # else:
         #     raise NotImplementedError
         raise NotImplementedError
+
 
     # @abc.abstractmethod
     # def evaluate_on_benchmark(self, model: torch.nn.Module):

@@ -1,17 +1,22 @@
+
 """This module contains HexRegressionEvaluator dataset."""
 
 from typing import Any, Optional
 
+
 import numpy as np
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+
 import srai.datasets as sds
 from srai.benchmark import BaseEvaluator
+
 
 from ._custom_metrics import (
     mean_absolute_percentage_error,
     symmetric_mean_absolute_percentage_error,
 )
+
 
 
 class HexRegressionEvaluator(BaseEvaluator):
@@ -20,6 +25,7 @@ class HexRegressionEvaluator(BaseEvaluator):
     def __init__(self) -> None:
         """Create the evaluator."""
         super().__init__(task="regression")
+
 
     def evaluate(
         self,
@@ -83,6 +89,7 @@ class HexRegressionEvaluator(BaseEvaluator):
         if log_metrics:
             self._log_metrics(metrics)
         return metrics
+
 
     def _compute_metrics(self, predictions: np.ndarray, labels: np.ndarray) -> dict[str, float]:
         """
