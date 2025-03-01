@@ -182,8 +182,8 @@ def test_correct_embedding(
     gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
     gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
     embedding_df = embedder.transform(
-        regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
-    )
+        regions=gdf_regions, features=gdf_features, joint=gdf_joint
+    ).to_dataframe()
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
     print(expected_embedding_fixture)
     print(expected_result_df)
@@ -255,7 +255,7 @@ def test_empty(
     gdf_joint: gpd.GeoDataFrame = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
+        embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint).to_dataframe()
         assert len(embedding) == len(gdf_regions)
         assert embedding.index.name == gdf_regions.index.name
         if expected_output_features:
@@ -318,9 +318,7 @@ def test_incorrect_indexes(
     joint_gdf = request.getfixturevalue(joint_fixture)
 
     with expectation:
-        CountEmbedder().transform(
-            regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf
-        )
+        CountEmbedder().transform(regions=regions_gdf, features=features_gdf, joint=joint_gdf)
 
 
 @pytest.mark.parametrize(  # type: ignore

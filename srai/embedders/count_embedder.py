@@ -4,16 +4,21 @@ Count Embedder.
 This module contains count embedder implementation.
 """
 
+import hashlib
 from typing import Optional, Union, cast
 
-import geopandas as gpd
+import duckdb
 import pandas as pd
 import polars as pl
-import pyarrow as pa
 
 from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.embedders import Embedder
+from srai.geodatatable import (
+    VALID_DATA_INPUT,
+    ParquetDataTable,
+    prepare_data_input,
+)
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
@@ -46,67 +51,90 @@ class CountEmbedder(Embedder):
 
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
-    ) -> pd.DataFrame:
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
+    ) -> ParquetDataTable:
         """
-        Embed a given GeoDataFrame.
+        Embed a given Geo data.
 
         Creates region embeddings by counting the frequencies of each feature value.
         Expects features_gdf to be in wide format with each column
         being a separate type of feature (e.g. amenity, leisure)
         and rows to hold values of these features for each object.
-        The resulting DataFrame will have columns made by combining
+        The resulting output will have columns made by combining
         the feature name (column) and value (row) e.g. amenity_fuel or type_0.
         The rows will hold numbers of this type of feature in each region.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes.
+            features (VALID_DATA_INPUT): Feature indexes and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf.
+            ParquetDataTable: Embedding for each region in regions_gdf.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
+            ValueError: If features is empty and self.expected_output_features is not set.
             ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If joint.index doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
-            ValueError: If features_gdf contains boolean columns and count_subcategories is True.
+            ValueError: If features contains boolean columns and count_subcategories is True.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        if features_gdf.empty:
+        regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        features_pdt = prepare_data_input(features).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        joint_pdt = prepare_data_input(joint).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+
+        self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
+
+        if features_pdt.empty:
             if self.expected_output_features is not None:
-                return pd.DataFrame(
-                    0, index=regions_gdf.index, columns=self.expected_output_features
+                paths = list(map(lambda x: f"'{x}'", regions_pdt.parquet_paths))
+                select_clauses = [f'0 AS "{column}"' for column in self.expected_output_features]
+
+                prefix_path = ParquetDataTable.generate_filename()
+                relation = duckdb.sql(
+                    f"""
+                    SELECT
+                        regions.{regions_pdt.index_name},
+                        {','.join(select_clauses)}
+                    FROM read_parquet([{','.join(paths)}]) regions
+                    """
+                )
+
+                h = hashlib.new("sha256")
+                h.update(relation.sql_query().encode())
+                relation_hash = h.hexdigest()
+
+                save_parquet_path = (
+                    ParquetDataTable.get_directory() / f"{prefix_path}_{relation_hash}.parquet"
+                )
+                relation.to_parquet(str(save_parquet_path))
+                return ParquetDataTable.from_parquet(
+                    parquet_path=save_parquet_path,
+                    index_column_names=regions_pdt.index_column_names,
                 )
             else:
                 raise ValueError(
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
 
-        regions_df = pl.from_arrow(
-            pa.Table.from_pandas(
-                regions_gdf[[]],
-            ),
-            schema={REGIONS_INDEX: pl.String()},
-        ).lazy()
-        features_df = pl.from_arrow(
-            pa.Table.from_pandas(
-                features_gdf,
-                columns=[c for c in features_gdf.columns if c != GEOMETRY_COLUMN],
-            )
-        ).lazy()
-        joint_df = pl.from_arrow(
-            pa.Table.from_pandas(
-                joint_gdf[[]],
-            ),
-            schema={REGIONS_INDEX: pl.String(), FEATURES_INDEX: pl.String()},
-        ).lazy()
+        regions_df = pl.scan_parquet(regions_pdt.parquet_paths, hive_partitioning=False)
+        features_df = pl.scan_parquet(features_pdt.parquet_paths, hive_partitioning=False)
+        joint_df = pl.scan_parquet(joint_pdt.parquet_paths, hive_partitioning=False)
 
+        regions_schema = regions_df.collect_schema()
         features_schema = features_df.collect_schema()
+        joint_schema = joint_df.collect_schema()
+
+        if regions_schema.get(REGIONS_INDEX) != joint_schema.get(REGIONS_INDEX):
+            regions_df = regions_df.cast({REGIONS_INDEX: pl.String})
+            joint_df = joint_df.cast({REGIONS_INDEX: pl.String})
+
+        if features_schema.get(FEATURES_INDEX) != joint_schema.get(FEATURES_INDEX):
+            features_df = features_df.cast({FEATURES_INDEX: pl.String})
+            joint_df = joint_df.cast({FEATURES_INDEX: pl.String})
+
         feature_columns = [col for col in features_schema.names() if col != FEATURES_INDEX]
         dtypes = features_schema.dtypes()
         are_all_columns_bool = all(
@@ -149,23 +177,23 @@ class CountEmbedder(Embedder):
             region_embeddings, feature_columns
         )
 
-        region_embeddings_df = (
-            (
-                regions_df.join(region_embeddings, on=REGIONS_INDEX, how="left")
-                .fill_null(0)
-                .with_columns(
-                    [
-                        pl.col(REGIONS_INDEX),
-                        *(pl.col(col).cast(pl.Int32) for col in feature_columns),
-                    ]
-                )
-            )
-            .collect(streaming=True)
-            .to_pandas()
-            .set_index(REGIONS_INDEX)
+        result_file_name = ParquetDataTable.generate_filename()
+        result_parquet_path = (
+            ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
         )
 
-        return region_embeddings_df
+        (
+            regions_df.join(region_embeddings, on=REGIONS_INDEX, how="left")
+            .fill_null(0)
+            .with_columns(
+                [
+                    pl.col(REGIONS_INDEX),
+                    *(pl.col(col).cast(pl.Int32) for col in feature_columns),
+                ]
+            )
+        ).sink_parquet(path=result_parquet_path)
+
+        return ParquetDataTable.from_parquet(result_parquet_path, index_column_names=REGIONS_INDEX)
 
     def _parse_expected_output_features(
         self,
