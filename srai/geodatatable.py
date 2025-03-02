@@ -3,7 +3,7 @@
 import hashlib
 import inspect
 import weakref
-from collections.abc import Iterable
+from collections.abc import Iterable, Sized
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union, cast
@@ -26,7 +26,7 @@ from typing import TypeVar
 _Self = TypeVar("_Self", bound="ParquetDataTable")
 
 
-class ParquetDataTable:
+class ParquetDataTable(Sized):
     """
     ParquetDataTable.
 
@@ -213,6 +213,16 @@ class ParquetDataTable:
         return list(ds.dataset(self.parquet_paths).schema.names)
 
     @property
+    def size(self) -> int:
+        """Total size in bytes."""
+        return sum(parquet_path.stat().st_size for parquet_path in self.parquet_paths)
+
+    @property
+    def rows(self) -> int:
+        """Number of rows."""
+        return sum(pq.read_metadata(parquet_path).num_rows for parquet_path in self.parquet_paths)
+
+    @property
     def empty(self) -> bool:
         """Check if data table is empty."""
         for parquet_path in self.parquet_paths:
@@ -220,6 +230,10 @@ class ParquetDataTable:
                 return False
 
         return True
+
+    def __len__(self) -> int:
+        """Alias for number of rows."""
+        return self.rows
 
     def drop_columns(
         self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
