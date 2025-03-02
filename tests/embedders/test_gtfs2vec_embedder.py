@@ -228,17 +228,9 @@ def test_embedder(
     embedder.fit(regions_gdf, features_gdf, joint_gdf)
     features_embedded = embedder.transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
 
-    pd.testing.assert_frame_equal(
-        features_embedded.sort_index(axis=1),
-        expected_features.sort_index(axis=1),
-        atol=1e-3,
-    )
+    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
 
-    pd.testing.assert_frame_equal(
-        features_embedded.sort_index(axis=1),
-        expected_features.sort_index(axis=1),
-        atol=1e-3,
-    )
+    pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
