@@ -18,6 +18,7 @@ from srai.regionalizers import H3Regionalizer, S2Regionalizer
 
 def test_large_area_embedding() -> None:
     """Test if large area embedding can be calculated on a single machine."""
+    # TODO: increase later
     H3_RESOLUTION = 5
     S2_RESOLUTION = 9
     H3_DISTANCE = 10
