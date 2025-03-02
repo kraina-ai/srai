@@ -171,7 +171,7 @@ class ParquetDataTable:
             else:
                 module_name = frame.f_globals["__name__"]
 
-            caller_name = class_name if class_name else module_name
+            caller_name = class_name or module_name
 
         timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         return f"{caller_name}_{timestr}"
@@ -361,8 +361,8 @@ def prepare_geo_input(data_input: VALID_GEO_INPUT) -> GeoDataTable:
         return data_input
     elif isinstance(data_input, gpd.GeoDataFrame):
         return GeoDataTable.from_geodataframe(data_input)
-    else:
-        return GeoDataTable.from_parquet(data_input)
+
+    return GeoDataTable.from_parquet(data_input)
 
 
 def prepare_data_input(data_input: VALID_DATA_INPUT) -> ParquetDataTable:
@@ -371,5 +371,5 @@ def prepare_data_input(data_input: VALID_DATA_INPUT) -> ParquetDataTable:
         return data_input
     elif isinstance(data_input, pd.DataFrame):
         return ParquetDataTable.from_dataframe(data_input)
-    else:
-        return ParquetDataTable.from_parquet(data_input)
+
+    return ParquetDataTable.from_parquet(data_input)
