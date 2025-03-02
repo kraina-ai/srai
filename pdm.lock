@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:42a1299b9651eb5a7010ae98ce4f5843cb750445159982e3a2b2974dd4080f29"
+content_hash = "sha256:761929f317a8c7470f377be5f25bdced79a44e44f2584a21edf611525284e081"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
