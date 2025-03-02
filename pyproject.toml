@@ -254,4 +254,5 @@ ignore_packages = [
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
     'mkl',                      # Github Action artifact, uses Intel Simplified Software License
+    'mkdocs-autorefs',          # uses ISC License, has mismatched license in analysis
 ]
