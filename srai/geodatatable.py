@@ -14,6 +14,7 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from geoarrow.pyarrow.io import _geoparquet_guess_geometry_columns
+from psutil._common import bytes2human
 
 from srai.constants import GEOMETRY_COLUMN
 from srai.duckdb import prepare_duckdb_extensions
@@ -61,6 +62,64 @@ class ParquetDataTable(Sized):
         )
         self.parquet_paths = parquet_paths
         self._finalizer = weakref.finalize(self, self._cleanup_files, self.parquet_paths)
+
+    @property
+    def index_name(self) -> Optional[str]:
+        """Get single index name."""
+        if self.index_column_names is not None and len(self.index_column_names) == 1:
+            return self.index_column_names[0]
+
+        return None
+
+    @property
+    def index_names(self) -> Optional[list[str]]:
+        """Get all index names."""
+        return list(self.index_column_names) if self.index_column_names is not None else None
+
+    @property
+    def columns(self) -> list[str]:
+        """Get available columns."""
+        return list(ds.dataset(self.parquet_paths).schema.names)
+
+    @property
+    def size(self) -> int:
+        """Total size in bytes."""
+        return sum(parquet_path.stat().st_size for parquet_path in self.parquet_paths)
+
+    @property
+    def rows(self) -> int:
+        """Number of rows."""
+        return sum(pq.read_metadata(parquet_path).num_rows for parquet_path in self.parquet_paths)
+
+    @property
+    def empty(self) -> bool:
+        """Check if data table is empty."""
+        for parquet_path in self.parquet_paths:
+            if pq.read_metadata(parquet_path).num_rows > 0:
+                return False
+
+        return True
+
+    def __len__(self) -> int:
+        """Alias for number of rows."""
+        return self.rows
+
+    def __repr__(self) -> str:
+        """Create representation string."""
+        content = f"{self.__class__.__name__} ({self.rows} rows)\n"
+        content += f"  Parquet files ({bytes2human(self.size)}):\n"
+        for path in self.parquet_paths:
+            content += f"    {path.as_posix()} ({bytes2human(path.stat().st_size)})\n"
+        content += "  Index columns:\n"
+        for index_column in self.index_column_names or []:
+            content += f"    {index_column}\n"
+        try:
+            duckdb_output = self.to_duckdb().__repr__()
+            content += duckdb_output
+        except Exception as ex:
+            content += str(ex)
+
+        return content
 
     @staticmethod
     def _cleanup_files(paths: Iterable[Path]) -> None:
@@ -194,47 +253,6 @@ class ParquetDataTable(Sized):
 
         return duckdb.sql(sql_query)
 
-    @property
-    def index_name(self) -> Optional[str]:
-        """Get single index name."""
-        if self.index_column_names is not None and len(self.index_column_names) == 1:
-            return self.index_column_names[0]
-
-        return None
-
-    @property
-    def index_names(self) -> Optional[list[str]]:
-        """Get all index names."""
-        return list(self.index_column_names) if self.index_column_names is not None else None
-
-    @property
-    def columns(self) -> list[str]:
-        """Get available columns."""
-        return list(ds.dataset(self.parquet_paths).schema.names)
-
-    @property
-    def size(self) -> int:
-        """Total size in bytes."""
-        return sum(parquet_path.stat().st_size for parquet_path in self.parquet_paths)
-
-    @property
-    def rows(self) -> int:
-        """Number of rows."""
-        return sum(pq.read_metadata(parquet_path).num_rows for parquet_path in self.parquet_paths)
-
-    @property
-    def empty(self) -> bool:
-        """Check if data table is empty."""
-        for parquet_path in self.parquet_paths:
-            if pq.read_metadata(parquet_path).num_rows > 0:
-                return False
-
-        return True
-
-    def __len__(self) -> int:
-        """Alias for number of rows."""
-        return self.rows
-
     def drop_columns(
         self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
     ) -> _Self:
@@ -283,23 +301,6 @@ class ParquetDataTable(Sized):
         return self.from_parquet(
             parquet_path=new_parquet_paths, index_column_names=new_index_column_names
         )
-
-    def __repr__(self) -> str:
-        """Create representation string."""
-        content = f"{self.__class__.__name__}\n"
-        content += "  Parquet files:\n"
-        for path in self.parquet_paths:
-            content += f"    {path.as_posix()}\n"
-        content += "  Index columns:\n"
-        for index_column in self.index_column_names or []:
-            content += f"    {index_column}\n"
-        try:
-            duckdb_output = self.to_duckdb().__repr__()
-            content += duckdb_output
-        except Exception as ex:
-            content += str(ex)
-
-        return content
 
 
 class GeoDataTable(ParquetDataTable):
