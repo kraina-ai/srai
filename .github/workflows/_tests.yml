@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4.2
         name: Setup PDM (Python ${{ matrix.python-version }})
         with:
           python-version: ${{ matrix.python-version }}
@@ -32,7 +32,9 @@ jobs:
           enable-pep582: true
           cache: false
       - name: Install dependencies
-        run: pdm install --no-default -d -G test --skip=post_install
+        run: |
+          pdm self add "dep-logic>=0.4.11"
+          pdm install --no-default -d -G test --skip=post_install
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
