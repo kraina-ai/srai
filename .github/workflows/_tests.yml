@@ -32,9 +32,7 @@ jobs:
           enable-pep582: true
           cache: false
       - name: Install dependencies
-        run: |
-          pdm self add "dep-logic>=0.4.11"
-          pdm install --no-default -d -G test --skip=post_install
+        run: pdm install --no-default -d -G test --skip=post_install
       - name: Cache Overpass data
         uses: actions/cache@v3
         with:
