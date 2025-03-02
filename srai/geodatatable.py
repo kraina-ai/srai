@@ -272,8 +272,9 @@ class ParquetDataTable:
     def __repr__(self) -> str:
         """Create representation string."""
         content = f"{self.__class__.__name__}\n"
-        content += f"    Parquet files: {self.parquet_paths}\n"
-        content += f"    Index columns: {self.index_column_names}\n"
+        paths = list(map(lambda x: x.as_posix(), self.parquet_paths))
+        content += f"    Parquet files: {', '.join(paths)}\n"
+        content += f"    Index columns: {', '.join(self.index_column_names or [])}\n"
         content += self.to_duckdb().__repr__()
 
         return content
