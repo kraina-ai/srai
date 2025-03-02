@@ -42,13 +42,16 @@ class ParquetDataTable(Sized):
         self,
         parquet_paths: Iterable[Path],
         index_column_names: Optional[Union[str, Iterable[str]]] = None,
+        persist_files: bool = False,
     ):
         """
         Initialize ParquetDataTable.
 
         Args:
             parquet_paths (Iterable[Path]): List of parquet files.
-            index_column_names (Optional[Union[str, Iterable[str]]]): Index column names.
+            index_column_names (Optional[Union[str, Iterable[str]]], optional): Index column names.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
         """
         prepare_duckdb_extensions()
         self.index_column_names = (
@@ -61,7 +64,9 @@ class ParquetDataTable(Sized):
             else None
         )
         self.parquet_paths = parquet_paths
-        self._finalizer = weakref.finalize(self, self._cleanup_files, self.parquet_paths)
+        self._finalizer = None
+        if not persist_files:
+            self._finalizer = weakref.finalize(self, self._cleanup_files, self.parquet_paths)
 
     @property
     def index_name(self) -> Optional[str]:
@@ -142,6 +147,7 @@ class ParquetDataTable(Sized):
         cls: type[_Self],
         parquet_path: Union[Path, str, Iterable[Union[Path, str]]],
         index_column_names: Optional[Union[str, Iterable[str]]] = None,
+        persist_files: bool = False,
     ) -> _Self:
         """
         Create ParquetDataTable object from parquet files.
@@ -150,6 +156,8 @@ class ParquetDataTable(Sized):
             parquet_path (Union[Path, str, Iterable[Union[Path, str]]]): Path or list of parquet
                 paths.
             index_column_names (Optional[Union[str, Iterable[str]]]): Index column name or names.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
 
         Returns:
             ParquetDataTable: Created object.
@@ -158,21 +166,23 @@ class ParquetDataTable(Sized):
             return cls(
                 parquet_paths=[Path(parquet_path)],
                 index_column_names=index_column_names,
+                persist_files=persist_files,
             )
 
         return cls(
             parquet_paths=[Path(p) for p in parquet_path],
             index_column_names=index_column_names,
+            persist_files=persist_files,
         )
 
     @classmethod
-    def from_dataframe(
+    def _dataframe_to_parquet(
         cls,
         dataframe: pd.DataFrame,
         parquet_path: Optional[Union[Path, str]] = None,
-    ) -> "ParquetDataTable":
+    ) -> tuple[Path, Optional[Union[str, Iterable[str]]]]:
         """
-        Create ParquetDataTable object from DataFrame.
+        Save DataFrame to parquet file.
 
         Args:
             dataframe (pd.DataFrame): DataFrame to save.
@@ -180,7 +190,8 @@ class ParquetDataTable(Sized):
                 file. Defaults to None.
 
         Returns:
-            ParquetDataTable: Created object.
+            tuple[Path, Optional[Union[str, Iterable[str]]]]: Path to the saved file and a list of
+                index names.
         """
         if not parquet_path:
             prefix_path = cls.generate_filename()
@@ -190,11 +201,42 @@ class ParquetDataTable(Sized):
             parquet_path = cls.get_directory() / f"{prefix_path}_{gdf_hash}.parquet"
 
         Path(parquet_path).parent.mkdir(exist_ok=True, parents=True)
-        dataframe.reset_index().to_parquet(parquet_path, index=False)
+        dataframe.rename(
+            columns={column: str(column) for column in dataframe.columns}
+        ).reset_index().to_parquet(parquet_path, index=False)
+
+        index_names = dataframe.index.name or dataframe.index.names
+        if len(index_names) == 1 and index_names[0] is None:
+            index_names = "index"
+
+        return (Path(parquet_path), cast(Optional[Union[str, Iterable[str]]], index_names))
+
+    @classmethod
+    def from_dataframe(
+        cls,
+        dataframe: pd.DataFrame,
+        parquet_path: Optional[Union[Path, str]] = None,
+        persist_files: bool = False,
+    ) -> "ParquetDataTable":
+        """
+        Create ParquetDataTable object from DataFrame.
+
+        Args:
+            dataframe (pd.DataFrame): DataFrame to save.
+            parquet_path (Optional[Union[Path, str]], optional): Path where to save the parquet
+                file. Defaults to None.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
+
+        Returns:
+            ParquetDataTable: Created object.
+        """
+        parquet_path, index_names = cls._dataframe_to_parquet(dataframe, parquet_path)
 
         return cls.from_parquet(
             parquet_path=parquet_path,
-            index_column_names=dataframe.index.name or dataframe.index.names,
+            index_column_names=index_names,
+            persist_files=persist_files,
         )
 
     @classmethod
@@ -302,6 +344,11 @@ class ParquetDataTable(Sized):
             parquet_path=new_parquet_paths, index_column_names=new_index_column_names
         )
 
+    def persist(self) -> None:
+        """Disable parquet file removal."""
+        if self._finalizer is not None:
+            self._finalizer.detach()
+
 
 class GeoDataTable(ParquetDataTable):
     """
@@ -316,6 +363,7 @@ class GeoDataTable(ParquetDataTable):
         self,
         parquet_paths: Iterable[Path],
         index_column_names: Optional[Union[str, Iterable[str]]] = None,
+        persist_files: bool = False,
     ):
         """
         Initialize GeoDataTable.
@@ -323,8 +371,10 @@ class GeoDataTable(ParquetDataTable):
         Args:
             parquet_paths (Iterable[Path]): List of parquet files.
             index_column_names (Optional[Union[str, Iterable[str]]]): Index column names.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
         """
-        super().__init__(parquet_paths, index_column_names)
+        super().__init__(parquet_paths, index_column_names, persist_files)
 
         schema = ds.dataset(parquet_paths).schema
         geometry_columns = _geoparquet_guess_geometry_columns(schema)
@@ -340,6 +390,7 @@ class GeoDataTable(ParquetDataTable):
         cls,
         geodataframe: gpd.GeoDataFrame,
         parquet_path: Optional[Union[Path, str]] = None,
+        persist_files: bool = False,
     ) -> "GeoDataTable":
         """
         Create GeoDataTable object from GeoDataFrame.
@@ -348,23 +399,18 @@ class GeoDataTable(ParquetDataTable):
             geodataframe (gpd.GeoDataFrame): GeoDataFrame to save.
             parquet_path (Optional[Union[Path, str]], optional): Path where to save the parquet
                 file. Defaults to None.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
 
         Returns:
             GeoDataTable: Created object.
         """
-        if not parquet_path:
-            prefix_path = cls.generate_filename()
-            h = hashlib.new("sha256")
-            h.update(geodataframe.values.tobytes())
-            gdf_hash = h.hexdigest()
-            parquet_path = cls.get_directory() / f"{prefix_path}_{gdf_hash}.parquet"
-
-        Path(parquet_path).parent.mkdir(exist_ok=True, parents=True)
-        geodataframe.reset_index().to_parquet(parquet_path, index=False)
+        parquet_path, index_names = cls._dataframe_to_parquet(geodataframe, parquet_path)
 
         return cls.from_parquet(
             parquet_path=parquet_path,
-            index_column_names=geodataframe.index.name or geodataframe.index.names,
+            index_column_names=index_names,
+            persist_files=persist_files,
         )
 
     def to_geodataframe(self) -> gpd.GeoDataFrame:
