@@ -16,6 +16,7 @@ import pyarrow.parquet as pq
 from geoarrow.pyarrow.io import _geoparquet_guess_geometry_columns
 
 from srai.constants import GEOMETRY_COLUMN
+from srai.duckdb import prepare_duckdb_extensions
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -48,6 +49,7 @@ class ParquetDataTable:
             parquet_paths (Iterable[Path]): List of parquet files.
             index_column_names (Optional[Union[str, Iterable[str]]]): Index column names.
         """
+        prepare_duckdb_extensions()
         self.index_column_names = (
             (
                 [index_column_names]
@@ -185,8 +187,12 @@ class ParquetDataTable:
         self, connection: Optional[duckdb.DuckDBPyConnection] = None
     ) -> duckdb.DuckDBPyRelation:
         """Get DuckDB relation."""
-        connection = connection or duckdb.connect()
-        return connection.read_parquet(self.parquet_paths)
+        paths = list(map(lambda x: f"'{x}'", self.parquet_paths))
+        sql_query = f"SELECT * FROM read_parquet([{','.join(paths)}])"
+        if connection is not None:
+            return connection.sql(sql_query)
+
+        return duckdb.sql(sql_query)
 
     @property
     def index_name(self) -> Optional[str]:
@@ -262,6 +268,15 @@ class ParquetDataTable:
         return self.from_parquet(
             parquet_path=new_parquet_paths, index_column_names=new_index_column_names
         )
+
+    def __repr__(self) -> str:
+        """Create representation string."""
+        content = f"{self.__class__.__name__}\n"
+        content += f"    Parquet files: {self.parquet_paths}\n"
+        content += f"    Index columns: {self.index_column_names}\n"
+        content += self.to_duckdb().__repr__()
+
+        return content
 
 
 class GeoDataTable(ParquetDataTable):
