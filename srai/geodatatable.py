@@ -240,13 +240,14 @@ class ParquetDataTable:
             return self
 
         columns_to_keep = set(existing_columns).difference(columns)
-        print(f"{columns_to_keep=}")
+        columns_to_keep_in_order = [c for c in existing_columns if c in columns_to_keep]
+        print(f"{columns_to_keep_in_order=}")
         print(f"{self.parquet_paths=}")
 
         new_parquet_paths = []
         for parquet_path in self.parquet_paths:
             prefix_path = self.generate_filename()
-            relation = duckdb.read_parquet(str(parquet_path)).select(*columns_to_keep)
+            relation = duckdb.read_parquet(str(parquet_path)).select(*columns_to_keep_in_order)
 
             h = hashlib.new("sha256")
             h.update(relation.sql_query().encode())
@@ -272,10 +273,17 @@ class ParquetDataTable:
     def __repr__(self) -> str:
         """Create representation string."""
         content = f"{self.__class__.__name__}\n"
-        paths = list(map(lambda x: x.as_posix(), self.parquet_paths))
-        content += f"    Parquet files: {', '.join(paths)}\n"
-        content += f"    Index columns: {', '.join(self.index_column_names or [])}\n"
-        content += self.to_duckdb().__repr__()
+        content += "  Parquet files:\n"
+        for path in self.parquet_paths:
+            content += f"    {path.as_posix()}\n"
+        content += "  Index columns:\n"
+        for index_column in self.index_column_names or []:
+            content += f"    {index_column}\n"
+        try:
+            duckdb_output = self.to_duckdb().__repr__()
+            content += duckdb_output
+        except Exception as ex:
+            content += str(ex)
 
         return content
 
