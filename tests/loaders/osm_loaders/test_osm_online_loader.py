@@ -18,7 +18,11 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @pytest.fixture  # type: ignore
 def mock_osmnx(
-    mocker, three_polygons_area_gdf, area_with_no_objects_gdf, amenities_gdf, building_gdf
+    mocker,
+    three_polygons_area_gdf,
+    area_with_no_objects_gdf,
+    amenities_gdf,
+    building_gdf,
 ):
     """Patch `osmnx` functions to return data from predefined gdfs."""
     gdfs = {"amenity": amenities_gdf, "building": building_gdf}
@@ -34,13 +38,13 @@ def mock_osmnx(
             tag_res = gdf.loc[gdf[tag_key] == tag_value]
         if tag_res.empty:
             return tag_res
-        if polygon == polygon_1:
+        if polygon.equals(polygon_1):
             return tag_res.iloc[:1]
-        elif polygon == polygon_2:
+        if polygon.equals(polygon_2):
             return tag_res.iloc[1:]
-        elif polygon == polygon_3:
+        if polygon.equals(polygon_3):
             return tag_res
-        elif polygon == empty_polygon:
+        if polygon.equals(empty_polygon):
             return gpd.GeoDataFrame(crs=WGS84_CRS, geometry=[])
         return None
 
@@ -53,8 +57,16 @@ def mock_osmnx(
 @pytest.mark.parametrize(  # type: ignore
     "area_gdf_fixture,query,expected_result_gdf_fixture",
     [
-        ("single_polygon_area_gdf", {"amenity": "restaurant"}, "expected_result_single_polygon"),
-        ("three_polygons_area_gdf", {"amenity": "restaurant"}, "expected_result_gdf_simple"),
+        (
+            "single_polygon_area_gdf",
+            {"amenity": "restaurant"},
+            "expected_result_single_polygon",
+        ),
+        (
+            "three_polygons_area_gdf",
+            {"amenity": "restaurant"},
+            "expected_result_gdf_simple",
+        ),
         (
             "three_polygons_area_gdf",
             {"amenity": ["restaurant", "bar"], "building": True},

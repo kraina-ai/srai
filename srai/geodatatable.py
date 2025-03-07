@@ -23,6 +23,7 @@ from geoarrow.rust.core import (
 )
 from psutil._common import bytes2human
 from shapely import coverage_union_all, union_all
+from shapely.errors import GEOSException
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
@@ -596,15 +597,25 @@ class GeoDataTable(ParquetDataTable):
 
         total_row_groups = len(tuples_to_queue)
 
-        with ProcessPoolExecutor(max_workers=min(no_cpus, total_row_groups)) as ex:
-            fn = partial(_union_geometries, union_fn=union_fn)
-            geometries = list(
-                tqdm(
-                    ex.map(fn, tuples_to_queue, chunksize=1),
-                    desc="Unioning geometries",
-                    total=total_row_groups,
+        with ProcessPoolExecutor(max_workers=max(1, min(no_cpus, total_row_groups))) as ex:
+            try:
+                fn = partial(_union_geometries, union_fn=union_fn)
+                geometries = list(
+                    tqdm(
+                        ex.map(fn, tuples_to_queue, chunksize=1),
+                        desc="Unioning geometries",
+                        total=total_row_groups,
+                    )
                 )
-            )
+            except GEOSException:
+                fn = partial(_union_geometries, union_fn=union_all)
+                geometries = list(
+                    tqdm(
+                        ex.map(fn, tuples_to_queue, chunksize=1),
+                        desc="Unioning geometries",
+                        total=total_row_groups,
+                    )
+                )
 
         if len(geometries) == 1:
             return geometries[0]
