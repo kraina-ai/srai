@@ -18,7 +18,9 @@ from tqdm.auto import tqdm
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
+from srai.geodatatable import GeoDataTable
 from srai.loaders import Loader
+from srai.loaders._base import VALID_AREA_INPUT
 
 from . import constants
 
@@ -95,12 +97,12 @@ class OSMWayLoader(Loader):
             .to_list()
         )
 
-    def load(self, area: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    def load(self, area: VALID_AREA_INPUT) -> tuple[GeoDataTable, GeoDataTable]:
         """
         Load road infrastructure for a given GeoDataFrame.
 
         Args:
-            area (gpd.GeoDataFrame): (Multi)Polygons for which to download road infrastructure data.
+            area (VALID_AREA_INPUT): (Multi)Polygons for which to download road infrastructure data.
 
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.
@@ -110,17 +112,18 @@ class OSMWayLoader(Loader):
                 any road infrastructure data.
 
         Returns:
-            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Road infrastructure as (intersections, roads)
+            Tuple[GeoDataTable, GeoDataTable]: Road infrastructure as (intersections, roads)
         """
+        area_gdf = self._prepare_area_gdf(area).to_geodataframe()
         import osmnx as ox
 
         ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
         ox.settings.timeout = constants.OSMNX_TIMEOUT
 
-        if area.empty:
-            raise ValueError("Provided `area` GeoDataFrame is empty.")
+        if area_gdf.empty:
+            raise ValueError("Provided `area` input is empty.")
 
-        gdf_wgs84 = area.to_crs(crs=WGS84_CRS)
+        gdf_wgs84 = area_gdf.to_crs(crs=WGS84_CRS)
 
         gdf_nodes_raw, gdf_edges_raw = self._graph_from_gdf(gdf_wgs84)
         if gdf_edges_raw.empty or gdf_edges_raw.empty:
@@ -138,7 +141,9 @@ class OSMWayLoader(Loader):
 
         gdf_edges = self._unify_index_and_columns_names(gdf_edges)
 
-        return gdf_nodes_raw, gdf_edges
+        return GeoDataTable.from_geodataframe(gdf_nodes_raw), GeoDataTable.from_geodataframe(
+            gdf_edges
+        )
 
     def _graph_from_gdf(self, gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
@@ -153,7 +158,10 @@ class OSMWayLoader(Loader):
         nodes = []
         edges = []
         for polygon in tqdm(
-            gdf["geometry"], desc="Downloading graphs", leave=False, disable=FORCE_TERMINAL
+            gdf["geometry"],
+            desc="Downloading graphs",
+            leave=False,
+            disable=FORCE_TERMINAL,
         ):
             gdf_n, gdf_e = self._try_graph_from_polygon(polygon)
 

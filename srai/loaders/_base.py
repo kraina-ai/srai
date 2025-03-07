@@ -7,12 +7,20 @@ from typing import Any, Union
 import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
 
+from srai._typing import is_expected_type
 from srai.constants import WGS84_CRS
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
+
+VALID_AREA_INPUT = Union[
+    BaseGeometry,
+    Iterable[BaseGeometry],
+    gpd.GeoSeries,
+    gpd.GeoDataFrame,
+    VALID_GEO_INPUT,
+]
 
 
-def prepare_area_gdf_for_loader(
-    area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-) -> gpd.GeoDataFrame:
+def prepare_area_gdf_for_loader(area: VALID_AREA_INPUT) -> GeoDataTable:
     """
     Prepare an area for the loader.
 
@@ -20,21 +28,25 @@ def prepare_area_gdf_for_loader(
     All Shapely geometries will by transformed into GeoDataFrame with proper CRS.
 
     Args:
-        area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
+        area (VALID_AREA_INPUT):
             Area to be parsed into GeoDataFrame.
 
     Returns:
-        gpd.GeoDataFrame: Sanitized GeoDataFrame.
+        GeoDataTable: Sanitized GeoDataFrame.
     """
-    if isinstance(area, gpd.GeoDataFrame):
-        # Return a GeoDataFrame with changed CRS
-        return area.to_crs(WGS84_CRS)
+    if is_expected_type(area, VALID_GEO_INPUT):
+        # Return a GeoDataTable from the valid input
+        return prepare_geo_input(area)
+    elif isinstance(area, gpd.GeoDataFrame):
+        # Return a GeoDataTable from GeoDataFrame with changed CRS
+        return GeoDataTable.from_geodataframe(area.to_crs(WGS84_CRS))
     elif isinstance(area, gpd.GeoSeries):
-        # Create a GeoDataFrame with GeoSeries
-        return gpd.GeoDataFrame(geometry=area, crs=WGS84_CRS)
+        # Create a GeoDataTable from GeoDataFrame with GeoSeries
+        return GeoDataTable.from_geodataframe(gpd.GeoDataFrame(geometry=area, crs=WGS84_CRS))
     elif isinstance(area, Iterable):
         # Create a GeoSeries with a list of geometries
         return prepare_area_gdf_for_loader(gpd.GeoSeries(area, crs=WGS84_CRS))
+
     # Wrap a single geometry with a list
     return prepare_area_gdf_for_loader([area])
 
@@ -43,7 +55,9 @@ class Loader(abc.ABC):
     """Abstract class for loaders."""
 
     @abc.abstractmethod
-    def load(self, *args: Any, **kwargs: Any) -> gpd.GeoDataFrame:  # pragma: no cover
+    def load(
+        self, *args: Any, **kwargs: Any
+    ) -> Union[GeoDataTable, Iterable[GeoDataTable]]:  # pragma: no cover
         """
         Load data for a given area.
 
@@ -52,12 +66,9 @@ class Loader(abc.ABC):
             **kwargs: Keyword arguments dependating on a specific loader.
 
         Returns:
-            GeoDataFrame with the downloaded data.
+            GeoDataTable or multiple GeoDataTables with the downloaded data.
         """
         raise NotImplementedError
 
-    def _prepare_area_gdf(
-        self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-    ) -> gpd.GeoDataFrame:
+    def _prepare_area_gdf(self, area: VALID_AREA_INPUT) -> GeoDataTable:
         return prepare_area_gdf_for_loader(area)
