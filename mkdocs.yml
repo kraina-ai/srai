@@ -146,6 +146,7 @@ plugins:
   - mermaid2
   - awesome-pages
   - social:
+      enabled: !ENV [MKDOCS_GENERATE_SOCIAL_CARDS, false]
       cards_layout_options:
         background_color: "#150b5b"
 
