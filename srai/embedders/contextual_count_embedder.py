@@ -127,7 +127,7 @@ class ContextualCountEmbedder(CountEmbedder):
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
 
         result_df: pd.DataFrame
         if self.concatenate_vectors:
