@@ -16,7 +16,7 @@ import requests
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.loaders.osm_loaders._base import prepare_area_gdf_for_loader
+from srai.loaders._base import prepare_area_gdf_for_loader
 from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
 
 from .osm_tile_data_collector import (

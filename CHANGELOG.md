@@ -7,9 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2025-02-23
+
+### Fixed
+
+- Catched OSMnx `InsufficientResponseError` in `OSMOnlineLoader`
+
+## [0.9.4] - 2025-02-16
+
+### Fixed
+
+- Saving expected target features in `GeoVexEmbedder`
+
+## [0.9.3] - 2025-02-10
+
+### Added
+
+- Option to change default aggregation in `ContextualCountEmbedder` from `average` to `median`, `sum`, `min` or `max`
+
+## [0.9.2] - 2025-02-03
+
+### Added
+
+- Option to change inherited parameter `count_subcategories` in `Hex2VecEmbedder` and `GeoVexEmbedder`
+
+### Changed
+
+- `OvertureMapsLoader` docstring with regards to `count_subcategories` parameter
+- Reduced memory footprint in `CountEmbedder` by using Arrow's zero-copy protocol
+
+## [0.9.1] - 2025-01-27
+
+### Changed
+
+- Refactored `ContextualCountEmbedder` progress bar and multiprocessing implementation
+
+## [0.9.0] - 2025-01-26
+
+### Added
+
+- `OvertureMapsLoader` for loading features from Overture Maps datasets
+
+### Changed
+
+- Replaced all `union_all` calls with `unary_union()` in GeoPandas context
+- Transform logic in `CountEmbedder` to work with new boolean based features dataframes from Overture Maps Loader
+- Changed `IntersetionJoiner` logic to use `STRTree` index instead of `sjoin` function
+- Refactored `CountEmbedder` to work on the lazy execution engine from the `polars` library
+
+## [0.8.4] - 2025-01-04
+
+### Added
+
+- Option to pass `verbosity_mode` to `OsmPbfLoader`
+
 ### Changed
 
 - Default OSM download source from Geofabrik to `any`
+- Replaced deprecated function calls from the `QuackOSM` library
 
 ## [0.8.3] - 2025-01-01
 
@@ -341,7 +396,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.8.3...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.5...HEAD
+
+[0.9.5]: https://github.com/kraina-ai/srai/compare/0.9.4...0.9.5
+
+[0.9.4]: https://github.com/kraina-ai/srai/compare/0.9.3...0.9.4
+
+[0.9.3]: https://github.com/kraina-ai/srai/compare/0.9.2...0.9.3
+
+[0.9.2]: https://github.com/kraina-ai/srai/compare/0.9.1...0.9.2
+
+[0.9.1]: https://github.com/kraina-ai/srai/compare/0.9.0...0.9.1
+
+[0.9.0]: https://github.com/kraina-ai/srai/compare/0.8.4...0.9.0
+
+[0.8.4]: https://github.com/kraina-ai/srai/compare/0.8.3...0.8.4
 
 [0.8.3]: https://github.com/kraina-ai/srai/compare/0.8.2...0.8.3
 

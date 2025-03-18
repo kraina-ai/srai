@@ -9,18 +9,19 @@ References:
 """
 
 from collections.abc import Collection, Iterator
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import geopandas as gpd
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from tqdm import trange
-from tqdm.contrib.concurrent import process_map
+from tqdm import tqdm
 
+from srai.constants import FORCE_TERMINAL
 from srai.embedders.count_embedder import CountEmbedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
@@ -39,6 +40,7 @@ class ContextualCountEmbedder(CountEmbedder):
             Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
         count_subcategories: bool = False,
+        aggregation_function: Literal["average", "median", "sum", "min", "max"] = "average",
         num_of_multiprocessing_workers: int = -1,
         multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
@@ -62,6 +64,8 @@ class ContextualCountEmbedder(CountEmbedder):
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.
+            aggregation_function (Literal["average", "median", "sum", "min", "max"], optional):
+                Function used to aggregate data from the neighbours. Defaults to average.
             num_of_multiprocessing_workers (int, optional): Number of workers used for
                 multiprocessing. Defaults to -1 which results in a total number of available
                 cpu threads. `0` and `1` values disable multiprocessing.
@@ -78,6 +82,7 @@ class ContextualCountEmbedder(CountEmbedder):
         self.neighbourhood = neighbourhood
         self.neighbourhood_distance = neighbourhood_distance
         self.concatenate_vectors = concatenate_vectors
+        self.aggregation_function = aggregation_function
 
         if self.neighbourhood_distance < 0:
             raise ValueError("Neighbourhood distance must be positive.")
@@ -100,12 +105,12 @@ class ContextualCountEmbedder(CountEmbedder):
 
         Creates region embeddings by counting the frequencies of each feature value and applying
         a contextualization based on neighbours of regions. For each region, features will be
-        altered based on the neighbours either by adding averaged values dimished based on distance,
-        or by adding new separate columns with neighbour distance postfix.
+        altered based on the neighbours either by adding aggregated values dimished based on
+        distance, or by adding new separate columns with neighbour distance postfix.
         Expects features_gdf to be in wide format with each column being a separate type of
         feature (e.g. amenity, leisure) and rows to hold values of these features for each object.
         The rows will hold numbers of this type of feature in each region. Numbers can be
-        fractional because neighbourhoods are averaged to represent a single value from
+        fractional because neighbourhoods are aggregated to represent a single value from
         all neighbours on a given level.
 
         Args:
@@ -151,8 +156,8 @@ class ContextualCountEmbedder(CountEmbedder):
 
         result_array = counts_df.values.astype(float)
 
-        for distance, averaged_values in self._get_averaged_values_for_distances(counts_df):
-            result_array += averaged_values / ((distance + 1) ** 2)
+        for distance, aggregated_values in self._get_aggregated_values_for_distances(counts_df):
+            result_array += aggregated_values / ((distance + 1) ** 2)
 
         return pd.DataFrame(data=result_array, index=counts_df.index, columns=base_columns)
 
@@ -184,21 +189,21 @@ class ContextualCountEmbedder(CountEmbedder):
         result_array = np.zeros(shape=(len(counts_df.index), len(columns)))
         result_array[:, 0:number_of_base_columns] = counts_df.values
 
-        for distance, averaged_values in self._get_averaged_values_for_distances(counts_df):
+        for distance, aggregated_values in self._get_aggregated_values_for_distances(counts_df):
             result_array[
                 :,
                 number_of_base_columns * distance : number_of_base_columns * (distance + 1),
-            ] = averaged_values
+            ] = aggregated_values
 
         return pd.DataFrame(data=result_array, index=counts_df.index, columns=columns)
 
-    def _get_averaged_values_for_distances(
+    def _get_aggregated_values_for_distances(
         self, counts_df: pd.DataFrame
     ) -> Iterator[tuple[int, npt.NDArray[np.float32]]]:
         """
-        Generate averaged values for neighbours at given distances.
+        Generate aggregated values for neighbours at given distances.
 
-        Function will yield tuples of distances and averaged values arrays
+        Function will yield tuples of distances and aggregated values arrays
         calculated based on neighbours at a given distance.
 
         Distance 0 is skipped.
@@ -220,72 +225,86 @@ class ContextualCountEmbedder(CountEmbedder):
             and len(counts_df.index) >= self.multiprocessing_activation_threshold
         )
 
-        for distance in trange(
-            1,
-            self.neighbourhood_distance + 1,
-            desc="Generating embeddings for neighbours",
+        with (
+            tqdm(
+                total=self.neighbourhood_distance * len(counts_df.index) * 2,
+                desc="Generating embeddings for neighbours",
+                disable=FORCE_TERMINAL,
+            ) as pbar,
+            ProcessPoolExecutor(max_workers=self.num_of_multiprocessing_workers) as executor,
         ):
-            if len(counts_df.index) == 0:
-                continue
+            for distance in range(1, self.neighbourhood_distance + 1):
+                pbar.set_postfix_str(f"Distance: {distance}", refresh=True)
+                if len(counts_df.index) == 0:
+                    continue
 
-            if activate_multiprocessing:
-                fn_neighbours = partial(
-                    _get_existing_neighbours_at_distance,
-                    neighbour_distance=distance,
-                    counts_index=counts_df.index,
-                    neighbourhood=self.neighbourhood,
-                )
-                neighbours_series = process_map(
-                    fn_neighbours,
-                    counts_df.index,
-                    max_workers=self.num_of_multiprocessing_workers,
-                    chunksize=ceil(
-                        len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
-                    ),
-                    disable=True,
-                )
-            else:
-                neighbours_series = counts_df.index.map(
-                    lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                        self.neighbourhood.get_neighbours_at_distance(
-                            region_id, neighbour_distance, include_center=False
-                        )
-                    ).values
-                )
+                neighbours_series = []
 
-            if len(neighbours_series) == 0:
-                continue
+                if activate_multiprocessing:
+                    fn_neighbours = partial(
+                        _get_existing_neighbours_at_distance,
+                        neighbour_distance=distance,
+                        counts_index=counts_df.index,
+                        neighbourhood=self.neighbourhood,
+                    )
 
-            if activate_multiprocessing:
-                fn_embeddings = partial(
-                    _get_embeddings_for_neighbours,
-                    counts_df=counts_df,
-                    number_of_base_columns=number_of_base_columns,
-                )
+                    for result in executor.map(
+                        fn_neighbours,
+                        counts_df.index,
+                        chunksize=ceil(
+                            len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
+                        ),
+                    ):
+                        neighbours_series.append(result)
+                        pbar.update()
+                else:
+                    for result in counts_df.index.map(
+                        lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
+                            self.neighbourhood.get_neighbours_at_distance(
+                                region_id, neighbour_distance, include_center=False
+                            )
+                        ).values
+                    ):
+                        neighbours_series.append(result)
+                        pbar.update()
 
-                averaged_values_stacked = np.stack(
-                    process_map(
+                if not neighbours_series:
+                    continue
+
+                values_to_stack = []
+
+                if activate_multiprocessing:
+                    fn_embeddings = partial(
+                        _get_embeddings_for_neighbours,
+                        counts_df=counts_df,
+                        aggregation_function=self.aggregation_function,
+                        number_of_base_columns=number_of_base_columns,
+                    )
+
+                    for result in executor.map(
                         fn_embeddings,
                         neighbours_series,
-                        max_workers=self.num_of_multiprocessing_workers,
                         chunksize=ceil(
                             len(neighbours_series) / (4 * self.num_of_multiprocessing_workers)
                         ),
-                        disable=True,
-                    )
-                )
-            else:
-                averaged_values_stacked = np.stack(
-                    neighbours_series.map(
-                        lambda region_ids: (
-                            np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
-                            if len(region_ids) > 0
-                            else np.zeros((number_of_base_columns,))
+                    ):
+                        values_to_stack.append(result)
+                        pbar.update()
+                else:
+                    for neighbours in neighbours_series:
+                        values_to_stack.append(
+                            _get_embeddings_for_neighbours(
+                                region_ids=neighbours,
+                                counts_df=counts_df,
+                                aggregation_function=self.aggregation_function,
+                                number_of_base_columns=number_of_base_columns,
+                            )
                         )
-                    ).values
-                )
+                        pbar.update()
 
-            yield distance, averaged_values_stacked
+                aggregated_values_stacked = np.stack(values_to_stack)
+
+                yield distance, aggregated_values_stacked
 
 
 def _parse_num_of_multiprocessing_workers(num_of_multiprocessing_workers: int) -> int:
@@ -322,10 +341,23 @@ def _get_existing_neighbours_at_distance(
 def _get_embeddings_for_neighbours(
     region_ids: Collection[IndexType],
     counts_df: pd.DataFrame,
+    aggregation_function: Literal["average", "median", "sum", "min", "max"],
     number_of_base_columns: int,
 ) -> Any:
-    return (
-        np.nan_to_num(np.nanmean(counts_df.loc[region_ids].values, axis=0))
-        if len(region_ids) > 0
-        else np.zeros((number_of_base_columns,))
-    )
+    if len(region_ids) == 0:
+        return np.zeros((number_of_base_columns,))
+
+    if aggregation_function == "average":
+        aggregation = np.nanmean(counts_df.loc[region_ids].values, axis=0)
+    elif aggregation_function == "median":
+        aggregation = np.nanmedian(counts_df.loc[region_ids].values, axis=0)
+    elif aggregation_function == "sum":
+        aggregation = np.sum(counts_df.loc[region_ids].values, axis=0)
+    elif aggregation_function == "min":
+        aggregation = np.min(counts_df.loc[region_ids].values, axis=0)
+    elif aggregation_function == "max":
+        aggregation = np.max(counts_df.loc[region_ids].values, axis=0)
+    else:
+        raise ValueError(f"Unknown aggregation function: {aggregation_function}")
+
+    return np.nan_to_num(aggregation)

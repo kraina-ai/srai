@@ -5,6 +5,7 @@ This module contains loader capable of loading OpenStreetMap features from Overp
 """
 
 from collections.abc import Iterable
+from contextlib import suppress
 from itertools import product
 from typing import Union
 
@@ -16,7 +17,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import FEATURES_INDEX, FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import (
     GroupedOsmTagsFilter,
@@ -115,12 +116,25 @@ class OSMOnlineLoader(OSMLoader):
             ox.features_from_polygon if osmnx_new_api else ox.geometries_from_polygon
         )
 
-        pbar = tqdm(product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries)
+        osmnx_new_exception_api = version.parse(ox.__version__) >= version.parse("1.6.0")
+        if osmnx_new_exception_api:
+            from osmnx._errors import InsufficientResponseError
+
+            response_error = InsufficientResponseError
+        else:
+            from osmnx._errors import EmptyOverpassResponse
+
+            response_error = EmptyOverpassResponse
+
+        pbar = tqdm(
+            product(area_wgs84[GEOMETRY_COLUMN], _tags), total=total_queries, disable=FORCE_TERMINAL
+        )
         for polygon, (key, value) in pbar:
             pbar.set_description(self._get_pbar_desc(key, value, desc_max_len))
-            geometries = osmnx_download_function(polygon, {key: value})
-            if not geometries.empty:
-                results.append(geometries[[GEOMETRY_COLUMN, key]])
+            with suppress(response_error):
+                geometries = osmnx_download_function(polygon, {key: value})
+                if not geometries.empty:
+                    results.append(geometries[[GEOMETRY_COLUMN, key]])
 
         result_gdf = self._group_gdfs(results).set_crs(WGS84_CRS)
         result_gdf = self._flatten_index(result_gdf)

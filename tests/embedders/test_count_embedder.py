@@ -111,6 +111,14 @@ def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
         ),
         (
             "gdf_regions",
+            "gdf_features_boolean",
+            "gdf_joint_boolean",
+            "expected_embedding_df",
+            False,
+            None,
+        ),
+        (
+            "gdf_regions",
             "gdf_features",
             "gdf_joint",
             "expected_subcategories_embedding_df",
@@ -167,7 +175,8 @@ def test_correct_embedding(
         else request.getfixturevalue(expected_features_fixture)
     )
     embedder = CountEmbedder(
-        expected_output_features=expected_output_features, count_subcategories=count_subcategories
+        expected_output_features=expected_output_features,
+        count_subcategories=count_subcategories,
     )
     gdf_regions: gpd.GeoDataFrame = request.getfixturevalue(regions_fixture)
     gdf_features: gpd.GeoDataFrame = request.getfixturevalue(features_fixture)
@@ -180,7 +189,9 @@ def test_correct_embedding(
     print(expected_result_df)
     print(embedding_df)
     assert_frame_equal(
-        embedding_df.sort_index(axis=1), expected_result_df.sort_index(axis=1), check_dtype=False
+        embedding_df.sort_index(axis=1),
+        expected_result_df.sort_index(axis=1),
+        check_dtype=False,
     )
 
 
@@ -193,6 +204,13 @@ def test_correct_embedding(
             "gdf_joint",
             None,
             does_not_raise(),
+        ),
+        (
+            "gdf_regions_empty",
+            "gdf_features_boolean",
+            "gdf_joint_boolean",
+            None,
+            pytest.raises(ValueError),
         ),
         (
             "gdf_regions",
@@ -288,7 +306,11 @@ def test_empty(
     ],
 )
 def test_incorrect_indexes(
-    regions_fixture: str, features_fixture: str, joint_fixture: str, expectation: Any, request: Any
+    regions_fixture: str,
+    features_fixture: str,
+    joint_fixture: str,
+    expectation: Any,
+    request: Any,
 ) -> None:
     """Test if cannot embed with incorrect dataframe indexes."""
     regions_gdf = request.getfixturevalue(regions_fixture)
@@ -411,7 +433,8 @@ def test_osm_tags_filter_parsing(
     """Test is properly parses osm tags filter."""
     with expectation:
         embedder = CountEmbedder(
-            expected_output_features=osm_tags_filter, count_subcategories=count_subcategories
+            expected_output_features=osm_tags_filter,
+            count_subcategories=count_subcategories,
         )
 
         ut.assertCountEqual(embedder.expected_output_features, expected_output_features)

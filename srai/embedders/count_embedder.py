@@ -8,8 +8,11 @@ from typing import Optional, Union, cast
 
 import geopandas as gpd
 import pandas as pd
+import polars as pl
+import pyarrow as pa
 
 from srai._typing import is_expected_type
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.embedders import Embedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
@@ -71,6 +74,7 @@ class CountEmbedder(Embedder):
             ValueError: If any of the gdfs index names is None.
             ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
+            ValueError: If features_gdf contains boolean columns and count_subcategories is True.
         """
         self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
         if features_gdf.empty:
@@ -83,21 +87,85 @@ class CountEmbedder(Embedder):
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
 
-        regions_df = self._remove_geometry_if_present(regions_gdf)
-        features_df = self._remove_geometry_if_present(features_gdf)
-        joint_df = self._remove_geometry_if_present(joint_gdf)
+        regions_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                regions_gdf[[]],
+            ),
+            schema={REGIONS_INDEX: pl.String()},
+        ).lazy()
+        features_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                features_gdf,
+                columns=[c for c in features_gdf.columns if c != GEOMETRY_COLUMN],
+            )
+        ).lazy()
+        joint_df = pl.from_arrow(
+            pa.Table.from_pandas(
+                joint_gdf[[]],
+            ),
+            schema={REGIONS_INDEX: pl.String(), FEATURES_INDEX: pl.String()},
+        ).lazy()
+
+        features_schema = features_df.collect_schema()
+        feature_columns = [col for col in features_schema.names() if col != FEATURES_INDEX]
+        dtypes = features_schema.dtypes()
+        are_all_columns_bool = all(
+            dtypes[idx] == pl.Boolean
+            for idx, col in enumerate(features_schema.names())
+            if col != FEATURES_INDEX
+        )
 
         if self.count_subcategories:
-            feature_encodings = pd.get_dummies(features_df)
+            if are_all_columns_bool:
+                raise ValueError("Cannot count subcategories with boolean columns.")
+
+            feature_encodings = (
+                features_df.collect(streaming=True).to_dummies(columns=feature_columns).lazy()
+            )
+            feature_columns = [
+                col
+                for col in feature_encodings.collect_schema().names()
+                if col != FEATURES_INDEX and not col.endswith("_null")
+            ]
+            feature_encodings = feature_encodings.select([FEATURES_INDEX, *feature_columns])
+        elif are_all_columns_bool:
+            feature_encodings = features_df.with_columns(
+                [
+                    pl.col(FEATURES_INDEX),
+                    *(pl.col(col).cast(pl.Int32) for col in feature_columns),
+                ]
+            )
         else:
-            feature_encodings = features_df.notna().astype(int)
-        joint_with_encodings = joint_df.join(feature_encodings)
-        region_embeddings = joint_with_encodings.groupby(level=0).sum()
+            feature_encodings = features_df.with_columns(
+                [
+                    pl.col(FEATURES_INDEX),
+                    *(pl.col(col).is_not_null().cast(pl.Int32) for col in feature_columns),
+                ]
+            )
 
-        region_embeddings = self._maybe_filter_to_expected_features(region_embeddings)
-        region_embedding_df = regions_df.join(region_embeddings, how="left").fillna(0).astype(int)
+        joint_with_encodings = joint_df.join(feature_encodings, on=FEATURES_INDEX, how="left")
+        region_embeddings = joint_with_encodings.drop(FEATURES_INDEX).group_by(REGIONS_INDEX).sum()
+        region_embeddings, feature_columns = self._maybe_filter_to_expected_features(
+            region_embeddings, feature_columns
+        )
 
-        return region_embedding_df
+        region_embeddings_df = (
+            (
+                regions_df.join(region_embeddings, on=REGIONS_INDEX, how="left")
+                .fill_null(0)
+                .with_columns(
+                    [
+                        pl.col(REGIONS_INDEX),
+                        *(pl.col(col).cast(pl.Int32) for col in feature_columns),
+                    ]
+                )
+            )
+            .collect(streaming=True)
+            .to_pandas()
+            .set_index(REGIONS_INDEX)
+        )
+
+        return region_embeddings_df
 
     def _parse_expected_output_features(
         self,
@@ -168,25 +236,28 @@ class CountEmbedder(Embedder):
 
         return sorted(list(expected_output_features))
 
-    def _maybe_filter_to_expected_features(self, region_embeddings: pd.DataFrame) -> pd.DataFrame:
+    def _maybe_filter_to_expected_features(
+        self, region_embeddings: pl.LazyFrame, current_embedding_columns: list[str]
+    ) -> tuple[pl.LazyFrame, list[str]]:
         """
         Add missing and remove excessive columns from embeddings.
 
         Args:
-            region_embeddings (pd.DataFrame): Counted frequencies of each feature value.
+            region_embeddings (pl.LazyFrame): Counted frequencies of each feature value.
+            current_embedding_columns (list[str]): List of current embedding columns.
 
         Returns:
-            pd.DataFrame: Embeddings with expected columns only.
+            tuple[pl.LazyFrame, list[str]]: Embeddings with expected columns only and new list
+            of columns.
         """
         if self.expected_output_features is None:
-            return region_embeddings
+            return region_embeddings, current_embedding_columns
 
         missing_features = self.expected_output_features[
-            ~self.expected_output_features.isin(region_embeddings.columns)
+            ~self.expected_output_features.isin(current_embedding_columns)
         ]
-        missing_features_df = pd.DataFrame(
-            0, index=region_embeddings.index, columns=missing_features
-        )
-        region_embeddings = pd.concat([region_embeddings, missing_features_df], axis=1)
-        region_embeddings = region_embeddings[self.expected_output_features]
-        return region_embeddings
+
+        region_embeddings = region_embeddings.with_columns(
+            [pl.lit(0, pl.Int32).alias(col) for col in missing_features]
+        ).select([REGIONS_INDEX, *self.expected_output_features])
+        return region_embeddings, list(self.expected_output_features)

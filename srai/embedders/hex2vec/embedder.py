@@ -37,6 +37,7 @@ class Hex2VecEmbedder(CountEmbedder):
         expected_output_features: Optional[
             Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
         ] = None,
+        count_subcategories: bool = True,
     ) -> None:
         """
         Initialize Hex2VecEmbedder.
@@ -48,9 +49,13 @@ class Hex2VecEmbedder(CountEmbedder):
             expected_output_features
                 (Union[List[str], OsmTagsFilter, GroupedOsmTagsFilter], optional):
                 List of expected output features. Defaults to None.
+            count_subcategories (bool, optional): Whether to count all subcategories individually
+                or count features only on the highest level based on features column name.
+                Defaults to False.
         """
         super().__init__(
-            expected_output_features=expected_output_features, count_subcategories=True
+            expected_output_features=expected_output_features,
+            count_subcategories=count_subcategories,
         )
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]

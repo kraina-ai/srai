@@ -61,8 +61,52 @@ jobs:
       - name: Install pdm
         run: pip install pdm
       - name: Generate lock with oldest dependencies
-        run: pdm lock --lockfile pdm.oldest.lock --strategy no_cross_platform,direct_minimal_versions -G all -dG test
+        run: |
+          echo "fiona==1.9.6" >> fiona_constraint.txt
+          pdm lock --override fiona_constraint.txt --lockfile pdm.oldest.lock --strategy no_cross_platform,direct_minimal_versions -G all -dG test
       - name: Install srai and tests dependencies
         run: pdm install --lockfile pdm.oldest.lock -G all -dG test --skip=post_install
       - name: Run tests with pytest
         run: pdm run pytest -v --durations=20 tests
+
+  run-example-notebooks:
+    name: Run example notebooks
+    runs-on: ubuntu-latest
+    env:
+      FORCE_TERMINAL_MODE: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CICD_PAT_TOKEN }}
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-dev-
+      - name: Install pdm
+        run: pip install pdm uv
+      - name: Regenerate lock with environment markers
+        run: pdm lock --update-reuse --strategy inherit_metadata
+      - name: Generate requirements.txt
+        run: pdm export --no-default -dG docs -dG visualization -f requirements -o requirements.txt
+      - name: Install dependencies
+        run: uv pip install --no-deps -r requirements.txt --system
+      - name: Install nbconvert dependency
+        run: uv pip install jupyter nbconvert nbformat black --system
+      - name: Install srai
+        run: |
+          pdm build -v -d dist
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: "**/cache"
+          key: mkdocs-overpass-dev-cache-${{ runner.os }}
+      - name: Execute jupyter notebooks
+        run: |
+          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
