@@ -67,7 +67,9 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "9") -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = "9"
+    ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
 
@@ -80,6 +82,7 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
                     split. Defaults to '9'. Raw, full data available as 'all'.
 
         Returns:
-            None
+            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
+                contain keys "train" and "test" if available.
         """
-        super().load(hf_token, version)
+        return super().load(hf_token, version)

@@ -52,7 +52,9 @@ class HuggingFaceDataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = None) -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = None
+    ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
 
@@ -63,8 +65,11 @@ class HuggingFaceDataset(abc.ABC):
             version (str, optional): version of a dataset
 
         Returns:
-            None
+            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
+                contain keys "train" and "test" if available.
         """
+        result = {}
+
         dataset_name = self.path
         version = version or self.version
         if version is not None and len(version) == 1:
@@ -73,10 +78,15 @@ class HuggingFaceDataset(abc.ABC):
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
         self.train_gdf = processed_train
+        result["train"] = processed_train
+
         if "test" in data:
             test = data["test"].to_pandas()
             processed_test = self._preprocessing(test)
             self.test_gdf = processed_test
+            result["test"] = processed_test
+
+        return result
 
     def train_test_split_bucket_regression(
         self,
@@ -85,7 +95,7 @@ class HuggingFaceDataset(abc.ABC):
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
-    ) -> None:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
         Args:
@@ -164,13 +174,15 @@ class HuggingFaceDataset(abc.ABC):
         self.test_gdf = test
         self.resolution = resolution
 
+        return self.train_gdf, self.test_gdf
+
     def train_test_split_spatial_points(
         self,
         test_size: float = 0.2,
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
         random_state: Optional[int] = None,
-    ) -> None:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Method to generate train and test split from GeoDataFrame, based on the spatial h3
         resolution.
@@ -243,6 +255,8 @@ class HuggingFaceDataset(abc.ABC):
         self.test_gdf = gdf_.iloc[test_indices]
         self.resolution = resolution
         # , gdf_.iloc[dev_indices],
+
+        return self.train_gdf, self.test_gdf
 
     def get_h3_with_labels(
         self,

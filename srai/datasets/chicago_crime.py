@@ -64,7 +64,9 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
         )
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "9") -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = "9"
+    ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
 
@@ -78,6 +80,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
                 as: '2020', '2021', '2022'.
 
         Returns:
-            None
+            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
+                contain keys "train" and "test" if available.
         """
-        super().load(hf_token, version)
+        return super().load(hf_token, version)
