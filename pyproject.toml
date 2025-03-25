@@ -232,6 +232,11 @@ ignore_packages = [
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
     'referencing',              # uses MIT license, has mismatched license in analysis
+    'griffe',                   # uses ISC license, not recognised by licensecheck
+    'mkdocs-autorefs',          # uses ISC license, not recognised by licensecheck
+    'mkdocstrings',             # uses ISC license, not recognised by licensecheck
+    'mkdocstrings-python',      # uses ISC license, not recognised by licensecheck
+    'pipdeptree',               # uses MIT license, not recognised by licensecheck
     'nvidia-cublas-cu11',       # uses NVIDIA license
     'nvidia-cuda-cupti-cu11',   # uses NVIDIA license
     'nvidia-cuda-nvrtc-cu11',   # uses NVIDIA license
