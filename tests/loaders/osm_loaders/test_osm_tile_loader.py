@@ -76,7 +76,7 @@ def test_load_images_properly(
     """Test if load returns proper images list according to location."""
     with requests_mock.Mocker() as m:
         mock_requests(images, m)
-        tiles = loader.load(gdf)
+        tiles = loader.load(gdf).to_geodataframe()
 
         assert len(m.request_history) == 3, f"Got {len(m.request_history)} requests."
 
