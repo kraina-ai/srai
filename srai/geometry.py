@@ -1,9 +1,11 @@
 """Utility geometry operations functions."""
 
 import hashlib
-from typing import Union
+from collections.abc import Iterable
+from typing import Optional, Union
 
 import geopandas as gpd
+import pandas as pd
 import pyproj
 import shapely.wkt as wktlib
 from functional import seq
@@ -11,6 +13,14 @@ from shapely.geometry import MultiPolygon, Polygon
 from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
 from shapely.ops import unary_union
+
+from srai.constants import (
+    FEATURES_INDEX,
+    FEATURES_INDEX_TYPE,
+    REGIONS_INDEX,
+    REGIONS_INDEX_TYPE,
+    WGS84_CRS,
+)
 
 __all__ = [
     "flatten_geometry_series",
@@ -126,3 +136,92 @@ def get_geometry_hash(geometry: BaseGeometry) -> str:
     h = hashlib.new("sha256")
     h.update(wkt_string.encode())
     return h.hexdigest()
+
+
+def convert_to_regions_gdf(
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+    index_column: Optional[str] = None,
+) -> gpd.GeoDataFrame:
+    """
+    Convert any geometry to a regions GeoDataFrame.
+
+    Args:
+        geometry (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]): Geo
+            objects to convert.
+        index_column (Optional[str], optional): Name of the column used to define the index.
+            If None, will rename the existing index. Defaults to None.
+
+    Returns:
+        gpd.GeoDataFrame: Regions gdf with proper index definition.
+    """
+    return _convert_to_internal_format(
+        geometry=geometry, destination_index_name=REGIONS_INDEX, index_column=index_column
+    )
+
+
+def convert_to_features_gdf(
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+    index_column: Optional[str] = None,
+) -> gpd.GeoDataFrame:
+    """
+    Convert any geometry to a features GeoDataFrame.
+
+    Args:
+        geometry (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]): Geo
+            objects to convert.
+        index_column (Optional[str], optional): Name of the column used to define the index.
+            If None, will rename the existing index. Defaults to None.
+
+    Returns:
+        gpd.GeoDataFrame: Features gdf with proper index definition.
+    """
+    return _convert_to_internal_format(
+        geometry=geometry, destination_index_name=FEATURES_INDEX, index_column=index_column
+    )
+
+
+def _convert_to_internal_format(
+    geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+    destination_index_name: Union[REGIONS_INDEX_TYPE, FEATURES_INDEX_TYPE],
+    index_column: Optional[str] = None,
+) -> gpd.GeoDataFrame:
+    """Converts geometry into internal format with a proper index name."""
+    if isinstance(geometry, gpd.GeoDataFrame):
+        # Return a GeoDataFrame with changed index
+        if isinstance(geometry.index, pd.MultiIndex):
+            raise ValueError(
+                "Cannot transform index of type pandas.MultiIndex. Please reset the index first."
+            )
+
+        if index_column is not None:
+            if index_column not in geometry.columns:
+                raise ValueError(f"Column {index_column} does not exist")
+
+            geometry = geometry.set_index(index_column)
+
+        geometry.index = geometry.index.rename(destination_index_name)
+
+        if geometry.crs is None:
+            geometry = geometry.set_crs(WGS84_CRS)
+        else:
+            geometry = geometry.to_crs(WGS84_CRS)
+
+        return geometry
+    elif isinstance(geometry, gpd.GeoSeries):
+        # Create a GeoDataFrame with GeoSeries
+        return _convert_to_internal_format(
+            gpd.GeoDataFrame(geometry=geometry),
+            destination_index_name=destination_index_name,
+            index_column=index_column,
+        )
+    elif isinstance(geometry, Iterable):
+        # Create a GeoSeries with a list of geometries
+        return _convert_to_internal_format(
+            gpd.GeoSeries(geometry),
+            destination_index_name=destination_index_name,
+            index_column=index_column,
+        )
+    # Wrap a single geometry with a list
+    return _convert_to_internal_format(
+        [geometry], destination_index_name=destination_index_name, index_column=index_column
+    )

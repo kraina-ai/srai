@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Functions `convert_to_regions_gdf` and `convert_to_features_gdf` to transform any existing geo input to an object with the correct index name
+
 ## [0.9.5] - 2025-02-23
 
 ### Fixed
