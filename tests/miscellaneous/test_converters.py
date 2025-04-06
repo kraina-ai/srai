@@ -10,7 +10,7 @@ import pytest
 from shapely import Point
 from shapely.geometry.base import BaseGeometry
 
-from srai.constants import FEATURES_INDEX, REGIONS_INDEX
+from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 from srai.geometry import _convert_to_internal_format
 from srai.loaders import convert_to_features_gdf
 from srai.regionalizers import convert_to_regions_gdf
@@ -58,6 +58,7 @@ def test_column_index_converter() -> None:
     gdf = gpd.GeoDataFrame(
         data={TEST_COLUMN_NAME: ["a", "b"]},
         geometry=[Point(0, 0), Point(1, 1)],
+        crs=WGS84_CRS,  # cover crs conversion
     )
     features_gdf = _convert_to_internal_format(
         geometry=gdf,

@@ -14,7 +14,13 @@ from shapely.geometry.base import BaseGeometry, BaseMultipartGeometry
 from shapely.ops import transform as shapely_transform
 from shapely.ops import unary_union
 
-from srai.constants import FEATURES_INDEX, FEATURES_INDEX_TYPE, REGIONS_INDEX, REGIONS_INDEX_TYPE
+from srai.constants import (
+    FEATURES_INDEX,
+    FEATURES_INDEX_TYPE,
+    REGIONS_INDEX,
+    REGIONS_INDEX_TYPE,
+    WGS84_CRS,
+)
 
 __all__ = [
     "flatten_geometry_series",
@@ -194,6 +200,12 @@ def _convert_to_internal_format(
             geometry = geometry.set_index(index_column)
 
         geometry.index = geometry.index.rename(destination_index_name)
+
+        if geometry.crs is None:
+            geometry = geometry.set_crs(WGS84_CRS)
+        else:
+            geometry = geometry.to_crs(WGS84_CRS)
+
         return geometry
     elif isinstance(geometry, gpd.GeoSeries):
         # Create a GeoDataFrame with GeoSeries
