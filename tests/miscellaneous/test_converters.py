@@ -34,6 +34,7 @@ def test_region_gdf_converter(
     """Test that region gdf converter works."""
     regions_gdf = convert_to_regions_gdf(input)
     assert regions_gdf.index.name == REGIONS_INDEX
+    assert regions_gdf.crs == WGS84_CRS
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -51,6 +52,7 @@ def test_features_gdf_converter(
     """Test that features gdf converter works."""
     features_gdf = convert_to_features_gdf(input)
     assert features_gdf.index.name == FEATURES_INDEX
+    assert features_gdf.crs == WGS84_CRS
 
 
 def test_column_index_converter() -> None:
