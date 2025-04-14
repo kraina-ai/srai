@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Function `h3_to_shapely_geometry` for single input
+
 ## [0.9.6] - 2025-04-06
 
 ### Added
