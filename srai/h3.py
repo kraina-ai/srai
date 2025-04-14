@@ -88,7 +88,33 @@ def shapely_geometry_to_h3(
     return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
 
 
-# TODO: write tests (#322)
+@overload
+def h3_to_shapely_geometry(h3_index: Union[int, str]) -> Polygon: ...
+
+
+@overload
+def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> list[Polygon]: ...
+
+
+def h3_to_shapely_geometry(
+    h3_index: Union[int, str, Iterable[Union[int, str]]],
+) -> Union[Polygon, list[Polygon]]:
+    """
+    Convert H3 index to Shapely polygon.
+
+    Args:
+        h3_index (Union[int, str, Iterable[Union[int, str]]]): H3 index (or list of indexes)
+            to be converted.
+
+    Returns:
+        Union[Polygon, List[Polygon]]: Converted polygon (or list of polygons).
+    """
+    gs = h3_to_geoseries(h3_index).values.tolist()
+    if isinstance(h3_index, (str, int)):
+        return gs[0]
+    return gs
+
+
 def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd.GeoSeries:
     """
     Convert H3 index to GeoPandas GeoSeries.
@@ -107,34 +133,6 @@ def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd
             h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_index
         )
         return gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_int_indexes), crs=WGS84_CRS)
-
-
-@overload
-def h3_to_shapely_geometry(h3_index: Union[int, str]) -> Polygon: ...
-
-
-@overload
-def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> list[Polygon]: ...
-
-
-# TODO: write tests (#322)
-def h3_to_shapely_geometry(
-    h3_index: Union[int, str, Iterable[Union[int, str]]],
-) -> Union[Polygon, list[Polygon]]:
-    """
-    Convert H3 index to Shapely polygon.
-
-    Args:
-        h3_index (Union[int, str, Iterable[Union[int, str]]]): H3 index (or list of indexes)
-            to be converted.
-
-    Returns:
-        Union[Polygon, List[Polygon]]: Converted polygon (or list of polygons).
-    """
-    if isinstance(h3_index, (str, int)):
-        coords = h3.cell_to_boundary(h3_index, geo_json=True)
-        return Polygon(coords)
-    return h3_to_geoseries(h3_index).values.tolist()
 
 
 @overload

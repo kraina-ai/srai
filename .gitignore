@@ -150,3 +150,6 @@ files/
 
 # ruff
 .ruff_cache
+
+# test generated files
+monaco_*.parquet

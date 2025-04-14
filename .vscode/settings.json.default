@@ -8,7 +8,6 @@
       "source.organizeImports": true
     }
   },
-  "python.formatting.provider": "black",
   "autoDocstring.docstringFormat": "google",
   "python.testing.pytestArgs": [
     "tests"

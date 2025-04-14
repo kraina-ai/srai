@@ -1,13 +1,18 @@
 """H3 shapely conversion tests."""
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Union
 from unittest import TestCase
 
 import geopandas as gpd
+import h3
+import numpy as np
 import pytest
+from shapely.geometry import Point
 
-from srai.h3 import shapely_geometry_to_h3
+from srai.constants import WGS84_CRS
+from srai.h3 import h3_to_geoseries, h3_to_shapely_geometry, shapely_geometry_to_h3
 from tests.h3.conftest import _gdf_noop, _gdf_to_geometry_list, _gdf_to_geoseries
 from tests.regionalizers.test_h3_regionalizer import H3_RESOLUTION
 
@@ -85,3 +90,63 @@ def test_full_coverage() -> None:
     assert all(len(value) > 0 for value in intersections.values())
     assert len(intersections["way/843232154"]) == 1
     assert "8a2ab5760167fff" in intersections["way/843232154"]
+
+
+@pytest.mark.parametrize(
+    "h3_index",
+    [
+        "8a1f52711897fff",
+        h3.str_to_int("8a1f52711897fff"),
+    ],
+)  # type: ignore
+def test_h3_to_shapely_geometry_consistency(
+    h3_index: Union[int, str],
+) -> None:
+    """Test checks whether conversion from h3 to shapely is consistent."""
+    geometry = h3_to_shapely_geometry(h3_index)
+    geometries = h3_to_shapely_geometry([h3_index])
+
+    assert geometry == geometries[0]
+
+
+CENTROID_8a1f52711897fff = Point(20.0005, 51.9997)
+CENTROID_8758128deffffff = Point(3.9683, 11.5235)
+
+
+@pytest.mark.parametrize(
+    "h3_index,expected_centroids",
+    [
+        ("8a1f52711897fff", [CENTROID_8a1f52711897fff]),
+        (["8a1f52711897fff"], [CENTROID_8a1f52711897fff]),
+        (
+            ["8a1f52711897fff", "8758128deffffff"],
+            [CENTROID_8a1f52711897fff, CENTROID_8758128deffffff],
+        ),
+        (h3.str_to_int("8a1f52711897fff"), [CENTROID_8a1f52711897fff]),
+        ([h3.str_to_int("8a1f52711897fff")], [CENTROID_8a1f52711897fff]),
+        (
+            [h3.str_to_int("8a1f52711897fff"), h3.str_to_int("8758128deffffff")],
+            [CENTROID_8a1f52711897fff, CENTROID_8758128deffffff],
+        ),
+        (
+            ["8a1f52711897fff", h3.str_to_int("8758128deffffff")],
+            [CENTROID_8a1f52711897fff, CENTROID_8758128deffffff],
+        ),
+    ],
+)  # type: ignore
+def test_h3_to_geoseries(
+    h3_index: Union[int, str, Iterable[Union[int, str]]], expected_centroids: Iterable[Point]
+) -> None:
+    """Test checks whether conversion from h3 to geoseries works."""
+    gs = h3_to_geoseries(h3_index)
+    assert gs.crs == WGS84_CRS
+
+    centroids = gs.centroid.values.tolist()
+
+    np.testing.assert_almost_equal(
+        [c.x for c in centroids], [p.x for p in expected_centroids], decimal=4
+    )
+
+    np.testing.assert_almost_equal(
+        [c.y for c in centroids], [p.y for p in expected_centroids], decimal=4
+    )
