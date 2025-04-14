@@ -131,7 +131,7 @@ docs = [
     "xgboost",
 ]
 # performance = ["scalene"]
-license = ["licensecheck==2024.3", "pipdeptree"]
+license = ["licensecheck>=2025.1", "pipdeptree"]
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
@@ -218,8 +218,8 @@ markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 log_cli = true
 
 [tool.licensecheck]
-using = "requirements"
 zero = true
+requirements_paths = ["requirements.txt"]
 ignore_licenses = ["UNKNOWN"]
 ignore_packages = [
     'srai',                     # skip self

@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:4e898eb2dfdff72b5c3a77a6b7c520ce784d24a9be624bfea9573492ff7e7444"
+content_hash = "sha256:1950d90c0f74ca74f6cc3a9c42143a1b5f91e692e79299796ebf9b2562b38269"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -592,6 +592,16 @@ dependencies = [
 files = [
     {file = "bleach-6.2.0-py3-none-any.whl", hash = "sha256:117d9c6097a7c3d22fd578fcd8d35ff1e125df6736f554da4e432fdd63f31e5e"},
     {file = "bleach-6.2.0.tar.gz", hash = "sha256:123e894118b8a599fd80d3ec1a6d4cc7ce4e5882b1317a7e1ba69b56e95f991f"},
+]
+
+[[package]]
+name = "boolean-py"
+version = "5.0"
+summary = "Define boolean algebras, create and parse boolean expressions and create custom boolean DSL."
+groups = ["license"]
+files = [
+    {file = "boolean_py-5.0-py3-none-any.whl", hash = "sha256:ef28a70bd43115208441b53a045d1549e2f0ec6e3d08a9d142cbc41c1938e8d9"},
+    {file = "boolean_py-5.0.tar.gz", hash = "sha256:60cbc4bad079753721d32649545505362c754e121570ada4658b852a3a318d95"},
 ]
 
 [[package]]
@@ -2213,27 +2223,42 @@ files = [
 ]
 
 [[package]]
+name = "license-expression"
+version = "30.4.1"
+requires_python = ">=3.9"
+summary = "license-expression is a comprehensive utility library to parse, compare, simplify and normalize license expressions (such as SPDX license expressions) using boolean logic."
+groups = ["license"]
+dependencies = [
+    "boolean-py>=4.0",
+]
+files = [
+    {file = "license_expression-30.4.1-py3-none-any.whl", hash = "sha256:679646bc3261a17690494a3e1cada446e5ee342dbd87dcfa4a0c24cc5dce13ee"},
+    {file = "license_expression-30.4.1.tar.gz", hash = "sha256:9f02105f9e0fcecba6a85dfbbed7d94ea1c3a70cf23ddbfb5adf3438a6f6fce0"},
+]
+
+[[package]]
 name = "licensecheck"
-version = "2024.3"
-requires_python = "<4.0,>=3.8"
+version = "2025.1.0"
+requires_python = ">=3.9"
 summary = "Output the licenses used by dependencies and check if these are compatible with the project license"
 groups = ["license"]
 dependencies = [
-    "appdirs<2,>=1.4.4",
-    "fhconfparser<2026,>=2024.1",
-    "loguru<2,>=0.7.2",
-    "markdown<4,>=3.6",
-    "packaging<25,>=24.0",
-    "requests-cache<2,>=1.2.0",
-    "requests<3,>=2.31.0",
-    "requirements-parser<2,>=0.11.0",
-    "rich<14,>=13.7.1",
-    "tomli<3,>=2.0.1",
-    "uv<2,>=0.3.3",
+    "appdirs>=1.4.4",
+    "fhconfparser>=2024.1",
+    "license-expression>=30.4.1",
+    "loguru>=0.7.3",
+    "markdown>=3.7",
+    "packaging>=24.2",
+    "requests-cache>=1.2.1",
+    "requests>=2.32.3",
+    "requirements-parser>=0.11.0",
+    "rich>=13.9.4",
+    "tomli>=2.2.1",
+    "uv>=0.6.8",
 ]
 files = [
-    {file = "licensecheck-2024.3-py3-none-any.whl", hash = "sha256:0baef4c1865e0325a35ff25ed12a0c7094035b7dcfbab9a1abfe43d7735adebe"},
-    {file = "licensecheck-2024.3.tar.gz", hash = "sha256:e838e1c87a7ede553df376ad35a69d7c4b02676df0fba9dd1c6a6866eb0e0ee5"},
+    {file = "licensecheck-2025.1.0-py3-none-any.whl", hash = "sha256:eb20131cd8f877e5396958fd7b00cdb2225436c37a59dba4cf36d36079133a17"},
+    {file = "licensecheck-2025.1.0.tar.gz", hash = "sha256:411a1d81606b8be695794c1e7e79cc899b51fe5c501164155361cd2d6f3c5969"},
 ]
 
 [[package]]
@@ -5542,28 +5567,29 @@ files = [
 
 [[package]]
 name = "uv"
-version = "0.5.13"
+version = "0.6.14"
 requires_python = ">=3.8"
 summary = "An extremely fast Python package and project manager, written in Rust."
 groups = ["license"]
 files = [
-    {file = "uv-0.5.13-py3-none-linux_armv6l.whl", hash = "sha256:45301cb355fc0525e692d220ea7cb196e8378a53162b27d6eea6e65c7635ed3d"},
-    {file = "uv-0.5.13-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ff96602b7d391f35dc25122c2661e680a9e94864e96801611ef05c853826c82c"},
-    {file = "uv-0.5.13-py3-none-macosx_11_0_arm64.whl", hash = "sha256:941c13f15a8726a2f5ad3fffa0bbe98e221c98fbe73adbca62cf327bd3fb029c"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:642d7e62c376487a63a03fb830749fb24dd7653f715864df2fb8788f29dfb85e"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:b5aab53db952f7f4505cfc2f62ecedb4a7977d746622f67cbadf052bef0d916e"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f57250f46914affab4e4ca50822f1fbc7910df01818a22b7d91d4f5ccc5eb80c"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:6fb26d2b6d4b6467b98acc22b67bbdd16360a1b843842d7cd77ff4df70884567"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:414dd7083bd7e06ab2db0ee6cfe81b0810c416e79ff1643701e15e2df5e1db2b"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:01fc5e928efba822ff28007f827c3c274b644508253fe358ec79085bae1da0c9"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:82479440765e507af1f2732bd496ec6ed849488f5ce310b8556cfe8c12da1c5f"},
-    {file = "uv-0.5.13-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:18f2141e71f6cb4c0ab44f1a100838d336f14c1d7a1c62444c79c2c2554331be"},
-    {file = "uv-0.5.13-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:4c2e75845c9c5adae3e8274967f70023b740488d732f88100baeef70090b60a0"},
-    {file = "uv-0.5.13-py3-none-musllinux_1_1_i686.whl", hash = "sha256:6de38097d5efa86ae62a71ff268e16f7eab86f4afa63c32b546cb7f5a182874f"},
-    {file = "uv-0.5.13-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:30440409a28f1d5d34af8839a48ba9c26da06fc295f363ba9b12689b796453d4"},
-    {file = "uv-0.5.13-py3-none-win32.whl", hash = "sha256:df2a751e8319e11ef2d8bec30d549ee13949027aaa936ab2a0ab126602f4232b"},
-    {file = "uv-0.5.13-py3-none-win_amd64.whl", hash = "sha256:4219f1ed370bb2cec5f10dcc93fa9ecf5615fa67e0b71eef4817d571291f0bfc"},
-    {file = "uv-0.5.13.tar.gz", hash = "sha256:58a66786f2e95c89539bafd819cf2959f56199457301eac8faa920c1872c4f36"},
+    {file = "uv-0.6.14-py3-none-linux_armv6l.whl", hash = "sha256:c775e5d7a80ff43cb88856bbdcd838918d5ac3dc362414317e6bbaeb615fff98"},
+    {file = "uv-0.6.14-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:2578f6f8cdbcc036ffad1043f9f66ade3ac0babf29def6abd9eefd4a7c6621cb"},
+    {file = "uv-0.6.14-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9fc8fe58871b4fe02a863b05b8b1b25ef1b6c60d4d224e85338f5c2be0ab4f0e"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:2fb2cd7f6aae21b81474b0051d30e7ed939a9a71714948c47f58b0e7acdd2a80"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d6ca3f99c1a6c1c430ae8f451133fb4e8c3a22f661c257425402a5d9430bb797"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ed41877b679e0a1af9ab65427d829b87a81b499017e59c70756d4ba02ca43fcb"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:fe9b4361b1c8055301b715fdd94d94eb512053dc4545fec40d3fe3657f655987"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:998b67bb1cebbe044fc2c5cb251c29cffc56f62a6d55719d6f4e960461d6edad"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:6d433925db6e2ef46047b68962d136ff2ef17a7b5609168615f19e60674232c9"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:36aaeb00a70a10f748e16c7a1fc410862e2ba905806e7e9dfbc3e64596309404"},
+    {file = "uv-0.6.14-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:11779beb3bd1f92814bc8d8cd350d5228e8f9198cca2f52138b53030a4061d93"},
+    {file = "uv-0.6.14-py3-none-musllinux_1_1_armv7l.whl", hash = "sha256:bf1ec103cf9a0850f03935dc6a93cacc680fa2c90c3b41cfc10da311afab8f5b"},
+    {file = "uv-0.6.14-py3-none-musllinux_1_1_i686.whl", hash = "sha256:955e36c98a438a249e178988d4f13b1bb831eb57264d73c459f171b5afd7b023"},
+    {file = "uv-0.6.14-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:2d534e7dc1299c8b53eb7b4c7575e4f0933673ea8b1275d3f3022f5670e311db"},
+    {file = "uv-0.6.14-py3-none-win32.whl", hash = "sha256:7cdf3c8d927b07d4eaffc44809eb57523d449705f10dabbdd6f34f7bdfc7d5fe"},
+    {file = "uv-0.6.14-py3-none-win_amd64.whl", hash = "sha256:012f46bef6909209c4a6749e4019eb755ba762d37d7ceaaf76da9cb4b7f771e9"},
+    {file = "uv-0.6.14-py3-none-win_arm64.whl", hash = "sha256:7465081b4d0b213d0055ccb48de7fe546b5cf0853c6d3601115760760634f6d8"},
+    {file = "uv-0.6.14.tar.gz", hash = "sha256:a117466f307d164a74444949cc94ec4328ec880fb489cbaa7df324dab14c5c98"},
 ]
 
 [[package]]
