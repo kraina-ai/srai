@@ -7,6 +7,7 @@ import osmnx as ox
 import pytest
 from packaging import version
 from pandas.testing import assert_frame_equal
+from pytest_mock import MockerFixture
 
 from srai.constants import WGS84_CRS
 from srai.loaders.osm_loaders import OSMOnlineLoader
@@ -18,8 +19,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 @pytest.fixture  # type: ignore
 def mock_osmnx(
-    mocker, two_polygons_area_gdf, area_with_no_objects_gdf, amenities_gdf, building_gdf
-):
+    mocker: MockerFixture,
+    two_polygons_area_gdf: gpd.GeoDataFrame,
+    area_with_no_objects_gdf: gpd.GeoDataFrame,
+    amenities_gdf: gpd.GeoDataFrame,
+    building_gdf: gpd.GeoDataFrame,
+) -> None:
     """Patch `osmnx` functions to return data from predefined gdfs."""
     gdfs = {"amenity": amenities_gdf, "building": building_gdf}
     polygon_1, polygon_2 = two_polygons_area_gdf["geometry"]
@@ -75,7 +80,7 @@ def test_osm_online_loader(
     query: OsmTagsFilter,
     expected_result_gdf_fixture: str,
     request: Any,
-):
+) -> None:
     """Test `OSMOnlineLoader.load()`."""
     _ = request.getfixturevalue("mock_osmnx")
     area_gdf = request.getfixturevalue(area_gdf_fixture)

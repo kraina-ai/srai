@@ -33,7 +33,7 @@ from tests.embedders.geovex.constants import (
     ],
 )
 def test_checking_encoder_sizes(
-    target_features: Union[str, list[str]], conv_layer_size, expectation: Any
+    target_features: Union[str, list[str]], conv_layer_size: int, expectation: Any
 ) -> None:
     """Test that incorrect encoder sizes raise ValueError."""
     target_tags: dict[str, list[str]] = target_features or HEX2VEC_FILTER  # type: ignore
@@ -98,7 +98,7 @@ def test_embedder() -> None:
 
         embedder._prepare_model(counts_df, 0.001)
 
-        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        for _, param in cast("GeoVexModel", embedder._model).named_parameters():
             param.data.fill_(0.01)
 
         result_df = embedder.fit_transform(
@@ -159,7 +159,7 @@ def test_embedder_save_load() -> None:
         embedder._prepare_model(counts_df, 0.001)
 
         # Initialize model parameters to a constant value for reproducibility
-        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        for _, param in cast("GeoVexModel", embedder._model).named_parameters():
             param.data.fill_(0.01)
 
         result_df = embedder.fit_transform(

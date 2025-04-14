@@ -91,18 +91,18 @@ def _read_imports_from_file(file_path: Path) -> tuple[list[str], list[str], str]
     module_docstring = ""
     st_expression = [stmt for stmt in st.body if isinstance(stmt, ast.Expr)]
     if st_expression:
-        module_docstring = cast(Any, st_expression[0]).value.value
+        module_docstring = cast("Any", st_expression[0]).value.value
 
     st_all_definition = [
         stmt
         for stmt in st.body
-        if isinstance(stmt, ast.Assign) and cast(Any, stmt.targets[0]).id == "__all__"
+        if isinstance(stmt, ast.Assign) and cast("Any", stmt.targets[0]).id == "__all__"
     ]
     if not st_all_definition:
         return [], [], ""
 
     module_all_definition = [
-        definition.value for definition in cast(Any, st_all_definition[0]).value.elts
+        definition.value for definition in cast("Any", st_all_definition[0]).value.elts
     ]
 
     classes: list[str] = []

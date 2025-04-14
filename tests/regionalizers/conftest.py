@@ -110,7 +110,7 @@ def earth_poles() -> list[geometry.Point]:
 
 
 @pytest.fixture  # type: ignore
-def gdf_earth_poles(earth_poles) -> gpd.GeoDataFrame:
+def gdf_earth_poles(earth_poles: list[geometry.Point]) -> gpd.GeoDataFrame:
     """Get GeoDataFrame with 6 Earth poles."""
     return gpd.GeoDataFrame(
         {GEOMETRY_COLUMN: earth_poles},
@@ -135,6 +135,6 @@ def earth_bbox() -> geometry.Polygon:
 
 
 @pytest.fixture  # type: ignore
-def gdf_earth_bbox(earth_bbox) -> gpd.GeoDataFrame:
+def gdf_earth_bbox(earth_bbox: geometry.Polygon) -> gpd.GeoDataFrame:
     """Get full bounding box GeoDataFrame."""
     return gpd.GeoDataFrame({GEOMETRY_COLUMN: [earth_bbox]}, crs=WGS84_CRS)

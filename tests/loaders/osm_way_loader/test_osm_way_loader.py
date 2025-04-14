@@ -227,7 +227,7 @@ def valid_and_empty_polygons_area_gdf(
     "graph_4",
     does_not_raise(),
 )
-def test_contract(
+def test_contract(  # type: ignore[no-untyped-def]
     area_gdf_fixture: str,
     expected_result: Optional[tuple[int, int]],
     loader_params: Optional[dict[str, Any]],
@@ -235,7 +235,7 @@ def test_contract(
     expectation,
     request: pytest.FixtureRequest,
     mocker: MockerFixture,
-):
+) -> None:
     """Test `OSMWayLoader.load`'s contract."""
     from packaging import version
 

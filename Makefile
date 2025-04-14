@@ -7,6 +7,6 @@ docs:
 	mkdocs serve --livereload -w srai
 
 test:
-	pytest -n auto
+	pdm run pytest -n auto
 
 .PHONY: install docs test
