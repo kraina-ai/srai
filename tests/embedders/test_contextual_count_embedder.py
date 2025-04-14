@@ -1194,6 +1194,6 @@ def test_bigger_example() -> None:
         expected_output_features=GEOFABRIK_LAYERS,
     ).transform(regions_gdf=regions, features_gdf=features, joint_gdf=joint)
 
-    assert len(embeddings) == len(
-        regions
-    ), f"Mismatched number of rows ({len(embeddings)}, {len(regions)})"
+    assert len(embeddings) == len(regions), (
+        f"Mismatched number of rows ({len(embeddings)}, {len(regions)})"
+    )
