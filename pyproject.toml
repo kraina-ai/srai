@@ -111,6 +111,7 @@ test = [
     "pytest-doctestplus>=1.2.1",
     "six>=1.9.0",
     "pytest-snapshot>=0.9.0",
+    "pytest-xdist"
 ]
 # pdm add -dG visualization <library>
 visualization = ["matplotlib", "lonboard", "pydeck", "pypalettes", "contextily", "seaborn"]
@@ -226,7 +227,6 @@ ignore_packages = [
     'docformatter',             # uses MIT license, has mismatched license in analysis
     'gtfs-kit',                 # uses MIT license, has mismatched license in analysis
     'pymap3d',                  # uses BSD-2 license, has mismatched license in analysis
-    'Markdown',                 # uses BSD-3 license, has mismatched license in analysis
     'mkdocs-jupyter',           # uses Apache-2.0 license, has mismatched license in analysis
     'pycountry',                # uses LGPLv2, has mismatched license in analysis
     'referencing',              # uses MIT license, has mismatched license in analysis
