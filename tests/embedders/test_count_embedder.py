@@ -437,4 +437,4 @@ def test_osm_tags_filter_parsing(
             count_subcategories=count_subcategories,
         )
 
-        ut.assertCountEqual(embedder.expected_output_features, expected_output_features)
+        ut.assertCountEqual(embedder.expected_output_features, expected_output_features)  # type: ignore

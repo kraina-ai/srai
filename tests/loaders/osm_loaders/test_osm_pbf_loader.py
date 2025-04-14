@@ -23,7 +23,7 @@ ut = TestCase()
 
 @pytest.mark.parametrize("explode_tags", [True, False])  # type: ignore
 @pytest.mark.parametrize("keep_all_tags", [True, False])  # type: ignore
-def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool):
+def test_pbf_to_geoparquet_parsing(explode_tags: bool, keep_all_tags: bool) -> None:
     """Test if pbf to geoparquet conversion works."""
     pbf_file = Path(__file__).parent / "test_files" / "monaco.osm.pbf"
     OSMPbfLoader(pbf_file=pbf_file).load_to_geoparquet(
@@ -128,7 +128,7 @@ def test_osm_pbf_loader(
     expected_result_length: int,
     expected_features_columns_length: int,
     expected_features_columns_names: list[str],
-):
+) -> None:
     """Test `OSMPbfLoader.load()`."""
     download_directory = Path(__file__).parent / "test_files"
     area = gpd.GeoDataFrame(

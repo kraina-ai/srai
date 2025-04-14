@@ -1,11 +1,13 @@
 """Optional dependencies tests."""
 
 import sys
+from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
 import geopandas as gpd
 import pytest
+from pytest import MonkeyPatch
 from shapely.geometry import box
 
 from srai._optional import ImportErrorHandle, import_optional_dependency
@@ -35,7 +37,7 @@ def optional_packages() -> list[str]:
 
 
 @pytest.fixture(autouse=True)  # type: ignore
-def cleanup_imports():
+def cleanup_imports() -> Generator[None, None, None]:
     """Clean imports."""
     yield
     sys.modules.pop("srai", None)
@@ -55,7 +57,9 @@ class PackageDiscarder:
 
 
 @pytest.fixture  # type: ignore
-def no_optional_dependencies(monkeypatch, optional_packages):
+def no_optional_dependencies(
+    monkeypatch: MonkeyPatch, optional_packages: list[str]
+) -> Generator[None, None, None]:
     """Mock environment without optional dependencies."""
     d = PackageDiscarder()
 
@@ -149,7 +153,7 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
     )
 
 
-@pytest.mark.parametrize(  # type: ignore
+@pytest.mark.parametrize(
     "test_fn",
     [
         (_test_voronoi),
@@ -160,13 +164,13 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_gtfs),
     ],
 )
-def test_optional_available(test_fn):
+def test_optional_available(test_fn):  # type: ignore
     """Test if defined functions are working with optional packages."""
     test_fn()
 
 
 @pytest.mark.usefixtures("no_optional_dependencies")
-@pytest.mark.parametrize(  # type: ignore
+@pytest.mark.parametrize(
     "test_fn",
     [
         (_test_voronoi),
@@ -177,7 +181,7 @@ def test_optional_available(test_fn):
         (_test_gtfs),
     ],
 )
-def test_optional_missing(test_fn):
+def test_optional_missing(test_fn):  # type: ignore
     """Test if defined functions are failing without optional packages."""
     with pytest.raises(ImportError):
         test_fn()

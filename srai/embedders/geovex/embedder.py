@@ -71,7 +71,7 @@ class GeoVexEmbedder(CountEmbedder):
             count_subcategories=count_subcategories,
         )
 
-        self._assert_feature_length(self.expected_output_features, convolutional_layer_size)
+        self._assert_feature_length(self.expected_output_features, convolutional_layer_size)  # type: ignore
 
         self._model: Optional[GeoVexModel] = None
         self._is_fitted = False
@@ -290,7 +290,7 @@ class GeoVexEmbedder(CountEmbedder):
         # embedding_size: int = 32,
         # convolutional_layer_size: int = 256,
         embedder_config = {
-            "target_features": self.expected_output_features.to_json(orient="records"),
+            "target_features": self.expected_output_features.to_json(orient="records"),  # type: ignore
             "batch_size": self._batch_size,
             "neighbourhood_radius": self._r,
             "convolutional_layers": self._convolutional_layers,
