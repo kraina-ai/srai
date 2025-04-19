@@ -218,12 +218,10 @@ class HuggingFaceDataset(abc.ABC):
         else:
             raise ValueError(f"Unsupported task type: {task}")
 
-        # Create stratification bins
         gdf_copy["stratification_bin"] = pd.cut(
             gdf_copy["stratify_col"], bins=bucket_number, labels=False
         )
 
-        # Prepare stratified sampling
         trajectory_indices = gdf_copy[trajectory_id_column].unique()
         duration_bins = (
             gdf_copy[[trajectory_id_column, "stratification_bin"]]
@@ -231,7 +229,6 @@ class HuggingFaceDataset(abc.ABC):
             .set_index(trajectory_id_column)["stratification_bin"]
         )
 
-        # Perform stratified split
         train_indices, test_indices = train_test_split(
             trajectory_indices,
             test_size=test_size,
@@ -241,11 +238,10 @@ class HuggingFaceDataset(abc.ABC):
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
         test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
 
-        # Assign back to class attributes if needed
         self.train_gdf = train_gdf
         self.test_gdf = test_gdf
 
-        return train_gdf, test_gdf
+        return self.train_gdf, self.test_gdf
 
     def train_test_split_spatial_points(
         self,
@@ -397,7 +393,12 @@ class HuggingFaceDataset(abc.ABC):
                 else:
                     _test_gdf = None
             elif self.version == "HMC":
-                raise NotImplementedError
+                _train_gdf = self.train_gdf[["h3_sequence_x", "h3_sequence_y"]]
+
+                if self.test_gdf is not None:
+                    _test_gdf = self.test_gdf[["h3_sequence_x", "h3_sequence_y"]]
+                else:
+                    _test_gdf = None
             elif self.version == "all":
                 raise TypeError(
                     "Could not provide targte labels, as version 'all'\

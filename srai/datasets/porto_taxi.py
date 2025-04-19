@@ -144,35 +144,28 @@ class PortoTaxiDataset(HuggingFaceDataset):
             speeds_interp.append(last["speed"])
             timestamps_interp.append(last["timestamp"])
 
+            res = {
+                "trip_id": row["trip_id"],
+                "h3_sequence": full_seq,
+                "avg_speed_per_hex": speeds_interp,
+                "timestamp": timestamps_interp,
+                "day_type": row["day_type"],
+                "call_type": row["call_type"],
+                "taxi_id": row["taxi_id"],
+                "geometry": row.geometry,
+            }
+
             if version == "TTE":
-                return pd.Series(
-                    {
-                        "trip_id": row["trip_id"],
-                        "duration": duration,
-                        "h3_sequence": full_seq,
-                        "avg_speed_per_hex": speeds_interp,
-                        "timestamp": timestamps_interp,
-                        "day_type": row["day_type"],
-                        "call_type": row["call_type"],
-                        "taxi_id": row["taxi_id"],
-                        "geometry": row.geometry,
-                    }
-                )
+                res["duration"] = (duration,)
             elif version == "HMC":
-                raise NotImplementedError
-            elif version == "all":
-                return pd.Series(
-                    {
-                        "trip_id": row["trip_id"],
-                        "h3_sequence": full_seq,
-                        "avg_speed_per_hex": speeds_interp,
-                        "timestamp": timestamps_interp,
-                        "day_type": row["day_type"],
-                        "call_type": row["call_type"],
-                        "taxi_id": row["taxi_id"],
-                        "geometry": row.geometry,
-                    }
-                )
+                split_idx = int(len(full_seq) * 0.85)
+                if split_idx == len(full_seq):
+                    split_idx = len(full_seq) - 1
+                del res["h3_sequence"]
+                res["h3_sequence_x"] = full_seq[:split_idx]
+                res["h3_sequence_y"] = full_seq[split_idx:]
+
+            return pd.Series(res)
 
         # Apply with progress bar
         hexes_df = _gdf.progress_apply(process_row, axis=1)
