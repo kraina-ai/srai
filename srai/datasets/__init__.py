@@ -10,6 +10,7 @@ from .chicago_crime import ChicagoCrimeDataset
 from .house_sales_in_king_county import HouseSalesInKingCountyDataset
 from .philadelphia_crime import PhiladelphiaCrimeDataset
 from .police_department_incidents import PoliceDepartmentIncidentsDataset
+from .porto_taxi import PortoTaxiDataset
 
 __all__ = [
     "HuggingFaceDataset",
@@ -18,4 +19,5 @@ __all__ = [
     "PhiladelphiaCrimeDataset",
     "ChicagoCrimeDataset",
     "PoliceDepartmentIncidentsDataset",
+    "PortoTaxiDataset",
 ]

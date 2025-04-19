@@ -60,7 +60,9 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
 
         return gdf
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = "8") -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = "8"
+    ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
 
@@ -74,6 +76,7 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
                         Melbourne, New York City. Raw, full data from ~80 cities available as 'all'.
 
         Returns:
-            None
+            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
+                contain keys "train" and "test" if available.
         """
-        super().load(hf_token, version)
+        return super().load(hf_token, version)

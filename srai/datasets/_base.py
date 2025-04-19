@@ -8,9 +8,10 @@ import h3
 import numpy as np
 import pandas as pd
 from datasets import load_dataset
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
 
 from srai.regionalizers import H3Regionalizer
 
@@ -52,7 +53,9 @@ class HuggingFaceDataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load(self, hf_token: Optional[str] = None, version: Optional[str] = None) -> None:
+    def load(
+        self, hf_token: Optional[str] = None, version: Optional[str] = None
+    ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
 
@@ -63,20 +66,26 @@ class HuggingFaceDataset(abc.ABC):
             version (str, optional): version of a dataset
 
         Returns:
-            None
+            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
+                 contain keys "train" and "test" if available.
         """
+        result = {}
         dataset_name = self.path
-        version = version or self.version
+        self.version = version
         if version is not None and len(version) == 1:
             self.resolution = int(version)
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
         self.train_gdf = processed_train
+        result["train"] = processed_train
         if "test" in data:
             test = data["test"].to_pandas()
             processed_test = self._preprocessing(test)
             self.test_gdf = processed_test
+            result["test"] = processed_test
+
+        return result
 
     def train_test_split_bucket_regression(
         self,
@@ -85,7 +94,7 @@ class HuggingFaceDataset(abc.ABC):
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
-    ) -> None:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
         Args:
@@ -99,7 +108,7 @@ class HuggingFaceDataset(abc.ABC):
                 Pass an int for reproducible output across multiple function. Defaults to None.
 
         Returns:
-            None
+            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
         """  # noqa: E501, W505
         if self.type != "point":
             raise ValueError("This split can be performed only on point data type!")
@@ -163,6 +172,108 @@ class HuggingFaceDataset(abc.ABC):
         self.train_gdf = train
         self.test_gdf = test
         self.resolution = resolution
+        return self.train_gdf, self.test_gdf
+
+    # def train_test_split_bucket_trajectory(
+    #     self,
+    #     trajectory_id_column: str = "trip_id",
+    #     task: Literal["TTE", "HMC"] = "TTE",
+    #     resolution: int = 9,
+    #     test_size: float = 0.2,
+    #     bucket_number: int = 4,
+    # ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    #     """
+    #     Method to generate train/test split from trajectories GeoDataFrame stratified by task
+    #     target_column.
+
+    #     Args:
+    #         gdf (gpd.GeoDataFrame): input GeoDataFrame
+    #         trajectory_id_column (str): Column to stratify on.
+    #         task (str): Trajectory task. Determines stratification column (Trajectory duration
+    #               in TTE or trajectory length in HMC). Defaults to TTE.
+    #         resolution (int): H3 resolution. Neccessery for HMC split (performed on trajectory
+    #               length in hexagons). Defaults to 9.
+    #         test_size (float): Percentage of test set. Defaults to 0.2.
+    #         bucket_number (int): Number of bins used to stratify data. Defaults to 4.
+
+    #     Returns:
+    #         tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits
+    #               in GeoDataFrames
+    #     """  # noqa: E501, W505
+
+    # def calculate_trajectory_duration(df: pd.DataFrame) -> float:
+    #     """
+    #     Calculate the duration of a trajectory based on timestamps in a DataFrame.
+
+    #     Args:
+    #     df (pandas.DataFrame): A DataFrame containing a column 'timestamp'
+    #                            with datetime objects.
+
+    #     Returns:
+    #     float: The duration of the trajectory in seconds.
+    #     """
+    #     if df.empty or df["timestamp"].nunique() == 1:
+    #         return 0.0
+
+    #     min_time = df["timestamp"].min()
+    #     max_time = df["timestamp"].max()
+    #     return float((max_time - min_time).total_seconds())
+
+    # if self.type != "trajectory":
+    #     raise ValueError("This split can be performed only on trajectory data!")
+
+    # trajectory_id_column = trajectory_id_column if trajectory_id_column is not None
+    # else self.target
+
+    # gdf_copy = self.train_gdf.copy()
+
+    # if task == "TTE":
+    #     trajectory = (
+    #         gdf_copy.groupby(trajectory_id_column)
+    #         .apply(calculate_trajectory_duration)
+    #         .reset_index(name="stratify_col")
+    #     )
+    # elif self.version == "HMC":
+    #     self.resolution=resolution
+    #     def unique_h3_count(df: pd.DataFrame) -> int:
+    #         h3_cells = set(
+    #             h3.latlng_to_cell(lat, lon, resolution)
+    #             for lon, lat in zip(df.geometry.x, df.geometry.y)
+    #         )
+    #         return len(h3_cells)
+    #     trajectory = (
+    #         gdf_copy.groupby(trajectory_id_column)
+    #         .apply(unique_h3_count)
+    #         .reset_index(name="stratify_col")
+    #     )
+    # gdf_copy = gdf_copy.merge(trajectory, on=trajectory_id_column)
+    # gdf_copy["stratification_bin"] = pd.cut(
+    #     gdf_copy["stratify_col"], bins=bucket_number, labels=False
+    # )
+    # trajectory_indices = gdf_copy[trajectory_id_column].unique()
+    # duration_bins = (
+    #     gdf_copy[[trajectory_id_column, "stratification_bin"]]
+    #     .drop_duplicates()
+    #     .set_index(trajectory_id_column)["stratification_bin"]
+    # )
+
+    # # TODO: does not seem to be intuitive, maybe user should provide train_size instead
+    # train_indices, test_indices = train_test_split(
+    #     trajectory_indices,
+    #     test_size=test_size * 2,
+    #     stratify=duration_bins.loc[trajectory_indices],
+    # )
+    # # dev_indices, test_indices = train_test_split(
+    # #     test_indices, test_size=0.5, stratify=duration_bins.loc[test_indices]
+    # # )
+
+    # train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
+    # # dev_gdf = gdf_copy[gdf_copy[target_column].isin(dev_indices)]
+    # test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
+    # self.train_gdf=train_gdf
+    # self.test_gdf=test_gdf
+
+    # return self.train_gdf, self.test_gdf
 
     def train_test_split_spatial_points(
         self,
@@ -170,7 +281,7 @@ class HuggingFaceDataset(abc.ABC):
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
         random_state: Optional[int] = None,
-    ) -> None:
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Method to generate train and test split from GeoDataFrame, based on the spatial h3
         resolution.
@@ -187,7 +298,7 @@ class HuggingFaceDataset(abc.ABC):
             ValueError: If type of data is not Points.
 
         Returns:
-            None
+            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
         """  # noqa: W505, E501, D205
         if self.type != "point":
             raise ValueError("This split can be performed only on Points data type!")
@@ -242,6 +353,8 @@ class HuggingFaceDataset(abc.ABC):
         self.train_gdf = gdf_.iloc[train_indices]
         self.test_gdf = gdf_.iloc[test_indices]
         self.resolution = resolution
+
+        return self.train_gdf, self.test_gdf
         # , gdf_.iloc[dev_indices],
 
     def get_h3_with_labels(
@@ -272,6 +385,7 @@ class HuggingFaceDataset(abc.ABC):
 
         resolution = resolution if resolution is not None else self.resolution
 
+        assert self.train_gdf is not None
         # If resolution is still None, raise an error
         if resolution is None:
             raise ValueError(
@@ -283,24 +397,40 @@ class HuggingFaceDataset(abc.ABC):
                 "Resolution provided is different from the preset resolution for the \
                              dataset. This may result in a data leak between splits."
             )
+        if self.type == "point":
+            if target_column is None:
+                target_column = getattr(self, "target", None) or "count"
 
-        if target_column is None:
-            target_column = getattr(self, "target", None) or "count"
+            _train_gdf = self._aggregate_hexes(self.train_gdf, resolution, target_column)
 
-        _train_gdf = self._aggregate_hexes(self.train_gdf, resolution, target_column)
+            if self.test_gdf is not None:
+                _test_gdf = self._aggregate_hexes(self.test_gdf, resolution, target_column)
+            else:
+                _test_gdf = None
 
-        if self.test_gdf is not None:
-            _test_gdf = self._aggregate_hexes(self.test_gdf, resolution, target_column)
-        else:
-            _test_gdf = None
+            # Scale the "count" column to [0, 1] if it is the target column
+            if target_column == "count":
+                scaler = MinMaxScaler()
+                # Fit the scaler on the train dataset and transform
+                _train_gdf["count"] = scaler.fit_transform(_train_gdf[["count"]])
+                if _test_gdf is not None:
+                    _test_gdf["count"] = scaler.transform(_test_gdf[["count"]])
 
-        # Scale the "count" column to [0, 1] if it is the target column
-        if target_column == "count":
-            scaler = MinMaxScaler()
-            # Fit the scaler on the train dataset and transform
-            _train_gdf["count"] = scaler.fit_transform(_train_gdf[["count"]])
-            if _test_gdf is not None:
-                _test_gdf["count"] = scaler.transform(_test_gdf[["count"]])
+        elif self.type == "trajectory":
+            if self.version == "TTE":
+                _train_gdf = self.train_gdf[["h3_sequence", "duration"]]
+
+                if self.test_gdf is not None:
+                    _test_gdf = self.test_gdf[["h3_sequence", "duration"]]
+                else:
+                    _test_gdf = None
+            elif self.version == "HMC":
+                raise NotImplementedError
+            elif self.version == "all":
+                raise TypeError(
+                    "Could not provide targte labels, as version 'all'\
+                of dataset does not provide one"
+                )
 
         return _train_gdf, _test_gdf
 
@@ -342,3 +472,54 @@ class HuggingFaceDataset(abc.ABC):
 
         gdf_.drop(columns=["geometry"], inplace=True)
         return gdf_
+
+    def _agg_points_to_trajectories(
+        self, gdf: gpd.GeoDataFrame, target_column: str
+    ) -> gpd.GeoDataFrame:
+        """
+        Preprocess the dataset from HuggingFace to trajectories.
+
+        Args:
+            gdf (pd.DataFrame): a dataset to preprocess
+            target_column (str): a column to aggregate trajectories (trip_id)
+
+        Returns:
+            gpd.GeoDataFrame: preprocessed data.
+        """
+        if self.type != "trajectory":
+            raise ValueError("This can be performed only on trajectory data type!")
+
+        _gdf = gdf.copy()
+        tqdm.pandas(desc="Building linestring trajectories")
+
+        _gdf = gdf.sort_values(by=[target_column, "timestamp"]).copy()
+        geometry_col = _gdf.geometry.name
+
+        # Group and aggregate all columns as lists
+        aggregated = _gdf.groupby(target_column).agg(lambda x: x.tolist())
+
+        aggregated[geometry_col] = aggregated[geometry_col].progress_apply(LineString)
+
+        traj_gdf = gpd.GeoDataFrame(aggregated.reset_index(), geometry=geometry_col, crs=_gdf.crs)
+
+        return traj_gdf
+
+    @abc.abstractmethod
+    def _aggregate_trajectories_to_hexes(
+        self,
+        gdf: gpd.GeoDataFrame,
+        resolution: int,
+        version: str,
+    ) -> gpd.GeoDataFrame:
+        """
+        Preprocess the gdf with linestring trajectories to h3 trajectories.
+
+        Args:
+            gdf (gpd.DataFrame): a gdf with prepared linestring.
+            resolution (int) : h3 resolution to regionalize data.
+            version (str): version of dataset.
+
+        Returns:
+            gpd.GeoDataFrame: preprocessed data.
+        """
+        raise NotImplementedError
