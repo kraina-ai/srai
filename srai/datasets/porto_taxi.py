@@ -92,29 +92,70 @@ class PortoTaxiDataset(HuggingFaceDataset):
 
             duration = (timestamps[-1] - timestamps[0]).total_seconds()
 
-            hex_speed_map: dict[str, float] = {}
-            hex_point_counts: dict[str, int] = {}
+            raw_h3_seq = []
+            hex_metadata = []
 
-            for (lon, lat), speed in zip(coords, speeds):
+            for (lon, lat), speed, ts in zip(coords, speeds, timestamps):
                 hex_id = h3.latlng_to_cell(lat, lon, resolution)
-                hex_speed_map[hex_id] = hex_speed_map.get(hex_id, 0) + speed
-                hex_point_counts[hex_id] = hex_point_counts.get(hex_id, 0) + 1
+                raw_h3_seq.append(hex_id)
+                hex_metadata.append(
+                    {
+                        "hex_id": hex_id,
+                        "speed": speed,
+                        "timestamp": ts,
+                    }
+                )
 
-            h3_sequence = list(hex_speed_map)
-            avg_speed_per_hex = [hex_speed_map[h] / hex_point_counts[h] for h in h3_sequence]
+            # Remove consecutive duplicates
+            cleaned_seq = [hex_metadata[0]]
+            for meta in hex_metadata[1:]:
+                if meta["hex_id"] != cleaned_seq[-1]["hex_id"]:
+                    cleaned_seq.append(meta)
+
+            # Interpolate missing hexes and propagate metadata
+            full_seq: list[str] = []
+            speeds_interp: list[float] = []
+            timestamps_interp: list[pd.Timestamp] = []
+
+            for i in range(len(cleaned_seq) - 1):
+                start = cleaned_seq[i]
+                end = cleaned_seq[i + 1]
+                last_known_speed = start["speed"]
+                last_known_ts = start["timestamp"]
+
+                try:
+                    path = h3.grid_path_cells(start["hex_id"], end["hex_id"])
+                    if path:
+                        # Skip first to avoid duplication
+                        if full_seq and path[0] == full_seq[-1]:
+                            path = path[1:]
+                        for h in path:
+                            full_seq.append(h)
+                            speeds_interp.append(last_known_speed)
+                            timestamps_interp.append(last_known_ts)
+                except Exception:
+                    full_seq.append(start["hex_id"])
+                    speeds_interp.append(last_known_speed)
+                    timestamps_interp.append(last_known_ts)
+
+            # Add last
+            last = cleaned_seq[-1]
+            full_seq.append(last["hex_id"])
+            speeds_interp.append(last["speed"])
+            timestamps_interp.append(last["timestamp"])
 
             if version == "TTE":
                 return pd.Series(
                     {
                         "trip_id": row["trip_id"],
                         "duration": duration,
-                        "h3_sequence": h3_sequence,
-                        "avg_speed_per_hex": avg_speed_per_hex,
+                        "h3_sequence": full_seq,
+                        "avg_speed_per_hex": speeds_interp,
+                        "timestamp": timestamps_interp,
                         "day_type": row["day_type"],
                         "call_type": row["call_type"],
                         "taxi_id": row["taxi_id"],
                         "geometry": row.geometry,
-                        "timestamp": row["timestamp"],
                     }
                 )
             elif version == "HMC":
@@ -123,13 +164,13 @@ class PortoTaxiDataset(HuggingFaceDataset):
                 return pd.Series(
                     {
                         "trip_id": row["trip_id"],
-                        "h3_sequence": h3_sequence,
-                        "avg_speed_per_hex": avg_speed_per_hex,
+                        "h3_sequence": full_seq,
+                        "avg_speed_per_hex": speeds_interp,
+                        "timestamp": timestamps_interp,
                         "day_type": row["day_type"],
                         "call_type": row["call_type"],
                         "taxi_id": row["taxi_id"],
                         "geometry": row.geometry,
-                        "timestamp": row["timestamp"],
                     }
                 )
 
