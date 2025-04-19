@@ -1,7 +1,7 @@
 """Base classes for Datasets."""
 
 import abc
-from typing import Optional
+from typing import Literal, Optional
 
 import geopandas as gpd
 import h3
@@ -174,106 +174,76 @@ class HuggingFaceDataset(abc.ABC):
         self.resolution = resolution
         return self.train_gdf, self.test_gdf
 
-    # def train_test_split_bucket_trajectory(
-    #     self,
-    #     trajectory_id_column: str = "trip_id",
-    #     task: Literal["TTE", "HMC"] = "TTE",
-    #     resolution: int = 9,
-    #     test_size: float = 0.2,
-    #     bucket_number: int = 4,
-    # ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    #     """
-    #     Method to generate train/test split from trajectories GeoDataFrame stratified by task
-    #     target_column.
+    def train_test_split_bucket_trajectory(
+        self,
+        trajectory_id_column: str = "trip_id",
+        task: Literal["TTE", "HMC"] = "TTE",
+        test_size: float = 0.2,
+        bucket_number: int = 4,
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Generate train/test split from trajectory GeoDataFrame stratified by task.
 
-    #     Args:
-    #         gdf (gpd.GeoDataFrame): input GeoDataFrame
-    #         trajectory_id_column (str): Column to stratify on.
-    #         task (str): Trajectory task. Determines stratification column (Trajectory duration
-    #               in TTE or trajectory length in HMC). Defaults to TTE.
-    #         resolution (int): H3 resolution. Neccessery for HMC split (performed on trajectory
-    #               length in hexagons). Defaults to 9.
-    #         test_size (float): Percentage of test set. Defaults to 0.2.
-    #         bucket_number (int): Number of bins used to stratify data. Defaults to 4.
+        Args:
+            trajectory_id_column (str): Column identifying each trajectory.
+            task (Literal["TTE", "HMC"]): Task type. Stratifies by duration
+                (TTE) or hex length (HMC).
+            test_size (float): Fraction of data to be used as test set.
+            bucket_number (int): Number of stratification bins.
 
-    #     Returns:
-    #         tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]: Train, Dev, Test splits
-    #               in GeoDataFrames
-    #     """  # noqa: E501, W505
+        Returns:
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
+        """
+        if self.type != "trajectory":
+            raise ValueError("This split can only be performed on trajectory data.")
 
-    # def calculate_trajectory_duration(df: pd.DataFrame) -> float:
-    #     """
-    #     Calculate the duration of a trajectory based on timestamps in a DataFrame.
+        assert self.train_gdf is not None
+        trajectory_id_column = trajectory_id_column or self.target
+        gdf_copy = self.train_gdf.copy()
 
-    #     Args:
-    #     df (pandas.DataFrame): A DataFrame containing a column 'timestamp'
-    #                            with datetime objects.
+        if task == "TTE":
+            self.version = "TTE"
+            # Calculate duration in seconds from timestamps list
+            gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
+                lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
+            )
 
-    #     Returns:
-    #     float: The duration of the trajectory in seconds.
-    #     """
-    #     if df.empty or df["timestamp"].nunique() == 1:
-    #         return 0.0
+        elif task == "HMC":
+            self.version = "HMC"
+            # Calculate trajectory length in unique hexagons
+            gdf_copy["stratify_col"] = gdf_copy["h3_sequence"].apply(lambda seq: len(set(seq)))
 
-    #     min_time = df["timestamp"].min()
-    #     max_time = df["timestamp"].max()
-    #     return float((max_time - min_time).total_seconds())
+        else:
+            raise ValueError(f"Unsupported task type: {task}")
 
-    # if self.type != "trajectory":
-    #     raise ValueError("This split can be performed only on trajectory data!")
+        # Create stratification bins
+        gdf_copy["stratification_bin"] = pd.cut(
+            gdf_copy["stratify_col"], bins=bucket_number, labels=False
+        )
 
-    # trajectory_id_column = trajectory_id_column if trajectory_id_column is not None
-    # else self.target
+        # Prepare stratified sampling
+        trajectory_indices = gdf_copy[trajectory_id_column].unique()
+        duration_bins = (
+            gdf_copy[[trajectory_id_column, "stratification_bin"]]
+            .drop_duplicates()
+            .set_index(trajectory_id_column)["stratification_bin"]
+        )
 
-    # gdf_copy = self.train_gdf.copy()
+        # Perform stratified split
+        train_indices, test_indices = train_test_split(
+            trajectory_indices,
+            test_size=test_size,
+            stratify=duration_bins.loc[trajectory_indices],
+        )
 
-    # if task == "TTE":
-    #     trajectory = (
-    #         gdf_copy.groupby(trajectory_id_column)
-    #         .apply(calculate_trajectory_duration)
-    #         .reset_index(name="stratify_col")
-    #     )
-    # elif self.version == "HMC":
-    #     self.resolution=resolution
-    #     def unique_h3_count(df: pd.DataFrame) -> int:
-    #         h3_cells = set(
-    #             h3.latlng_to_cell(lat, lon, resolution)
-    #             for lon, lat in zip(df.geometry.x, df.geometry.y)
-    #         )
-    #         return len(h3_cells)
-    #     trajectory = (
-    #         gdf_copy.groupby(trajectory_id_column)
-    #         .apply(unique_h3_count)
-    #         .reset_index(name="stratify_col")
-    #     )
-    # gdf_copy = gdf_copy.merge(trajectory, on=trajectory_id_column)
-    # gdf_copy["stratification_bin"] = pd.cut(
-    #     gdf_copy["stratify_col"], bins=bucket_number, labels=False
-    # )
-    # trajectory_indices = gdf_copy[trajectory_id_column].unique()
-    # duration_bins = (
-    #     gdf_copy[[trajectory_id_column, "stratification_bin"]]
-    #     .drop_duplicates()
-    #     .set_index(trajectory_id_column)["stratification_bin"]
-    # )
+        train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
+        test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
 
-    # # TODO: does not seem to be intuitive, maybe user should provide train_size instead
-    # train_indices, test_indices = train_test_split(
-    #     trajectory_indices,
-    #     test_size=test_size * 2,
-    #     stratify=duration_bins.loc[trajectory_indices],
-    # )
-    # # dev_indices, test_indices = train_test_split(
-    # #     test_indices, test_size=0.5, stratify=duration_bins.loc[test_indices]
-    # # )
+        # Assign back to class attributes if needed
+        self.train_gdf = train_gdf
+        self.test_gdf = test_gdf
 
-    # train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
-    # # dev_gdf = gdf_copy[gdf_copy[target_column].isin(dev_indices)]
-    # test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
-    # self.train_gdf=train_gdf
-    # self.test_gdf=test_gdf
-
-    # return self.train_gdf, self.test_gdf
+        return train_gdf, test_gdf
 
     def train_test_split_spatial_points(
         self,

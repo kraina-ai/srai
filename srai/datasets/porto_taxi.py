@@ -106,6 +106,7 @@ class PortoTaxiDataset(HuggingFaceDataset):
             if version == "TTE":
                 return pd.Series(
                     {
+                        "trip_id": row["trip_id"],
                         "duration": duration,
                         "h3_sequence": h3_sequence,
                         "avg_speed_per_hex": avg_speed_per_hex,
@@ -121,6 +122,7 @@ class PortoTaxiDataset(HuggingFaceDataset):
             elif version == "all":
                 return pd.Series(
                     {
+                        "trip_id": row["trip_id"],
                         "h3_sequence": h3_sequence,
                         "avg_speed_per_hex": avg_speed_per_hex,
                         "day_type": row["day_type"],
