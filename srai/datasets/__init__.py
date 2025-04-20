@@ -7,6 +7,7 @@ Datasets can be loaded using .load() method. Some of them may need name of versi
 from ._base import HuggingFaceDataset
 from .airbnb_multicity import AirbnbMulticityDataset
 from .chicago_crime import ChicagoCrimeDataset
+from .geolife import GeolifeDataset
 from .house_sales_in_king_county import HouseSalesInKingCountyDataset
 from .philadelphia_crime import PhiladelphiaCrimeDataset
 from .police_department_incidents import PoliceDepartmentIncidentsDataset
@@ -20,4 +21,5 @@ __all__ = [
     "ChicagoCrimeDataset",
     "PoliceDepartmentIncidentsDataset",
     "PortoTaxiDataset",
+    "GeolifeDataset",
 ]

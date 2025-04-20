@@ -1,9 +1,10 @@
 """
-Porto Taxi dataset loader.
+Geolife dataset loader.
 
-This module contains Porto Taxi Dataset.
+This module contains Geolife Dataset.
 """
 
+from collections import Counter
 from typing import Optional
 
 import geopandas as gpd
@@ -15,28 +16,22 @@ from srai.constants import WGS84_CRS
 from srai.datasets import HuggingFaceDataset
 
 
-class PortoTaxiDataset(HuggingFaceDataset):
+class GeolifeDataset(HuggingFaceDataset):
     """
-    Porto Taxi dataset.
+    Geolife dataset.
 
-    The dataset covers a year of trajectory data for taxis in Porto, Portugal
-    Each ride is categorized as:
-    A) taxi central based,
-    B) stand-based or
-    C) non-taxi central based.
-    Each data point represents a completed trip initiated through
-    the dispatch central, a taxi stand, or a random street.
+    GPS trajectories that were collected in (Microsoft Research Asia) Geolife Project by 182 users
     """
 
     def __init__(self) -> None:
         """Create the dataset."""
-        numerical_columns = ["speed"]
-        categorical_columns = ["call_type", "origin_call", "origin_stand", "day_type"]
+        numerical_columns = ["altitude"]
+        categorical_columns = ["mode"]
         type = "trajectory"
-        target = "trip_id"
+        target = "trajectory_id"
         # target = None
         super().__init__(
-            "kraina/porto_taxi",
+            "kraina/geolife",
             type=type,
             numerical_columns=numerical_columns,
             categorical_columns=categorical_columns,
@@ -73,36 +68,36 @@ class PortoTaxiDataset(HuggingFaceDataset):
             Args:
                 row (pd.Series): A row from a GeoDataFrame with at least the following fields:
                     - geometry (shapely.geometry.LineString)
-                    - speed (list[float])
                     - timestamp (list[pd.Timestamp])
-                    - day_type (str)
-                    - call_type (str)
-                    - taxi_id (int or str)
+                    - mode (list[str])
+                    - altitude (list[float])
 
             Returns:
                 pd.Series: A new series containing:
                     - duration (float): Duration of the trajectory in seconds.
                     - h3_sequence (list[str]): List of H3 hex IDs visited.
-                    - avg_speed_per_hex (list[float]): Average speed per H3 hex.
-                    - day_type, call_type, taxi_id, geometry: Carried over from input.
+                    - mode
+                    - avg_altitude
             """
             coords = row.geometry.coords
-            speeds = row["speed"]
+            altitudes = row["altitude"]
             timestamps = row["timestamp"]
+            mode = row["mode"]
 
             duration = (timestamps[-1] - timestamps[0]).total_seconds()
 
             raw_h3_seq = []
             hex_metadata = []
 
-            for (lon, lat), speed, ts in zip(coords, speeds, timestamps):
+            for (lon, lat), alt, ts, m in zip(coords, altitudes, timestamps, mode):
                 hex_id = h3.latlng_to_cell(lat, lon, resolution)
                 raw_h3_seq.append(hex_id)
                 hex_metadata.append(
                     {
                         "hex_id": hex_id,
-                        "speed": speed,
+                        "altitude": alt,
                         "timestamp": ts,
+                        "mode": m,
                     }
                 )
 
@@ -114,14 +109,16 @@ class PortoTaxiDataset(HuggingFaceDataset):
 
             # Interpolate missing hexes and propagate metadata
             full_seq: list[str] = []
-            speeds_interp: list[float] = []
+            altitude_interp: list[float] = []
             timestamps_interp: list[pd.Timestamp] = []
+            mode_interp: list[str] = []
 
             for i in range(len(cleaned_seq) - 1):
                 start = cleaned_seq[i]
                 end = cleaned_seq[i + 1]
-                last_known_speed = start["speed"]
+                last_known_altitude = start["altitude"]
                 last_known_ts = start["timestamp"]
+                last_known_mode = start["mode"]
 
                 try:
                     path = h3.grid_path_cells(start["hex_id"], end["hex_id"])
@@ -131,32 +128,34 @@ class PortoTaxiDataset(HuggingFaceDataset):
                             path = path[1:]
                         for h in path:
                             full_seq.append(h)
-                            speeds_interp.append(last_known_speed)
+                            altitude_interp.append(last_known_altitude)
                             timestamps_interp.append(last_known_ts)
+                            mode_interp.append(last_known_mode)
                 except Exception:
                     full_seq.append(start["hex_id"])
-                    speeds_interp.append(last_known_speed)
+                    altitude_interp.append(last_known_altitude)
                     timestamps_interp.append(last_known_ts)
+                    mode_interp.append(last_known_mode)
 
             # Add last
             last = cleaned_seq[-1]
             full_seq.append(last["hex_id"])
-            speeds_interp.append(last["speed"])
+            altitude_interp.append(last["altitude"])
             timestamps_interp.append(last["timestamp"])
+            mode_interp.append(last["mode"])
 
             res = {
-                "trip_id": row["trip_id"],
+                "user_id": row["user_id"],
+                "trajectory_id": row["trajectory_id"],
                 "h3_sequence": full_seq,
-                "avg_speed_per_hex": speeds_interp,
+                "avg_altitude_per_hex": altitude_interp,
                 "timestamp": timestamps_interp,
-                "day_type": row["day_type"],
-                "call_type": row["call_type"],
-                "taxi_id": row["taxi_id"],
                 "geometry": row.geometry,
             }
 
             if version == "TTE":
                 res["duration"] = duration
+                res["mode"] = [Counter([m]).most_common(1)[0][0] for m in mode_interp]
             elif version == "HMC":
                 split_idx = int(len(full_seq) * 0.85)
                 if split_idx == len(full_seq):
@@ -164,6 +163,7 @@ class PortoTaxiDataset(HuggingFaceDataset):
                 del res["h3_sequence"]
                 res["h3_sequence_x"] = full_seq[:split_idx]
                 res["h3_sequence_y"] = full_seq[split_idx:]
+                res["mode"] = mode_interp
 
             return pd.Series(res)
 
@@ -207,7 +207,7 @@ class PortoTaxiDataset(HuggingFaceDataset):
     def load(
         self,
         hf_token: Optional[str] = None,
-        version: Optional[str] = "TTE",
+        version: Optional[str] = "HMC",
         resolution: Optional[int] = None,
     ) -> dict[str, gpd.GeoDataFrame]:
         """

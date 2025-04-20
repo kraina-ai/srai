@@ -386,17 +386,17 @@ class HuggingFaceDataset(abc.ABC):
 
         elif self.type == "trajectory":
             if self.version == "TTE":
-                _train_gdf = self.train_gdf[["h3_sequence", "duration"]]
+                _train_gdf = self.train_gdf[[self.target, "h3_sequence", "duration"]]
 
                 if self.test_gdf is not None:
-                    _test_gdf = self.test_gdf[["h3_sequence", "duration"]]
+                    _test_gdf = self.test_gdf[[self.target, "h3_sequence", "duration"]]
                 else:
                     _test_gdf = None
             elif self.version == "HMC":
-                _train_gdf = self.train_gdf[["h3_sequence_x", "h3_sequence_y"]]
+                _train_gdf = self.train_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
 
                 if self.test_gdf is not None:
-                    _test_gdf = self.test_gdf[["h3_sequence_x", "h3_sequence_y"]]
+                    _test_gdf = self.test_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
                 else:
                     _test_gdf = None
             elif self.version == "all":
