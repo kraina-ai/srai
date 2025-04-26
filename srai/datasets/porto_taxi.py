@@ -12,10 +12,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import TrajectoryDataset
 
 
-class PortoTaxiDataset(HuggingFaceDataset):
+class PortoTaxiDataset(TrajectoryDataset):
     """
     Porto Taxi dataset.
 

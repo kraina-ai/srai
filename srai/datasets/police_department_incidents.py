@@ -10,10 +10,10 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 
-class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
+class PoliceDepartmentIncidentsDataset(PointDataset):
     """
     The San Francisco Police Department's (SFPD) Incident Report Datatset.
 

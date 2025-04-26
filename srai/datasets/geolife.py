@@ -13,10 +13,10 @@ import pandas as pd
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import TrajectoryDataset
 
 
-class GeolifeDataset(HuggingFaceDataset):
+class GeolifeDataset(TrajectoryDataset):
     """
     Geolife dataset.
 
@@ -178,7 +178,7 @@ class GeolifeDataset(HuggingFaceDataset):
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
-            data: Data of Chicago Crime dataset.
+            data: Data of Geolife dataset.
             version: version of a dataset
 
         Returns:
