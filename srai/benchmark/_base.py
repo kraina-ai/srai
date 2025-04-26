@@ -22,7 +22,7 @@ class BaseEvaluator(abc.ABC):
     @abc.abstractmethod
     def evaluate(
         self,
-        dataset: sds.HuggingFaceDataset,
+        dataset: sds.PointDataset,
         predictions: np.ndarray,
         log_metrics: bool = True,
         hf_token: Optional[str] = None,

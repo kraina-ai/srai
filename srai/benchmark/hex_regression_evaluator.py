@@ -23,7 +23,7 @@ class HexRegressionEvaluator(BaseEvaluator):
 
     def evaluate(
         self,
-        dataset: sds.HuggingFaceDataset,
+        dataset: sds.PointDataset,
         predictions: np.ndarray,
         log_metrics: bool = True,
         hf_token: Optional[str] = None,
@@ -35,7 +35,7 @@ class HexRegressionEvaluator(BaseEvaluator):
         This regression evaluator is designed for H3 grid predictions.
 
         Args:
-            dataset (sds.HuggingFaceDataset): Dataset to evaluate.
+            dataset (sds.PointDataset): Dataset to evaluate.
             predictions (np.ndarray): Predictions returned by your model. Should match regions_id.
             log_metrics (bool, optional): If True, logs metrics to the console. Defaults to True.
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to HF
