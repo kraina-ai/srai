@@ -196,9 +196,6 @@ class PointDataset(abc.ABC):
         Returns:
             tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
         """  # noqa: W505, E501, D205
-        if self.type != "point":
-            raise ValueError("This split can be performed only on Points data type!")
-
         if self.train_gdf is None:
             raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
         gdf = self.train_gdf
@@ -445,9 +442,6 @@ class TrajectoryDataset(abc.ABC):
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
         """
-        if self.type != "trajectory":
-            raise ValueError("This split can only be performed on trajectory data.")
-
         assert self.train_gdf is not None
         trajectory_id_column = trajectory_id_column or self.target
         gdf_copy = self.train_gdf.copy()
@@ -549,8 +543,8 @@ class TrajectoryDataset(abc.ABC):
                 _test_gdf = None
         elif self.version == "all":
             raise TypeError(
-                "Could not provide targte labels, as version 'all'\
-            of dataset does not provide one"
+                "Could not provide target labels, as version 'all'\
+            of dataset does not provide one."
             )
 
         return _train_gdf, _test_gdf

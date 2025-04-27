@@ -2,5 +2,6 @@
 
 from ._base import BaseEvaluator
 from .hex_regression_evaluator import HexRegressionEvaluator
+from .trajectory_regression_evaluator import TrajectoryRegressionEvaluator
 
-__all__ = ["BaseEvaluator", "HexRegressionEvaluator"]
+__all__ = ["BaseEvaluator", "HexRegressionEvaluator", "TrajectoryRegressionEvaluator"]
