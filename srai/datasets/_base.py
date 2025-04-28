@@ -16,7 +16,7 @@ from tqdm import tqdm
 from srai.regionalizers import H3Regionalizer
 
 
-class PointDataset(abc.ABC):
+class HuggingFaceDataset(abc.ABC):
     """Abstract class for HuggingFace datasets."""
 
     def __init__(
@@ -73,7 +73,8 @@ class PointDataset(abc.ABC):
         dataset_name = self.path
         self.version = version
         if version is not None and len(version) == 1:
-            self.resolution = int(version)
+            if self.resolution is None:
+                self.resolution = int(version)
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
@@ -86,6 +87,51 @@ class PointDataset(abc.ABC):
             result["test"] = processed_test
 
         return result
+
+    @abc.abstractmethod
+    def get_h3_with_labels(
+        self,
+        resolution: Optional[int] = None,
+        target_column: Optional[str] = None,
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+        """
+        Returns indexes with target labels from the dataset depending on dataset and task type.
+
+        Args:
+            resolution (int): h3 resolution to regionalize data.
+            train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
+            test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
+            target_column (Optional[str], optional): Target column name.Defaults to None.
+
+        Returns:
+            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test indexes with target \
+                labels in GeoDataFrames
+        """
+        raise NotImplementedError
+
+
+class PointDataset(HuggingFaceDataset):
+    """Abstract class for HuggingFace datasets with Point Data."""
+
+    def __init__(
+        self,
+        path: str,
+        version: Optional[str] = None,
+        type: Optional[str] = None,
+        numerical_columns: Optional[list[str]] = None,
+        categorical_columns: Optional[list[str]] = None,
+        target: Optional[str] = None,
+        resolution: Optional[int] = None,
+    ) -> None:
+        self.path = path
+        self.version = version
+        self.numerical_columns = numerical_columns
+        self.categorical_columns = categorical_columns
+        self.target = target
+        self.type = type
+        self.train_gdf = None
+        self.test_gdf = None
+        self.resolution = resolution
 
     def train_test_split_bucket_regression(
         self,
@@ -351,8 +397,8 @@ class PointDataset(abc.ABC):
         return gdf_
 
 
-class TrajectoryDataset(abc.ABC):
-    """Abstract class for HuggingFace datasets."""
+class TrajectoryDataset(HuggingFaceDataset):
+    """Abstract class for HuggingFace datasets with Trajectory data."""
 
     def __init__(
         self,
@@ -373,52 +419,6 @@ class TrajectoryDataset(abc.ABC):
         self.train_gdf = None
         self.test_gdf = None
         self.resolution = resolution
-
-    @abc.abstractmethod
-    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
-        """
-        Preprocess the dataset from HuggingFace.
-
-        Args:
-            data (pd.DataFrame): a dataset to preprocess
-            version (str, optional): version of dataset
-
-        Returns:
-            gpd.GeoDataFrame: preprocessed data.
-        """
-        raise NotImplementedError
-
-    def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = None
-    ) -> dict[str, gpd.GeoDataFrame]:
-        """
-        Method to load dataset.
-
-        Args:
-            hf_token (str, optional): If needed, a User Access Token needed to authenticate to
-                the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
-                Defaults to None.
-            version (str, optional): version of a dataset
-
-        Returns:
-            dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
-                 contain keys "train" and "test" if available.
-        """
-        result = {}
-        dataset_name = self.path
-        self.version = version
-        data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
-        train = data["train"].to_pandas()
-        processed_train = self._preprocessing(train)
-        self.train_gdf = processed_train
-        result["train"] = processed_train
-        if "test" in data:
-            test = data["test"].to_pandas()
-            processed_test = self._preprocessing(test)
-            self.test_gdf = processed_test
-            result["test"] = processed_test
-
-        return result
 
     def train_test_split_bucket_trajectory(
         self,
