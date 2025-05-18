@@ -131,6 +131,7 @@ class PointDataset(HuggingFaceDataset):
         self.type = type
         self.train_gdf = None
         self.test_gdf = None
+        self.dev_gdf = None
         self.resolution = resolution
 
     def train_test_split_bucket_regression(
@@ -140,6 +141,7 @@ class PointDataset(HuggingFaceDataset):
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
+        dev: bool = False,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
 
@@ -152,6 +154,7 @@ class PointDataset(HuggingFaceDataset):
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
             random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
                 Pass an int for reproducible output across multiple function. Defaults to None.
+            dev (bool): If True, creates a dev split from existing train split and assigns it to self.dev_gdf.
 
         Returns:
             tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
@@ -201,21 +204,33 @@ class PointDataset(HuggingFaceDataset):
         #     test_size=0.5,
         #     stratify=gdf_.iloc[test_indices].bucket,
         # )
-        train = gdf_.iloc[train_indices]
-        test = gdf_.iloc[test_indices]
+        train_gdf = gdf_.iloc[train_indices]
+        test_gdf = gdf_.iloc[test_indices]
         if target_column == "count":
-            train_hex_indexes = train["region_id"].unique()
-            test_hex_indexes = test["region_id"].unique()
+            train_hex_indexes = train_gdf["region_id"].unique()
+            test_hex_indexes = test_gdf["region_id"].unique()
             train = joined_gdf[joined_gdf["h3_index"].isin(train_hex_indexes)]
             test = joined_gdf[joined_gdf["h3_index"].isin(test_hex_indexes)]
             train = train.drop(columns=["h3_index"])
             test = test.drop(columns=["h3_index"])
 
         # return train, test  # , gdf_.iloc[dev_indices]
-        self.train_gdf = train
-        self.test_gdf = test
+        if not dev:
+            self.train_gdf = train_gdf
+            self.test_gdf = test_gdf
+            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+                   test len: {len(self.test_gdf)}")
+        else:
+            self.train_gdf = train_gdf
+            self.dev_gdf = test_gdf
+            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
+                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
+                    test len: {len(self.test_gdf)}")
+
+        # self.train_gdf = train
+        # self.test_gdf = test
         self.resolution = resolution
-        return self.train_gdf, self.test_gdf
+        return train_gdf, test_gdf
 
     def train_test_split_spatial_points(
         self,
@@ -223,6 +238,7 @@ class PointDataset(HuggingFaceDataset):
         resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
         resolution_subsampling: int = 1,
         random_state: Optional[int] = None,
+        dev: bool = False,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Method to generate train and test split from GeoDataFrame, based on the spatial h3
@@ -235,6 +251,7 @@ class PointDataset(HuggingFaceDataset):
                 data for stratification. Defaults to 1.
             random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
                 Pass an int for reproducible output across multiple function. Defaults to None.
+            dev (bool): If True, creates a dev split from existing train split and assigns it to self.dev_gdf.
 
         Raises:
             ValueError: If type of data is not Points.
@@ -289,11 +306,23 @@ class PointDataset(HuggingFaceDataset):
         #    gdf_.iloc[train_indices],
         #   gdf_.iloc[test_indices],
         # )
-        self.train_gdf = gdf_.iloc[train_indices]
-        self.test_gdf = gdf_.iloc[test_indices]
+        train_gdf = gdf_.iloc[train_indices]
+        test_gdf = gdf_.iloc[test_indices]
+        # self.train_gdf = gdf_.iloc[train_indices]
+        # self.test_gdf = gdf_.iloc[test_indices]
         self.resolution = resolution
-
-        return self.train_gdf, self.test_gdf
+        if not dev:
+            self.train_gdf = train_gdf
+            self.test_gdf = test_gdf
+            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+                   test len: {len(self.test_gdf)}")
+        else:
+            self.train_gdf = train_gdf
+            self.dev_gdf = test_gdf
+            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
+                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
+                    test len: {len(self.test_gdf)}")
+        return train_gdf, test_gdf
         # , gdf_.iloc[dev_indices],
 
     def get_h3_with_labels(
@@ -426,6 +455,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         task: Literal["TTE", "HMC"] = "TTE",
         test_size: float = 0.2,
         bucket_number: int = 4,
+        dev: bool = False,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
         Generate train/test split from trajectory GeoDataFrame stratified by task.
@@ -438,6 +468,9 @@ class TrajectoryDataset(HuggingFaceDataset):
                 (TTE) or hex length (HMC).
             test_size (float): Fraction of data to be used as test set.
             bucket_number (int): Number of stratification bins.
+            dev (bool): If True, creates a dev split from existing train split and assigns \
+                it to self.dev_gdf.
+
 
         Returns:
             Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
@@ -449,9 +482,13 @@ class TrajectoryDataset(HuggingFaceDataset):
         if task == "TTE":
             self.version = "TTE"
             # Calculate duration in seconds from timestamps list
-            gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
-                lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
-            )
+            # gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
+            #     lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
+            # )
+            if "duration" in gdf_copy.columns:
+                gdf_copy["stratify_col"] = gdf_copy["duration"]
+            else:
+                raise ValueError("Duration column does not exist. Can't stratify it.")
 
         elif task == "HMC":
             self.version = "HMC"
@@ -481,10 +518,20 @@ class TrajectoryDataset(HuggingFaceDataset):
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
         test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
 
-        self.train_gdf = train_gdf
-        self.test_gdf = test_gdf
-
-        return self.train_gdf, self.test_gdf
+        train_gdf.drop(columns=["stratification_bin", "stratify_col"], inplace=True)
+        test_gdf.drop(columns=["stratification_bin", "stratify_col"], inplace=True)
+        if not dev:
+            self.train_gdf = train_gdf
+            self.test_gdf = test_gdf
+            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+                   test len: {len(self.test_gdf)}")
+        else:
+            self.train_gdf = train_gdf
+            self.dev_gdf = test_gdf
+            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
+                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
+                    test len: {len(self.test_gdf)}")
+        return train_gdf, test_gdf
 
     def get_h3_with_labels(
         self,
@@ -492,22 +539,21 @@ class TrajectoryDataset(HuggingFaceDataset):
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
-        Returns h3 indexes with target labels from the dataset.
+        Returns ids, h3 indexes sequences, with target labels from the dataset.
 
-        Points are aggregated to hexes and target column values are averaged or if target column \
-        is None, then the number of points is calculted within a hex and scaled to [0,1].
+        Points are aggregated to hex trajectories and target column values are calculated \
+            for each trajectory (time duration for TTE task, future movement sequence for HMC task).
 
         Args:
             resolution (int): h3 resolution to regionalize data.
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
-            target_column (Optional[str], optional): Target column name. If None, aggregates h3 \
-                on basis of number of points within a hex of given resolution. In this case values \
-                     are normalized to [0,1] scale. Defaults to None.
+            target_column (Optional[str], optional): Target column name. In trajectories it is\
+                 usually an id of trajectory/trip.
 
         Returns:
-            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes with target \
-                labels in GeoDataFrames
+            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes sequences with \
+                target labels in GeoDataFrames
         """
         # if target_column is None:
         #     target_column = "count"

@@ -95,7 +95,8 @@ class HexRegressionEvaluator(BaseEvaluator):
         if missing_h3_indexes:
             logging.info(
                 f"{len(missing_h3_indexes)} region_ids from given predictions have no matching h3\
-                    indexes in test set and will be skipped during the evaluation."
+                    indexes in test set and will be skipped during the evaluation. Measuring for \
+                          {len(available_h3_indexes)} indexes."
             )
 
         # Reorder labels and predictions accordingly
