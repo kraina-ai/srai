@@ -73,7 +73,7 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         if h3_test is None:
             raise ValueError("The function 'get_h3_with_labels' returned None for h3_test.")
         else:
-            trip_indexes = h3_test["trip_id"].to_list()
+            trip_indexes = [int(idx) for idx in h3_test["trip_id"].to_list()]
             labels = h3_test["duration"].to_numpy()
 
         trip_to_prediction = {
@@ -85,21 +85,27 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         missing_trip_indexes = set(trip_indexes) - set(available_trip_indexes)
         if missing_trip_indexes:
             logging.info(f"{len(missing_trip_indexes)} trip_ids have no matching trip indexes in\
-                         the test set and will be skipped in evaluation.")
+                         the test set and will be skipped in evaluation. Measuring for \
+                          {len(available_trip_indexes)} indexes.")
 
         # Reorder labels and predictions accordingly
-        filtered_labels = np.array(
-            [label for idx, label in zip(trip_indexes, labels) if idx in trip_to_prediction]
-        )
-        ordered_predictions = np.array([trip_to_prediction[idx] for idx in available_trip_indexes])
+        if len(missing_trip_indexes) != len(trip_ids):
+            filtered_labels = np.array(
+                [label for idx, label in zip(trip_indexes, labels) if idx in trip_to_prediction]
+            )
+            ordered_predictions = np.array(
+                [trip_to_prediction[idx] for idx in available_trip_indexes]
+            )
 
-        trip_ids[:] = available_trip_indexes
-        predictions = ordered_predictions
+            trip_ids[:] = available_trip_indexes
+            predictions = ordered_predictions
 
-        metrics = self._compute_metrics(predictions, filtered_labels)
-        if log_metrics:
-            self._log_metrics(metrics)
-        return metrics
+            metrics = self._compute_metrics(predictions, filtered_labels)
+            if log_metrics:
+                self._log_metrics(metrics)
+            return metrics
+        else:
+            raise ValueError("No matching trip ids found in test dataset")
 
     def _compute_metrics(self, predictions: np.ndarray, labels: np.ndarray) -> dict[str, float]:
         """
