@@ -46,7 +46,7 @@ def write_file(file_path: Path) -> None:
                         nbformat.v4.new_markdown_cell(
                             RUN_IN_COLAB_CELL_MARKDOWN.format(relative_file_path=root_path)
                         ),
-                        *nb["cells"][i:-1],
+                        *nb["cells"][i:],
                     )
                     break
         else:
