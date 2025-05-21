@@ -10,6 +10,7 @@ from shapely.geometry import LineString, Polygon
 from srai.constants import FEATURES_INDEX, REGIONS_INDEX
 from srai.embedders import Highway2VecEmbedder
 from srai.exceptions import ModelNotFitException
+from tests.embedders.conftest import TRAINER_KWARGS
 
 
 @pytest.fixture  # type: ignore
@@ -65,9 +66,9 @@ def highway2vec_embeddings() -> pd.DataFrame:
     """Get features embedded."""
     embeddings = np.array(
         [
-            [-0.019932, 0.027169, -0.031977, -0.000582],
-            [0.236779, -0.258233, 0.051689, 0.098861],
-            [0.236779, -0.258233, 0.051689, 0.098861],
+            [-0.103225, 0.125734, 0.081541, 0.117882],
+            [0.124697, -0.205139, 0.128667, 0.142849],
+            [0.124697, -0.205139, 0.128667, 0.142849],
         ],
         dtype=np.float32,
     )
@@ -101,7 +102,9 @@ def test_embedder_on_correct_input(
     embedder = Highway2VecEmbedder(embedding_size=4)
 
     seed_everything(42)
-    embedder.fit(highway2vec_regions, highway2vec_features, highway2vec_joint)
+    embedder.fit(
+        highway2vec_regions, highway2vec_features, highway2vec_joint, trainer_kwargs=TRAINER_KWARGS
+    )
     features_embedded = embedder.transform(
         highway2vec_regions, highway2vec_features, highway2vec_joint
     ).to_dataframe()
@@ -109,6 +112,6 @@ def test_embedder_on_correct_input(
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(
-        highway2vec_regions, highway2vec_features, highway2vec_joint
+        highway2vec_regions, highway2vec_features, highway2vec_joint, trainer_kwargs=TRAINER_KWARGS
     ).to_dataframe()
     pd.testing.assert_frame_equal(features_embedded, highway2vec_embeddings, atol=1e-3)

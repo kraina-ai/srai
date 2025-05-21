@@ -13,6 +13,7 @@ from shapely.geometry import Polygon
 from srai.constants import REGIONS_INDEX
 from srai.embedders import GTFS2VecEmbedder
 from srai.exceptions import ModelNotFitException
+from tests.embedders.conftest import TRAINER_KWARGS
 
 
 @pytest.fixture  # type: ignore
@@ -82,10 +83,10 @@ def features_embedded() -> pd.DataFrame:
     """Get features embedded."""
     embeddings = np.array(
         [
-            [0.642446, 0.001230, -0.038590],
-            [0.960088, 0.433973, 0.401301],
-            [0.224951, -0.135296, -0.157667],
-            [0.782488, 0.212641, 0.177253],
+            [0.600297, -0.022049, -0.057144],
+            [0.966431, 0.439312, 0.409587],
+            [0.191470, -0.154228, -0.173722],
+            [0.742529, 0.190458, 0.159326],
         ],
         dtype=np.float32,
     )
@@ -225,12 +226,14 @@ def test_embedder(
     embedder = GTFS2VecEmbedder(hidden_size=2, embedding_size=4, skip_autoencoder=not embedding)
 
     seed_everything(42)
-    embedder.fit(regions_gdf, features_gdf, joint_gdf)
+    embedder.fit(regions_gdf, features_gdf, joint_gdf, trainer_kwargs=TRAINER_KWARGS)
     features_embedded = embedder.transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
 
     pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
 
     seed_everything(42)
-    features_embedded = embedder.fit_transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
+    features_embedded = embedder.fit_transform(
+        regions_gdf, features_gdf, joint_gdf, trainer_kwargs=TRAINER_KWARGS
+    ).to_dataframe()
 
     pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)

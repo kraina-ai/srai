@@ -103,6 +103,7 @@ class GTFS2VecEmbedder(Embedder):
         regions: VALID_DATA_INPUT,
         features: VALID_DATA_INPUT,
         joint: VALID_DATA_INPUT,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit model to a given data.
@@ -111,6 +112,7 @@ class GTFS2VecEmbedder(Embedder):
             regions (VALID_DATA_INPUT): Region indexes and geometries.
             features (VALID_DATA_INPUT): Feature indexes, geometries and feature values.
             joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
+            trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Raises:
             ValueError: If any of the gdfs index names is None.
@@ -136,6 +138,7 @@ class GTFS2VecEmbedder(Embedder):
         regions: VALID_DATA_INPUT,
         features: VALID_DATA_INPUT,
         joint: VALID_DATA_INPUT,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> ParquetDataTable:
         """
         Fit model and transform a given data.
@@ -144,6 +147,7 @@ class GTFS2VecEmbedder(Embedder):
             regions (VALID_DATA_INPUT): Region indexes and geometries.
             features (VALID_DATA_INPUT): Feature indexes, geometries and feature values.
             joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
+            trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Returns:
             ParquetDataTable: Embedding and geometry index for each region in regions.
@@ -172,7 +176,7 @@ class GTFS2VecEmbedder(Embedder):
         if self._skip_autoencoder:
             return ParquetDataTable.from_dataframe(gtfs_features, result_parquet_path)
 
-        self._model = self._train_model_unsupervised(gtfs_features)
+        self._model = self._train_model_unsupervised(gtfs_features, trainer_kwargs)
         embedded_gtfs_features = self._embed(gtfs_features)
         return ParquetDataTable.from_dataframe(embedded_gtfs_features, result_parquet_path)
 
@@ -266,12 +270,17 @@ class GTFS2VecEmbedder(Embedder):
 
         return features
 
-    def _train_model_unsupervised(self, features: pd.DataFrame) -> GTFS2VecModel:
+    def _train_model_unsupervised(
+        self,
+        features: pd.DataFrame,
+        trainer_kwargs: Optional[dict[str, Any]] = None,
+    ) -> GTFS2VecModel:
         """
         Train model unsupervised.
 
         Args:
             features (pd.DataFrame): Features.
+            trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
         """
         import pytorch_lightning as pl
         from torch.utils.data import DataLoader
@@ -283,7 +292,11 @@ class GTFS2VecEmbedder(Embedder):
         )
         X = features.to_numpy().astype(np.float32)
         x_dataloader = DataLoader(X, batch_size=24, shuffle=True, num_workers=4)
-        trainer = pl.Trainer(max_epochs=10)
+
+        trainer_kwargs = trainer_kwargs or {}
+        if "max_epochs" not in trainer_kwargs:
+            trainer_kwargs["max_epochs"] = 10
+        trainer = pl.Trainer(**trainer_kwargs)
 
         trainer.fit(model, x_dataloader)
 
