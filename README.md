@@ -61,6 +61,58 @@ Right now, `srai` provides a toolset for data download and processing sufficient
 
 For `srai` integration into full [kedro](https://kedro.org/) pipeline, see [this project](https://github.com/Calychas/highway2vec_remaster/) by [@Calychas](https://github.com/Calychas).
 
+## Spatial Representation Tools for Geospatial Analysis
+
+This section introduces libraries and tools for geospatial analysis, specifically designed for working with spatial data such as OpenStreetMap (OSM) data, road networks, and geospatial embeddings. For better understanding, see the comparison of available geospatial libraries and their features:
+
+### 1. **TorchGeo**
+   - **TorchGeo** is a comprehensive framework for deep learning-based geospatial data processing. It provides tools for working with geospatial data like satellite images and aerial photos, making it an essential library for remote sensing and environmental analysis.
+   - **Link**: [TorchGeo Documentation](https://torchgeo.readthedocs.io/en/latest/)
+   - **Key Features**:
+     - Integration with PyTorch for easy model training.
+     - Supports various types of geospatial data (e.g., satellite imagery, point clouds).
+     - Built-in transformers for augmenting geospatial data.
+   - **Alternatives**: TorchGeo integrates with several alternatives, such as:
+     - **Rasterio** for raster data processing.
+     - **GeoPandas** for general-purpose geospatial data manipulation.
+
+### 2. **GeoPandas**
+   - **GeoPandas** is an open-source library that makes working with geospatial data in Python easy. It extends the Pandas library to support geospatial data types like geometry, and it provides efficient methods for spatial operations.
+   - **Link**: [GeoPandas Documentation](https://geopandas.org/)
+   - **Key Features**:
+     - Simplifies the analysis of geospatial data in Python.
+     - Easily integrates with other geospatial libraries such as Shapely and Fiona.
+     - Compatible with several spatial file formats, including shapefiles, GeoJSON, and more.
+
+### 3. **PyTorch Geometric (PyG)**
+   - **PyTorch Geometric** provides tools for deep learning on irregularly structured data such as graphs, point clouds, and other spatial data types. This is particularly useful for analyzing spatial networks or point clouds.
+   - **Link**: [PyTorch Geometric Documentation](https://pytorch-geometric.readthedocs.io/en/latest/)
+   - **Key Features**:
+     - Focus on graph-based data and spatial graph neural networks (GNN).
+     - Built on top of PyTorch, so it integrates smoothly with deep learning models.
+     - High scalability for large datasets.
+
+### 4. **H3 (Uber's H3 Library)**
+   - **H3** is a geospatial indexing system developed by Uber that partitions the Earth's surface into hexagons. It is highly efficient for spatial indexing, mapping, and regional analysis.
+   - **Link**: [H3 GitHub Repository](https://github.com/uber/h3)
+   - **Key Features**:
+     - Converts geographical coordinates into H3 indices for efficient storage and querying.
+     - Supports geospatial operations such as distance calculation, containment, and neighbor querying.
+     - Ideal for large-scale spatial data applications.
+
+---
+
+### Choosing the Right Tool
+When deciding on the appropriate library for your project, consider the following factors:
+
+- **Scale of Data**: Libraries like **TorchGeo** and **PyTorch Geometric** are better suited for large-scale data and deep learning applications.
+- **Type of Data**: If your focus is on general geospatial data (such as vector data), **GeoPandas** will be more suitable.
+- **Specific Use Case**: For specialized tasks like geospatial indexing or partitioning (e.g., large-scale mapping or spatial indexing), **H3** provides a great solution.
+
+This section provides an overview of several tools in the ecosystem of geospatial analysis. Choose the right one based on your specific needs.
+
+
+
 ## Installation
 
 To install `srai` simply run:
