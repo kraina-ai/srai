@@ -146,60 +146,6 @@ class OSMPbfLoader(OSMLoader):
 
         return features_gdf
 
-    def load_to_geoparquet(
-        self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-        tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
-        ignore_cache: bool = False,
-        explode_tags: bool = True,
-        keep_all_tags: bool = False,
-    ) -> Path:
-        """
-        Load OSM features with specified tags for a given area and save it to geoparquet file.
-
-        Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
-            tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
-                specifying which tags to download.
-                The keys should be OSM tags (e.g. `building`, `amenity`).
-                The values should either be `True` for retrieving all objects with the tag,
-                string for retrieving a single tag-value pair
-                or list of strings for retrieving all values specified in the list.
-                `tags={'leisure': 'park}` would return parks from the area.
-                `tags={'leisure': 'park, 'amenity': True, 'shop': ['bakery', 'bicycle']}`
-                would return parks, all amenity types, bakeries and bicycle shops.
-            ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
-                Defaults to False.
-            explode_tags: (bool, optional): Whether to split OSM tags into multiple columns or keep
-                them in a single dict. Defaults to True.
-            keep_all_tags: (bool, optional): Whether to keep all tags related to the element,
-                or return only those defined in the `tags_filter`. When True, will override
-                the optional grouping defined in the `tags_filter`. Defaults to False.
-
-        Returns:
-            Path: Path to the saved GeoParquet file.
-        """
-        area_wgs84 = self._prepare_area_gdf(area)
-
-        pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
-
-        geoparquet_file_path: Path
-
-        if self.pbf_file is not None:
-            geoparquet_file_path = pbf_reader.convert_pbf_to_parquet(
-                pbf_path=self.pbf_file,
-                keep_all_tags=keep_all_tags,
-                explode_tags=explode_tags,
-                ignore_cache=ignore_cache,
-            )
-        else:
-            geoparquet_file_path = pbf_reader.convert_geometry_to_parquet(
-                keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
-            )
-
-        return geoparquet_file_path
-
     def _get_pbf_file_reader(
         self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
     ) -> "PbfFileReader":

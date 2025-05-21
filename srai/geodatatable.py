@@ -240,7 +240,7 @@ class ParquetDataTable(Sized):
 
         return (
             Path(parquet_path),
-            cast(Optional[Union[str, Iterable[str]]], index_names),
+            cast("Optional[Union[str, Iterable[str]]]", index_names),
         )
 
     @classmethod
