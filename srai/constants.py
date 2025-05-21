@@ -1,11 +1,14 @@
 """Constants used across the project."""
 
 import os
+from typing import Literal, get_args
 
 WGS84_CRS = "EPSG:4326"
 
-REGIONS_INDEX = "region_id"
-FEATURES_INDEX = "feature_id"
+REGIONS_INDEX_TYPE = Literal["region_id"]
+FEATURES_INDEX_TYPE = Literal["feature_id"]
+REGIONS_INDEX = get_args(REGIONS_INDEX_TYPE)[0]
+FEATURES_INDEX = get_args(FEATURES_INDEX_TYPE)[0]
 
 GEOMETRY_COLUMN = "geometry"
 

@@ -6,6 +6,8 @@ have a unified spatial data format, which makes it possible to feed them into an
 methods available in this library.
 """
 
+from srai.geometry import convert_to_features_gdf
+
 from ._base import Loader
 from .download import download_file
 from .geoparquet_loader import GeoparquetLoader
@@ -26,4 +28,5 @@ __all__ = [
     "OSMNetworkType",
     "OvertureMapsLoader",
     "download_file",
+    "convert_to_features_gdf",
 ]

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2025-04-06
+
+### Added
+
+- Functions `convert_to_regions_gdf` and `convert_to_features_gdf` to transform any existing geo input to an object with the correct index name
+
 ## [0.9.5] - 2025-02-23
 
 ### Fixed
@@ -396,7 +402,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.5...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.6...HEAD
+
+[0.9.6]: https://github.com/kraina-ai/srai/compare/0.9.5...0.9.6
 
 [0.9.5]: https://github.com/kraina-ai/srai/compare/0.9.4...0.9.5
 
