@@ -17,10 +17,10 @@ from srai.embedders.hex2vec.embedder import Hex2VecEmbedder
 from srai.embedders.hex2vec.model import Hex2VecModel
 from srai.exceptions import ModelNotFitException
 from srai.neighbourhoods import H3Neighbourhood
+from tests.embedders.conftest import TRAINER_KWARGS
 from tests.embedders.hex2vec.constants import (
     ENCODER_SIZES,
     PREDEFINED_TEST_CASES,
-    TRAINER_KWARGS,
 )
 
 

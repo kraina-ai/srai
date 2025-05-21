@@ -17,10 +17,10 @@ from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 from srai.neighbourhoods import H3Neighbourhood
+from tests.embedders.conftest import TRAINER_KWARGS
 from tests.embedders.geovex.constants import (
     EMBEDDING_SIZE,
     PREDEFINED_TEST_CASES,
-    TRAINER_KWARGS,
 )
 
 

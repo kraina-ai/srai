@@ -135,7 +135,10 @@ class OSMPbfLoader(OSMLoader):
                 keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
             )
 
-        features_gdf = features_gdf.set_crs(WGS84_CRS)
+        if features_gdf.crs is None:
+            features_gdf = features_gdf.set_crs(WGS84_CRS)
+        else:
+            features_gdf = features_gdf.to_crs(WGS84_CRS)
 
         features_columns = [
             column

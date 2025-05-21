@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Option to pass `trainer_kwargs` to `Gtfs2VecEmbedder`'s `fit` and `fit_transform` functions
+
+### Fixed
+
+- Change CRS setting for GeoDataFrame in `OSMPbfLoader`
+
 ## [0.9.6] - 2025-04-06
 
 ### Added
