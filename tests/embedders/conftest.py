@@ -7,6 +7,8 @@ from shapely import geometry
 
 from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 
+TRAINER_KWARGS = {"max_epochs": 1, "accelerator": "cpu", "deterministic": True}
+
 
 @pytest.fixture  # type: ignore
 def gdf_empty() -> gpd.GeoDataFrame:

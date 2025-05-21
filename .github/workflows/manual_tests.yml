@@ -25,7 +25,6 @@ jobs:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
       COLUMNS: 120
-      CUDA_VISIBLE_DEVICES: ""
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python-version }}

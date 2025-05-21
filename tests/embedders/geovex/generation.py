@@ -18,7 +18,8 @@ from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-from tests.embedders.geovex.constants import EMBEDDING_SIZE, TRAINER_KWARGS
+from tests.embedders.conftest import TRAINER_KWARGS
+from tests.embedders.geovex.constants import EMBEDDING_SIZE
 
 
 def generate_test_case(
