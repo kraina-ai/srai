@@ -26,6 +26,7 @@ dependencies = [
     "osmnx>=1.3.0",
     "polars>=0.19.4",
     "duckdb>=1.2.0",
+    "rq-geo-toolkit>=2025.5.1",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -59,9 +60,9 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.11.0"]
+osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.14.0"]
 # pdm add -G overturemaps <library>
-overturemaps = ["overturemaestro>=0.2.5"]
+overturemaps = ["overturemaestro>=0.4.2"]
 # pdm add -G voronoi <library>
 voronoi = [
     "pymap3d>=3.0.0",
