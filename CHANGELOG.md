@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `rq-geo-toolkit` library to the dependencies
+
+### Changed
+
+- Bumped `QuackOSM` version to `0.14.0`
+- Bumped `OvertureMaestro` version to `0.4.2`
+
 ## [0.9.7] - 2025-05-21
 
 ### Added

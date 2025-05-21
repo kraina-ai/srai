@@ -36,11 +36,12 @@ def single_polygon_area_gdf() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def two_polygons_area_gdf() -> gpd.GeoDataFrame:
+def three_polygons_area_gdf() -> gpd.GeoDataFrame:
     """Get an example area gdf with with two polygons."""
     polygon_1 = Polygon([(0, 0), (0, 1), (1, 1), (1, 0)])
     polygon_2 = Polygon([(1, 1), (2, 2), (2, 1), (1, 0)])
-    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon_1, polygon_2]}, crs=WGS84_CRS)
+    polygon_3 = Polygon([(0, 1), (1, 1), (2, 2), (2, 1), (1, 0), (0, 0), (0, 1)])
+    gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: [polygon_1, polygon_2, polygon_3]}, crs=WGS84_CRS)
     return gdf
 
 
