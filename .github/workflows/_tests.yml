@@ -18,6 +18,8 @@ jobs:
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      COLUMNS: 120
+      PYTORCH_MPS_HIGH_WATERMARK_RATIO: 0
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python-version }}
