@@ -1,4 +1,4 @@
-"""This module contains TrajectoryRegressionEvaluator dataset."""
+"""This module contains TrajectoryRegressionEvaluator."""
 
 import logging
 from typing import Any, Optional

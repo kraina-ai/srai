@@ -15,7 +15,10 @@ class BaseEvaluator(abc.ABC):
     """Abstract class for benchmark evaluators."""
 
     def __init__(
-        self, task: Literal["trajectory_regression", "regression", "poi_prediction"]
+        self,
+        task: Literal[
+            "trajectory_regression", "regression", "poi_prediction", "mobility_classification"
+        ],
     ) -> None:
         self.task = task
 
