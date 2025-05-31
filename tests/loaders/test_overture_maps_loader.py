@@ -79,7 +79,7 @@ TEST_OVERTUREMAPS_RELEASE_VERSION = "2024-08-20.0"
             0.9,
             False,
             327,
-            205,
+            207,
         ),
     ],
 )
@@ -100,7 +100,7 @@ def test_overture_maps_loader(
         hierarchy_depth=hierarchy_depth,
         places_minimal_confidence=places_confidence_score,
     )
-    result = loader.load(area=test_geometries, ignore_cache=True)
+    result = loader.load(area=test_geometries, ignore_cache=True).to_geodataframe()
 
     assert (
         len(result) == expected_result_length

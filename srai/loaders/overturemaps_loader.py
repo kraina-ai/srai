@@ -153,15 +153,3 @@ class OvertureMapsLoader(Loader):
             sort_geometries=False,
         )
         return features_gdt
-
-        # features_gdf.index.name = FEATURES_INDEX
-        # features_gdf = features_gdf.to_crs(WGS84_CRS)
-
-        # features_columns = [
-        #     column
-        #     for column in features_gdf.columns
-        #     if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
-        # ]
-        # features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
-
-        # return features_gdf
