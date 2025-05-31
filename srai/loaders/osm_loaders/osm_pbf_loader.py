@@ -4,15 +4,13 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 
-from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import geopandas as gpd
-from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS, FEATURES_INDEX
+from srai.constants import FEATURES_INDEX
 from srai.geodatatable import GeoDataTable
 from srai.loaders._base import VALID_AREA_INPUT
 from srai.loaders.osm_loaders._base import OSMLoader
@@ -125,30 +123,24 @@ class OSMPbfLoader(OSMLoader):
         pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
 
         if self.pbf_file is not None:
-            features_gdf = pbf_reader.convert_pbf_to_geodataframe(
-                file_paths=self.pbf_file,
+            features_parquet_path = pbf_reader.convert_pbf_to_parquet(
+                pbf_path=self.pbf_file,
                 keep_all_tags=keep_all_tags,
                 explode_tags=explode_tags,
                 ignore_cache=ignore_cache,
             )
         else:
-            features_gdf = pbf_reader.convert_geometry_to_geodataframe(
+            features_parquet_path = pbf_reader.convert_geometry_to_parquet(
                 keep_all_tags=keep_all_tags, explode_tags=explode_tags, ignore_cache=ignore_cache
             )
 
-        if features_gdf.crs is None:
-            features_gdf = features_gdf.set_crs(WGS84_CRS)
-        else:
-            features_gdf = features_gdf.to_crs(WGS84_CRS)
-
-        features_columns = [
-            column
-            for column in features_gdf.columns
-            if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
-        ]
-        features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
-
-        return features_gdf
+        features_gdt = GeoDataTable.from_parquet(
+            features_parquet_path,
+            index_column_names=FEATURES_INDEX,
+            persist_files=True,
+            sort_geometries=False,
+        )
+        return features_gdt
 
     def _get_pbf_file_reader(
         self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]

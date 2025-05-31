@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
 from srai.geodatatable import GeoDataTable
 from srai.loaders._base import VALID_AREA_INPUT, Loader
 
@@ -113,14 +112,14 @@ class OvertureMapsLoader(Loader):
             GeoDataTable: Downloaded features as a GeoDataTable.
         """
         from overturemaestro.advanced_functions import (
-            convert_geometry_to_wide_form_geodataframe_for_all_types,
-            convert_geometry_to_wide_form_geodataframe_for_multiple_types,
+            convert_geometry_to_wide_form_parquet_for_all_types,
+            convert_geometry_to_wide_form_parquet_for_multiple_types,
         )
 
         area_wgs84 = self._prepare_area_input(area)
 
         if self.theme_type_pairs:
-            features_gdf = convert_geometry_to_wide_form_geodataframe_for_multiple_types(
+            features_parquet_path = convert_geometry_to_wide_form_parquet_for_multiple_types(
                 theme_type_pairs=self.theme_type_pairs,
                 geometry_filter=area_wgs84.union_all(),
                 release=self.release,
@@ -134,7 +133,7 @@ class OvertureMapsLoader(Loader):
                 places_use_primary_category_only=self.places_use_primary_category_only,
             )
         else:
-            features_gdf = convert_geometry_to_wide_form_geodataframe_for_all_types(
+            features_parquet_path = convert_geometry_to_wide_form_parquet_for_all_types(
                 geometry_filter=area_wgs84.union_all(),
                 release=self.release,
                 include_all_possible_columns=self.include_all_possible_columns,
@@ -147,14 +146,22 @@ class OvertureMapsLoader(Loader):
                 places_use_primary_category_only=self.places_use_primary_category_only,
             )
 
-        features_gdf.index.name = FEATURES_INDEX
-        features_gdf = features_gdf.to_crs(WGS84_CRS)
+        features_gdt = GeoDataTable.from_parquet(
+            features_parquet_path,
+            index_column_names="id",
+            persist_files=True,
+            sort_geometries=False,
+        )
+        return features_gdt
 
-        features_columns = [
-            column
-            for column in features_gdf.columns
-            if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
-        ]
-        features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
+        # features_gdf.index.name = FEATURES_INDEX
+        # features_gdf = features_gdf.to_crs(WGS84_CRS)
 
-        return features_gdf
+        # features_columns = [
+        #     column
+        #     for column in features_gdf.columns
+        #     if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
+        # ]
+        # features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
+
+        # return features_gdf
