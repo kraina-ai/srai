@@ -22,6 +22,12 @@ from geoarrow.rust.core import (
     to_shapely,
 )
 from psutil._common import bytes2human
+from rq_geo_toolkit.constants import (
+    PARQUET_COMPRESSION,
+    PARQUET_COMPRESSION_LEVEL,
+    PARQUET_ROW_GROUP_SIZE,
+)
+from rq_geo_toolkit.geoparquet_sorting import sort_geoparquet_file_by_geometry
 from shapely import coverage_union_all, union_all
 from shapely.errors import GEOSException
 from shapely.geometry.base import BaseGeometry
@@ -36,9 +42,6 @@ if TYPE_CHECKING:
 from typing import TypeVar
 
 _Self = TypeVar("_Self", bound="ParquetDataTable")
-
-PARQUET_ROW_GROUP_SIZE = 100_000
-PARQUET_COMPRESSION = "zstd"
 
 
 class ParquetDataTable(Sized):
@@ -100,7 +103,11 @@ class ParquetDataTable(Sized):
     @property
     def columns(self) -> list[str]:
         """Get available columns."""
-        return list(ds.dataset(self.parquet_paths).schema.names)
+        return list(
+            column_name
+            for column_name in ds.dataset(self.parquet_paths).schema.names
+            if column_name not in (self.index_column_names or [])
+        )
 
     @property
     def size(self) -> int:
@@ -144,7 +151,7 @@ class ParquetDataTable(Sized):
 
     @staticmethod
     def _cleanup_files(paths: Iterable[Path]) -> None:
-        print("cleanup!")
+        print(f"cleanup! ({paths})")
         for path in paths:
             path.unlink(missing_ok=True)
 
@@ -427,10 +434,9 @@ class GeoDataTable(ParquetDataTable):
             )
 
         if sort_geometries:
-            new_parquet_path = self._sort_geometries(sort_extent)
+            new_parquet_paths = self._sort_geometries(sort_extent)
             self._detach_finalizer()
-            self._cleanup_files(self.parquet_paths)
-            self.parquet_paths = [new_parquet_path]
+            self.parquet_paths = new_parquet_paths
 
             if not self.persist_files:
                 self._configure_finalizer()
@@ -521,61 +527,29 @@ class GeoDataTable(ParquetDataTable):
             gdf.set_index(self.index_column_names, inplace=True)
         return gdf
 
-    def _sort_geometries(self, sort_extent: Optional[tuple[float, float, float, float]]) -> Path:
+    def _sort_geometries(
+        self, sort_extent: Optional[tuple[float, float, float, float]]
+    ) -> list[Path]:
         """Order geometries and save parquet files again."""
-        prefix_path = self.generate_filename()
+        sorted_files = []
 
-        # https://medium.com/radiant-earth-insights/using-duckdbs-hilbert-function-with-geop-8ebc9137fb8a
-        if sort_extent is None:
-            order_clause = f"""
-            ST_Hilbert(
-                {GEOMETRY_COLUMN},
-                (
-                    SELECT ST_Extent(ST_Extent_Agg({GEOMETRY_COLUMN}))::BOX_2D
-                    FROM ({self.to_duckdb().sql_query()})
-                )
+        for path in self.parquet_paths:
+            new_parquet_path = self.get_directory() / f"{path.stem}_sorted.parquet"
+
+            sort_geoparquet_file_by_geometry(
+                input_file_path=path,
+                output_file_path=new_parquet_path,
+                compression=PARQUET_COMPRESSION,
+                compression_level=PARQUET_COMPRESSION_LEVEL,
+                row_group_size=PARQUET_ROW_GROUP_SIZE,
+                sort_extent=sort_extent,
+                verbosity_mode="transient",
+                remove_input_file=not self.persist_files,
             )
-            """
-        else:
-            extent_box_clause = f"""
-            {{
-                min_x: {sort_extent[0]},
-                min_y: {sort_extent[1]},
-                max_x: {sort_extent[2]},
-                max_y: {sort_extent[3]}
-            }}::BOX_2D
-            """
-            order_clause = f"""
-            ST_Within(ST_Extent({GEOMETRY_COLUMN}), {extent_box_clause}),
-            ST_Hilbert(
-                {GEOMETRY_COLUMN},
-                {extent_box_clause}
-            )
-            """
 
-        relation = duckdb.sql(
-            f"""
-            SELECT *
-            FROM ({self.to_duckdb().sql_query()})
-            ORDER BY {order_clause}
-            """
-        )
+            sorted_files.append(new_parquet_path)
 
-        print(relation.sql_query())
-
-        h = hashlib.new("sha256")
-        h.update(relation.sql_query().encode())
-        relation_hash = h.hexdigest()
-
-        new_parquet_path = self.get_directory() / f"{prefix_path}_{relation_hash}_sorted.parquet"
-
-        relation.to_parquet(
-            str(new_parquet_path),
-            row_group_size=PARQUET_ROW_GROUP_SIZE,
-            compression=PARQUET_COMPRESSION,
-        )
-
-        return new_parquet_path
+        return sorted_files
 
     def union_all(self, method: Literal["coverage", "unary"] = "coverage") -> BaseGeometry:
         """Return union of all geometries in the GeoDataTable."""
