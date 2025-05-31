@@ -12,7 +12,9 @@ import geopandas as gpd
 from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS, FEATURES_INDEX
+from srai.geodatatable import GeoDataTable
+from srai.loaders._base import VALID_AREA_INPUT
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
@@ -75,12 +77,12 @@ class OSMPbfLoader(OSMLoader):
 
     def load(
         self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+        area: VALID_AREA_INPUT,
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
         ignore_cache: bool = False,
         explode_tags: bool = True,
         keep_all_tags: bool = False,
-    ) -> gpd.GeoDataFrame:
+    ) -> GeoDataTable:
         """
         Load OSM features with specified tags for a given area from an `*.osm.pbf` file.
 
@@ -93,8 +95,7 @@ class OSMPbfLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
+            area (VALID_AREA_INPUT): Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -117,9 +118,9 @@ class OSMPbfLoader(OSMLoader):
                 aren't shapely.geometry.Polygons.
 
         Returns:
-            gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
+            GeoDataTable: Downloaded features as a GeoDataTable.
         """
-        area_wgs84 = self._prepare_area_gdf(area)
+        area_wgs84 = self._prepare_area_input(area)
 
         pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
 

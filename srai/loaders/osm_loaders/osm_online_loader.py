@@ -83,8 +83,7 @@ class OSMOnlineLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
+            area (VALID_AREA_INPUT): Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -102,7 +101,7 @@ class OSMOnlineLoader(OSMLoader):
 
         polygons = [
             g
-            for g in flatten_geometry(self._prepare_area_gdf(area).union_all())
+            for g in flatten_geometry(self._prepare_area_input(area).union_all())
             if isinstance(g, Polygon)
         ]
 

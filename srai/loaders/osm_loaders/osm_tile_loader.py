@@ -100,13 +100,12 @@ class OSMTileLoader(Loader):
         Return all tiles of region.
 
         Args:
-            area (VALID_AREA_INPUT):
-                Area for which to download objects.
+            area (VALID_AREA_INPUT): Area for which to download objects.
 
         Returns:
             gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
         """
-        area_wgs84 = self._prepare_area_gdf(area).to_geodataframe()
+        area_wgs84 = self._prepare_area_input(area).to_geodataframe()
         regions = self.regionalizer.transform(gdf=area_wgs84)
         regions["tile"] = regions.apply(self._get_tile_for_area, axis=1)
         return GeoDataTable.from_geodataframe(regions)

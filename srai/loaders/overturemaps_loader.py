@@ -5,16 +5,13 @@ This module contains loader capable of loading Overture Maps features from the p
 on the s3 bucket.
 """
 
-from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import geopandas as gpd
-from shapely.geometry.base import BaseGeometry
-
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
-from srai.loaders._base import Loader
+from srai.geodatatable import GeoDataTable
+from srai.loaders._base import VALID_AREA_INPUT, Loader
 
 
 class OvertureMapsLoader(Loader):
@@ -90,9 +87,9 @@ class OvertureMapsLoader(Loader):
 
     def load(
         self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+        area: VALID_AREA_INPUT,
         ignore_cache: bool = False,
-    ) -> gpd.GeoDataFrame:
+    ) -> GeoDataTable:
         """
         Load Overture Maps features for a given area in a wide format.
 
@@ -108,20 +105,19 @@ class OvertureMapsLoader(Loader):
             the given area.
 
         Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
+            area (VALID_AREA_INPUT): Area for which to download objects.
             ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
         Returns:
-            gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
+            GeoDataTable: Downloaded features as a GeoDataTable.
         """
         from overturemaestro.advanced_functions import (
             convert_geometry_to_wide_form_geodataframe_for_all_types,
             convert_geometry_to_wide_form_geodataframe_for_multiple_types,
         )
 
-        area_wgs84 = self._prepare_area_gdf(area)
+        area_wgs84 = self._prepare_area_input(area)
 
         if self.theme_type_pairs:
             features_gdf = convert_geometry_to_wide_form_geodataframe_for_multiple_types(

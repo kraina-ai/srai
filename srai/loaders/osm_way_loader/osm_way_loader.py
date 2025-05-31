@@ -114,7 +114,7 @@ class OSMWayLoader(Loader):
         Returns:
             Tuple[GeoDataTable, GeoDataTable]: Road infrastructure as (intersections, roads)
         """
-        area_gdf = self._prepare_area_gdf(area).to_geodataframe()
+        area_gdf = self._prepare_area_input(area).to_geodataframe()
         import osmnx as ox
 
         ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS

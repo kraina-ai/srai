@@ -20,19 +20,18 @@ VALID_AREA_INPUT = Union[
 ]
 
 
-def prepare_area_gdf_for_loader(area: VALID_AREA_INPUT) -> GeoDataTable:
+def prepare_area_input_for_loader(area: VALID_AREA_INPUT) -> GeoDataTable:
     """
     Prepare an area for the loader.
 
-    Loader expects a GeoDataFrame input, but users shouldn't be limited by this requirement.
-    All Shapely geometries will by transformed into GeoDataFrame with proper CRS.
+    Loader expects a GeoDataTable input, but users shouldn't be limited by this requirement.
+    All Shapely geometries will by transformed into GeoDataTable with proper CRS.
 
     Args:
-        area (VALID_AREA_INPUT):
-            Area to be parsed into GeoDataFrame.
+        area (VALID_AREA_INPUT): Area to be parsed into GeoDataTable.
 
     Returns:
-        GeoDataTable: Sanitized GeoDataFrame.
+        GeoDataTable: Sanitized GeoDataTable.
     """
     if is_expected_type(area, VALID_GEO_INPUT):
         # Return a GeoDataTable from the valid input
@@ -45,10 +44,10 @@ def prepare_area_gdf_for_loader(area: VALID_AREA_INPUT) -> GeoDataTable:
         return GeoDataTable.from_geodataframe(gpd.GeoDataFrame(geometry=area, crs=WGS84_CRS))
     elif isinstance(area, Iterable):
         # Create a GeoSeries with a list of geometries
-        return prepare_area_gdf_for_loader(gpd.GeoSeries(area, crs=WGS84_CRS))
+        return prepare_area_input_for_loader(gpd.GeoSeries(area, crs=WGS84_CRS))
 
     # Wrap a single geometry with a list
-    return prepare_area_gdf_for_loader([area])
+    return prepare_area_input_for_loader([area])
 
 
 class Loader(abc.ABC):
@@ -70,5 +69,5 @@ class Loader(abc.ABC):
         """
         raise NotImplementedError
 
-    def _prepare_area_gdf(self, area: VALID_AREA_INPUT) -> GeoDataTable:
-        return prepare_area_gdf_for_loader(area)
+    def _prepare_area_input(self, area: VALID_AREA_INPUT) -> GeoDataTable:
+        return prepare_area_input_for_loader(area)
