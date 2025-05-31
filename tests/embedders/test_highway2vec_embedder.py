@@ -76,7 +76,7 @@ def highway2vec_embeddings() -> pd.DataFrame:
     features = pd.DataFrame(
         embeddings,
         index=pd.Index(["ff1", "ff2", "ff3"], name=REGIONS_INDEX),
-        columns=pd.RangeIndex(0, 4, 1),
+        columns=list(map(str, range(4))),
     )
     return features
 
@@ -107,11 +107,11 @@ def test_embedder_on_correct_input(
     )
     features_embedded = embedder.transform(
         highway2vec_regions, highway2vec_features, highway2vec_joint
-    )
+    ).to_dataframe()
     pd.testing.assert_frame_equal(features_embedded, highway2vec_embeddings, atol=1e-3)
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(
         highway2vec_regions, highway2vec_features, highway2vec_joint, trainer_kwargs=TRAINER_KWARGS
-    )
+    ).to_dataframe()
     pd.testing.assert_frame_equal(features_embedded, highway2vec_embeddings, atol=1e-3)

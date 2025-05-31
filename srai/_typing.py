@@ -1,9 +1,29 @@
 """Utility function for typing purposes."""
 
+from collections.abc import Iterable
 from contextlib import suppress
 from typing import Any
 
-from typeguard import TypeCheckError, check_type
+from typeguard import (
+    CollectionCheckStrategy,
+    TypeCheckerCallable,
+    TypeCheckError,
+    check_type,
+    checker_lookup_functions,
+)
+from typeguard._checkers import check_list
+
+
+def _iterable_checker_lookup(
+    origin_type: Any, args: tuple[Any, ...], extras: tuple[Any, ...]
+) -> TypeCheckerCallable | None:
+    if origin_type == Iterable:
+        return check_list
+
+    return None
+
+
+checker_lookup_functions.append(_iterable_checker_lookup)
 
 
 def is_expected_type(value: object, expected_type: Any) -> bool:
@@ -22,7 +42,9 @@ def is_expected_type(value: object, expected_type: Any) -> bool:
     result = False
 
     with suppress(TypeCheckError):
-        check_type(value, expected_type)
+        check_type(
+            value, expected_type, collection_check_strategy=CollectionCheckStrategy.ALL_ITEMS
+        )
         result = True
 
     return result
