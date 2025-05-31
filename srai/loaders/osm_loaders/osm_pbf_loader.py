@@ -4,15 +4,13 @@ OSM PBF Loader.
 This module contains loader capable of loading OpenStreetMap features from `*.osm.pbf` files.
 """
 
-from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import geopandas as gpd
-from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.constants import GEOMETRY_COLUMN, WGS84_CRS, FEATURES_INDEX
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.geodatatable import GeoDataTable
 from srai.loaders._base import VALID_AREA_INPUT
 from srai.loaders.osm_loaders._base import OSMLoader
