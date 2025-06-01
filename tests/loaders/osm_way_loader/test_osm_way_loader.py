@@ -275,6 +275,9 @@ def test_contract(
         )
         nodes, edges = loader.load(area_gdf)
 
+        nodes = nodes.to_geodataframe()
+        edges = edges.to_geodataframe()
+
         check.equal(len(nodes), nodes_expected_len)
         check.equal(len(edges), edges_expected_len)
         check.is_in(GEOMETRY_COLUMN, nodes.columns)
