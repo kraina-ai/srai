@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable
 from contextlib import suppress
-from typing import Any
+from typing import Any, Optional
 
 from typeguard import (
     CollectionCheckStrategy,
@@ -16,7 +16,7 @@ from typeguard._checkers import check_list
 
 def _iterable_checker_lookup(
     origin_type: Any, args: tuple[Any, ...], extras: tuple[Any, ...]
-) -> TypeCheckerCallable | None:
+) -> Optional[TypeCheckerCallable]:
     if origin_type == Iterable:
         return check_list
 
