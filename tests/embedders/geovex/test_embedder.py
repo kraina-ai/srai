@@ -98,7 +98,7 @@ def test_embedder() -> None:
 
         embedder._prepare_model(counts_df, 0.001)
 
-        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        for _, param in cast("GeoVexModel", embedder._model).named_parameters():
             param.data.fill_(0.01)
 
         result_df = embedder.fit_transform(
@@ -159,7 +159,7 @@ def test_embedder_save_load() -> None:
         embedder._prepare_model(counts_df, 0.001)
 
         # Initialize model parameters to a constant value for reproducibility
-        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        for _, param in cast("GeoVexModel", embedder._model).named_parameters():
             param.data.fill_(0.01)
 
         result_df = embedder.fit_transform(

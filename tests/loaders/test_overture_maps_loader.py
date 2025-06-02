@@ -102,9 +102,9 @@ def test_overture_maps_loader(
     )
     result = loader.load(area=test_geometries, ignore_cache=True)
 
-    assert (
-        len(result) == expected_result_length
-    ), f"Mismatched result length ({len(result)}, {expected_result_length})"
-    assert (
-        len(result.columns) == expected_features_columns_length + 1
-    ), f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
+    assert len(result) == expected_result_length, (
+        f"Mismatched result length ({len(result)}, {expected_result_length})"
+    )
+    assert len(result.columns) == expected_features_columns_length + 1, (
+        f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
+    )

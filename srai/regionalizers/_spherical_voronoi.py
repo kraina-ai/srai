@@ -444,7 +444,7 @@ def _generate_spherical_polygons_parts(
             ):
                 continue
 
-            intersection = cast(SphericalPolygon, sph_pol).intersection(sphere_part)
+            intersection = cast("SphericalPolygon", sph_pol).intersection(sphere_part)
             for points in intersection.points:
                 sphere_intersection_parts.append((region_id, sphere_part_index, points))
 

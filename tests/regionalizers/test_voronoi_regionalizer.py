@@ -61,7 +61,7 @@ def check_if_seeds_match_regions(seeds: gpd.GeoDataFrame, regions: gpd.GeoDataFr
     if len(joined_data) != len(regions):
         return False
 
-    return cast(bool, (joined_data[REGIONS_INDEX] == joined_data[seeds_index_column_name]).all())
+    return cast("bool", (joined_data[REGIONS_INDEX] == joined_data[seeds_index_column_name]).all())
 
 
 def test_empty_gdf_attribute_error(gdf_empty: gpd.GeoDataFrame) -> None:
@@ -173,12 +173,12 @@ def test_regions_edge_resolution(
     )
     result_gdf = vr.transform()
     assert len(result_gdf.index) == 6
-    assert check_if_seeds_match_regions(
-        seeds=gdf_earth_poles, regions=result_gdf
-    ), "Seeds don't match generated regions"
-    assert (
-        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
-    ), "Result doesn't cover bounding box"
+    assert check_if_seeds_match_regions(seeds=gdf_earth_poles, regions=result_gdf), (
+        "Seeds don't match generated regions"
+    )
+    assert result_gdf.geometry.union_all().difference(earth_bbox).is_empty, (
+        "Result doesn't cover bounding box"
+    )
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
@@ -196,9 +196,9 @@ def test_multiple_seeds_regions(
     assert check_if_seeds_match_regions(
         seeds=gpd.GeoDataFrame(geometry=seeds, crs=WGS84_CRS), regions=result_gdf
     ), f"Seeds don't match generated regions (seed: {seed})"
-    assert (
-        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
-    ), f"Result doesn't cover bounding box (seed: {seed})"
+    assert result_gdf.geometry.union_all().difference(earth_bbox).is_empty, (
+        f"Result doesn't cover bounding box (seed: {seed})"
+    )
     assert check_if_disjoint(result_gdf), f"Result isn't disjoint (seed: {seed})"
 
 
@@ -219,12 +219,12 @@ def test_four_close_seed_region(gdf_earth_bbox: gpd.GeoDataFrame, earth_bbox: Po
     vr = VoronoiRegionalizer(seeds=seeds_gdf)
     result_gdf = vr.transform(gdf=gdf_earth_bbox)
     assert len(result_gdf.index) == 4
-    assert check_if_seeds_match_regions(
-        seeds=seeds_gdf, regions=result_gdf
-    ), "Seeds don't match generated regions"
-    assert (
-        result_gdf.geometry.union_all().difference(earth_bbox).is_empty
-    ), "Result doesn't cover bounding box"
+    assert check_if_seeds_match_regions(seeds=seeds_gdf, regions=result_gdf), (
+        "Seeds don't match generated regions"
+    )
+    assert result_gdf.geometry.union_all().difference(earth_bbox).is_empty, (
+        "Result doesn't cover bounding box"
+    )
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
 
@@ -233,9 +233,9 @@ def test_default_parameter(gdf_earth_poles: gpd.GeoDataFrame, earth_bbox: Polygo
     vr = VoronoiRegionalizer(seeds=gdf_earth_poles)
     result_gdf = vr.transform(gdf=None)
     assert len(result_gdf.index) == 6
-    assert check_if_seeds_match_regions(
-        seeds=gdf_earth_poles, regions=result_gdf
-    ), "Seeds don't match generated regions"
+    assert check_if_seeds_match_regions(seeds=gdf_earth_poles, regions=result_gdf), (
+        "Seeds don't match generated regions"
+    )
     assert result_gdf.union_all().difference(earth_bbox).is_empty
     assert check_if_disjoint(result_gdf), "Result isn't disjoint"
 
