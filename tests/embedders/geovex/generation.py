@@ -75,7 +75,7 @@ def generate_test_case(
 
     embedder._prepare_model(counts_df, 0.001)
 
-    for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+    for _, param in cast("GeoVexModel", embedder._model).named_parameters():
         param.data.fill_(0.01)
 
     results_df = embedder.fit_transform(
@@ -153,7 +153,7 @@ def generate_test_case_batches(
 
     embedder._prepare_model(counts_df, 0.001)
 
-    for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+    for _, param in cast("GeoVexModel", embedder._model).named_parameters():
         param.data.fill_(0.01)
 
     output_path = Path(__file__).parent / "test_files"
@@ -162,13 +162,13 @@ def generate_test_case_batches(
     for i, batch in enumerate(dataloader):
         torch.save(batch, output_path / f"{files_prefix}_batch_{i}.pt")
 
-        encoder_forward_tensor = cast(GeoVexModel, embedder._model).encoder.forward(batch)
+        encoder_forward_tensor = cast("GeoVexModel", embedder._model).encoder.forward(batch)
         torch.save(encoder_forward_tensor, output_path / f"{files_prefix}_encoder_forward_{i}.pt")
 
-        forward_tensor = cast(GeoVexModel, embedder._model).forward(batch)
+        forward_tensor = cast("GeoVexModel", embedder._model).forward(batch)
         torch.save(forward_tensor, output_path / f"{files_prefix}_forward_{i}.pt")
 
-        loss_tensor = cast(GeoVexModel, embedder._model).training_step(batch, i)
+        loss_tensor = cast("GeoVexModel", embedder._model).training_step(batch, i)
         torch.save(loss_tensor, output_path / f"{files_prefix}_loss_{i}.pt")
 
 

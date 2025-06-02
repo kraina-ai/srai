@@ -48,14 +48,14 @@ def merge_osm_tags_filter(
         OsmTagsFilter: Merged filters.
     """
     if is_expected_type(osm_tags_filter, OsmTagsFilter):
-        return cast(OsmTagsFilter, osm_tags_filter)
+        return cast("OsmTagsFilter", osm_tags_filter)
     elif is_expected_type(osm_tags_filter, GroupedOsmTagsFilter):
-        return _merge_grouped_osm_tags_filter(cast(GroupedOsmTagsFilter, osm_tags_filter))
+        return _merge_grouped_osm_tags_filter(cast("GroupedOsmTagsFilter", osm_tags_filter))
     elif is_expected_type(osm_tags_filter, Iterable):
         return _merge_multiple_osm_tags_filters(
             [
                 merge_osm_tags_filter(
-                    cast(Union[OsmTagsFilter, GroupedOsmTagsFilter], sub_osm_tags_filter)
+                    cast("Union[OsmTagsFilter, GroupedOsmTagsFilter]", sub_osm_tags_filter)
                 )
                 for sub_osm_tags_filter in osm_tags_filter
             ]
@@ -114,7 +114,7 @@ def _merge_multiple_osm_tags_filters(osm_tags_filters: Iterable[OsmTagsFilter]) 
             if isinstance(result[osm_tag_key], bool) and result[osm_tag_key]:
                 continue
 
-            current_values_list = cast(list[str], result[osm_tag_key])
+            current_values_list = cast("list[str]", result[osm_tag_key])
 
             # Check bool
             if isinstance(osm_tag_value, bool) and osm_tag_value:
