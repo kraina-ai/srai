@@ -156,7 +156,7 @@ class GeolifeDataset(TrajectoryDataset):
             if version == "TTE":
                 res["duration"] = duration
                 res["mode"] = [Counter([m]).most_common(1)[0][0] for m in mode_interp]
-            elif version == "HMC":
+            elif version == "HMP":
                 split_idx = int(len(full_seq) * 0.85)
                 if split_idx == len(full_seq):
                     split_idx = len(full_seq) - 1
@@ -207,7 +207,7 @@ class GeolifeDataset(TrajectoryDataset):
     def load(
         self,
         hf_token: Optional[str] = None,
-        version: Optional[str] = "HMC",
+        version: Optional[str] = "HMP",
         resolution: Optional[int] = None,
     ) -> dict[str, gpd.GeoDataFrame]:
         """
@@ -219,7 +219,7 @@ class GeolifeDataset(TrajectoryDataset):
                 Defaults to None.
             version (Optional[str]): version of a dataset.
                 Available: Official train-test split for Travel Time Estimation task (TTE) and
-                Human Mobility Classification task (HMC). Raw data from available as: 'all'.
+                Human Mobility Prediction task (HMP). Raw data from available as: 'all'.
             resolution (Optional[int]): H3 resolution for hex trajectories.
                 Neccessary if using 'all' split.
 
@@ -227,7 +227,7 @@ class GeolifeDataset(TrajectoryDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        if version == "TTE" or version == "HMC":
+        if version == "TTE" or version == "HMP":
             self.resolution = 9
         elif version == "all":
             if resolution is None:

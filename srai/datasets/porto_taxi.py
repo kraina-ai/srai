@@ -157,7 +157,7 @@ class PortoTaxiDataset(TrajectoryDataset):
 
             if version == "TTE":
                 res["duration"] = duration
-            elif version == "HMC":
+            elif version == "HMP":
                 split_idx = int(len(full_seq) * 0.85)
                 if split_idx == len(full_seq):
                     split_idx = len(full_seq) - 1
@@ -169,6 +169,11 @@ class PortoTaxiDataset(TrajectoryDataset):
 
         # Apply with progress bar
         hexes_df = _gdf.progress_apply(process_row, axis=1)
+        if version == "HMP":
+            hexes_df = hexes_df[
+                hexes_df["h3_sequence_x"].apply(lambda x: len(x) > 0)
+                & hexes_df["h3_sequence_y"].apply(lambda y: len(y) > 0)
+            ].reset_index(drop=True)
         hexes_gdf = gpd.GeoDataFrame(hexes_df, geometry="geometry", crs=WGS84_CRS)
 
         return hexes_gdf
@@ -219,7 +224,7 @@ class PortoTaxiDataset(TrajectoryDataset):
                 Defaults to None.
             version (Optional[str]): version of a dataset.
                 Available: Official train-test split for Travel Time Estimation task (TTE) and
-                Human Mobility Classification task (HMC). Raw data from available as: 'all'.
+                Human Mobility Prediction task (HMP). Raw data from available as: 'all'.
             resolution (Optional[int]): H3 resolution for hex trajectories.
                 Neccessary if using 'all' split.
 
@@ -227,7 +232,7 @@ class PortoTaxiDataset(TrajectoryDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        if version == "TTE" or version == "HMC":
+        if version == "TTE" or version == "HMP":
             self.resolution = 9
         elif version == "all":
             if resolution is None:

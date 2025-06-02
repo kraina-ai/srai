@@ -452,7 +452,7 @@ class TrajectoryDataset(HuggingFaceDataset):
     def train_test_split_bucket_trajectory(
         self,
         trajectory_id_column: str = "trip_id",
-        task: Literal["TTE", "HMC"] = "TTE",
+        task: Literal["TTE", "HMP"] = "TTE",
         test_size: float = 0.2,
         bucket_number: int = 4,
         dev: bool = False,
@@ -464,8 +464,8 @@ class TrajectoryDataset(HuggingFaceDataset):
 
         Args:
             trajectory_id_column (str): Column identifying each trajectory.
-            task (Literal["TTE", "HMC"]): Task type. Stratifies by duration
-                (TTE) or hex length (HMC).
+            task (Literal["TTE", "HMP"]): Task type. Stratifies by duration
+                (TTE) or hex length (HMP).
             test_size (float): Fraction of data to be used as test set.
             bucket_number (int): Number of stratification bins.
             dev (bool): If True, creates a dev split from existing train split and assigns \
@@ -490,11 +490,14 @@ class TrajectoryDataset(HuggingFaceDataset):
             else:
                 raise ValueError("Duration column does not exist. Can't stratify it.")
 
-        elif task == "HMC":
-            self.version = "HMC"
+        elif task == "HMP":
+            self.version = "HMP"
             # Calculate trajectory length in unique hexagons
-            gdf_copy["stratify_col"] = gdf_copy["h3_sequence"].apply(lambda seq: len(set(seq)))
-
+            gdf_copy["x_len"] = gdf_copy["h3_sequence_x"].apply(lambda seq: len(set(seq)))
+            gdf_copy["y_len"] = gdf_copy["h3_sequence_y"].apply(lambda seq: len(set(seq)))
+            gdf_copy["stratify_col"] = gdf_copy.apply(
+                lambda row: row["x_len"] + row["y_len"], axis=1
+            )
         else:
             raise ValueError(f"Unsupported task type: {task}")
 
@@ -518,8 +521,12 @@ class TrajectoryDataset(HuggingFaceDataset):
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
         test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
 
-        train_gdf.drop(columns=["stratification_bin", "stratify_col"], inplace=True)
-        test_gdf.drop(columns=["stratification_bin", "stratify_col"], inplace=True)
+        train_gdf.drop(
+            columns=["stratification_bin", "stratify_col", "x_len", "y_len"], inplace=True
+        )
+        test_gdf.drop(
+            columns=["stratification_bin", "stratify_col", "x_len", "y_len"], inplace=True
+        )
         if not dev:
             self.train_gdf = train_gdf
             self.test_gdf = test_gdf
@@ -542,7 +549,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         Returns ids, h3 indexes sequences, with target labels from the dataset.
 
         Points are aggregated to hex trajectories and target column values are calculated \
-            for each trajectory (time duration for TTE task, future movement sequence for HMC task).
+            for each trajectory (time duration for TTE task, future movement sequence for HMP task).
 
         Args:
             resolution (int): h3 resolution to regionalize data.
@@ -580,7 +587,7 @@ class TrajectoryDataset(HuggingFaceDataset):
                 _test_gdf = self.test_gdf[[self.target, "h3_sequence", "duration"]]
             else:
                 _test_gdf = None
-        elif self.version == "HMC":
+        elif self.version == "HMP":
             _train_gdf = self.train_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
 
             if self.test_gdf is not None:
