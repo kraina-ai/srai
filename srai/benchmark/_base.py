@@ -17,7 +17,7 @@ class BaseEvaluator(abc.ABC):
     def __init__(
         self,
         task: Literal[
-            "trajectory_regression", "regression", "poi_prediction", "mobility_classification"
+            "trajectory_regression", "regression", "poi_prediction", "mobility_prediction"
         ],
     ) -> None:
         self.task = task

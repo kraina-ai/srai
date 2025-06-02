@@ -13,12 +13,12 @@ from ._custom_metrics import dtw_distance, haversine_sequence, sequence_accuracy
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-class MobilityClassificationEvaluator(BaseEvaluator):
+class MobilityPredictionEvaluator(BaseEvaluator):
     """Evaluator for models predicting H3 index trajectories directly."""
 
     def __init__(self) -> None:
         """Create the evaluator."""
-        super().__init__(task="mobility_classification")
+        super().__init__(task="mobility_prediction")
 
     def evaluate(
         self,
