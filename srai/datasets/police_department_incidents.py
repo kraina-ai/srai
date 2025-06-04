@@ -39,7 +39,7 @@ class PoliceDepartmentIncidentsDataset(PointDataset):
         ]
         type = "point"
         # target = "Incident Category"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/police_department_incidents",
             type=type,

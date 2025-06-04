@@ -36,7 +36,7 @@ class ChicagoCrimeDataset(PointDataset):
         ]
         type = "point"
         # target = "Primary Type"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/chicago_crime",
             type=type,

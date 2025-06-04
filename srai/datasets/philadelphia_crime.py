@@ -36,7 +36,7 @@ class PhiladelphiaCrimeDataset(PointDataset):
         ]
         type = "point"
         # target = "text_general_code"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/philadelphia_crime",
             type=type,

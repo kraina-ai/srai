@@ -159,6 +159,19 @@ class PointDataset(HuggingFaceDataset):
         Returns:
             tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
         """  # noqa: E501, W505
+        resolution = resolution if resolution is not None else self.resolution
+
+        if resolution is None:
+            raise ValueError(
+                "No preset resolution for the dataset in self.resolution. Please \
+                             provide a resolution."
+            )
+        elif self.resolution is not None and resolution != self.resolution:
+            raise ValueError(
+                "Resolution provided is different from the preset resolution for the \
+                             dataset. This may result in a data leak between splits."
+            )
+
         target_column = target_column if target_column is not None else self.target
         if target_column is None:
             # target_column = self.target
@@ -183,6 +196,16 @@ class PointDataset(HuggingFaceDataset):
             gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
             gdf_.index = gdf_["region_id"]
 
+            # regionalizer = H3Regionalizer(resolution=resolution)
+            # regions = regionalizer.transform(gdf)
+
+            # joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")
+            # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+
+            # point_counts = joined_gdf.groupby("h3_index").size().reset_index(name="count")
+            # joined_gdf = joined_gdf.merge(point_counts, on="h3_index", how="left")
+            # gdf_ = joined_gdf
+
         splits = np.linspace(
             0, 1, num=bucket_number + 1
         )  # generate splits to bucket classification
@@ -194,7 +217,7 @@ class PointDataset(HuggingFaceDataset):
 
         train_indices, test_indices = train_test_split(
             range(len(gdf_)),
-            test_size=test_size,  # * 2 multiply for dev set also
+            test_size=test_size,
             stratify=gdf_.bucket,  # stratify by bucket value
             random_state=random_state,
         )
@@ -215,14 +238,22 @@ class PointDataset(HuggingFaceDataset):
             test = test.drop(columns=["h3_index"])
 
         # return train, test  # , gdf_.iloc[dev_indices]
+        # if not dev:
+        #     self.train_gdf = train_gdf
+        #     self.test_gdf = test_gdf
+        #     print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+        #            test len: {len(self.test_gdf)}")
+        # else:
+        #     self.train_gdf = train_gdf
+        #     self.dev_gdf = test_gdf
         if not dev:
-            self.train_gdf = train_gdf
-            self.test_gdf = test_gdf
+            self.train_gdf = train if target_column == "count" else train_gdf
+            self.test_gdf = test if target_column == "count" else test_gdf
             print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                   test len: {len(self.test_gdf)}")
+                test len: {len(self.test_gdf)}")
         else:
-            self.train_gdf = train_gdf
-            self.dev_gdf = test_gdf
+            self.train_gdf = train if target_column == "count" else train_gdf
+            self.dev_gdf = test if target_column == "count" else test_gdf
             print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
                    Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
                     test len: {len(self.test_gdf)}")
@@ -230,7 +261,10 @@ class PointDataset(HuggingFaceDataset):
         # self.train_gdf = train
         # self.test_gdf = test
         self.resolution = resolution
-        return train_gdf, test_gdf
+        if not dev:
+            return self.train_gdf, self.test_gdf
+        else:
+            return self.train_gdf, self.dev_gdf
 
     def train_test_split_spatial_points(
         self,
@@ -263,6 +297,19 @@ class PointDataset(HuggingFaceDataset):
             raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
         gdf = self.train_gdf
         gdf_ = gdf.copy()
+
+        resolution = resolution if resolution is not None else self.resolution
+
+        if resolution is None:
+            raise ValueError(
+                "No preset resolution for the dataset in self.resolution. Please \
+                             provide a resolution."
+            )
+        elif self.resolution is not None and resolution != self.resolution:
+            raise ValueError(
+                "Resolution provided is different from the preset resolution for the \
+                             dataset. This may result in a data leak between splits."
+            )
 
         regionalizer = H3Regionalizer(resolution=resolution)
         regions = regionalizer.transform(gdf_)
@@ -322,7 +369,11 @@ class PointDataset(HuggingFaceDataset):
             print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
                    Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
                     test len: {len(self.test_gdf)}")
-        return train_gdf, test_gdf
+
+        if not dev:
+            return self.train_gdf, self.test_gdf
+        else:
+            return self.train_gdf, self.dev_gdf
         # , gdf_.iloc[dev_indices],
 
     def get_h3_with_labels(
@@ -411,15 +462,14 @@ class PointDataset(HuggingFaceDataset):
         joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         if target_column == "count":
             aggregated = joined_gdf.groupby("h3_index").size().reset_index(name=target_column)
-
         else:
-            # Calculate mean of the target column within each hex
             aggregated = (
                 joined_gdf.groupby("h3_index")[target_column].mean().reset_index(name=target_column)
             )
 
         gdf_ = regions.merge(aggregated, how="inner", left_on="region_id", right_on="h3_index")
         gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
+
         # gdf_.index = gdf_["region_id"]
 
         gdf_.drop(columns=["geometry"], inplace=True)
