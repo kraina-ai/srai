@@ -196,21 +196,13 @@ class PointDataset(HuggingFaceDataset):
             gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
             gdf_.index = gdf_["region_id"]
 
-            # regionalizer = H3Regionalizer(resolution=resolution)
-            # regions = regionalizer.transform(gdf)
-
-            # joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")
-            # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
-
-            # point_counts = joined_gdf.groupby("h3_index").size().reset_index(name="count")
-            # joined_gdf = joined_gdf.merge(point_counts, on="h3_index", how="left")
-            # gdf_ = joined_gdf
-
         splits = np.linspace(
             0, 1, num=bucket_number + 1
         )  # generate splits to bucket classification
-        quantiles = gdf_[target_column].quantile(splits)  # compute quantiles
-        bins = [quantiles[i] for i in splits]
+        # quantiles = gdf_[target_column].quantile(splits)  # compute quantiles
+        quantiles = gdf_[target_column].quantile(splits).drop_duplicates()
+        bins = quantiles.values
+        # bins = [quantiles[i] for i in splits]
         gdf_["bucket"] = pd.cut(gdf_[target_column], bins=bins, include_lowest=True).apply(
             lambda x: x.mid
         )  # noqa: E501
@@ -237,15 +229,6 @@ class PointDataset(HuggingFaceDataset):
             train = train.drop(columns=["h3_index"])
             test = test.drop(columns=["h3_index"])
 
-        # return train, test  # , gdf_.iloc[dev_indices]
-        # if not dev:
-        #     self.train_gdf = train_gdf
-        #     self.test_gdf = test_gdf
-        #     print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-        #            test len: {len(self.test_gdf)}")
-        # else:
-        #     self.train_gdf = train_gdf
-        #     self.dev_gdf = test_gdf
         if not dev:
             self.train_gdf = train if target_column == "count" else train_gdf
             self.test_gdf = test if target_column == "count" else test_gdf
@@ -434,6 +417,7 @@ class PointDataset(HuggingFaceDataset):
             _train_gdf["count"] = scaler.fit_transform(_train_gdf[["count"]])
             if _test_gdf is not None:
                 _test_gdf["count"] = scaler.transform(_test_gdf[["count"]])
+                _test_gdf["count"] = np.clip(_test_gdf["count"], 0, 1)
 
         return _train_gdf, _test_gdf
 

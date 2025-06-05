@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional
 
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 import srai.datasets as sds
 from srai.benchmark import BaseEvaluator
@@ -126,10 +126,5 @@ class HexRegressionEvaluator(BaseEvaluator):
         mae = mean_absolute_error(labels, predictions)
         mape = mean_absolute_percentage_error(labels, predictions)
         smape = symmetric_mean_absolute_percentage_error(labels, predictions)
-        return {
-            "MSE": mse,
-            "RMSE": rmse,
-            "MAE": mae,
-            "MAPE": mape,
-            "sMAPE": smape,
-        }
+        r2 = r2_score(labels, predictions)
+        return {"MSE": mse, "RMSE": rmse, "MAE": mae, "MAPE": mape, "sMAPE": smape, "r2": r2}
