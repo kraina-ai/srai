@@ -26,46 +26,6 @@ except ImportError:
     from srai.embedders._pytorch_stubs import nn, torch
 
 
-class PatchEmbed(nn.Module):
-    """Patch Embedding Layer."""
-
-    def __init__(self, img_size: int, patch_size: int, in_ch: int, embed_dim: int):
-        """
-        Initialize the PatchEmbed layer.
-
-        This layer divides the input image into patches
-        and projects them into a lower-dimensional space.
-
-        Args:
-            img_size (int): The size of the input image.
-            patch_size (int): The size of the patches.
-            in_ch (int): The number of input channels.
-            embed_dim (int): The dimension of the embedding.
-        """
-        super().__init__()
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.grid_size = img_size // patch_size
-        self.num_patches = self.grid_size**2
-        self.proj = nn.Conv2d(in_ch, embed_dim, kernel_size=patch_size, stride=patch_size)
-
-    def forward(self, x: "torch.Tensor") -> "torch.Tensor":
-        """
-        Forward pass of the PatchEmbed layer.
-
-        Args:
-            x (torch.Tensor): The input tensor. The dimensions are
-                (batch_size, in_ch, img_size, img_size).
-
-        Returns:
-            torch.Tensor: The output tensor. The dimensions are
-                (batch_size, num_patches, embed_dim).
-        """
-        x = self.proj(x)  # (B, D, H/P, W/P)
-        x = x.flatten(2).transpose(1, 2)  # (B, N, D)
-        return x
-
-
 class MAEEncoder(nn.Module):
     """Masked Autoencoder Encoder."""
 
@@ -176,10 +136,13 @@ class S2VecModel(Model):
 
         super().__init__()
 
-        self.patch_embed = PatchEmbed(img_size, patch_size, in_ch, embed_dim)
+        # self.patch_embed = PatchEmbed(img_size, patch_size, in_ch, embed_dim)
+        self.patch_size = patch_size
+        patch_dim = patch_size * patch_size * in_ch
+        self.grid_size = img_size // patch_size
+        self.patch_embed = nn.Linear(in_ch, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.encoder = MAEEncoder(embed_dim, encoder_layers, num_heads)
-        patch_dim = patch_size * patch_size * in_ch
         self.decoder_embed = nn.Linear(embed_dim, decoder_dim)
         self.decoder = MAEDecoder(
             decoder_dim,
@@ -189,38 +152,15 @@ class S2VecModel(Model):
         )
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_dim))
         self.mask_ratio = mask_ratio
-        pos_embed = get_2d_sincos_pos_embed(embed_dim, self.patch_embed.grid_size, cls_token=True)
+        pos_embed = get_2d_sincos_pos_embed(embed_dim, self.grid_size, cls_token=True)
         self.pos_embed = nn.Parameter(pos_embed, requires_grad=False)
-        decoder_pos_embed = get_2d_sincos_pos_embed(
-            decoder_dim, self.patch_embed.grid_size, cls_token=True
-        )
+        decoder_pos_embed = get_2d_sincos_pos_embed(decoder_dim, self.grid_size, cls_token=True)
         self.decoder_pos_embed = nn.Parameter(decoder_pos_embed, requires_grad=False)
         self.patch_dim = patch_dim
         self.lr = lr
 
-    def patchify(self, imgs):
-        """
-        Convert images into patches.
-
-        Args:
-            imgs (torch.Tensor): The input images. The dimensions are
-                (batch_size, in_ch, img_size, img_size).
-
-        Returns:
-            torch.Tensor: The output tensor containing patches. The dimensions are
-                (batch_size, num_patches, patch_dim).
-        """
-        p = self.patch_embed.patch_size
-        assert imgs.shape[2] == imgs.shape[3] and imgs.shape[2] % p == 0
-
-        h = w = imgs.shape[2] // p
-        x = imgs.reshape(shape=(imgs.shape[0], imgs.shape[1], h, p, w, p))
-        x = torch.einsum("nchpwq->nhwpqc", x)
-        x = x.reshape(shape=(imgs.shape[0], h * w, self.patch_dim))
-        return x
-
     def random_masking(
-        self, x: "torch.Tensor"
+        self, x: "torch.Tensor", mask_ratio: float
     ) -> tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
         """
         Randomly mask patches in the input tensor.
@@ -232,6 +172,7 @@ class S2VecModel(Model):
         Args:
             x (torch.Tensor): The input tensor. The dimensions are
                 (batch_size, num_patches, embed_dim).
+            mask_ratio (float): The ratio of masked patches.
 
         Returns:
             tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The masked tensor, the mask, and the
@@ -239,7 +180,7 @@ class S2VecModel(Model):
 
         """
         B, N, D = x.shape
-        len_keep = int(N * (1 - self.mask_ratio))
+        len_keep = int(N * (1 - mask_ratio))
 
         noise = torch.rand(B, N, device=x.device)
         ids_shuffle = torch.argsort(noise, dim=1)
@@ -254,21 +195,25 @@ class S2VecModel(Model):
 
         return x_masked, mask, ids_restore
 
-    def encode(self, x: "torch.Tensor") -> "torch.Tensor":
+    def encode(
+        self, x: "torch.Tensor", mask_ratio: float
+    ) -> tuple["torch.Tensor", "torch.Tensor", "torch.Tensor"]:
         """
         Forward pass of the encoder.
 
         Args:
             x (torch.Tensor): The input tensor. The dimensions are
                 (batch_size, num_patches, embed_dim).
+            mask_ratio (float): The ratio of masked patches.
 
         Returns:
-            torch.Tensor: The output tensor from the encoder.
+            tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The encoded tensor, the mask, and the
+            indices to restore the original order.
         """
         x = self.patch_embed(x)
         x = x + self.pos_embed[:, 1:, :]  # Add positional embedding, excluding class token
 
-        x, mask, ids_restore = self.random_masking(x)
+        x, mask, ids_restore = self.random_masking(x, mask_ratio)
 
         cls_token = self.cls_token + self.pos_embed[:, :1, :]  # Class token
         cls_tokens = cls_token.expand(x.shape[0], -1, -1)  # Expand class token to batch size
@@ -290,7 +235,6 @@ class S2VecModel(Model):
             torch.Tensor: The output tensor from the decoder.
         """
         x = self.decoder_embed(x)  # Project to decoder dimension
-
         mask_tokens = self.mask_token.repeat(x.shape[0], ids_restore.shape[1] + 1 - x.shape[1], 1)
 
         x_ = torch.cat([x[:, 1:, :], mask_tokens], dim=1)
@@ -302,7 +246,6 @@ class S2VecModel(Model):
         x = self.decoder(x)
 
         x = x[:, 1:, :]  # Exclude class token
-
         return x
 
     def forward(
@@ -313,21 +256,16 @@ class S2VecModel(Model):
 
         Args:
             inputs (torch.Tensor): The input tensor. The dimensions are
-                (batch_size, num_patches, embed_dim).
+                (batch_size, num_patches, num_features).
 
         Returns:
             tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The reconstructed tensor,
             the target tensor, and the mask.
         """
-        print(inputs.shape)
-        latent, mask, ids_restore = self.encode(inputs)
+        latent, mask, ids_restore = self.encode(inputs, self.mask_ratio)
         pred = self.decode(latent, ids_restore)
+        target = inputs
 
-        print(latent.shape)
-        print(pred.shape)
-
-        target = self.patchify(inputs)  # Get target patches
-        print(target.shape)
         loss = (pred - target) ** 2
         loss = loss.mean(dim=-1)
 
@@ -348,8 +286,7 @@ class S2VecModel(Model):
         Returns:
             torch.Tensor: The loss value.
         """
-        imgs, _ = batch
-        rec, target, mask = self(imgs)
+        rec, target, mask = self(batch)
 
         B, N, D = target.shape
         loss = (rec - target).pow(2).mean(dim=-1)  # MSE per patch
