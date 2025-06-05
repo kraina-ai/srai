@@ -9,6 +9,7 @@ from typing import Optional
 
 import geopandas as gpd
 import h3
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -169,6 +170,16 @@ class GeolifeDataset(TrajectoryDataset):
 
         # Apply with progress bar
         hexes_df = _gdf.progress_apply(process_row, axis=1)
+
+        # if version == "HMP":
+        #     hexes_df = hexes_df[
+        #         hexes_df["h3_sequence_x"].apply(lambda x: len(x) > 0)
+        #         & hexes_df["h3_sequence_y"].apply(lambda y: len(y) > 0)
+        #     ].reset_index(drop=True)
+        # elif version == "TTE":
+        # hexes_df = hexes_df[
+        #     hexes_df["h3_sequence"].apply(lambda x: len(x) > 3)
+        # ].reset_index(drop=True)
         hexes_gdf = gpd.GeoDataFrame(hexes_df, geometry="geometry", crs=WGS84_CRS)
 
         return hexes_gdf
@@ -201,6 +212,14 @@ class GeolifeDataset(TrajectoryDataset):
         hexes_gdf = self._aggregate_trajectories_to_hexes(
             gdf=trajectory_gdf, resolution=self.resolution, version=self.version
         )
+        lengths = hexes_gdf.geometry.length
+
+        # Compute 5th and 95th percentiles
+        lower = np.percentile(lengths, 5)
+        upper = np.percentile(lengths, 95)
+
+        # Filter based on length
+        hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
 
         return hexes_gdf
 
