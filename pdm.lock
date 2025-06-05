@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:3d53efa15ca661295e8b218b498960d739697ad107e7f5238dc586e6eaa2b1bb"
+content_hash = "sha256:0c41ea042e661d12c916442cf816748f8d12a8ef69d66f0413e704595450383c"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1175,6 +1175,18 @@ groups = ["docs", "visualization"]
 files = [
     {file = "executing-2.1.0-py2.py3-none-any.whl", hash = "sha256:8d63781349375b5ebccc3142f4b30350c0cd9c79f921cde38be2be4637e98eaf"},
     {file = "executing-2.1.0.tar.gz", hash = "sha256:8ea27ddd260da8150fa5a708269c4a10e76161e2496ec3e587da9e3c0fe4b9ab"},
+]
+
+[[package]]
+name = "fastdtw"
+version = "0.3.4"
+summary = "Dynamic Time Warping (DTW) algorithm with an O(N) time and memory complexity."
+groups = ["default"]
+dependencies = [
+    "numpy",
+]
+files = [
+    {file = "fastdtw-0.3.4.tar.gz", hash = "sha256:2350fa6ec36bcad186eaf81f46eff35181baf04e324f522de8aeb43d0243f64f"},
 ]
 
 [[package]]

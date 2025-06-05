@@ -27,6 +27,7 @@ dependencies = [
     "omegaconf",
     "python-dotenv",
     "datasets",
+    "fastdtw",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
