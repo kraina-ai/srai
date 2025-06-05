@@ -175,10 +175,8 @@ class PortoTaxiDataset(TrajectoryDataset):
         #         hexes_df["h3_sequence_x"].apply(lambda x: len(x) > 0)
         #         & hexes_df["h3_sequence_y"].apply(lambda y: len(y) > 0)
         #     ].reset_index(drop=True)
-        # elif version == "TTE":
-        #     hexes_df = hexes_df[
-        #         hexes_df["h3_sequence"].apply(lambda x: len(x) > 3)
-        #     ].reset_index(drop=True)
+        if version == "TTE":
+            hexes_df = hexes_df[hexes_df["duration"] > 0.0].reset_index(drop=True)
         hexes_gdf = gpd.GeoDataFrame(hexes_df, geometry="geometry", crs=WGS84_CRS)
 
         return hexes_gdf
