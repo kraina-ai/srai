@@ -52,7 +52,12 @@ class Hex2VecEmbedder(CountEmbedder):
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.
-        """
+        """  # noqa: D202
+
+        self.expected_output_features: Optional[
+            Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
+        ] = expected_output_features
+
         super().__init__(
             expected_output_features=expected_output_features,
             count_subcategories=count_subcategories,
@@ -139,8 +144,9 @@ class Hex2VecEmbedder(CountEmbedder):
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
 
         if self.expected_output_features is None:
-            self.expected_output_features = pd.Series(counts_df.columns)
+            self.expected_output_features = list(counts_df.columns)
 
+        assert self.expected_output_features is not None
         num_features = len(self.expected_output_features)
         self._model = Hex2VecModel(
             layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
@@ -249,9 +255,7 @@ class Hex2VecEmbedder(CountEmbedder):
         embedder_config = {
             "encoder_sizes": self._encoder_sizes,
             "expected_output_features": (
-                self.expected_output_features.tolist()
-                if self.expected_output_features is not None
-                else None
+                self.expected_output_features if self.expected_output_features is not None else None
             ),
         }
         self._save(path, embedder_config)
