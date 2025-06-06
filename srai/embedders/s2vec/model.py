@@ -136,8 +136,10 @@ class S2VecModel(Model):
 
         super().__init__()
 
-        # self.patch_embed = PatchEmbed(img_size, patch_size, in_ch, embed_dim)
+        self.img_size = img_size
         self.patch_size = patch_size
+        self.in_ch = in_ch
+        self.embed_dim = embed_dim
         patch_dim = patch_size * patch_size * in_ch
         self.grid_size = img_size // patch_size
         self.patch_embed = nn.Linear(in_ch, embed_dim)
@@ -336,10 +338,10 @@ class S2VecModel(Model):
             Dict[str, Union[int, float]]: The model configuration.
         """
         return {
-            "img_size": self.patch_embed.img_size,
-            "patch_size": self.patch_embed.patch_size,
-            "in_ch": self.patch_embed.in_ch,
-            "embed_dim": self.patch_embed.embed_dim,
+            "img_size": self.img_size,
+            "patch_size": self.patch_size,
+            "in_ch": self.in_ch,
+            "embed_dim": self.embed_dim,
             "mask_ratio": self.mask_ratio,
             "lr": self.lr,
         }

@@ -18,7 +18,6 @@ import pandas as pd
 from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder, ModelT
-from srai.embedders.geovex.model import GeoVexModel
 from srai.embedders.s2vec.dataset import S2VecDataset
 from srai.embedders.s2vec.model import S2VecModel
 from srai.embedders.s2vec.s2_utils import get_patches_from_img_gdf
@@ -61,7 +60,7 @@ class S2VecEmbedder(CountEmbedder):
                 i.e. "<super-tag>_<sub-tag>", or use OsmTagsFilter object.
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
-                Defaults to False.
+                Defaults to True.
             batch_size (int, optional): Batch size. Defaults to 64.
             img_res (int, optional): Image resolution. Defaults to 8.
             patch_res (int, optional): Patch resolution. Defaults to 12.
@@ -83,7 +82,8 @@ class S2VecEmbedder(CountEmbedder):
             count_subcategories=count_subcategories,
         )
 
-        # self._assert_feature_length(self.expected_output_features, convolutional_layer_size)
+        self._assert_embed_dim(self.expected_output_features, embedding_dim)
+        assert 0.0 <= mask_ratio <= 1.0, "Mask ratio must be between 0 and 1."
 
         self._model: Optional[S2VecModel] = None
         self._is_fitted = False
@@ -234,7 +234,6 @@ class S2VecEmbedder(CountEmbedder):
         Args:
             regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
             features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            negative_sample_k_distance (int, optional): Distance of negative samples. Defaults to 2.
             learning_rate (float, optional): Learning rate. Defaults to 0.001.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. This is where the
                 number of epochs can be set. Defaults to None.
@@ -267,33 +266,31 @@ class S2VecEmbedder(CountEmbedder):
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
 
-    def _assert_feature_length(self, target_features: list[str], conv_layer_size: int) -> None:
-        if len(target_features) < conv_layer_size:
+    def _assert_embed_dim(self, target_features: list[str], embed_dim: int) -> None:
+        if len(target_features) >= embed_dim:
             raise ValueError(
-                f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."
+                f"The S2Vec model expects an embedding dimension > {len(target_features)}."
             )
 
     def save(self, path: Union[str, Any]) -> None:
         """
-        Save the model to a directory.
+        Save the S2VecEmbedder model to a directory.
 
         Args:
             path (Union[str, Any]): Path to the directory.
         """
-        # embedder_config must match the constructor signature:
-        # target_features: Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter],
-        # batch_size: Optional[int] = 32,
-        # neighbourhood_radius: int = 4,
-        # convolutional_layers: int = 2,
-        # embedding_size: int = 32,
-        # convolutional_layer_size: int = 256,
         embedder_config = {
             "target_features": self.expected_output_features.to_json(orient="records"),
+            "count_subcategories": self.count_subcategories,
             "batch_size": self._batch_size,
-            "neighbourhood_radius": self._r,
-            "convolutional_layers": self._convolutional_layers,
-            "embedding_size": self._embedding_size,
-            "convolutional_layer_size": self._convolutional_layer_size,
+            "img_res": self._img_res,
+            "patch_res": self._patch_res,
+            "num_heads": self._num_heads,
+            "encoder_layers": self._encoder_layers,
+            "decoder_layers": self._decoder_layers,
+            "embedding_dim": self._embedding_dim,
+            "decoder_dim": self._decoder_dim,
+            "mask_ratio": self._mask_ratio,
         }
         self._save(path, embedder_config)
 
@@ -328,9 +325,9 @@ class S2VecEmbedder(CountEmbedder):
             model_module (type[ModelT]): Model class.
 
         Returns:
-            GeoVexEmbedder: GeoVexEmbedder object.
+            S2VecEmbedder: S2VecEmbedder object.
         """
-        return cls._load(path, GeoVexModel)
+        return cls._load(path, S2VecModel)
 
     @classmethod
     def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "S2VecEmbedder":
