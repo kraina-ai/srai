@@ -78,7 +78,8 @@ def dtw_distance(true_h3_seq: list[str], pred_h3_seq: list[str]) -> float:
     """
     true_coords = [h3.cell_to_latlng(h) for h in true_h3_seq]
     pred_coords = [h3.cell_to_latlng(h) for h in pred_h3_seq]
-    distance, _ = fastdtw(true_coords, pred_coords)
+    # distance, _ = fastdtw(true_coords, pred_coords)
+    distance, _ = fastdtw(true_coords, pred_coords, dist=lambda x, y: great_circle(x, y).meters)
     return float(distance)
 
 
