@@ -3,7 +3,7 @@
 import torch
 
 
-def get_1d_sincos_pos_embed_from_grid(embed_dim: int, pos: torch.Tensor) -> torch.Tensor:
+def get_1d_sincos_pos_embed(embed_dim: int, pos: torch.Tensor) -> torch.Tensor:
     """
     Generate 1D sin-cos positional embeddings.
 
@@ -47,8 +47,8 @@ def get_2d_sincos_pos_embed(
     grid = grid.reshape(2, -1).transpose(0, 1)  # (grid_size*grid_size, 2)
 
     # For each dimension, generate sin-cos embedding and then concatenate
-    emb_h = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[:, 0])
-    emb_w = get_1d_sincos_pos_embed_from_grid(embed_dim // 2, grid[:, 1])
+    emb_h = get_1d_sincos_pos_embed(embed_dim // 2, grid[:, 0])
+    emb_w = get_1d_sincos_pos_embed(embed_dim // 2, grid[:, 1])
     pos_embed = torch.cat([emb_h, emb_w], dim=1)  # (grid_size*grid_size, embed_dim)
     if cls_token:
         cls_token_embed = torch.zeros([1, embed_dim], dtype=torch.float32)

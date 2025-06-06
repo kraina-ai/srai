@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Union
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
-from srai.embedders.s2vec.pos_embed import get_2d_sincos_pos_embed
+from srai.embedders.s2vec.positional_encoding import get_2d_sincos_pos_embed
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
