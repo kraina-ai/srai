@@ -72,7 +72,7 @@ class HuggingFaceDataset(abc.ABC):
         result = {}
         dataset_name = self.path
         self.version = version
-        if version is not None and len(version) == 1:
+        if version is not None and len(version) <= 2:
             if self.resolution is None:
                 self.resolution = int(version)
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
@@ -555,12 +555,21 @@ class TrajectoryDataset(HuggingFaceDataset):
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
         test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
 
-        train_gdf.drop(
-            columns=["stratification_bin", "stratify_col", "x_len", "y_len"], inplace=True
+        test_gdf = test_gdf.drop(
+            columns=[
+                col
+                for col in ["x_len", "y_len", "stratification_bin", "stratify_col"]
+                if col in test_gdf.columns
+            ],
         )
-        test_gdf.drop(
-            columns=["stratification_bin", "stratify_col", "x_len", "y_len"], inplace=True
+        train_gdf = train_gdf.drop(
+            columns=[
+                col
+                for col in ["x_len", "y_len", "stratification_bin", "stratify_col"]
+                if col in test_gdf.columns
+            ],
         )
+
         if not dev:
             self.train_gdf = train_gdf
             self.test_gdf = test_gdf
