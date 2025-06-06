@@ -97,7 +97,6 @@ build-backend = "pdm.backend"
 [tool.pdm]
 [tool.pdm.dev-dependencies]
 # pdm add -d <library>
-dev = ["bumpver", "types-requests"]
 # pdm add -dG lint <library>
 lint = ["pre-commit", "mypy", "docformatter[tomli]", "ruff"]
 # pdm add -dG test <library>
@@ -253,4 +252,12 @@ ignore_packages = [
     'nvidia-nvtx-cu12',         # uses NVIDIA license
     'nvidia-nvjitlink-cu12',    # uses NVIDIA license
     'mkl',                      # Github Action artifact, uses Intel Simplified Software License
+]
+
+[dependency-groups]
+dev = [
+    "bumpver",
+    "types-requests",
+    "pre-commit",
+    "tox",
 ]
