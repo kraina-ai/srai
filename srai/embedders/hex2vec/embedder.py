@@ -52,7 +52,12 @@ class Hex2VecEmbedder(CountEmbedder):
             count_subcategories (bool, optional): Whether to count all subcategories individually
                 or count features only on the highest level based on features column name.
                 Defaults to False.
-        """
+        """  # noqa: D202
+
+        self.expected_output_features: Optional[
+            Union[list[str], OsmTagsFilter, GroupedOsmTagsFilter]
+        ] = expected_output_features
+
         super().__init__(
             expected_output_features=expected_output_features,
             count_subcategories=count_subcategories,
@@ -250,9 +255,7 @@ class Hex2VecEmbedder(CountEmbedder):
         embedder_config = {
             "encoder_sizes": self._encoder_sizes,
             "expected_output_features": (
-                self.expected_output_features.tolist()
-                if self.expected_output_features is not None
-                else None
+                self.expected_output_features if self.expected_output_features is not None else None
             ),
         }
         self._save(path, embedder_config)
