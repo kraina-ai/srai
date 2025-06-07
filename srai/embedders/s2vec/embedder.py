@@ -262,6 +262,8 @@ class S2VecEmbedder(CountEmbedder):
     def _prepare_trainer_kwargs(self, trainer_kwargs: Optional[dict[str, Any]]) -> dict[str, Any]:
         if trainer_kwargs is None:
             trainer_kwargs = {}
+        if "gradient_clip_val" not in trainer_kwargs:
+            trainer_kwargs["gradient_clip_val"] = 1.0
         if "max_epochs" not in trainer_kwargs:
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs

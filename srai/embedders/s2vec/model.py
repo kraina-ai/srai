@@ -112,7 +112,8 @@ class S2VecModel(Model):
         embed_dim: int = 256,
         decoder_dim: int = 128,
         mask_ratio: float = 0.75,
-        lr: float = 1e-4,
+        lr: float = 5e-4,
+        weight_decay: float = 1e-3,
     ):
         """
         Initialize the S2Vec model.
@@ -127,7 +128,8 @@ class S2VecModel(Model):
             embed_dim (int): The dimension of the encoder. Defaults to 256.
             decoder_dim (int): The dimension of the decoder. Defaults to 128.
             mask_ratio (float): The ratio of masked patches. Defaults to 0.75.
-            lr (float): The learning rate. Defaults to 1e-4.
+            lr (float): The learning rate. Defaults to 5e-4.
+            weight_decay (float): The weight decay. Defaults to 1e-3.
         """
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
@@ -160,6 +162,7 @@ class S2VecModel(Model):
         self.decoder_pos_embed = nn.Parameter(decoder_pos_embed, requires_grad=False)
         self.patch_dim = patch_dim
         self.lr = lr
+        self.weight_decay = weight_decay
 
     def random_masking(
         self, x: "torch.Tensor", mask_ratio: float
@@ -327,8 +330,21 @@ class S2VecModel(Model):
         opt: torch.optim.Optimizer = torch.optim.AdamW(
             self.parameters(),
             lr=self.lr,
+            weight_decay=self.weight_decay,
+            betas=(0.9, 0.95),
         )
-        return [opt]
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=100
+        )
+        return {
+            "optimizer": opt,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch",
+                "frequency": 1,
+            },
+        }
 
     def get_config(self) -> dict[str, Union[int, float]]:
         """
