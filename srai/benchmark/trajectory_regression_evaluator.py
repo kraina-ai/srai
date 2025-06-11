@@ -73,14 +73,14 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         if h3_test is None:
             raise ValueError("The function 'get_h3_with_labels' returned None for h3_test.")
         else:
-            trip_indexes = [int(idx) for idx in h3_test["trip_id"].to_list()]
+            trip_indexes = [int(idx) for idx in h3_test[dataset.target].to_list()]
             labels = h3_test["duration"].to_numpy()
 
         trip_to_prediction = {
             trip_id: prediction for trip_id, prediction in zip(trip_ids, predictions)
         }
 
-        available_trip_indexes = [idx for idx in trip_indexes if idx in trip_to_prediction]
+        available_trip_indexes = [int(idx) for idx in trip_indexes if idx in trip_to_prediction]
 
         missing_trip_indexes = set(trip_indexes) - set(available_trip_indexes)
         if missing_trip_indexes:
