@@ -16,8 +16,15 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 class MobilityPredictionEvaluator(BaseEvaluator):
     """Evaluator for models predicting H3 index trajectories directly."""
 
-    def __init__(self) -> None:
-        """Create the evaluator."""
+    def __init__(self, k: int = np.inf) -> None:
+        """
+        Create the evaluator.
+
+        Args:
+        k (int) : If set, only the first k elements of each sequence are used for metrics
+                 computation. Defaults to np.inf (use full sequences).
+        """
+        self.k = k
         super().__init__(task="mobility_prediction")
 
     def evaluate(
@@ -62,7 +69,9 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         }
 
         all_trip_ids = set(map(int, h3_test[trip_id_col].unique()))
-        available_trip_ids = [trip_id for trip_id in trip_to_prediction if trip_id in all_trip_ids]
+        available_trip_ids = [
+            int(trip_id) for trip_id in trip_to_prediction if trip_id in all_trip_ids
+        ]
         missing_trip_ids = set(trip_to_prediction.keys()) - set(available_trip_ids)
 
         if missing_trip_ids:
@@ -87,7 +96,7 @@ class MobilityPredictionEvaluator(BaseEvaluator):
             filtered_predictions.append(pred_h3_seq)
 
         # Compute metrics
-        metrics = self._compute_metrics(true_sequences, filtered_predictions)
+        metrics = self._compute_metrics(true_sequences, filtered_predictions, self.k)
 
         if log_metrics:
             self._log_metrics(metrics)
@@ -95,9 +104,7 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         return metrics
 
     def _compute_metrics(
-        self,
-        true_sequences: list[list[str]],
-        pred_sequences: list[list[str]],
+        self, true_sequences: list[list[str]], pred_sequences: list[list[str]], k: int = np.inf
     ) -> dict[str, float]:
         """
         Compute trajectory evaluation metrics based on H3 index sequences.
@@ -111,6 +118,8 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         Args:
             true_sequences (list[list[str]]): Ground truth sequences of H3 cell indexes.
             pred_sequences (list[list[str]]): Predicted sequences of H3 cell indexes.
+            k (int): If set, only the first k elements of each sequence are used for metrics
+                 computation. Defaults to np.inf (use full sequences).
 
         Returns:
             dict[str, float]: Dictionary containing the averaged trajectory evaluation metrics.
@@ -120,9 +129,16 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         dtw_list = []
 
         for true_seq, pred_seq in zip(true_sequences, pred_sequences):
-            acc = sequence_accuracy(true_seq, pred_seq)
-            hav = haversine_sequence(true_seq, pred_seq)
-            dtw = dtw_distance(true_seq, pred_seq)
+            if k != np.inf and k <= len(true_seq):
+                true_seq_k = true_seq[: int(k)]
+                pred_seq_k = pred_seq[: int(k)]
+            else:
+                true_seq_k = true_seq
+                pred_seq_k = pred_seq
+
+            acc = sequence_accuracy(true_seq_k, pred_seq_k)
+            hav = haversine_sequence(true_seq_k, pred_seq_k)
+            dtw = dtw_distance(true_seq_k, pred_seq_k)
 
             acc_list.append(acc)
             haversine_list.append(hav)
