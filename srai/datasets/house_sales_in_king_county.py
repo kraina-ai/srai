@@ -7,13 +7,14 @@ This module contains House Sales in King County Dataset.
 from typing import Optional
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 
-class HouseSalesInKingCountyDataset(HuggingFaceDataset):
+class HouseSalesInKingCountyDataset(PointDataset):
     """
     House Sales in King County dataset.
 
@@ -65,6 +66,12 @@ class HouseSalesInKingCountyDataset(HuggingFaceDataset):
             geometry=gpd.points_from_xy(x=data["long"], y=data["lat"]),
             crs=WGS84_CRS,
         )
+
+        lower = np.percentile(gdf[self.target], 10)
+        upper = np.percentile(gdf[self.target], 90)
+
+        # Filter out outlier prices based on aggregated value
+        gdf = gdf[(gdf[self.target] >= lower) & (gdf[self.target] <= upper)]
         return gdf
 
     def load(

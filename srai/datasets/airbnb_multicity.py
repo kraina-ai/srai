@@ -7,13 +7,14 @@ This module contains AirbnbMulticity dataset.
 from typing import Optional
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 
-class AirbnbMulticityDataset(HuggingFaceDataset):
+class AirbnbMulticityDataset(PointDataset):
     """
     AirbnbMulticity dataset.
 
@@ -57,6 +58,11 @@ class AirbnbMulticityDataset(HuggingFaceDataset):
             geometry=gpd.points_from_xy(x=df["longitude"], y=df["latitude"]),
             crs=WGS84_CRS,
         )
+        lower = np.percentile(gdf[self.target], 5)
+        upper = np.percentile(gdf[self.target], 95)
+
+        # Filter out outlier prices based on aggregated value
+        gdf = gdf[(gdf[self.target] >= lower) & (gdf[self.target] <= upper)]
 
         return gdf
 

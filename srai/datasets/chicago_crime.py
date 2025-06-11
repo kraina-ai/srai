@@ -10,10 +10,10 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 
-class ChicagoCrimeDataset(HuggingFaceDataset):
+class ChicagoCrimeDataset(PointDataset):
     """
     Chicago Crime dataset.
 
@@ -36,7 +36,7 @@ class ChicagoCrimeDataset(HuggingFaceDataset):
         ]
         type = "point"
         # target = "Primary Type"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/chicago_crime",
             type=type,

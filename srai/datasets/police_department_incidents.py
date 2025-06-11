@@ -10,10 +10,10 @@ import geopandas as gpd
 import pandas as pd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 
-class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
+class PoliceDepartmentIncidentsDataset(PointDataset):
     """
     The San Francisco Police Department's (SFPD) Incident Report Datatset.
 
@@ -39,7 +39,7 @@ class PoliceDepartmentIncidentsDataset(HuggingFaceDataset):
         ]
         type = "point"
         # target = "Incident Category"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/police_department_incidents",
             type=type,

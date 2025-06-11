@@ -9,13 +9,13 @@ from typing import Optional
 import geopandas as gpd
 
 from srai.constants import WGS84_CRS
-from srai.datasets import HuggingFaceDataset
+from srai.datasets import PointDataset
 
 years_previous: list[int] = [2013, 2014, 2015, 2016, 2017, 2018, 2019]
 years_current: list[int] = [2020, 2021, 2022, 2023]
 
 
-class PhiladelphiaCrimeDataset(HuggingFaceDataset):
+class PhiladelphiaCrimeDataset(PointDataset):
     """
     Philadelphia Crime dataset.
 
@@ -36,7 +36,7 @@ class PhiladelphiaCrimeDataset(HuggingFaceDataset):
         ]
         type = "point"
         # target = "text_general_code"
-        target = None
+        target = "count"
         super().__init__(
             "kraina/philadelphia_crime",
             type=type,

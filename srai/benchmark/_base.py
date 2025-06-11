@@ -15,14 +15,17 @@ class BaseEvaluator(abc.ABC):
     """Abstract class for benchmark evaluators."""
 
     def __init__(
-        self, task: Literal["trajectory_prediction", "regression", "poi_prediction"]
+        self,
+        task: Literal[
+            "trajectory_regression", "regression", "poi_prediction", "mobility_prediction"
+        ],
     ) -> None:
         self.task = task
 
     @abc.abstractmethod
     def evaluate(
         self,
-        dataset: sds.HuggingFaceDataset,
+        dataset: sds.PointDataset | sds.TrajectoryDataset,
         predictions: np.ndarray,
         log_metrics: bool = True,
         hf_token: Optional[str] = None,
