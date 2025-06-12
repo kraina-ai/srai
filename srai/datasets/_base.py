@@ -166,13 +166,13 @@ class PointDataset(HuggingFaceDataset):
 
         if resolution is None:
             raise ValueError(
-                "No preset resolution for the dataset in self.resolution. Please \
-                             provide a resolution."
+                "No preset resolution for the dataset in self.resolution. Please "
+                "provide a resolution."
             )
         elif self.resolution is not None and resolution != self.resolution:
             raise ValueError(
-                "Resolution provided is different from the preset resolution for the \
-                             dataset. This may result in a data leak between splits."
+                "Resolution provided is different from the preset resolution for the "
+                "dataset. This may result in a data leak between splits."
             )
 
         target_column = target_column if target_column is not None else self.target
@@ -288,13 +288,13 @@ class PointDataset(HuggingFaceDataset):
 
         if resolution is None:
             raise ValueError(
-                "No preset resolution for the dataset in self.resolution. Please \
-                             provide a resolution."
+                "No preset resolution for the dataset in self.resolution. Please"
+                "provide a resolution."
             )
         elif self.resolution is not None and resolution != self.resolution:
             raise ValueError(
-                "Resolution provided is different from the preset resolution for the \
-                             dataset. This may result in a data leak between splits."
+                "Resolution provided is different from the preset resolution for the"
+                "dataset. This may result in a data leak between splits."
             )
 
         regionalizer = H3Regionalizer(resolution=resolution)
@@ -400,13 +400,13 @@ class PointDataset(HuggingFaceDataset):
         # If resolution is still None, raise an error
         if resolution is None:
             raise ValueError(
-                "No preset resolution for the dataset in self.resolution. Please \
-                             provide a resolution."
+                "No preset resolution for the dataset in self.resolution. Please"
+                "provide a resolution."
             )
         elif self.resolution is not None and resolution != self.resolution:
             raise ValueError(
-                "Resolution provided is different from the preset resolution for the \
-                             dataset. This may result in a data leak between splits."
+                "Resolution provided is different from the preset resolution for the"
+                "dataset. This may result in a data leak between splits."
             )
 
         if target_column is None:
@@ -645,13 +645,13 @@ class TrajectoryDataset(HuggingFaceDataset):
         # If resolution is still None, raise an error
         if resolution is None:
             raise ValueError(
-                "No preset resolution for the dataset in self.resolution. Please \
-                             provide a resolution."
+                "No preset resolution for the dataset in self.resolution. Please"
+                "provide a resolution."
             )
         elif self.resolution is not None and resolution != self.resolution:
             raise ValueError(
-                "Resolution provided is different from the preset resolution for the \
-                             dataset. This may result in a data leak between splits."
+                "Resolution provided is different from the preset resolution for the"
+                "dataset. This may result in a data leak between splits."
             )
 
         if self.version == "TTE":
