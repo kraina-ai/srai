@@ -349,14 +349,18 @@ class PointDataset(HuggingFaceDataset):
         if not dev:
             self.train_gdf = train_gdf
             self.test_gdf = test_gdf
-            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                   test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, "
+                f"test len: {len(self.test_gdf)}"
+            )
         else:
             self.train_gdf = train_gdf
             self.dev_gdf = test_gdf
-            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
-                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
-                    test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and dev_gdf. Test split remains unchanged."
+                f"Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)},"
+                f"test len: {len(self.test_gdf)}"
+            )
 
         if not dev:
             return self.train_gdf, self.test_gdf
@@ -596,14 +600,18 @@ class TrajectoryDataset(HuggingFaceDataset):
         if not dev:
             self.train_gdf = train_gdf
             self.test_gdf = test_gdf
-            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                   test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)},"
+                f"test len: {len(self.test_gdf)}"
+            )
         else:
             self.train_gdf = train_gdf
             self.dev_gdf = test_gdf
-            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
-                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
-                    test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and dev_gdf. Test split remains unchanged."
+                f"Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)},"
+                f"test len: {len(self.test_gdf)}"
+            )
         return train_gdf, test_gdf
 
     def get_h3_with_labels(
