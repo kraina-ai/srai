@@ -190,13 +190,13 @@ class PointDataset(HuggingFaceDataset):
             regions = regionalizer.transform(gdf)
 
             joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
-            joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+            # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
 
-            averages_hex = joined_gdf.groupby("h3_index").size().reset_index(name=target_column)
+            averages_hex = joined_gdf.groupby("region_id").size().reset_index(name=target_column)
             gdf_ = regions.merge(
-                averages_hex, how="inner", left_on="region_id", right_on="h3_index"
+                averages_hex, how="inner", left_on="region_id", right_on="region_id"
             )
-            gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
+            # gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
             gdf_.index = gdf_["region_id"]
 
         splits = np.linspace(
@@ -227,10 +227,10 @@ class PointDataset(HuggingFaceDataset):
         if target_column == "count":
             train_hex_indexes = train_gdf["region_id"].unique()
             test_hex_indexes = test_gdf["region_id"].unique()
-            train = joined_gdf[joined_gdf["h3_index"].isin(train_hex_indexes)]
-            test = joined_gdf[joined_gdf["h3_index"].isin(test_hex_indexes)]
-            train = train.drop(columns=["h3_index"])
-            test = test.drop(columns=["h3_index"])
+            train = joined_gdf[joined_gdf["region_id"].isin(train_hex_indexes)]
+            test = joined_gdf[joined_gdf["region_id"].isin(test_hex_indexes)]
+            train = train.drop(columns=["region_id"])
+            test = test.drop(columns=["region_id"])
 
         if not dev:
             self.train_gdf = train if target_column == "count" else train_gdf
@@ -308,22 +308,24 @@ class PointDataset(HuggingFaceDataset):
         )  # get localization of h3 region
 
         joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")
-        joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+        # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         joined_gdf.drop_duplicates(inplace=True)
 
-        if joined_gdf["h3_index"].isnull().sum() != 0:  # handle outliers
-            joined_gdf.loc[joined_gdf["h3_index"].isnull(), "h3_index"] = "fffffffffffffff"
+        if joined_gdf["region_id"].isnull().sum() != 0:  # handle outliers
+            joined_gdf.loc[joined_gdf["region_id"].isnull(), "region_id"] = "fffffffffffffff"
         # set outlier index fffffffffffffff
-        outlier_indices = joined_gdf["h3_index"].value_counts()
+        outlier_indices = joined_gdf["region_id"].value_counts()
         outlier_indices = outlier_indices[
             outlier_indices <= 4
         ].index  # if only 4 points are in hex, they're outliers
-        joined_gdf.loc[joined_gdf["h3_index"].isin(outlier_indices), "h3_index"] = "fffffffffffffff"
+        joined_gdf.loc[joined_gdf["region_id"].isin(outlier_indices), "region_id"] = (
+            "fffffffffffffff"
+        )
 
         train_indices, test_indices = train_test_split(
             range(len(joined_gdf)),
             test_size=test_size,  # * 2,  # multiply for dev set also
-            stratify=joined_gdf.h3_index,  # stratify by spatial h3
+            stratify=joined_gdf.region_id,  # stratify by spatial h3
             random_state=random_state,
         )
 
@@ -446,16 +448,17 @@ class PointDataset(HuggingFaceDataset):
         regionalizer = H3Regionalizer(resolution=resolution)
         regions = regionalizer.transform(gdf)
         joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
-        joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
+
         if target_column == "count":
-            aggregated = joined_gdf.groupby("h3_index").size().reset_index(name=target_column)
+            aggregated = joined_gdf.groupby("region_id").size().reset_index(name=target_column)
         else:
             aggregated = (
-                joined_gdf.groupby("h3_index")[target_column].mean().reset_index(name=target_column)
+                joined_gdf.groupby("region_id")[target_column]
+                .mean()
+                .reset_index(name=target_column)
             )
 
-        gdf_ = regions.merge(aggregated, how="inner", left_on="region_id", right_on="h3_index")
-        gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
+        gdf_ = regions.merge(aggregated, how="inner", left_on="region_id", right_on="region_id")
 
         # gdf_.index = gdf_["region_id"]
 
@@ -519,16 +522,33 @@ class TrajectoryDataset(HuggingFaceDataset):
         if task == "TTE":
             self.version = "TTE"
             # Calculate duration in seconds from timestamps list
-            # gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
-            #     lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
-            # )
+
             if "duration" in gdf_copy.columns:
                 gdf_copy["stratify_col"] = gdf_copy["duration"]
+            elif "duration" not in gdf_copy.columns and "timestamp" in gdf_copy.columns:
+                gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
+                    lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
+                )
             else:
-                raise ValueError("Duration column does not exist. Can't stratify it.")
+                raise ValueError(
+                    "Duration column and timestamp column does not exist.\
+                                  Can't stratify it."
+                )
 
         elif task == "HMP":
             self.version = "HMP"
+
+            def split_sequence(seq):
+                split_idx = int(len(seq) * 0.85)
+                if split_idx == len(seq):
+                    split_idx = len(seq) - 1
+                return seq[:split_idx], seq[split_idx:]
+
+            if "h3_sequence_x" not in gdf_copy.columns:
+                split_result = gdf_copy["h3_sequence"].apply(split_sequence)
+                gdf_copy["h3_sequence_x"] = split_result.apply(lambda x: x[0])
+                gdf_copy["h3_sequence_y"] = split_result.apply(lambda x: x[1])
+
             # Calculate trajectory length in unique hexagons
             gdf_copy["x_len"] = gdf_copy["h3_sequence_x"].apply(lambda seq: len(set(seq)))
             gdf_copy["y_len"] = gdf_copy["h3_sequence_y"].apply(lambda seq: len(set(seq)))
