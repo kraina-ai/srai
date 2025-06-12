@@ -72,9 +72,12 @@ class HuggingFaceDataset(abc.ABC):
         result = {}
         dataset_name = self.path
         self.version = version
-        if version is not None and len(version) <= 2:
-            if self.resolution is None:
+        if self.resolution is None and version is not None:
+            try:
+                # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(version)
+            except ValueError:
+                pass
         data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
@@ -132,7 +135,7 @@ class PointDataset(HuggingFaceDataset):
         self.train_gdf = None
         self.test_gdf = None
         self.dev_gdf = None
-        self.resolution = resolution
+        self.resolution = None
 
     def train_test_split_bucket_regression(
         self,
@@ -358,8 +361,6 @@ class PointDataset(HuggingFaceDataset):
         else:
             return self.train_gdf, self.dev_gdf
         # , gdf_.iloc[dev_indices],
-
-        return self.train_gdf, self.test_gdf
 
     def get_h3_with_labels(
         self,
@@ -667,8 +668,9 @@ class TrajectoryDataset(HuggingFaceDataset):
         geometry_col = _gdf.geometry.name
 
         # Group and aggregate all columns as lists
-        aggregated = _gdf.groupby(target_column).agg(lambda x: x.tolist())
 
+        aggregated = _gdf.groupby(target_column).agg(lambda x: x.tolist())
+        aggregated = aggregated[aggregated[geometry_col].apply(lambda x: len(x) > 1)]
         aggregated[geometry_col] = aggregated[geometry_col].progress_apply(LineString)
 
         traj_gdf = gpd.GeoDataFrame(aggregated.reset_index(), geometry=geometry_col, crs=_gdf.crs)

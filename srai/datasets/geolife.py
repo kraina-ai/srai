@@ -197,7 +197,8 @@ class GeolifeDataset(TrajectoryDataset):
             gpd.GeoDataFrame: preprocessed data.
         """
         df = data.copy()
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")  # <- fix here
+        if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+            df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")  # <- fix here
 
         gdf = gpd.GeoDataFrame(
             df.drop(["longitude", "latitude"], axis=1),
