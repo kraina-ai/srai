@@ -94,14 +94,13 @@ class HuggingFaceDataset(abc.ABC):
     @abc.abstractmethod
     def get_h3_with_labels(
         self,
-        resolution: Optional[int] = None,
+        # resolution: Optional[int] = None,
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Returns indexes with target labels from the dataset depending on dataset and task type.
 
         Args:
-            resolution (int): h3 resolution to regionalize data.
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
             target_column (Optional[str], optional): Target column name.Defaults to None.
@@ -370,7 +369,7 @@ class PointDataset(HuggingFaceDataset):
 
     def get_h3_with_labels(
         self,
-        resolution: Optional[int] = None,
+        # resolution: Optional[int] = None,
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
@@ -380,7 +379,6 @@ class PointDataset(HuggingFaceDataset):
         is None, then the number of points is calculted within a hex and scaled to [0,1].
 
         Args:
-            resolution (int): h3 resolution to regionalize data.
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
             target_column (Optional[str], optional): Target column name. If None, aggregates h3 \
@@ -394,28 +392,28 @@ class PointDataset(HuggingFaceDataset):
         # if target_column is None:
         #     target_column = "count"
 
-        resolution = resolution if resolution is not None else self.resolution
+        # resolution = resolution if resolution is not None else self.resolution
 
         assert self.train_gdf is not None
         # If resolution is still None, raise an error
-        if resolution is None:
+        if self.resolution is None:
             raise ValueError(
                 "No preset resolution for the dataset in self.resolution. Please"
                 "provide a resolution."
             )
-        elif self.resolution is not None and resolution != self.resolution:
-            raise ValueError(
-                "Resolution provided is different from the preset resolution for the"
-                "dataset. This may result in a data leak between splits."
-            )
+        # elif self.resolution is not None and resolution != self.resolution:
+        #     raise ValueError(
+        #         "Resolution provided is different from the preset resolution for the"
+        #         "dataset. This may result in a data leak between splits."
+        #     )
 
         if target_column is None:
             target_column = getattr(self, "target", None) or "count"
 
-        _train_gdf = self._aggregate_hexes(self.train_gdf, resolution, target_column)
+        _train_gdf = self._aggregate_hexes(self.train_gdf, self.resolution, target_column)
 
         if self.test_gdf is not None:
-            _test_gdf = self._aggregate_hexes(self.test_gdf, resolution, target_column)
+            _test_gdf = self._aggregate_hexes(self.test_gdf, self.resolution, target_column)
         else:
             _test_gdf = None
 
@@ -616,7 +614,7 @@ class TrajectoryDataset(HuggingFaceDataset):
 
     def get_h3_with_labels(
         self,
-        resolution: Optional[int] = None,
+        # resolution: Optional[int] = None,
         target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
@@ -626,7 +624,6 @@ class TrajectoryDataset(HuggingFaceDataset):
             for each trajectory (time duration for TTE task, future movement sequence for HMP task).
 
         Args:
-            resolution (int): h3 resolution to regionalize data.
             train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
             test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
             target_column (Optional[str], optional): Target column name. In trajectories it is\
@@ -639,20 +636,20 @@ class TrajectoryDataset(HuggingFaceDataset):
         # if target_column is None:
         #     target_column = "count"
 
-        resolution = resolution if resolution is not None else self.resolution
+        # resolution = resolution if resolution is not None else self.resolution
 
         assert self.train_gdf is not None
         # If resolution is still None, raise an error
-        if resolution is None:
+        if self.resolution is None:
             raise ValueError(
                 "No preset resolution for the dataset in self.resolution. Please"
                 "provide a resolution."
             )
-        elif self.resolution is not None and resolution != self.resolution:
-            raise ValueError(
-                "Resolution provided is different from the preset resolution for the"
-                "dataset. This may result in a data leak between splits."
-            )
+        # elif self.resolution is not None and resolution != self.resolution:
+        #     raise ValueError(
+        #         "Resolution provided is different from the preset resolution for the"
+        #         "dataset. This may result in a data leak between splits."
+        #     )
 
         if self.version == "TTE":
             _train_gdf = self.train_gdf[[self.target, "h3_sequence", "duration"]]
