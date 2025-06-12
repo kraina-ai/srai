@@ -4,7 +4,7 @@ AirbnbMulticity dataset loader.
 This module contains AirbnbMulticity dataset.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -67,7 +67,7 @@ class AirbnbMulticityDataset(PointDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "8"
+        self, version: Optional[Union[int, str]] = 8, hf_token: Optional[str] = None
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -76,7 +76,7 @@ class AirbnbMulticityDataset(PointDataset):
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (str, optional): version of a dataset.
+            version (str or int, optional): version of a dataset.
                 Available: '8', '9', '10', where number is a h3 resolution used in train-test \
                     split. Benchmark version comprises six cities: Paris, Rome, London, Amsterdam, \
                         Melbourne, New York City. Raw, full data from ~80 cities available as 'all'.
@@ -85,4 +85,4 @@ class AirbnbMulticityDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        return super().load(hf_token, version)
+        return super().load(version=version, hf_token=hf_token)

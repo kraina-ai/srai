@@ -4,7 +4,7 @@ House Sales in King County dataset loader.
 This module contains House Sales in King County Dataset.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 import numpy as np
@@ -75,7 +75,7 @@ class HouseSalesInKingCountyDataset(PointDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "8"
+        self, version: Optional[Union[int, str]] = 8, hf_token: Optional[str] = None
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -84,7 +84,7 @@ class HouseSalesInKingCountyDataset(PointDataset):
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (str, optional): version of a dataset.
+            version (str or int, optional): version of a dataset.
                 Available: '8', '9', '10', where number is a h3 resolution used in train-test \
                     split. Defaults to '8'. Raw, full data available as 'all'.
 
@@ -92,4 +92,4 @@ class HouseSalesInKingCountyDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        return super().load(hf_token, version)
+        return super().load(hf_token=hf_token, version=version)

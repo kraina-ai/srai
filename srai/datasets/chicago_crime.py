@@ -4,7 +4,7 @@ Chicago Crime dataset loader.
 This module contains Chicago Crime Dataset.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -65,7 +65,7 @@ class ChicagoCrimeDataset(PointDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "9"
+        self, version: Optional[Union[int, str]] = 9, hf_token: Optional[str] = None
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -74,7 +74,7 @@ class ChicagoCrimeDataset(PointDataset):
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (str, optional): version of a dataset.
+            version (str or int, optional): version of a dataset.
                 Available: Official spatial train-test split from year 2022 in chosen h3 resolution:
                 '8', '9, '10'. Defaults to '9'. Raw data from other years available
                 as: '2020', '2021', '2022'.
@@ -83,4 +83,4 @@ class ChicagoCrimeDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        return super().load(hf_token, version)
+        return super().load(hf_token=hf_token, version=version)

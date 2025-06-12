@@ -4,7 +4,7 @@ The San Francisco Police Department's (SFPD) Incident Report dataset loader.
 This module contains The San Francisco Police Department's (SFPD) Incident Report Datatset.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 import pandas as pd
@@ -68,7 +68,7 @@ class PoliceDepartmentIncidentsDataset(PointDataset):
         return gdf
 
     def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = "9"
+        self, version: Optional[Union[int, str]] = 9, hf_token: Optional[str] = None
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -77,7 +77,7 @@ class PoliceDepartmentIncidentsDataset(PointDataset):
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (str, optional): version of a dataset.
+            version (str or int, optional): version of a dataset.
                 Available: '8', '9', '10', where number is a h3 resolution used in train-test \
                     split. Defaults to '9'. Raw, full data available as 'all'.
 
@@ -85,4 +85,4 @@ class PoliceDepartmentIncidentsDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        return super().load(hf_token, version)
+        return super().load(hf_token=hf_token, version=version)

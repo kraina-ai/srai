@@ -1,7 +1,7 @@
 """Base classes for Datasets."""
 
 import abc
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import geopandas as gpd
 import h3
@@ -54,7 +54,7 @@ class HuggingFaceDataset(abc.ABC):
         raise NotImplementedError
 
     def load(
-        self, hf_token: Optional[str] = None, version: Optional[str] = None
+        self, version: Optional[Union[int, str]] = None, hf_token: Optional[str] = None
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -63,7 +63,7 @@ class HuggingFaceDataset(abc.ABC):
             hf_token (str, optional): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (str, optional): version of a dataset
+            version (str or int, optional): version of a dataset
 
         Returns:
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
@@ -71,14 +71,14 @@ class HuggingFaceDataset(abc.ABC):
         """
         result = {}
         dataset_name = self.path
-        self.version = version
+        self.version = str(version)
         if self.resolution is None and version is not None:
             try:
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(version)
             except ValueError:
                 pass
-        data = load_dataset(dataset_name, version, token=hf_token, trust_remote_code=True)
+        data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
         self.train_gdf = processed_train
@@ -135,7 +135,7 @@ class PointDataset(HuggingFaceDataset):
         self.train_gdf = None
         self.test_gdf = None
         self.dev_gdf = None
-        self.resolution = None
+        self.resolution = resolution
 
     def train_test_split_bucket_regression(
         self,

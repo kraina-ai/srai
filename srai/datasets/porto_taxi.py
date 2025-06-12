@@ -4,7 +4,7 @@ Porto Taxi dataset loader.
 This module contains Porto Taxi Dataset.
 """
 
-from typing import Optional
+from typing import Optional, Union
 
 import geopandas as gpd
 import h3
@@ -224,8 +224,8 @@ class PortoTaxiDataset(TrajectoryDataset):
 
     def load(
         self,
+        version: Optional[Union[int, str]] = "TTE",
         hf_token: Optional[str] = None,
-        version: Optional[str] = "TTE",
         resolution: Optional[int] = None,
     ) -> dict[str, gpd.GeoDataFrame]:
         """
@@ -235,7 +235,7 @@ class PortoTaxiDataset(TrajectoryDataset):
             hf_token (Optional[str]): If needed, a User Access Token needed to authenticate to
                 the Hugging Face Hub. Environment variable `HF_TOKEN` can be also used.
                 Defaults to None.
-            version (Optional[str]): version of a dataset.
+            version (Optional[str, int]): version of a dataset.
                 Available: Official train-test split for Travel Time Estimation task (TTE) and
                 Human Mobility Prediction task (HMP). Raw data from available as: 'all'.
             resolution (Optional[int]): H3 resolution for hex trajectories.
@@ -252,4 +252,6 @@ class PortoTaxiDataset(TrajectoryDataset):
                 raise ValueError("Pass the resolution parameter to generate h3 trajectories.")
             else:
                 self.resolution = resolution
-        return super().load(hf_token, version)
+        else:
+            raise NotImplementedError("Version not implemented")
+        return super().load(hf_token=hf_token, version=version)
