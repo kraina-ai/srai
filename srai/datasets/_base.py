@@ -95,15 +95,10 @@ class HuggingFaceDataset(abc.ABC):
     def get_h3_with_labels(
         self,
         # resolution: Optional[int] = None,
-        target_column: Optional[str] = None,
+        # target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Returns indexes with target labels from the dataset depending on dataset and task type.
-
-        Args:
-            train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
-            test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
-            target_column (Optional[str], optional): Target column name.Defaults to None.
 
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test indexes with target \
@@ -370,7 +365,7 @@ class PointDataset(HuggingFaceDataset):
     def get_h3_with_labels(
         self,
         # resolution: Optional[int] = None,
-        target_column: Optional[str] = None,
+        # target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Returns h3 indexes with target labels from the dataset.
@@ -378,12 +373,6 @@ class PointDataset(HuggingFaceDataset):
         Points are aggregated to hexes and target column values are averaged or if target column \
         is None, then the number of points is calculted within a hex and scaled to [0,1].
 
-        Args:
-            train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
-            test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
-            target_column (Optional[str], optional): Target column name. If None, aggregates h3 \
-                on basis of number of points within a hex of given resolution. In this case values \
-                     are normalized to [0,1] scale. Defaults to None.
 
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes with target \
@@ -407,8 +396,10 @@ class PointDataset(HuggingFaceDataset):
         #         "dataset. This may result in a data leak between splits."
         #     )
 
-        if target_column is None:
+        if self.target is None:
             target_column = getattr(self, "target", None) or "count"
+        else:
+            target_column = self.target
 
         _train_gdf = self._aggregate_hexes(self.train_gdf, self.resolution, target_column)
 
@@ -615,7 +606,7 @@ class TrajectoryDataset(HuggingFaceDataset):
     def get_h3_with_labels(
         self,
         # resolution: Optional[int] = None,
-        target_column: Optional[str] = None,
+        # target_column: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
         """
         Returns ids, h3 indexes sequences, with target labels from the dataset.
@@ -623,19 +614,10 @@ class TrajectoryDataset(HuggingFaceDataset):
         Points are aggregated to hex trajectories and target column values are calculated \
             for each trajectory (time duration for TTE task, future movement sequence for HMP task).
 
-        Args:
-            train_gdf (gpd.GeoDataFrame): GeoDataFrame with training data.
-            test_gdf (Optional[gpd.GeoDataFrame]): GeoDataFrame with testing data.
-            target_column (Optional[str], optional): Target column name. In trajectories it is\
-                 usually an id of trajectory/trip.
-
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes sequences with \
                 target labels in GeoDataFrames
         """
-        # if target_column is None:
-        #     target_column = "count"
-
         # resolution = resolution if resolution is not None else self.resolution
 
         assert self.train_gdf is not None
