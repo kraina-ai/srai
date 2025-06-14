@@ -396,20 +396,15 @@ class PointDataset(HuggingFaceDataset):
         #         "dataset. This may result in a data leak between splits."
         #     )
 
-        if self.target is None:
-            target_column = getattr(self, "target", None) or "count"
-        else:
-            target_column = self.target
-
-        _train_gdf = self._aggregate_hexes(self.train_gdf, self.resolution, target_column)
+        _train_gdf = self._aggregate_hexes(self.train_gdf, self.resolution, self.target)
 
         if self.test_gdf is not None:
-            _test_gdf = self._aggregate_hexes(self.test_gdf, self.resolution, target_column)
+            _test_gdf = self._aggregate_hexes(self.test_gdf, self.resolution, self.target)
         else:
             _test_gdf = None
 
         # Scale the "count" column to [0, 1] if it is the target column
-        if target_column == "count":
+        if self.target == "count":
             scaler = MinMaxScaler()
             # Fit the scaler on the train dataset and transform
             _train_gdf["count"] = scaler.fit_transform(_train_gdf[["count"]])
