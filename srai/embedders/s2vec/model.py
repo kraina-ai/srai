@@ -104,9 +104,9 @@ class S2VecModel(Model):
     """
     S2Vec Model.
 
-    This class implements the S2Vec model. It is based on the masked autoencoder architecture.
-    The model is described in [1]. It takes a rasterized image as input (counts of
-    features per region) and outputs dense embeddings.
+    This class implements the S2Vec model. It is based on the masked autoencoder architecture. The
+    model is described in [1]. It takes a rasterized image as input (counts of features per region)
+    and outputs dense embeddings.
     """
 
     def __init__(
@@ -200,7 +200,6 @@ class S2VecModel(Model):
         Returns:
             tuple[torch.Tensor, torch.Tensor, torch.Tensor]: The masked tensor, the mask, and the
             indices to restore the original order.
-
         """
         B, N, D = x.shape
         len_keep = int(N * (1 - mask_ratio))
