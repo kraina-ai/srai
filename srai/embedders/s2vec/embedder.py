@@ -82,7 +82,6 @@ class S2VecEmbedder(CountEmbedder):
             count_subcategories=count_subcategories,
         )
 
-        self._assert_embed_dim(self.expected_output_features, embedding_dim)
         assert 0.0 <= mask_ratio <= 1.0, "Mask ratio must be between 0 and 1."
 
         self._model: Optional[S2VecModel] = None
@@ -267,12 +266,6 @@ class S2VecEmbedder(CountEmbedder):
         if "max_epochs" not in trainer_kwargs:
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
-
-    def _assert_embed_dim(self, target_features: list[str], embed_dim: int) -> None:
-        if len(target_features) >= embed_dim:
-            raise ValueError(
-                f"The S2Vec model expects an embedding dimension > {len(target_features)}."
-            )
 
     def save(self, path: Union[str, Any]) -> None:
         """
