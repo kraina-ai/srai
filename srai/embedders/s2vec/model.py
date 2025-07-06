@@ -10,6 +10,8 @@ References:
 
 from typing import TYPE_CHECKING, Union
 
+from timm.models.vision_transformer import Block
+
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
 from srai.embedders.s2vec.positional_encoding import get_2d_sincos_pos_embed
@@ -39,9 +41,10 @@ class MAEEncoder(nn.Module):
             num_heads (int): The number of attention heads.
         """
         super().__init__()
-        encoder_layer = nn.TransformerEncoderLayer(embed_dim, num_heads, batch_first=True)
-        norm = nn.LayerNorm(embed_dim)
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=depth, norm=norm)
+        self.norm = nn.LayerNorm(embed_dim)
+        self.blocks = nn.ModuleList(
+            [Block(embed_dim, num_heads=num_heads, qkv_bias=True) for _ in range(depth)]
+        )
 
     def forward(self, x):
         """
@@ -54,7 +57,9 @@ class MAEEncoder(nn.Module):
         Returns:
             torch.Tensor: The output tensor from the encoder.
         """
-        return self.encoder(x)
+        for block in self.blocks:
+            x = block(x)
+        return self.norm(x)
 
 
 class MAEDecoder(nn.Module):
@@ -71,9 +76,10 @@ class MAEDecoder(nn.Module):
             num_heads (int): The number of attention heads.
         """
         super().__init__()
-        decoder_layer = nn.TransformerEncoderLayer(decoder_dim, num_heads, batch_first=True)
-        norm = nn.LayerNorm(decoder_dim)
-        self.decoder = nn.TransformerEncoder(decoder_layer, num_layers=depth, norm=norm)
+        self.norm = nn.LayerNorm(decoder_dim)
+        self.blocks = nn.ModuleList(
+            [Block(decoder_dim, num_heads=num_heads, qkv_bias=True) for _ in range(depth)]
+        )
         self.output = nn.Linear(decoder_dim, patch_dim)
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":
@@ -87,7 +93,9 @@ class MAEDecoder(nn.Module):
         Returns:
             torch.Tensor: The output tensor from the decoder.
         """
-        x = self.decoder(x)
+        for block in self.blocks:
+            x = block(x)
+        x = self.norm(x)
         x = self.output(x)
         return x
 
@@ -142,9 +150,10 @@ class S2VecModel(Model):
         self.patch_size = patch_size
         self.in_ch = in_ch
         self.embed_dim = embed_dim
+        num_patches = (img_size // patch_size) ** 2
         patch_dim = patch_size * patch_size * in_ch
         self.grid_size = img_size // patch_size
-        self.patch_embed = nn.Linear(in_ch, embed_dim)
+        self.patch_embed = nn.Linear(patch_dim, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.encoder = MAEEncoder(embed_dim, encoder_layers, num_heads)
         self.decoder_embed = nn.Linear(embed_dim, decoder_dim)
@@ -157,12 +166,21 @@ class S2VecModel(Model):
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_dim))
         self.mask_ratio = mask_ratio
         pos_embed = get_2d_sincos_pos_embed(embed_dim, self.grid_size, cls_token=True)
-        self.pos_embed = nn.Parameter(pos_embed, requires_grad=False)
+        self.pos_embed = nn.Parameter(
+            torch.zeros(1, num_patches + 1, embed_dim), requires_grad=False
+        )
+        self.pos_embed.data.copy_(pos_embed.float())
         decoder_pos_embed = get_2d_sincos_pos_embed(decoder_dim, self.grid_size, cls_token=True)
-        self.decoder_pos_embed = nn.Parameter(decoder_pos_embed, requires_grad=False)
+        self.decoder_pos_embed = nn.Parameter(
+            torch.zeros(1, num_patches + 1, decoder_dim), requires_grad=False
+        )
+        self.decoder_pos_embed.data.copy_(decoder_pos_embed.float())
         self.patch_dim = patch_dim
         self.lr = lr
         self.weight_decay = weight_decay
+
+        torch.nn.init.normal_(self.cls_token, std=0.02)
+        torch.nn.init.normal_(self.mask_token, std=0.02)
 
     def random_masking(
         self, x: "torch.Tensor", mask_ratio: float
@@ -271,12 +289,7 @@ class S2VecModel(Model):
         pred = self.decode(latent, ids_restore)
         target = inputs
 
-        loss = (pred - target) ** 2
-        loss = loss.mean(dim=-1)
-
-        loss = (loss * mask).sum() / mask.sum()  # Only on masked patches
-
-        return loss, pred, mask
+        return pred, target, mask
 
     def training_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
@@ -293,7 +306,6 @@ class S2VecModel(Model):
         """
         rec, target, mask = self(batch)
 
-        B, N, D = target.shape
         loss = (rec - target).pow(2).mean(dim=-1)  # MSE per patch
         loss = (loss * mask).sum() / mask.sum()  # Only on masked patches
 
@@ -311,10 +323,8 @@ class S2VecModel(Model):
         Returns:
             torch.Tensor: The loss value.
         """
-        imgs, _ = batch
-        rec, target, mask = self(imgs)
+        rec, target, mask = self(batch)
 
-        B, N, D = target.shape
         loss = (rec - target).pow(2).mean(dim=-1)
         loss = (loss * mask).sum() / mask.sum()
         self.log("validation_loss", loss, on_step=True, on_epoch=True)
@@ -334,9 +344,7 @@ class S2VecModel(Model):
             betas=(0.9, 0.95),
         )
 
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=100
-        )
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=100)
         return {
             "optimizer": opt,
             "lr_scheduler": {
