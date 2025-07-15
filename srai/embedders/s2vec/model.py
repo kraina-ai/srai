@@ -8,7 +8,7 @@ References:
     [2] https://arxiv.org/abs/2111.06377
 """
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from timm.models.vision_transformer import Block
 
@@ -28,7 +28,7 @@ except ImportError:
     from srai.embedders._pytorch_stubs import nn, torch
 
 
-class MAEEncoder(nn.Module):
+class MAEEncoder(nn.Module):  # type: ignore
     """Masked Autoencoder Encoder."""
 
     def __init__(self, embed_dim: int, depth: int, num_heads: int):
@@ -46,7 +46,7 @@ class MAEEncoder(nn.Module):
             [Block(embed_dim, num_heads=num_heads, qkv_bias=True) for _ in range(depth)]
         )
 
-    def forward(self, x):
+    def forward(self, x: "torch.Tensor") -> "torch.Tensor":
         """
         Forward pass of the MAEEncoder.
 
@@ -62,7 +62,7 @@ class MAEEncoder(nn.Module):
         return self.norm(x)
 
 
-class MAEDecoder(nn.Module):
+class MAEDecoder(nn.Module):  # type: ignore
     """Masked Autoencoder Decoder."""
 
     def __init__(self, decoder_dim: int, patch_dim: int, depth: int, num_heads: int):
@@ -139,8 +139,27 @@ class S2VecModel(Model):
             lr (float): The learning rate. Defaults to 5e-4.
             weight_decay (float): The weight decay. Defaults to 1e-3.
         """
+        if img_size <= 0:
+            raise ValueError("img_size must be a positive integer.")
+        if patch_size <= 0 or img_size % patch_size != 0:
+            raise ValueError("patch_size must be a positive integer and divide img_size evenly.")
+        if in_ch <= 0:
+            raise ValueError("in_ch must be a positive integer.")
+        if num_heads <= 0:
+            raise ValueError("num_heads must be a positive integer.")
+        if encoder_layers <= 0:
+            raise ValueError("encoder_layers must be a positive integer.")
+        if decoder_layers <= 0:
+            raise ValueError("decoder_layers must be a positive integer.")
+        if embed_dim <= 0:
+            raise ValueError("embed_dim must be a positive integer.")
+        if decoder_dim <= 0:
+            raise ValueError("decoder_dim must be a positive integer.")
+        if not (0.0 < mask_ratio < 1.0):
+            raise ValueError("mask_ratio must be between 0 and 1 (exclusive).")
+
         import_optional_dependencies(
-            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+            dependency_group="torch", modules=["timm", "torch", "pytorch_lightning"]
         )
         from torch import nn
 
@@ -202,6 +221,11 @@ class S2VecModel(Model):
             indices to restore the original order.
         """
         B, N, D = x.shape
+
+        if mask_ratio == 0.0:
+            mask = torch.zeros([B, N], device=x.device)
+            ids_restore = torch.arange(N, device=x.device).unsqueeze(0).repeat(B, 1)
+            return x, mask, ids_restore
         len_keep = int(N * (1 - mask_ratio))
 
         noise = torch.rand(B, N, device=x.device)
@@ -329,7 +353,7 @@ class S2VecModel(Model):
         self.log("validation_loss", loss, on_step=True, on_epoch=True)
         return loss
 
-    def configure_optimizers(self) -> list["torch.optim.Optimizer"]:
+    def configure_optimizers(self) -> dict[str, Any]:
         """
         Configure the optimizers. This is called by PyTorch Lightning.
 
