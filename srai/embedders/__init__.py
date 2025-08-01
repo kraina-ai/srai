@@ -13,6 +13,7 @@ from .geovex import GeoVexEmbedder
 from .gtfs2vec import GTFS2VecEmbedder
 from .hex2vec import Hex2VecEmbedder
 from .highway2vec import Highway2VecEmbedder
+from .s2vec import S2VecEmbedder
 
 __all__ = [
     "Embedder",
@@ -22,6 +23,7 @@ __all__ = [
     "Hex2VecEmbedder",
     "Highway2VecEmbedder",
     "GeoVexEmbedder",
+    "S2VecEmbedder",
     "Model",
     "ModelT",
 ]
