@@ -98,14 +98,7 @@ class S2VecEmbedder(CountEmbedder):
 
         self._batch_size = batch_size
 
-        # save invalid h3s for later
-        self._invalid_cells: list[str] = []
         self._dataset: DataLoader = None
-
-    @property
-    def invalid_cells(self) -> list[str]:
-        """List of invalid h3s."""
-        return self._invalid_cells
 
     def transform(
         self,
