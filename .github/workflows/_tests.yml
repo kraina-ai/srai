@@ -11,13 +11,15 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
         include:
-          - os: macos-13
-            python-version: "3.12"
+          # Disable macos for now - stuck indefinitely
+          # - os: macos-latest
+          #   python-version: "3.12"
           - os: windows-latest
             python-version: "3.12"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      COLUMNS: 120
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python-version }}

@@ -7,6 +7,8 @@ We include both pre-defined spatial indexes (e.g. H3 or S2), data-based ones (e.
 based ones (e.g. administrative boundaries).
 """
 
+from srai.geometry import convert_to_regions_gdf
+
 from ._base import Regionalizer
 from .administrative_boundary_regionalizer import AdministrativeBoundaryRegionalizer
 from .geocode import geocode_to_region_gdf
@@ -23,4 +25,5 @@ __all__ = [
     "VoronoiRegionalizer",
     "SlippyMapRegionalizer",
     "geocode_to_region_gdf",
+    "convert_to_regions_gdf",
 ]

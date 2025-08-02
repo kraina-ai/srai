@@ -15,7 +15,8 @@ from srai.loaders.osm_loaders import OSMPbfLoader
 from srai.loaders.osm_loaders.filters import OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 from srai.regionalizers import geocode_to_region_gdf
-from tests.embedders.hex2vec.constants import ENCODER_SIZES, TRAINER_KWARGS
+from tests.embedders.conftest import TRAINER_KWARGS
+from tests.embedders.hex2vec.constants import ENCODER_SIZES
 
 
 def generate_test_case(
