@@ -15,11 +15,8 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
         types_or: [ python, pyi, jupyter ]
-  # TODO: Switch back to upstream docformatter
-  # after https://github.com/PyCQA/docformatter/issues/289 is fixed
   - repo: https://github.com/PyCQA/docformatter
     rev: v1.7.7
-    # rev: v1.7.5
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
@@ -64,7 +61,7 @@ repos:
     rev: "2025.1.0"
     hooks:
       - id: licensecheck
-        args: ["-u", "requirements:requirements.txt"]
+        args: ["--requirements-paths", "requirements.txt"]
         stages: [manual]
 
 ci:
