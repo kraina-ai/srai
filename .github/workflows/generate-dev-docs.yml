@@ -50,7 +50,7 @@ jobs:
           key: mkdocs-overpass-dev-cache-${{ runner.os }}
       - name: Execute jupyter notebooks
         run: |
-          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
+          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb" -not -path "examples/benchmark/*") --ExecutePreprocessor.kernel_name='python3'
       - uses: jannekem/run-python-script-action@v1
         name: Replace copyright date
         with:

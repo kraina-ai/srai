@@ -61,6 +61,8 @@ banned_directories = [
     "example_files",
     "__pycache__",
     "lightning_logs",
+    # exclude long running notebooks
+    "benchmark",
 ]
 banned_extensions = [".pbf", ".parquet", ".json", ".geojson", ".pt"]
 for i in EXAMPLES_DIRECTORY_PATH.glob("**/*"):
