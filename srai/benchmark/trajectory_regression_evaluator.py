@@ -79,10 +79,10 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         trip_to_prediction = {
             trip_id: prediction for trip_id, prediction in zip(trip_ids, predictions)
         }
+        trip_to_prediction_keys = trip_to_prediction.keys()
+        available_trip_indexes = set(trip_indexes).intersection(trip_to_prediction_keys)
+        missing_trip_indexes = set(trip_indexes).difference(available_trip_indexes)
 
-        available_trip_indexes = [int(idx) for idx in trip_indexes if idx in trip_to_prediction]
-
-        missing_trip_indexes = set(trip_indexes) - set(available_trip_indexes)
         if missing_trip_indexes:
             logging.info(f"{len(missing_trip_indexes)} trip_ids have no matching trip indexes in\
                          the test set and will be skipped in evaluation. Measuring for \

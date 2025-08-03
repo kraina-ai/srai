@@ -1,6 +1,8 @@
 """Base classes for Datasets."""
 
 import abc
+import operator
+from contextlib import suppress
 from typing import Literal, Optional, Union
 
 import geopandas as gpd
@@ -73,11 +75,9 @@ class HuggingFaceDataset(abc.ABC):
         dataset_name = self.path
         self.version = str(version)
         if self.resolution is None and version is not None:
-            try:
+            with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(version)
-            except ValueError:
-                pass
         data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
@@ -243,8 +243,8 @@ class PointDataset(HuggingFaceDataset):
         self.resolution = resolution
         if not dev:
             return self.train_gdf, self.test_gdf
-        else:
-            return self.train_gdf, self.dev_gdf
+
+        return self.train_gdf, self.dev_gdf
 
     def train_test_split_spatial_points(
         self,
@@ -358,8 +358,8 @@ class PointDataset(HuggingFaceDataset):
 
         if not dev:
             return self.train_gdf, self.test_gdf
-        else:
-            return self.train_gdf, self.dev_gdf
+
+        return self.train_gdf, self.dev_gdf
         # , gdf_.iloc[dev_indices],
 
     def get_h3_with_labels(
@@ -534,8 +534,8 @@ class TrajectoryDataset(HuggingFaceDataset):
 
             if "h3_sequence_x" not in gdf_copy.columns:
                 split_result = gdf_copy["h3_sequence"].apply(split_sequence)
-                gdf_copy["h3_sequence_x"] = split_result.apply(lambda x: x[0])
-                gdf_copy["h3_sequence_y"] = split_result.apply(lambda x: x[1])
+                gdf_copy["h3_sequence_x"] = split_result.apply(operator.itemgetter(0))
+                gdf_copy["h3_sequence_y"] = split_result.apply(operator.itemgetter(1))
 
             # Calculate trajectory length in unique hexagons
             gdf_copy["x_len"] = gdf_copy["h3_sequence_x"].apply(lambda seq: len(set(seq)))
@@ -569,14 +569,14 @@ class TrajectoryDataset(HuggingFaceDataset):
         test_gdf = test_gdf.drop(
             columns=[
                 col
-                for col in ["x_len", "y_len", "stratification_bin", "stratify_col"]
+                for col in ("x_len", "y_len", "stratification_bin", "stratify_col")
                 if col in test_gdf.columns
             ],
         )
         train_gdf = train_gdf.drop(
             columns=[
                 col
-                for col in ["x_len", "y_len", "stratification_bin", "stratify_col"]
+                for col in ("x_len", "y_len", "stratification_bin", "stratify_col")
                 if col in test_gdf.columns
             ],
         )

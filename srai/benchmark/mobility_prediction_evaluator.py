@@ -67,12 +67,11 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         trip_to_prediction = {
             int(trip_id): prediction for trip_id, prediction in zip(trip_ids, predictions)
         }
+        trip_to_prediction_keys = trip_to_prediction.keys()
 
         all_trip_ids = set(map(int, h3_test[trip_id_col].unique()))
-        available_trip_ids = [
-            int(trip_id) for trip_id in trip_to_prediction if trip_id in all_trip_ids
-        ]
-        missing_trip_ids = set(trip_to_prediction.keys()) - set(available_trip_ids)
+        available_trip_ids = set(trip_to_prediction_keys).intersection(all_trip_ids)
+        missing_trip_ids = set(trip_to_prediction_keys).difference(available_trip_ids)
 
         if missing_trip_ids:
             logging.info(
@@ -130,8 +129,8 @@ class MobilityPredictionEvaluator(BaseEvaluator):
 
         for true_seq, pred_seq in zip(true_sequences, pred_sequences):
             if k != np.inf and k <= len(true_seq):
-                true_seq_k = true_seq[: int(k)]
-                pred_seq_k = pred_seq[: int(k)]
+                true_seq_k = true_seq[:k]
+                pred_seq_k = pred_seq[:k]
             else:
                 true_seq_k = true_seq
                 pred_seq_k = pred_seq
