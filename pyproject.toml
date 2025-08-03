@@ -60,7 +60,7 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # pdm add -G osm <library>
 osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.11.0"]
 # pdm add -G overturemaps <library>
-overturemaps = ["overturemaestro>=0.2.5"]
+overturemaps = ["overturemaestro>=0.5.0"]
 # pdm add -G voronoi <library>
 voronoi = [
     "pymap3d>=3.0.0",
