@@ -1,5 +1,6 @@
 """Base class for regionalizers."""
 
+
 import abc
 
 import geopandas as gpd

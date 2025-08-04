@@ -1,5 +1,6 @@
 """Hex2Vec."""
 
+
 from .embedder import Hex2VecEmbedder
 from .model import Hex2VecModel
 from .neighbour_dataset import NeighbourDataset, NeighbourDatasetItem

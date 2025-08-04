@@ -7,6 +7,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
+
 import math
 from typing import TYPE_CHECKING, Callable, Union
 
@@ -84,9 +85,8 @@ def get_shape(r: int) -> int:
 
 def build_mask_funcs(R: int) -> tuple[Callable[[int, int], float], ...]:
     """
-    Build the mask functions for the loss function. These functions depend on the radius of the
-    hexagonal region. They weight the loss function to give more importance to the center of the
-    region.
+    Build the mask functions for the loss function. hexagonal region. They weight the loss function
+    to give more importance to the center of the These functions depend on the radius of the region.
 
     Args:
         R (int): Radius of the hexagonal region.
@@ -97,14 +97,15 @@ def build_mask_funcs(R: int) -> tuple[Callable[[int, int], float], ...]:
 
     def w_dist(i: int, j: int) -> float:
         """
-        The Distance Weighting Kernel. Equation (6) in [1].
+        The Distance Weighting Kernel.
 
-        Args:
-            i (int): row index of the first point
-            j (int): column index of the first point
+        Equation (6) in [1].
+                Args:
+                    i (int): row index of the first point
+                    j (int): column index of the first point
 
-        Returns:
-            float: The weight of the loss function.
+                Returns:
+                    float: The weight of the loss function.
         """
         q = j - R
         r = i - R
@@ -113,17 +114,18 @@ def build_mask_funcs(R: int) -> tuple[Callable[[int, int], float], ...]:
 
     def w_num(i: int, j: int) -> float:
         """
-        The Numerosity Weighting Kernel. Equation (6) in [1].
+        The Numerosity Weighting Kernel.
 
-        The 6 is the number of hexagons in a ring,
-        which is multiplied by the ring number to get the total number of hexagons in the ring.
+        Equation (6) in [1].
+                The 6 is the number of hexagons in a ring,
+                which is multiplied by the ring number to get the total number of hexagons in the ring.
 
-        Args:
-            i (int): row index of the first point
-            j (int): column index of the first point
+                Args:
+                    i (int): row index of the first point
+                    j (int): column index of the first point
 
-        Returns:
-            float: The weight of the loss function.
+                Returns:
+                    float: The weight of the loss function.
         """
         # r represents the ring number, which can be found using the ij index
         q = j - R
@@ -227,16 +229,17 @@ class HexagonalConv2d(nn.Module):  # type: ignore
         groups: int = 1,
     ):
         """
-        Initialize the HexagonalConv2d. This is a convolutional layer with a hexagonal kernel.
+        Initialize the HexagonalConv2d.
 
-        Args:
-            in_channels (int): The number of input channels.
-            out_channels (int): The number of output channels.
-            kernel_size (int, optional): The size of the kernel. Defaults to 3.
-            stride (int, optional): The stride of the convolution. Defaults to 2.
-            padding (int, optional): The padding of the convolution. Defaults to 0.
-            bias (bool, optional): Whether to use bias. Defaults to True.
-            groups (int, optional): The number of groups. Defaults to 1.
+        This is a convolutional layer with a hexagonal kernel.
+                Args:
+                    in_channels (int): The number of input channels.
+                    out_channels (int): The number of output channels.
+                    kernel_size (int, optional): The size of the kernel. Defaults to 3.
+                    stride (int, optional): The stride of the convolution. Defaults to 2.
+                    padding (int, optional): The padding of the convolution. Defaults to 0.
+                    bias (bool, optional): Whether to use bias. Defaults to True.
+                    groups (int, optional): The number of groups. Defaults to 1.
         """
         from torch import nn
 
@@ -533,16 +536,17 @@ class GeoVexModel(Model):
     def training_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         # sourcery skip: class-extract-method
         """
-        Perform a training step. This is called by PyTorch Lightning.
+        Perform a training step.
 
-        One training step consists of a forward pass, a loss calculation, and a backward pass.
+        This is called by PyTorch Lightning.
+                One training step consists of a forward pass, a loss calculation, and a backward pass.
 
-        Args:
-            batch (List[torch.Tensor]): The batch of data.
-            batch_idx (int): The index of the batch.
+                Args:
+                    batch (List[torch.Tensor]): The batch of data.
+                    batch_idx (int): The index of the batch.
 
-        Returns:
-            torch.Tensor: The loss value.
+                Returns:
+                    torch.Tensor: The loss value.
         """
         loss = self._loss.forward(*self.forward(batch), batch)
         self.log("train_loss", loss, on_step=True, on_epoch=True)
@@ -550,14 +554,15 @@ class GeoVexModel(Model):
 
     def validation_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
-        Perform a validation step. This is called by PyTorch Lightning.
+        Perform a validation step.
 
-        Args:
-            batch (List[torch.Tensor]): The batch of data.
-            batch_idx (int): The index of the batch.
+        This is called by PyTorch Lightning.
+                Args:
+                    batch (List[torch.Tensor]): The batch of data.
+                    batch_idx (int): The index of the batch.
 
-        Returns:
-            torch.Tensor: The loss value.
+                Returns:
+                    torch.Tensor: The loss value.
         """
         loss = self._loss.forward(*self.forward(batch), batch)
         self.log("validation_loss", loss, on_step=True, on_epoch=True)
@@ -565,10 +570,11 @@ class GeoVexModel(Model):
 
     def configure_optimizers(self) -> list["torch.optim.Optimizer"]:
         """
-        Configure the optimizers. This is called by PyTorch Lightning.
+        Configure the optimizers.
 
-        Returns:
-            List[torch.optim.Optimizer]: The optimizers.
+        This is called by PyTorch Lightning.
+                Returns:
+                    List[torch.optim.Optimizer]: The optimizers.
         """
         opt: torch.optim.Optimizer = torch.optim.Adam(
             self.parameters(),

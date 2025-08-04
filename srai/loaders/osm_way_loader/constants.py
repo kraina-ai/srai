@@ -1,5 +1,6 @@
 """Constants for OSMWayLoader."""
 
+
 import numpy as np
 
 MPH_TO_KMH = 1.609344
@@ -34,7 +35,6 @@ OSMNX_WAY_KEYS: list[str] = [
     "lit",
 ]
 """Extended OSMnx way tags."""
-
 
 OSM_WAY_TAGS: dict[str, list[str]] = {
     "oneway": ["False", "True"],
@@ -192,7 +192,6 @@ References:
     1. https://taginfo.openstreetmap.org/
     2. https://wiki.openstreetmap.org/wiki/Main_Page
 """
-
 
 OSM_IMPLICIT_MAXSPEEDS = {
     "AR:urban": "40",

@@ -1,5 +1,6 @@
 """Utility H3 related functions."""
 
+
 from collections.abc import Iterable
 from typing import Literal, Union, overload
 

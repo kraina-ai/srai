@@ -4,6 +4,7 @@ OSM Online Loader.
 This module contains loader capable of loading OpenStreetMap features from Overpass.
 """
 
+
 from collections.abc import Iterable
 from contextlib import suppress
 from itertools import product

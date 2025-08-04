@@ -1,5 +1,6 @@
 """Base class for OSM loaders."""
 
+
 import abc
 from collections.abc import Iterable
 from typing import Optional, Union, cast

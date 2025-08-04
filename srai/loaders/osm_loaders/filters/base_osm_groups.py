@@ -8,6 +8,7 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
+
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter
 
 BASE_OSM_GROUPS_FILTER: GroupedOsmTagsFilter = {

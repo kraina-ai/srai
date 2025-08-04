@@ -1,5 +1,6 @@
 """Models."""
 
+
 from .embedder import GTFS2VecEmbedder
 from .model import GTFS2VecModel
 

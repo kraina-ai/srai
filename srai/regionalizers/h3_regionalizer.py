@@ -13,6 +13,7 @@ References:
     2. https://uber.github.io/h3-py/api_comparison
 """
 
+
 import geopandas as gpd
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS

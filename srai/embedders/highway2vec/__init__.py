@@ -1,5 +1,6 @@
 """Highway2Vec."""
 
+
 from .embedder import Highway2VecEmbedder
 from .model import Highway2VecModel
 

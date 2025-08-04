@@ -1,5 +1,6 @@
 """Base class for embedders and models."""
 
+
 import abc
 from pathlib import Path
 from typing import Any, TypeVar, Union

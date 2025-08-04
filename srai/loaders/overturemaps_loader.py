@@ -5,6 +5,7 @@ This module contains loader capable of loading Overture Maps features from the p
 on the s3 bucket.
 """
 
+
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal, Optional, Union

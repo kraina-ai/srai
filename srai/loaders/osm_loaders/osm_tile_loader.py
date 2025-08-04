@@ -4,6 +4,7 @@ OSM tile loader.
 This module implements downloading tiles from given OSM tile server.
 """
 
+
 from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
@@ -119,12 +120,13 @@ class OSMTileLoader:
 
     def get_tile_by_x_y(self, x: int, y: int, idx: Any = None) -> Any:
         """
-        Download single tile from tile server. Return tile processed by DataCollector.
+        Download single tile from tile server.
 
-        Args:
-            x(int): x tile coordinate
-            y(int): y tile coordinate
-            idx (Any): id of tile, if non created as x_y_self.zoom
+        Return tile processed by DataCollector.
+                Args:
+                    x(int): x tile coordinate
+                    y(int): y tile coordinate
+                    idx (Any): id of tile, if non created as x_y_self.zoom
         """
         from PIL import Image
 

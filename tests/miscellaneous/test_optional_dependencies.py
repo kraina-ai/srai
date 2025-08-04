@@ -1,5 +1,6 @@
 """Optional dependencies tests."""
 
+
 import sys
 from contextlib import nullcontext as does_not_raise
 from typing import Any

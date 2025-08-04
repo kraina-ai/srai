@@ -1,5 +1,6 @@
 """Tests for H3Regionalizer."""
 
+
 from contextlib import nullcontext as does_not_raise
 from typing import TYPE_CHECKING, Any
 from unittest import TestCase

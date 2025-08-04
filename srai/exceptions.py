@@ -4,10 +4,8 @@
 class SRAIException(Exception):
     """Base class for all SRAI exceptions."""
 
-
 class ModelNotFitException(SRAIException):
     """Exception raised when a model is not fit."""
-
 
 class LoadedDataIsEmptyException(SRAIException):
     """Exception when the loaded data returned by the loader is empty."""

@@ -4,6 +4,7 @@ Voronoi Regionalizer.
 This module contains voronoi regionalizer implementation.
 """
 
+
 from typing import TYPE_CHECKING, Optional, Union
 
 import geopandas as gpd

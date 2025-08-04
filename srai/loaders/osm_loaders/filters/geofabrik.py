@@ -11,6 +11,7 @@ References:
     1. https://www.geofabrik.de/data/geofabrik-osm-gis-standard-0.7.pdf
 """
 
+
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter
 
 GEOFABRIK_LAYERS: GroupedOsmTagsFilter = {

@@ -1,5 +1,6 @@
 """Test if converters properly transform input data."""
 
+
 from collections.abc import Iterable
 from typing import Union
 from unittest import TestCase

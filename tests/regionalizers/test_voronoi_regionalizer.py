@@ -1,5 +1,6 @@
 """Voronoi regionalizer tests."""
 
+
 from multiprocessing import cpu_count
 from typing import Any, cast
 

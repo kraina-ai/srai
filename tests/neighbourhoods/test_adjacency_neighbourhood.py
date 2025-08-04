@@ -1,5 +1,6 @@
 """Tests for AdjacencyNeighbourhood."""
 
+
 import geopandas as gpd
 import pytest
 from shapely import geometry

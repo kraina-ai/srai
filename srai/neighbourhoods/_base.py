@@ -1,5 +1,6 @@
 """Neighbourhood interface."""
 
+
 import operator
 from abc import ABC, abstractmethod
 from queue import Queue

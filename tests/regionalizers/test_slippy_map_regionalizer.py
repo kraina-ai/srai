@@ -1,5 +1,6 @@
 """Tests for SlippyMapRegionalizer class."""
 
+
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 

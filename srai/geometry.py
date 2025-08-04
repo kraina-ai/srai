@@ -1,5 +1,6 @@
 """Utility geometry operations functions."""
 
+
 import hashlib
 from collections.abc import Iterable
 from typing import Optional, Union

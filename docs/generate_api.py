@@ -1,5 +1,6 @@
 """Utility function for automatic api documentation generation."""
 
+
 import ast
 from pathlib import Path
 from typing import Any, cast

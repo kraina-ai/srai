@@ -1,5 +1,6 @@
 """Constants for hex2vec tests."""
 
+
 from srai.loaders.osm_loaders.filters.hex2vec import HEX2VEC_FILTER
 
 ENCODER_SIZES = [32, 16]

@@ -1,5 +1,6 @@
 """H3 shapely conversion tests."""
 
+
 from pathlib import Path
 from typing import Any, Callable
 from unittest import TestCase

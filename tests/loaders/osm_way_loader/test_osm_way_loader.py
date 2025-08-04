@@ -1,5 +1,6 @@
 """Tests for OSMWayLoader."""
 
+
 import pickle as pkl
 from collections.abc import Sequence
 from contextlib import nullcontext as does_not_raise

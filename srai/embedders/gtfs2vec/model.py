@@ -7,6 +7,7 @@ References:
     1. https://doi.org/10.1145/3486640.3491392
 """
 
+
 from typing import TYPE_CHECKING, Any
 
 from srai._optional import import_optional_dependencies

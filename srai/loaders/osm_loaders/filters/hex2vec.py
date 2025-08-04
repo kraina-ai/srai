@@ -7,6 +7,7 @@ References:
     1. https://dl.acm.org/doi/10.1145/3486635.3491076
 """
 
+
 from srai.loaders.osm_loaders.filters import OsmTagsFilter
 
 HEX2VEC_FILTER: OsmTagsFilter = {

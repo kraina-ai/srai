@@ -1,5 +1,6 @@
 """ContextualCountEmbedder tests."""
 
+
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 from typing import Any, Literal, Union

@@ -1,5 +1,6 @@
 """Tests for folium plotting wrapper."""
 
+
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
 from srai.plotting.folium_wrapper import plot_neighbours
 from srai.regionalizers.geocode import geocode_to_region_gdf

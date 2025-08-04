@@ -1,5 +1,6 @@
 """Fixtures for Regionalizers."""
 
+
 import geopandas as gpd
 import pytest
 from shapely import geometry

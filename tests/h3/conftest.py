@@ -1,5 +1,6 @@
 """Conftest for H3 tests."""
 
+
 import geopandas as gpd
 import pytest
 from shapely import geometry

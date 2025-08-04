@@ -1,5 +1,6 @@
 """Tests for OSMOnlineLoader."""
 
+
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd

@@ -4,6 +4,7 @@ OSM Way loader.
 This module contains osm loader implementation for ways based on OSMnx.
 """
 
+
 import logging
 from enum import Enum
 from typing import Any, Optional, Union

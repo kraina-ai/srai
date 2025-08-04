@@ -4,6 +4,7 @@ Geoparquet loader.
 This module contains geoparquet loader implementation.
 """
 
+
 from pathlib import Path
 from typing import Optional, Union
 

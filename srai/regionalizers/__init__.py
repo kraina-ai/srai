@@ -7,6 +7,7 @@ We include both pre-defined spatial indexes (e.g. H3 or S2), data-based ones (e.
 based ones (e.g. administrative boundaries).
 """
 
+
 from srai.geometry import convert_to_regions_gdf
 
 from ._base import Regionalizer

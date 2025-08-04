@@ -8,6 +8,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
+
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
