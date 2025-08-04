@@ -1,5 +1,6 @@
 """Constants used across the project."""
 
+
 import os
 from typing import Literal, get_args
 

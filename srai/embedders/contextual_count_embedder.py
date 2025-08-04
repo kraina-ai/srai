@@ -8,6 +8,7 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
+
 from collections.abc import Collection, Iterator
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial

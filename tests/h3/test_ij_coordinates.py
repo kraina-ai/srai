@@ -1,5 +1,6 @@
 """H3 IJ coordinates tests."""
 
+
 import h3
 import numpy as np
 import pytest

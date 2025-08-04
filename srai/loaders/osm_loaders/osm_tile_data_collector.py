@@ -1,5 +1,6 @@
 """This module contains classes of strategy for handling downloaded tiles."""
 
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
@@ -46,11 +47,12 @@ class SavingDataCollector(DataCollector):
 
     def store(self, idx: str, data: "Image.Image") -> Path:
         """
-        Save image on disk. Returns path.
+        Save image on disk.
 
-        Args:
-            idx (str): id of tile
-            data (Image.Image): tile
+        Returns path.
+                Args:
+                    idx (str): id of tile
+                    data (Image.Image): tile
         """
         path = self.save_path / f"{idx}.{self.format}"
         data.save(path)

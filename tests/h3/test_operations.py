@@ -1,5 +1,6 @@
 """Module for testing srai.h3 module functionality."""
 
+
 from typing import Any, Callable
 
 import geopandas as gpd

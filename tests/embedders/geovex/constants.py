@@ -1,5 +1,6 @@
 """Constants for geovex tests."""
 
+
 from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER
 
 EMBEDDING_SIZE = 32

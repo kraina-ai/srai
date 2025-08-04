@@ -1,5 +1,6 @@
 """Generate the code reference pages."""
 
+
 import os
 from pathlib import Path
 

@@ -1,5 +1,6 @@
 """Conftest for Embedders."""
 
+
 import geopandas as gpd
 import pandas as pd
 import pytest

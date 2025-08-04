@@ -9,6 +9,7 @@ References:
     2. https://github.com/JoaoCarabetta/s2-py
 """
 
+
 import json
 from typing import Any
 

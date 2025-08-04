@@ -8,6 +8,7 @@ References:
     1. https://taginfo.openstreetmap.org/
 """
 
+
 import operator
 from typing import Any
 

@@ -1,5 +1,6 @@
 """Tests for OvertureMapsLoader."""
 
+
 from typing import Optional
 from unittest import TestCase
 

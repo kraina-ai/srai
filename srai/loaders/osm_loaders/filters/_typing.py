@@ -1,5 +1,6 @@
 """Module contains a dedicated type alias for OSM tags filter."""
 
+
 from collections.abc import Iterable
 from typing import Union, cast, overload
 

@@ -5,6 +5,7 @@ This module contains the AdjacencyNeighbourhood class, that allows to get the ne
 region based on its borders.
 """
 
+
 from collections.abc import Hashable
 from typing import Optional
 

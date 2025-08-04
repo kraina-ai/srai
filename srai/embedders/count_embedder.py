@@ -4,6 +4,7 @@ Count Embedder.
 This module contains count embedder implementation.
 """
 
+
 from typing import Optional, Union, cast
 
 import geopandas as gpd

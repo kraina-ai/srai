@@ -4,6 +4,7 @@ Intersection Joiner.
 This module contains intersection joiner implementation.
 """
 
+
 import geopandas as gpd
 import pandas as pd
 

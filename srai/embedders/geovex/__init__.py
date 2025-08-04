@@ -1,5 +1,6 @@
 """GeoVex."""
 
+
 from .dataset import HexagonalDataset
 from .embedder import GeoVexEmbedder
 from .model import GeoVexModel

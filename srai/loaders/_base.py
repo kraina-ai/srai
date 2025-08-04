@@ -1,5 +1,6 @@
 """Base class for loaders."""
 
+
 import abc
 from collections.abc import Iterable
 from typing import Any, Union

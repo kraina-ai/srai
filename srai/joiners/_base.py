@@ -1,5 +1,6 @@
 """Base class for joiners."""
 
+
 import abc
 
 import geopandas as gpd

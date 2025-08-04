@@ -7,6 +7,7 @@ References:
     1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
 """
 
+
 from itertools import product
 from typing import Any
 

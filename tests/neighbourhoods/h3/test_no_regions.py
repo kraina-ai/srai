@@ -1,5 +1,6 @@
 """Tests for neigbourhoods with no regions."""
 
+
 import pytest
 
 from srai.neighbourhoods import H3Neighbourhood

@@ -5,6 +5,7 @@ This module contains spherical voronoi implementation based on SphericalVoronoi 
 library.
 """
 
+
 import hashlib
 import warnings
 from collections.abc import Hashable
