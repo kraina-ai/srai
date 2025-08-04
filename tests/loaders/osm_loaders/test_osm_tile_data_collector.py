@@ -44,7 +44,7 @@ class TestSavingDataCollector:
 
 
 def _get_expected_path(x: int, y: int) -> Path:
-    return Path(os.path.join(PATH, f"{create_id(x,y)}.{FILE_TYPE}"))
+    return Path(os.path.join(PATH, f"{create_id(x, y)}.{FILE_TYPE}"))
 
 
 def _path_image_save(mocker: MockerFixture) -> None:

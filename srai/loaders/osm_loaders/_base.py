@@ -54,7 +54,9 @@ class OSMLoader(Loader, abc.ABC):
             gpd.GeoDataFrame: Parsed features_gdf.
         """
         if is_expected_type(tags, GroupedOsmTagsFilter):
-            features_gdf = self._group_features_gdf(features_gdf, cast(GroupedOsmTagsFilter, tags))
+            features_gdf = self._group_features_gdf(
+                features_gdf, cast("GroupedOsmTagsFilter", tags)
+            )
         return features_gdf
 
     def _group_features_gdf(
