@@ -344,7 +344,7 @@ def _get_embeddings_for_neighbours(
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
     number_of_base_columns: int,
 ) -> Any:
-    if len(region_ids) == 0:
+    if not region_ids:
         return np.zeros((number_of_base_columns,))
 
     if aggregation_function == "average":
