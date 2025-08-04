@@ -3,35 +3,32 @@
 default_stages: [pre-commit]
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.4.0
+    rev: v4.2.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.5.6'
+    rev: 'v0.12.2'
     hooks:
       - id: ruff
         types_or: [ python, pyi, jupyter ]
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
         types_or: [ python, pyi, jupyter ]
-  # TODO: Switch back to upstream docformatter
-  # after https://github.com/PyCQA/docformatter/issues/289 is fixed
   - repo: https://github.com/PyCQA/docformatter
-    rev: eb1df34
-    # rev: v1.7.5
+    rev: v1.7.7
     hooks:
       - id: docformatter
         additional_dependencies: [tomli]
         args: [--in-place, --config, ./pyproject.toml]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.1
+    rev: v1.16.1
     hooks:
       - id: mypy
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.22.0
+    rev: 2.25.4
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -39,7 +36,7 @@ repos:
         files: ^pdm.lock$
         stages: [manual]
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
+    rev: 0.8.1
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -54,17 +51,17 @@ repos:
         args: ['--maxkb=1000']
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v2.0.0
+    rev: v2.1.0
     hooks:
       - id: refurb
         args: ["--python-version", "3.9", "--disable", "FURB184", "--format", "github"]
         language: python
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck
-    rev: "2024.3"
+    rev: "2025.1.0"
     hooks:
       - id: licensecheck
-        args: ["-u", "requirements:requirements.txt"]
+        args: ["--requirements-paths", "requirements.txt"]
         stages: [manual]
 
 ci:
