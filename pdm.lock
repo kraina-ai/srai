@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:a6f363a73f98c6ed4c6d5b37dc0131e6de2d9efe81d8bd79211dca15b74520a9"
+content_hash = "sha256:6d86bbc77337871a80b45b1aa3ce45abe363cb61f15f8fc48d5145a232ead2d0"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -3483,7 +3483,7 @@ files = [
 
 [[package]]
 name = "overturemaestro"
-version = "0.4.2"
+version = "0.5.0"
 requires_python = ">=3.9"
 summary = "An open-source tool for downloading Overture Maps data with quality of life features"
 groups = ["all", "overturemaps"]
@@ -3491,7 +3491,7 @@ dependencies = [
     "aiohttp>=3.8.0",
     "duckdb>=1.1.2",
     "fsspec>=2021.04.0",
-    "geoarrow-rust-core>=0.3.0",
+    "geoarrow-rust-core>=0.4.0",
     "geopandas>=1.0",
     "geopy>=2.0.0",
     "numpy>=1.26.0",
@@ -3501,12 +3501,12 @@ dependencies = [
     "psutil>=5.6.2",
     "pyarrow>=16.0.0",
     "rich>=12.0.0",
-    "rq-geo-toolkit>=2025.5.1",
+    "rq-geo-toolkit>=2025.8.0",
     "shapely>=2.0.6",
 ]
 files = [
-    {file = "overturemaestro-0.4.2-py3-none-any.whl", hash = "sha256:af7f4879cc509ba742335edf40bcb8f5e57fb83329e51ee2878822ee15312d55"},
-    {file = "overturemaestro-0.4.2.tar.gz", hash = "sha256:cafdcceac2e772e511d4d7c077484449b4de7cbaa41bf33142953384e0ca596f"},
+    {file = "overturemaestro-0.5.0-py3-none-any.whl", hash = "sha256:7915a2347a32fafaca9f3e67bbac883693d5f56bd19e10a2296da9375c3dca84"},
+    {file = "overturemaestro-0.5.0.tar.gz", hash = "sha256:139ac2240b38ad61ed4a935c43f04610ad6cc57b3ed593f321438da0f9405a9b"},
 ]
 
 [[package]]
@@ -4945,7 +4945,7 @@ files = [
 
 [[package]]
 name = "rq-geo-toolkit"
-version = "2025.7.0"
+version = "2025.8.0"
 requires_python = ">=3.9"
 summary = "Collection of geo related functions for reuse in other libraries"
 groups = ["all", "overturemaps"]
@@ -4960,8 +4960,8 @@ dependencies = [
     "shapely>=2.0.6",
 ]
 files = [
-    {file = "rq_geo_toolkit-2025.7.0-py3-none-any.whl", hash = "sha256:43bec577f434ddb169a283cf8c61694ba42ab5dfc30fbf862d977145d8738036"},
-    {file = "rq_geo_toolkit-2025.7.0.tar.gz", hash = "sha256:599047d83c263dca2e6522b30b9cce28546f425a85e43832e73ce41a7422259f"},
+    {file = "rq_geo_toolkit-2025.8.0-py3-none-any.whl", hash = "sha256:02e2917573bbb392ad935bdae1d162f76adce3608ca080fdb3656d04294155b6"},
+    {file = "rq_geo_toolkit-2025.8.0.tar.gz", hash = "sha256:0e61fcb0e7dd14e3740308104cd8e36a9faddf4d47e26b40faf43b45c898c905"},
 ]
 
 [[package]]

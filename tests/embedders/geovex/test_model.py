@@ -98,7 +98,7 @@ def test_model_tensors() -> None:
 
         embedder._prepare_model(counts_df, 0.001)
 
-        for _, param in cast(GeoVexModel, embedder._model).named_parameters():
+        for _, param in cast("GeoVexModel", embedder._model).named_parameters():
             param.data.fill_(0.01)
 
         for i, batch in enumerate(dataloader):
@@ -108,13 +108,13 @@ def test_model_tensors() -> None:
             expected_encoder_forward_tensor = torch.load(
                 test_files_path / f"{name}_encoder_forward_{i}.pt"
             )
-            encoder_forward_tensor = cast(GeoVexModel, embedder._model).encoder.forward(batch)
+            encoder_forward_tensor = cast("GeoVexModel", embedder._model).encoder.forward(batch)
             torch.testing.assert_close(encoder_forward_tensor, expected_encoder_forward_tensor)
 
             expected_forward_tensor = torch.load(test_files_path / f"{name}_forward_{i}.pt")
-            forward_tensor = cast(GeoVexModel, embedder._model).forward(batch)
+            forward_tensor = cast("GeoVexModel", embedder._model).forward(batch)
             torch.testing.assert_close(forward_tensor, expected_forward_tensor)
 
             expected_loss_tensor = torch.load(test_files_path / f"{name}_loss_{i}.pt")
-            loss_tensor = cast(GeoVexModel, embedder._model).training_step(batch, i)
+            loss_tensor = cast("GeoVexModel", embedder._model).training_step(batch, i)
             torch.testing.assert_close(loss_tensor, expected_loss_tensor)

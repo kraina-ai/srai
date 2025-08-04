@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bumped minimal `overturemaestro` version to `0.5.0`
+
 ### Fixed
 
 - Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)

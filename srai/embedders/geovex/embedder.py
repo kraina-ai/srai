@@ -8,8 +8,9 @@ References:
 """
 
 import json
+from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union, cast
 
 import geopandas as gpd
 import numpy as np
@@ -70,6 +71,9 @@ class GeoVexEmbedder(CountEmbedder):
             expected_output_features=target_features,
             count_subcategories=count_subcategories,
         )
+
+        if self.expected_output_features is None:
+            raise ValueError("GeoVex embedder expects target_features to be defined.")
 
         self._assert_feature_length(self.expected_output_features, convolutional_layer_size)
 
@@ -269,7 +273,9 @@ class GeoVexEmbedder(CountEmbedder):
             trainer_kwargs["max_epochs"] = 3
         return trainer_kwargs
 
-    def _assert_feature_length(self, target_features: list[str], conv_layer_size: int) -> None:
+    def _assert_feature_length(
+        self, target_features: Collection[str], conv_layer_size: int
+    ) -> None:
         if len(target_features) < conv_layer_size:
             raise ValueError(
                 f"The convolutional layers in GeoVex expect >= {conv_layer_size} features."
@@ -290,7 +296,9 @@ class GeoVexEmbedder(CountEmbedder):
         # embedding_size: int = 32,
         # convolutional_layer_size: int = 256,
         embedder_config = {
-            "target_features": self.expected_output_features.to_json(orient="records"),
+            "target_features": cast("pd.Series[str]", self.expected_output_features).to_json(
+                orient="records"
+            ),
             "batch_size": self._batch_size,
             "neighbourhood_radius": self._r,
             "convolutional_layers": self._convolutional_layers,
