@@ -58,9 +58,11 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
             raise ValueError("This evaluator only supports TrajectoryDataset.")
 
         if dataset.version != "TTE":
-            raise ValueError(f"Trajectory Regression Evaluator is made for regression tasks\
+            raise ValueError(
+                f"Trajectory Regression Evaluator is made for regression tasks\
                             such as Travevel Time Estimation (TTE). Your dataset version is\
-                              preprocessed for task: {dataset.version}")
+                              preprocessed for task: {dataset.version}"
+            )
         trip_ids = kwargs.get("trip_ids")
 
         if trip_ids is None:
@@ -84,9 +86,11 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         missing_trip_indexes = set(trip_indexes).difference(available_trip_indexes)
 
         if missing_trip_indexes:
-            logging.info(f"{len(missing_trip_indexes)} trip_ids have no matching trip indexes in\
+            logging.info(
+                f"{len(missing_trip_indexes)} trip_ids have no matching trip indexes in\
                          the test set and will be skipped in evaluation. Measuring for \
-                          {len(available_trip_indexes)} indexes.")
+                          {len(available_trip_indexes)} indexes."
+            )
 
         # Reorder labels and predictions accordingly
         if len(missing_trip_indexes) != len(trip_ids):

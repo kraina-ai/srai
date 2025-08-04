@@ -229,14 +229,18 @@ class PointDataset(HuggingFaceDataset):
         if not dev:
             self.train_gdf = train if target_column == "count" else train_gdf
             self.test_gdf = test if target_column == "count" else test_gdf
-            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+                test len: {len(self.test_gdf)}"
+            )
         else:
             self.train_gdf = train if target_column == "count" else train_gdf
             self.dev_gdf = test if target_column == "count" else test_gdf
-            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
+            print(
+                f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
                    Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
-                    test len: {len(self.test_gdf)}")
+                    test len: {len(self.test_gdf)}"
+            )
 
         # self.train_gdf = train
         # self.test_gdf = test
