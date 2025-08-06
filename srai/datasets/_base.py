@@ -10,11 +10,13 @@ import h3
 import numpy as np
 import pandas as pd
 from datasets import load_dataset
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.h3 import h3_to_geoseries
 from srai.regionalizers import H3Regionalizer
 
 
@@ -134,7 +136,7 @@ class PointDataset(HuggingFaceDataset):
     def train_test_split_bucket_regression(
         self,
         target_column: Optional[str] = None,
-        resolution: int = 9,
+        resolution: Optional[int] = None,
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
@@ -146,7 +148,7 @@ class PointDataset(HuggingFaceDataset):
             target_column (Optional[str], optional): Target column name. If None, split generated on basis of number \
                 of points within a hex ov given resolution. In this case values are normalized to [0,1] scale. \
                       Defaults to preset dataset target column.
-            resolution (int, optional): h3 resolution to regionalize data. Defaults to 9.
+            resolution (int, optional): h3 resolution to regionalize data. Defaults to default value from the dataset.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
             bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
             random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
@@ -156,7 +158,7 @@ class PointDataset(HuggingFaceDataset):
         Returns:
             tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
         """  # noqa: E501, W505
-        resolution = resolution if resolution is not None else self.resolution
+        resolution = resolution or self.resolution
 
         if resolution is None:
             raise ValueError(
@@ -186,12 +188,11 @@ class PointDataset(HuggingFaceDataset):
             joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
             # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
 
-            averages_hex = joined_gdf.groupby("region_id").size().reset_index(name=target_column)
+            averages_hex = joined_gdf.groupby(REGIONS_INDEX).size().reset_index(name=target_column)
             gdf_ = regions.merge(
-                averages_hex, how="inner", left_on="region_id", right_on="region_id"
+                averages_hex, how="inner", left_on=REGIONS_INDEX, right_on=REGIONS_INDEX
             )
-            # gdf_.rename(columns={"h3_index": "region_id"}, inplace=True)
-            gdf_.index = gdf_["region_id"]
+            gdf_.set_index(REGIONS_INDEX, inplace=True)
 
         splits = np.linspace(
             0, 1, num=bucket_number + 1
@@ -219,24 +220,28 @@ class PointDataset(HuggingFaceDataset):
         train_gdf = gdf_.iloc[train_indices]
         test_gdf = gdf_.iloc[test_indices]
         if target_column == "count":
-            train_hex_indexes = train_gdf["region_id"].unique()
-            test_hex_indexes = test_gdf["region_id"].unique()
-            train = joined_gdf[joined_gdf["region_id"].isin(train_hex_indexes)]
-            test = joined_gdf[joined_gdf["region_id"].isin(test_hex_indexes)]
-            train = train.drop(columns=["region_id"])
-            test = test.drop(columns=["region_id"])
+            train_hex_indexes = train_gdf[REGIONS_INDEX].unique()
+            test_hex_indexes = test_gdf[REGIONS_INDEX].unique()
+            train = joined_gdf[joined_gdf[REGIONS_INDEX].isin(train_hex_indexes)]
+            test = joined_gdf[joined_gdf[REGIONS_INDEX].isin(test_hex_indexes)]
+            train = train.drop(columns=[REGIONS_INDEX])
+            test = test.drop(columns=[REGIONS_INDEX])
 
         if not dev:
             self.train_gdf = train if target_column == "count" else train_gdf
             self.test_gdf = test if target_column == "count" else test_gdf
-            print(f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                test len: {len(self.test_gdf)}")
+            print(
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
+                test len: {len(self.test_gdf)}"
+            )
         else:
             self.train_gdf = train if target_column == "count" else train_gdf
             self.dev_gdf = test if target_column == "count" else test_gdf
-            print(f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
+            print(
+                f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
                    Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
-                    test len: {len(self.test_gdf)}")
+                    test len: {len(self.test_gdf)}"
+            )
 
         # self.train_gdf = train
         # self.test_gdf = test
@@ -249,7 +254,7 @@ class PointDataset(HuggingFaceDataset):
     def train_test_split_spatial_points(
         self,
         test_size: float = 0.2,
-        resolution: int = 8,  # TODO: dodać pole per dataset z h3_train_resolution
+        resolution: Optional[int] = None,
         resolution_subsampling: int = 1,
         random_state: Optional[int] = None,
         dev: bool = False,
@@ -260,7 +265,7 @@ class PointDataset(HuggingFaceDataset):
 
         Args:
             test_size (float, optional): Percentage of test set.. Defaults to 0.2.
-            resolution (int, optional): h3 resolution to regionalize data. Defaults to 8.
+            resolution (int, optional): h3 resolution to regionalize data. Defaults to default value from the dataset.
             resolution_subsampling (int, optional): h3 resolution difference to subsample \
                 data for stratification. Defaults to 1.
             random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
@@ -278,7 +283,7 @@ class PointDataset(HuggingFaceDataset):
         gdf = self.train_gdf
         gdf_ = gdf.copy()
 
-        resolution = resolution if resolution is not None else self.resolution
+        resolution = resolution or self.resolution
 
         if resolution is None:
             raise ValueError(
@@ -297,22 +302,20 @@ class PointDataset(HuggingFaceDataset):
         regions.index = regions.index.map(
             lambda idx: h3.cell_to_parent(idx, resolution - resolution_subsampling)
         )  # get parent h3 region
-        regions["geometry"] = regions.index.map(
-            lambda idx: Polygon([(lon, lat) for lat, lon in h3.cell_to_boundary(idx)])
-        )  # get localization of h3 region
+        regions[GEOMETRY_COLUMN] = h3_to_geoseries(regions.index)  # get localization of h3 region
 
         joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")
         # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
         joined_gdf.drop_duplicates(inplace=True)
 
-        if joined_gdf["region_id"].isnull().sum() != 0:  # handle outliers
-            joined_gdf.loc[joined_gdf["region_id"].isnull(), "region_id"] = "fffffffffffffff"
+        if joined_gdf[REGIONS_INDEX].isnull().sum() != 0:  # handle outliers
+            joined_gdf.loc[joined_gdf[REGIONS_INDEX].isnull(), REGIONS_INDEX] = "fffffffffffffff"
         # set outlier index fffffffffffffff
-        outlier_indices = joined_gdf["region_id"].value_counts()
+        outlier_indices = joined_gdf[REGIONS_INDEX].value_counts()
         outlier_indices = outlier_indices[
             outlier_indices <= 4
         ].index  # if only 4 points are in hex, they're outliers
-        joined_gdf.loc[joined_gdf["region_id"].isin(outlier_indices), "region_id"] = (
+        joined_gdf.loc[joined_gdf[REGIONS_INDEX].isin(outlier_indices), REGIONS_INDEX] = (
             "fffffffffffffff"
         )
 
@@ -438,20 +441,20 @@ class PointDataset(HuggingFaceDataset):
         joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
 
         if target_column == "count":
-            aggregated = joined_gdf.groupby("region_id").size().reset_index(name=target_column)
+            aggregated = joined_gdf.groupby(REGIONS_INDEX).size().reset_index(name=target_column)
         else:
             aggregated = (
-                joined_gdf.groupby("region_id")[target_column]
+                joined_gdf.groupby(REGIONS_INDEX)[target_column]
                 .mean()
                 .reset_index(name=target_column)
             )
 
-        gdf_ = regions.merge(aggregated, how="inner", left_on="region_id", right_on="region_id")
+        gdf_ = regions.merge(aggregated, how="inner", left_on=REGIONS_INDEX, right_on=REGIONS_INDEX)
 
         # gdf_.index = gdf_["region_id"]
 
-        gdf_.drop(columns=["geometry"], inplace=True)
-        return gdf_
+        # gdf_.drop(columns=[GEOMETRY_COLUMN], inplace=True) # disabling dropping geometry
+        return gdf_.set_index(REGIONS_INDEX)
 
 
 class TrajectoryDataset(HuggingFaceDataset):
