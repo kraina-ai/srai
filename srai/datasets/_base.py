@@ -117,6 +117,8 @@ class HuggingFaceDataset(abc.ABC):
                  contain keys "train" and "test" if available.
         """
         result = {}
+
+        self.train_gdf, self.val_gdf, self.test_gdf = None, None, None
         dataset_name = self.path
         self.version = str(version)
         if self.resolution is None and version is not None:
@@ -258,7 +260,7 @@ class PointDataset(HuggingFaceDataset):
             self.test_gdf = test
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and test_gdf. Train len: {len(self.train_len)}, \
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
                 test len: {test_len}"
             )
         else:
