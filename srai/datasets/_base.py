@@ -3,10 +3,9 @@
 import abc
 import operator
 from contextlib import suppress
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 import geopandas as gpd
-import h3
 import numpy as np
 import pandas as pd
 from datasets import load_dataset
@@ -15,9 +14,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
-from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
-from srai.h3 import h3_to_geoseries
+from srai.constants import REGIONS_INDEX
 from srai.regionalizers import H3Regionalizer
+from srai.spatial_split import train_test_spatial_split
 
 
 class HuggingFaceDataset(abc.ABC):
@@ -41,6 +40,7 @@ class HuggingFaceDataset(abc.ABC):
         self.type = type
         self.train_gdf = None
         self.test_gdf = None
+        self.val_gdf = None
         self.resolution = resolution
 
     @abc.abstractmethod
@@ -57,8 +57,51 @@ class HuggingFaceDataset(abc.ABC):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def train_test_split(
+        self,
+        target_column: Optional[str] = None,
+        resolution: Optional[int] = None,
+        test_size: float = 0.2,
+        bucket_number: int = 7,
+        random_state: Optional[int] = None,
+        validation_split: bool = False,
+        force_split: bool = False,
+        task: Optional[str] = None,
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """
+        Method to generate train/test or train/val split from GeoDataFrame.
+
+        Args:
+            target_column (Optional[str], optional): Target column name for Points, trajectories id\
+                column fortrajectory datasets. Defaults to preset dataset target column.
+            resolution (int, optional): H3 resolution, subclasses mayb use this argument to\
+                regionalize data. Defaults to default value from the dataset.
+            test_size (float, optional): Percentage of test set. Defaults to 0.2.
+            bucket_number (int, optional): Bucket number used to stratify target data.
+            random_state (int, optional):  Controls the shuffling applied to the data before \
+                applying the split.
+                Pass an int for reproducible output across multiple function. Defaults to None.
+            validation_split (bool): If True, creates a validation split from existing train split\
+                and assigns it to self.val_gdf.
+            force_split: If True, forces a new split to be created, even if an existing train/test\
+                or validation split is already present.
+                - With `validation_split=False`, regenerates and overwrites the test split.
+                - With `validation_split=True`, regenerates and overwrites the validation split.
+            task (Optional[str], optional): Task identifier. Subclasses may use this argument to
+                determine stratification logic (e.g., by duration or spatial pattern).\
+                    Defaults to None.
+
+        Returns:
+            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test or Train-val split made on\
+                previous train subset.
+        """
+        raise NotImplementedError
+
     def load(
-        self, version: Optional[Union[int, str]] = None, hf_token: Optional[str] = None
+        self,
+        version: Optional[Union[int, str]] = None,
+        hf_token: Optional[str] = None,
     ) -> dict[str, gpd.GeoDataFrame]:
         """
         Method to load dataset.
@@ -130,34 +173,58 @@ class PointDataset(HuggingFaceDataset):
         self.type = type
         self.train_gdf = None
         self.test_gdf = None
-        self.dev_gdf = None
+        self.val_gdf = None
         self.resolution = resolution
 
-    def train_test_split_bucket_regression(
+    def train_test_split(
         self,
         target_column: Optional[str] = None,
         resolution: Optional[int] = None,
         test_size: float = 0.2,
         bucket_number: int = 7,
         random_state: Optional[int] = None,
-        dev: bool = False,
+        validation_split: bool = False,
+        force_split: bool = False,
+        task: Optional[str] = None,
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-        """Method to generate train and test split from GeoDataFrame, based on the target_column values - its statistic.
+        """
+        Method to generate splits from GeoDataFrame, based on the target_column values.
 
         Args:
-            target_column (Optional[str], optional): Target column name. If None, split generated on basis of number \
-                of points within a hex ov given resolution. In this case values are normalized to [0,1] scale. \
-                      Defaults to preset dataset target column.
-            resolution (int, optional): h3 resolution to regionalize data. Defaults to default value from the dataset.
+            target_column (Optional[str], optional): Target column name. If None, split generated\
+                on basis of number \
+                of points within a hex ov given resolution. In this case values are normalized to\
+                    [0,1] scale. Defaults to preset dataset target column.
+            resolution (int, optional): h3 resolution to regionalize data. Defaults to default\
+                value from the dataset.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
-            bucket_number (int, optional): Bucket number used to stratify target data. Defaults to 7.
-            random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
+            bucket_number (int, optional): Bucket number used to stratify target data.\
+                Defaults to 7.
+            random_state (int, optional):  Controls the shuffling applied to the data before\
+                applying the split. \
                 Pass an int for reproducible output across multiple function. Defaults to None.
-            dev (bool): If True, creates a dev split from existing train split and assigns it to self.dev_gdf.
+            validation_split (bool): If True, creates a validation split from existing train split\
+                and assigns it to self.val_gdf.
+            force_split: If True, forces a new split to be created, even if an existing train/test\
+                or validation split is already present.
+                - With `validation_split=False`, regenerates and overwrites the test split.
+                - With `validation_split=True`, regenerates and overwrites the validation split.
+            task (Optional[str], optional): Currentlu not supported. Ignored in this subclass.
 
         Returns:
-            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
-        """  # noqa: E501, W505
+            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test or train-val split made on\
+                previous train subset.
+        """
+        assert self.train_gdf is not None
+
+        if (self.val_gdf is not None and validation_split and not force_split) or (
+            self.test_gdf is not None and not validation_split and not force_split
+        ):
+            raise ValueError(
+                "A split already exists. Use `force_split=True` to overwrite the existing "
+                f"{'validation' if validation_split else 'test'} split."
+            )
+
         resolution = resolution or self.resolution
 
         if resolution is None:
@@ -173,197 +240,38 @@ class PointDataset(HuggingFaceDataset):
 
         target_column = target_column if target_column is not None else self.target
         if target_column is None:
-            # target_column = self.target
             target_column = "count"
 
-        if self.train_gdf is None:
-            raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
         gdf = self.train_gdf
         gdf_ = gdf.copy()
 
-        if target_column == "count":
-            regionalizer = H3Regionalizer(resolution=resolution)
-            regions = regionalizer.transform(gdf)
-
-            joined_gdf = gpd.sjoin(gdf, regions, how="left", predicate="within")  # noqa: E501
-            # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
-
-            averages_hex = joined_gdf.groupby(REGIONS_INDEX).size().reset_index(name=target_column)
-            gdf_ = regions.merge(
-                averages_hex, how="inner", left_on=REGIONS_INDEX, right_on=REGIONS_INDEX
-            )
-            gdf_.set_index(REGIONS_INDEX, inplace=True)
-
-        splits = np.linspace(
-            0, 1, num=bucket_number + 1
-        )  # generate splits to bucket classification
-        # quantiles = gdf_[target_column].quantile(splits)  # compute quantiles
-        quantiles = gdf_[target_column].quantile(splits).drop_duplicates()
-        bins = quantiles.values
-        # bins = [quantiles[i] for i in splits]
-        gdf_["bucket"] = pd.cut(gdf_[target_column], bins=bins, include_lowest=True).apply(
-            lambda x: x.mid
-        )  # noqa: E501
-
-        train_indices, test_indices = train_test_split(
-            range(len(gdf_)),
+        train, test = train_test_spatial_split(
+            gdf_,
+            parent_h3_resolution=resolution,
+            target_column=target_column,
             test_size=test_size,
-            stratify=gdf_.bucket,  # stratify by bucket value
+            n_buckets=bucket_number,
             random_state=random_state,
         )
 
-        # dev_indices, test_indices = train_test_split(
-        #     range(len(test_indices)),
-        #     test_size=0.5,
-        #     stratify=gdf_.iloc[test_indices].bucket,
-        # )
-        train_gdf = gdf_.iloc[train_indices]
-        test_gdf = gdf_.iloc[test_indices]
-        if target_column == "count":
-            train_hex_indexes = train_gdf[REGIONS_INDEX].unique()
-            test_hex_indexes = test_gdf[REGIONS_INDEX].unique()
-            train = joined_gdf[joined_gdf[REGIONS_INDEX].isin(train_hex_indexes)]
-            test = joined_gdf[joined_gdf[REGIONS_INDEX].isin(test_hex_indexes)]
-            train = train.drop(columns=[REGIONS_INDEX])
-            test = test.drop(columns=[REGIONS_INDEX])
-
-        if not dev:
-            self.train_gdf = train if target_column == "count" else train_gdf
-            self.test_gdf = test if target_column == "count" else test_gdf
+        self.train_gdf = train
+        if not validation_split:
+            self.test_gdf = test
+            test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                test len: {len(self.test_gdf)}"
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_len)}, \
+                test len: {test_len}"
             )
         else:
-            self.train_gdf = train if target_column == "count" else train_gdf
-            self.dev_gdf = test if target_column == "count" else test_gdf
+            self.val_gdf = test
+            val_len = len(self.val_gdf) if self.val_gdf is not None else 0
+            test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and dev_gdf. Test split remains unchanged. \
-                   Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)}, \
-                    test len: {len(self.test_gdf)}"
+                f"Created new train_gdf and val_gdf. Test split remains unchanged. \
+                   Train len: {len(self.train_gdf)}, val len: {len(val_len)}, \
+                    test len: {test_len}"
             )
-
-        # self.train_gdf = train
-        # self.test_gdf = test
-        self.resolution = resolution
-        if not dev:
-            return self.train_gdf, self.test_gdf
-
-        return self.train_gdf, self.dev_gdf
-
-    def train_test_split_spatial_points(
-        self,
-        test_size: float = 0.2,
-        resolution: Optional[int] = None,
-        resolution_subsampling: int = 1,
-        random_state: Optional[int] = None,
-        dev: bool = False,
-    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-        """
-        Method to generate train and test split from GeoDataFrame, based on the spatial h3
-        resolution.
-
-        Args:
-            test_size (float, optional): Percentage of test set.. Defaults to 0.2.
-            resolution (int, optional): h3 resolution to regionalize data. Defaults to default value from the dataset.
-            resolution_subsampling (int, optional): h3 resolution difference to subsample \
-                data for stratification. Defaults to 1.
-            random_state (int, optional):  Controls the shuffling applied to the data before applying the split. \
-                Pass an int for reproducible output across multiple function. Defaults to None.
-            dev (bool): If True, creates a dev split from existing train split and assigns it to self.dev_gdf.
-
-        Raises:
-            ValueError: If type of data is not Points.
-
-        Returns:
-            tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test split made on previous train subset.
-        """  # noqa: W505, E501, D205
-        if self.train_gdf is None:
-            raise ValueError("Train GeoDataFrame is not loaded! Load the dataset first.")
-        gdf = self.train_gdf
-        gdf_ = gdf.copy()
-
-        resolution = resolution or self.resolution
-
-        if resolution is None:
-            raise ValueError(
-                "No preset resolution for the dataset in self.resolution. Please"
-                "provide a resolution."
-            )
-        elif self.resolution is not None and resolution != self.resolution:
-            raise ValueError(
-                "Resolution provided is different from the preset resolution for the"
-                "dataset. This may result in a data leak between splits."
-            )
-
-        regionalizer = H3Regionalizer(resolution=resolution)
-        regions = regionalizer.transform(gdf_)
-
-        regions.index = regions.index.map(
-            lambda idx: h3.cell_to_parent(idx, resolution - resolution_subsampling)
-        )  # get parent h3 region
-        regions[GEOMETRY_COLUMN] = h3_to_geoseries(regions.index)  # get localization of h3 region
-
-        joined_gdf = gpd.sjoin(gdf_, regions, how="left", predicate="within")
-        # joined_gdf.rename(columns={"index_right": "h3_index"}, inplace=True)
-        joined_gdf.drop_duplicates(inplace=True)
-
-        if joined_gdf[REGIONS_INDEX].isnull().sum() != 0:  # handle outliers
-            joined_gdf.loc[joined_gdf[REGIONS_INDEX].isnull(), REGIONS_INDEX] = "fffffffffffffff"
-        # set outlier index fffffffffffffff
-        outlier_indices = joined_gdf[REGIONS_INDEX].value_counts()
-        outlier_indices = outlier_indices[
-            outlier_indices <= 4
-        ].index  # if only 4 points are in hex, they're outliers
-        joined_gdf.loc[joined_gdf[REGIONS_INDEX].isin(outlier_indices), REGIONS_INDEX] = (
-            "fffffffffffffff"
-        )
-
-        train_indices, test_indices = train_test_split(
-            range(len(joined_gdf)),
-            test_size=test_size,  # * 2,  # multiply for dev set also
-            stratify=joined_gdf.region_id,  # stratify by spatial h3
-            random_state=random_state,
-        )
-
-        # dev_indices, test_indices = train_test_split(
-        #     range(len(test_indices)),
-        #     test_size=0.5,
-        #     stratify=joined_gdf.iloc[
-        #         test_indices
-        #     ].h3_index,  # perform spatial stratify (by h3 index)
-        # )
-
-        # return (
-        #    gdf_.iloc[train_indices],
-        #   gdf_.iloc[test_indices],
-        # )
-        train_gdf = gdf_.iloc[train_indices]
-        test_gdf = gdf_.iloc[test_indices]
-        # self.train_gdf = gdf_.iloc[train_indices]
-        # self.test_gdf = gdf_.iloc[test_indices]
-        self.resolution = resolution
-        if not dev:
-            self.train_gdf = train_gdf
-            self.test_gdf = test_gdf
-            print(
-                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, "
-                f"test len: {len(self.test_gdf)}"
-            )
-        else:
-            self.train_gdf = train_gdf
-            self.dev_gdf = test_gdf
-            print(
-                f"Created new train_gdf and dev_gdf. Test split remains unchanged."
-                f"Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)},"
-                f"test len: {len(self.test_gdf)}"
-            )
-
-        if not dev:
-            return self.train_gdf, self.test_gdf
-
-        return self.train_gdf, self.dev_gdf
-        # , gdf_.iloc[dev_indices],
+        return train, test
 
     def get_h3_with_labels(
         self,
@@ -449,7 +357,12 @@ class PointDataset(HuggingFaceDataset):
                 .reset_index(name=target_column)
             )
 
-        gdf_ = regions.merge(aggregated, how="inner", left_on=REGIONS_INDEX, right_on=REGIONS_INDEX)
+        gdf_ = regions.merge(
+            aggregated,
+            how="inner",
+            left_on=REGIONS_INDEX,
+            right_on=REGIONS_INDEX,
+        )
 
         # gdf_.index = gdf_["region_id"]
 
@@ -478,37 +391,61 @@ class TrajectoryDataset(HuggingFaceDataset):
         self.type = type
         self.train_gdf = None
         self.test_gdf = None
+        self.val_gdf = None
         self.resolution = resolution
 
-    def train_test_split_bucket_trajectory(
+    def train_test_split(
         self,
-        trajectory_id_column: str = "trip_id",
-        task: Literal["TTE", "HMP"] = "TTE",
+        target_column: Optional[str] = "trip_id",
+        resolution: Optional[int] = None,
         test_size: float = 0.2,
         bucket_number: int = 4,
-        dev: bool = False,
+        random_state: Optional[int] = None,
+        validation_split: bool = False,
+        force_split: bool = False,
+        task: Optional[str] = "TTE",
     ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """
-        Generate train/test split from trajectory GeoDataFrame stratified by task.
+        Generate train/test split or train/val split from trajectory GeoDataFrame.
 
-        Split is generated by splitting train_gdf.
+        Train-test/train-val split is generated by splitting train_gdf.
 
         Args:
-            trajectory_id_column (str): Column identifying each trajectory.
-            task (Literal["TTE", "HMP"]): Task type. Stratifies by duration
-                (TTE) or hex length (HMP).
+            target_column (str): Column identifying each trajectory (contains trajectory ids).
             test_size (float): Fraction of data to be used as test set.
             bucket_number (int): Number of stratification bins.
-            dev (bool): If True, creates a dev split from existing train split and assigns \
-                it to self.dev_gdf.
+            random_state (int, optional):  Controls the shuffling applied to the data before\
+                applying the split. Pass an int for reproducible output across multiple function.\
+                    Defaults to None.
+            validation_split (bool): If True, creates a validation split from existing train split\
+                and assigns it to self.val_gdf.
+            force_split: If True, forces a new split to be created, even if an existing train/test\
+                or validation split is already present.
+                - With `validation_split=False`, regenerates and overwrites the test split.
+                - With `validation_split=True`, regenerates and overwrites the validation split.
+            resolution (int, optional): H3 resolution to regionalize data. Currently ignored in\
+                this subclass, different resolutions splits not supported yet.\
+                    Defaults to default value from the dataset.
+            task (Literal["TTE", "HMP"]): Task type. Stratifies by duration
+                (TTE) or hex length (HMP).
 
 
         Returns:
-            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
+            Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train/test or train/val GeoDataFrames.
         """
+        if (self.val_gdf is not None and validation_split and not force_split) or (
+            self.test_gdf is not None and not validation_split and not force_split
+        ):
+            raise ValueError(
+                "A split already exists. Use `force_split=True` to overwrite the existing "
+                f"{'validation' if validation_split else 'test'} split."
+            )
         assert self.train_gdf is not None
-        trajectory_id_column = trajectory_id_column or self.target
+        trajectory_id_column = target_column or self.target
         gdf_copy = self.train_gdf.copy()
+
+        if task not in {"TTE", "HMP"}:
+            raise ValueError(f"Unsupported task: {task}")
 
         if task == "TTE":
             self.version = "TTE"
@@ -518,7 +455,7 @@ class TrajectoryDataset(HuggingFaceDataset):
                 gdf_copy["stratify_col"] = gdf_copy["duration"]
             elif "duration" not in gdf_copy.columns and "timestamp" in gdf_copy.columns:
                 gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
-                    lambda ts: 0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds()
+                    lambda ts: (0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds())
                 )
             else:
                 raise ValueError(
@@ -564,6 +501,7 @@ class TrajectoryDataset(HuggingFaceDataset):
             trajectory_indices,
             test_size=test_size,
             stratify=duration_bins.loc[trajectory_indices],
+            random_state=random_state,
         )
 
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
@@ -572,32 +510,44 @@ class TrajectoryDataset(HuggingFaceDataset):
         test_gdf = test_gdf.drop(
             columns=[
                 col
-                for col in ("x_len", "y_len", "stratification_bin", "stratify_col")
+                for col in (
+                    "x_len",
+                    "y_len",
+                    "stratification_bin",
+                    "stratify_col",
+                )
                 if col in test_gdf.columns
             ],
         )
         train_gdf = train_gdf.drop(
             columns=[
                 col
-                for col in ("x_len", "y_len", "stratification_bin", "stratify_col")
+                for col in (
+                    "x_len",
+                    "y_len",
+                    "stratification_bin",
+                    "stratify_col",
+                )
                 if col in test_gdf.columns
             ],
         )
 
-        if not dev:
-            self.train_gdf = train_gdf
+        self.train_gdf = train_gdf
+        if not validation_split:
             self.test_gdf = test_gdf
+            test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
                 f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)},"
-                f"test len: {len(self.test_gdf)}"
+                f"test len: {test_len}"
             )
         else:
-            self.train_gdf = train_gdf
-            self.dev_gdf = test_gdf
+            self.val_gdf = test_gdf
+            val_len = len(self.val_gdf) if self.val_gdf is not None else 0
+            test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and dev_gdf. Test split remains unchanged."
-                f"Train len: {len(self.train_gdf)}, dev len: {len(self.dev_gdf)},"
-                f"test len: {len(self.test_gdf)}"
+                f"Created new train_gdf and val_gdf. Test split remains unchanged."
+                f"Train len: {len(self.train_gdf)}, dev len: {val_len},"
+                f"test len: {test_len}"
             )
         return train_gdf, test_gdf
 
