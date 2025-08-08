@@ -5,7 +5,7 @@
 groups = ["default", "all", "datasets", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:056b920cc38b6dca0ccbc5e31e4a3ede08412562bd0654503fa0b2d9c23b6dc2"
+content_hash = "sha256:ea209efbeef624074f7a80660b98b012bfd01b8eb806609fb9194a8543e3ae3a"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1076,7 +1076,7 @@ name = "datasets"
 version = "3.6.0"
 requires_python = ">=3.9.0"
 summary = "HuggingFace community-driven open-source library of datasets"
-groups = ["datasets"]
+groups = ["all", "datasets"]
 dependencies = [
     "dill<0.3.9,>=0.3.0",
     "filelock",
@@ -1155,7 +1155,7 @@ name = "dill"
 version = "0.3.8"
 requires_python = ">=3.8"
 summary = "serialize all of Python"
-groups = ["default", "datasets"]
+groups = ["default", "all", "datasets"]
 files = [
     {file = "dill-0.3.8-py3-none-any.whl", hash = "sha256:c36ca9ffb54365bdd2f8eb3eff7d2a21237f8452b57ace88b1ac615b7e815bd7"},
     {file = "dill-0.3.8.tar.gz", hash = "sha256:3ebe3c479ad625c4553aca177444d89b486b1d84982eeacded644afc0cf797ca"},
@@ -1289,7 +1289,7 @@ files = [
 name = "fastdtw"
 version = "0.3.4"
 summary = "Dynamic Time Warping (DTW) algorithm with an O(N) time and memory complexity."
-groups = ["datasets"]
+groups = ["all", "datasets"]
 dependencies = [
     "numpy",
 ]
@@ -1842,7 +1842,7 @@ name = "hf-xet"
 version = "1.1.7"
 requires_python = ">=3.8"
 summary = "Fast transfer of large files with the Hugging Face Hub."
-groups = ["datasets"]
+groups = ["all", "datasets"]
 marker = "platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"arm64\" or platform_machine == \"aarch64\""
 files = [
     {file = "hf_xet-1.1.7-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:60dae4b44d520819e54e216a2505685248ec0adbdb2dd4848b17aa85a0375cde"},
@@ -1860,7 +1860,7 @@ name = "huggingface-hub"
 version = "0.34.4"
 requires_python = ">=3.8.0"
 summary = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
-groups = ["datasets"]
+groups = ["all", "datasets"]
 dependencies = [
     "filelock",
     "fsspec>=2023.5.0",
@@ -3029,7 +3029,7 @@ name = "multiprocess"
 version = "0.70.16"
 requires_python = ">=3.8"
 summary = "better multiprocessing and multithreading in Python"
-groups = ["datasets"]
+groups = ["all", "datasets"]
 dependencies = [
     "dill>=0.3.8",
 ]
@@ -5842,7 +5842,7 @@ name = "xxhash"
 version = "3.5.0"
 requires_python = ">=3.7"
 summary = "Python binding for xxHash"
-groups = ["datasets"]
+groups = ["all", "datasets"]
 files = [
     {file = "xxhash-3.5.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ece616532c499ee9afbb83078b1b952beffef121d989841f7f4b3dc5ac0fd212"},
     {file = "xxhash-3.5.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3171f693dbc2cef6477054a665dc255d996646b4023fe56cb4db80e26f4cc520"},

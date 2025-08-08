@@ -84,11 +84,9 @@ plotting = [
 # pdm add -G torch <library>
 torch = [
     "pytorch-lightning>=2.0.0",
-    # Torch 2.2.* is the last oficially supported torch version on macOS x86_64
-    "torch<2.3; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "torch",
 ]
-all = ["srai[osm,overturemaps,voronoi,gtfs,plotting,torch]"]
+all = ["srai[osm,overturemaps,voronoi,gtfs,plotting,torch,datasets]"]
 
 
 [build-system]
