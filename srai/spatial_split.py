@@ -127,7 +127,7 @@ def spatial_split_points(
         h3_cells_stats["bucket"] = pd.qcut(h3_cells_stats[target_column], n_buckets, labels=False)
         h3_cells_stats = h3_cells_stats.groupby(["h3", "bucket"]).size().reset_index(name="points")
 
-    # Save list of all brands in the input table
+    # Save list of all buckets in the input table
     stratification_buckets = sorted(h3_cells_stats["bucket"].unique())
     # Shuffle statistics using random_state
     h3_cells_stats_shuffled = h3_cells_stats.sample(frac=1, random_state=random_state)
@@ -174,7 +174,7 @@ def spatial_split_points(
                 current_stratification_bucket = row["bucket"]
                 current_number_of_cells = row["points"]
 
-                # Calculate what will be the new total sum of all pairs so far
+                # Calculate what will be the new total sum of all points so far
                 new_total_sum = (
                     sum(sums[current_stratification_bucket].values()) + current_number_of_cells
                 )
@@ -196,7 +196,7 @@ def spatial_split_points(
                 ratio_difference = sum(
                     abs(expected_ratios[split] - new_ratios[split]) for split in splits
                 )
-                # Increase the difference from all brands
+                # Increase the difference from all buckets
                 ratio_difference_for_all_buckets += ratio_difference
 
             # If there is a new smallest ratio difference - swap it
@@ -208,7 +208,7 @@ def spatial_split_points(
                 split_to_add_h3_cell = current_split
 
         # Modify list of sums after selecting best matching split
-        # We have to add all pairs for each brand separately to the dict.
+        # We have to add all points for each bucket separately to the dict.
         for row in rows:
             current_stratification_bucket = row["bucket"]
             current_number_of_cells = row["points"]
@@ -219,14 +219,15 @@ def spatial_split_points(
         # Add current H3 cell to the best matching split
         h3_cell_buckets[cast("str", split_to_add_h3_cell)].append(h3_cell)
 
-    # Calculate total sum of pairs per split
+    # Calculate total sum of points per split
     total_sums = {
-        split: sum(sums[brand][split] for brand in stratification_buckets) for split in splits
+        split: sum(sums[bucket][split] for bucket in stratification_buckets) for split in splits
     }
     # Calculate actual ratios base on total sums
     actual_ratios = {
         split: round(
-            sum(sums[brand][split] for brand in stratification_buckets) / sum(total_sums.values()),
+            sum(sums[bucket][split] for bucket in stratification_buckets)
+            / sum(total_sums.values()),
             3,
         )
         for split in splits
@@ -236,7 +237,7 @@ def spatial_split_points(
         split: round(expected_ratios[split] - actual_ratios[split], 3) for split in splits
     }
 
-    # Calculate ratio and difference for each brand
+    # Calculate ratio and difference for each bucket
     table_summary_data = []
     for stratification_bucket in stratification_buckets:
         bucket_ratios = {
