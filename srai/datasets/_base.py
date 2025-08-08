@@ -8,12 +8,12 @@ from typing import Optional, Union
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from datasets import load_dataset
 from shapely.geometry import LineString
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
+from srai._optional import import_optional_dependencies
 from srai.constants import REGIONS_INDEX
 from srai.regionalizers import H3Regionalizer
 from srai.spatial_split import train_test_spatial_split
@@ -116,6 +116,8 @@ class HuggingFaceDataset(abc.ABC):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                  contain keys "train" and "test" if available.
         """
+        from datasets import load_dataset
+
         result = {}
 
         self.train_gdf, self.val_gdf, self.test_gdf = None, None, None
@@ -167,6 +169,7 @@ class PointDataset(HuggingFaceDataset):
         target: Optional[str] = None,
         resolution: Optional[int] = None,
     ) -> None:
+        import_optional_dependencies(dependency_group="datasets", modules=["datasets"])
         self.path = path
         self.version = version
         self.numerical_columns = numerical_columns
@@ -391,6 +394,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         target: Optional[str] = None,
         resolution: Optional[int] = None,
     ) -> None:
+        import_optional_dependencies(dependency_group="datasets", modules=["datasets"])
         self.path = path
         self.version = version
         self.numerical_columns = numerical_columns

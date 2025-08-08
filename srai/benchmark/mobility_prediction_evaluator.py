@@ -56,7 +56,7 @@ class MobilityPredictionEvaluator(BaseEvaluator):
         if trip_ids is None:
             raise ValueError("`trip_ids` are required for trajectory evaluation.")
 
-        _, h3_test = dataset.get_h3_with_labels()
+        _, _, h3_test = dataset.get_h3_with_labels()
         if h3_test is None:
             raise ValueError("The function 'get_h3_with_labels' returned None for h3_test.")
 

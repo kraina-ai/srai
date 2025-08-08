@@ -68,7 +68,7 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
         if trip_ids is None:
             raise ValueError("Trip_ids are required for trajectory based evaluation.")
 
-        _, h3_test = dataset.get_h3_with_labels()
+        _, _, h3_test = dataset.get_h3_with_labels()
         # target_column = dataset.target if dataset.target is not None else "count"
         # _, h3_test = dataset.get_h3_with_labels()
 

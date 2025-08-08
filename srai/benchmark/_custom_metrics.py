@@ -6,8 +6,9 @@ This module contains implementation of non-standard metrics used by evaluators.
 
 import h3
 import numpy as np
-from fastdtw import fastdtw
 from geopy.distance import great_circle
+
+from srai._optional import import_optional_dependencies
 
 
 def mean_absolute_percentage_error(
@@ -76,9 +77,11 @@ def dtw_distance(true_h3_seq: list[str], pred_h3_seq: list[str]) -> float:
     Returns:
         float: DTW distance between the latitude-longitude paths of the two sequences.
     """
+    import_optional_dependencies(dependency_group="datasets", modules=["fastdtw"])
+    from fastdtw import fastdtw
+
     true_coords = [h3.cell_to_latlng(h) for h in true_h3_seq]
     pred_coords = [h3.cell_to_latlng(h) for h in pred_h3_seq]
-    # distance, _ = fastdtw(true_coords, pred_coords)
     distance, _ = fastdtw(true_coords, pred_coords, dist=lambda x, y: great_circle(x, y).meters)
     return float(distance)
 

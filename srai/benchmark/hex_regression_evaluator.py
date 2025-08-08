@@ -63,7 +63,7 @@ class HexRegressionEvaluator(BaseEvaluator):
             raise ValueError("Region_ids are required for region-based evaluation.")
 
         target_column = dataset.target if dataset.target is not None else "count"
-        _, h3_test = dataset.get_h3_with_labels()
+        _, _, h3_test = dataset.get_h3_with_labels()
 
         if h3_test is None:
             raise ValueError("The function 'get_h3_with_labels' returned None for h3_test.")
