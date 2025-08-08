@@ -1,6 +1,6 @@
 """Module for spatially splitting input data."""
 
-from typing import Optional, Union, cast
+from typing import Literal, Optional, Union, cast, overload
 
 import geopandas as gpd
 import h3
@@ -50,6 +50,7 @@ def train_test_spatial_split(
     return splits["train"], splits["test"]
 
 
+@overload
 def spatial_split_points(
     input_gdf: gpd.GeoDataFrame,
     parent_h3_resolution: int,
@@ -59,7 +60,35 @@ def spatial_split_points(
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
-) -> dict[str, Optional[str]]:
+    return_split_stats: Literal[False] = False,
+) -> dict[str, Optional[str]]: ...
+
+
+@overload
+def spatial_split_points(
+    input_gdf: gpd.GeoDataFrame,
+    parent_h3_resolution: int,
+    geometry_column: str = "geometry",
+    target_column: Optional[str] = None,
+    n_buckets: int = 7,
+    test_size: Union[float, int] = 0.2,
+    validation_size: Union[float, int] = 0,
+    random_state: Optional[int] = None,
+    return_split_stats: Literal[True] = True,
+) -> tuple[dict[str, Optional[str]], pd.DataFrame]: ...
+
+
+def spatial_split_points(
+    input_gdf: gpd.GeoDataFrame,
+    parent_h3_resolution: int,
+    geometry_column: str = "geometry",
+    target_column: Optional[str] = None,
+    n_buckets: int = 7,
+    test_size: Union[float, int] = 0.2,
+    validation_size: Union[float, int] = 0,
+    random_state: Optional[int] = None,
+    return_split_stats: Optional[bool] = False,
+) -> Union[dict[str, Optional[str]], tuple[dict[str, Optional[str]], pd.DataFrame]]:
     """
     Split data based on parent H3 cell and stratify the data using specified target.
 
@@ -77,6 +106,7 @@ def spatial_split_points(
         validation_size (Union[float, int], optional): Size of the validation dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.
         random_state (Optional[int], optional): Random state for reproducibility. Defaults to None.
+        return_split_stats (Optional[bool], optional): Return split statistics. Defaults to False.
 
     Returns:
         dict[str, Optional[str]]: _description_
@@ -121,10 +151,14 @@ def spatial_split_points(
 
     if target_column == "count":
         h3_cells_stats = _gdf.groupby("h3").size().reset_index(name="points")
-        h3_cells_stats["bucket"] = pd.qcut(h3_cells_stats["points"], n_buckets, labels=False)
+        h3_cells_stats["bucket"] = pd.qcut(
+            h3_cells_stats["points"], n_buckets, labels=False, duplicates="drop"
+        )
     else:
         h3_cells_stats = _gdf.copy()
-        h3_cells_stats["bucket"] = pd.qcut(h3_cells_stats[target_column], n_buckets, labels=False)
+        h3_cells_stats["bucket"] = pd.qcut(
+            h3_cells_stats[target_column], n_buckets, labels=False, duplicates="drop"
+        )
         h3_cells_stats = h3_cells_stats.groupby(["h3", "bucket"]).size().reset_index(name="points")
 
     # Save list of all buckets in the input table
@@ -260,6 +294,8 @@ def spatial_split_points(
             }
         )
 
+    table_summary_df = pd.DataFrame(table_summary_data)
+
     # Display splitting results
     print("Summary of the split:\n")
     train_h3_cells = len(h3_cell_buckets["train"])
@@ -282,7 +318,7 @@ def spatial_split_points(
     print("  Actual ratios:", actual_ratios)
     print("  Actual ratios difference:", actual_ratios_differences)
 
-    print(pd.DataFrame(table_summary_data))
+    print(table_summary_df)
 
     # Split input table into three dataframes
     # (Can skip data if the expected ratio is 0 and there are no H3 cells in the bucket)
@@ -296,4 +332,7 @@ def spatial_split_points(
         splitted_data[split] = _gdf.loc[matching_indexes]
 
     # Return dict with split name and corresponding dataframe
+    if return_split_stats:
+        return splitted_data, table_summary_df
+
     return splitted_data
