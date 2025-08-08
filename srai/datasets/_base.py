@@ -63,7 +63,7 @@ class HuggingFaceDataset(abc.ABC):
         target_column: Optional[str] = None,
         resolution: Optional[int] = None,
         test_size: float = 0.2,
-        bucket_number: int = 7,
+        n_bins: int = 7,
         random_state: Optional[int] = None,
         validation_split: bool = False,
         force_split: bool = False,
@@ -78,7 +78,7 @@ class HuggingFaceDataset(abc.ABC):
             resolution (int, optional): H3 resolution, subclasses mayb use this argument to\
                 regionalize data. Defaults to default value from the dataset.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
-            bucket_number (int, optional): Bucket number used to stratify target data.
+            n_bins (int, optional): Bucket number used to stratify target data.
             random_state (int, optional):  Controls the shuffling applied to the data before \
                 applying the split.
                 Pass an int for reproducible output across multiple function. Defaults to None.
@@ -141,13 +141,13 @@ class HuggingFaceDataset(abc.ABC):
         self,
         # resolution: Optional[int] = None,
         # target_column: Optional[str] = None,
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]:
         """
         Returns indexes with target labels from the dataset depending on dataset and task type.
 
         Returns:
-            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test indexes with target \
-                labels in GeoDataFrames
+            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]: \
+                Train, Val, Test indexes with target labels in GeoDataFrames
         """
         raise NotImplementedError
 
@@ -181,7 +181,7 @@ class PointDataset(HuggingFaceDataset):
         target_column: Optional[str] = None,
         resolution: Optional[int] = None,
         test_size: float = 0.2,
-        bucket_number: int = 7,
+        n_bins: int = 7,
         random_state: Optional[int] = None,
         validation_split: bool = False,
         force_split: bool = False,
@@ -198,7 +198,7 @@ class PointDataset(HuggingFaceDataset):
             resolution (int, optional): h3 resolution to regionalize data. Defaults to default\
                 value from the dataset.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
-            bucket_number (int, optional): Bucket number used to stratify target data.\
+            n_bins (int, optional): Bucket number used to stratify target data.\
                 Defaults to 7.
             random_state (int, optional):  Controls the shuffling applied to the data before\
                 applying the split. \
@@ -250,7 +250,7 @@ class PointDataset(HuggingFaceDataset):
             parent_h3_resolution=resolution,
             target_column=target_column,
             test_size=test_size,
-            n_buckets=bucket_number,
+            n_bins=n_bins,
             random_state=random_state,
         )
 
@@ -277,7 +277,7 @@ class PointDataset(HuggingFaceDataset):
         self,
         # resolution: Optional[int] = None,
         # target_column: Optional[str] = None,
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]:
         """
         Returns h3 indexes with target labels from the dataset.
 
@@ -286,8 +286,8 @@ class PointDataset(HuggingFaceDataset):
 
 
         Returns:
-            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes with target \
-                labels in GeoDataFrames
+            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]:\
+                Train, Val, Test hexes with target labels in GeoDataFrames
         """
         # if target_column is None:
         #     target_column = "count"
@@ -314,6 +314,11 @@ class PointDataset(HuggingFaceDataset):
         else:
             _test_gdf = None
 
+        if self.val_gdf is not None:
+            _val_gdf = self._aggregate_hexes(self.val_gdf, self.resolution, self.target)
+        else:
+            _val_gdf = None
+
         # Scale the "count" column to [0, 1] if it is the target column
         if self.target == "count":
             scaler = MinMaxScaler()
@@ -322,8 +327,11 @@ class PointDataset(HuggingFaceDataset):
             if _test_gdf is not None:
                 _test_gdf["count"] = scaler.transform(_test_gdf[["count"]])
                 _test_gdf["count"] = np.clip(_test_gdf["count"], 0, 1)
+            if _val_gdf is not None:
+                _val_gdf["count"] = scaler.transform(_val_gdf[["count"]])
+                _val_gdf["count"] = np.clip(_val_gdf["count"], 0, 1)
 
-        return _train_gdf, _test_gdf
+        return _train_gdf, _val_gdf, _test_gdf
 
     def _aggregate_hexes(
         self,
@@ -399,7 +407,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         target_column: Optional[str] = "trip_id",
         resolution: Optional[int] = None,
         test_size: float = 0.2,
-        bucket_number: int = 4,
+        n_bins: int = 4,
         random_state: Optional[int] = None,
         validation_split: bool = False,
         force_split: bool = False,
@@ -413,7 +421,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         Args:
             target_column (str): Column identifying each trajectory (contains trajectory ids).
             test_size (float): Fraction of data to be used as test set.
-            bucket_number (int): Number of stratification bins.
+            n_bins (int): Number of stratification bins.
             random_state (int, optional):  Controls the shuffling applied to the data before\
                 applying the split. Pass an int for reproducible output across multiple function.\
                     Defaults to None.
@@ -486,9 +494,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         else:
             raise ValueError(f"Unsupported task type: {task}")
 
-        gdf_copy["stratification_bin"] = pd.cut(
-            gdf_copy["stratify_col"], bins=bucket_number, labels=False
-        )
+        gdf_copy["stratification_bin"] = pd.cut(gdf_copy["stratify_col"], bins=n_bins, labels=False)
 
         trajectory_indices = gdf_copy[trajectory_id_column].unique()
         duration_bins = (
@@ -555,7 +561,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         self,
         # resolution: Optional[int] = None,
         # target_column: Optional[str] = None,
-    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]:
+    ) -> tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]:
         """
         Returns ids, h3 indexes sequences, with target labels from the dataset.
 
@@ -563,8 +569,8 @@ class TrajectoryDataset(HuggingFaceDataset):
             for each trajectory (time duration for TTE task, future movement sequence for HMP task).
 
         Returns:
-            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame]]: Train, Test hexes sequences with \
-                target labels in GeoDataFrames
+            tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]: Train,\
+                Val, Test hexes sequences with target labels in GeoDataFrames
         """
         # resolution = resolution if resolution is not None else self.resolution
 
@@ -588,6 +594,12 @@ class TrajectoryDataset(HuggingFaceDataset):
                 _test_gdf = self.test_gdf[[self.target, "h3_sequence", "duration"]]
             else:
                 _test_gdf = None
+
+            if self.val_gdf is not None:
+                _val_gdf = self.val_gdf[[self.target, "h3_sequence", "duration"]]
+            else:
+                _val_gdf = None
+
         elif self.version == "HMP":
             _train_gdf = self.train_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
 
@@ -595,13 +607,19 @@ class TrajectoryDataset(HuggingFaceDataset):
                 _test_gdf = self.test_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
             else:
                 _test_gdf = None
+
+            if self.val_gdf is not None:
+                _val_gdf = self.val_gdf[[self.target, "h3_sequence_x", "h3_sequence_y"]]
+            else:
+                _val_gdf = None
+
         elif self.version == "all":
             raise TypeError(
                 "Could not provide target labels, as version 'all'\
             of dataset does not provide one."
             )
 
-        return _train_gdf, _test_gdf
+        return _train_gdf, _val_gdf, _test_gdf
 
     def _agg_points_to_trajectories(
         self, gdf: gpd.GeoDataFrame, target_column: str

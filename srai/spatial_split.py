@@ -15,7 +15,7 @@ def train_test_spatial_split(
     parent_h3_resolution: int,
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
-    n_buckets: int = 7,
+    n_bins: int = 7,
     test_size: Union[float, int] = 0.2,
     random_state: Optional[int] = None,
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
@@ -30,7 +30,7 @@ def train_test_spatial_split(
             If None, split generated on basis of number of points within a hex ov given resolution.
             In this case values are normalized to [0-1] scale.
             Defaults to preset dataset target column.
-        n_buckets (int, optional): Bucket number used to stratify target data. Defaults to 7.
+        n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
         random_state (Optional[int], optional): Random state for reproducibility. Defaults to None.
@@ -43,7 +43,7 @@ def train_test_spatial_split(
         parent_h3_resolution=parent_h3_resolution,
         geometry_column=geometry_column,
         target_column=target_column,
-        n_buckets=n_buckets,
+        n_bins=n_bins,
         test_size=test_size,
         validation_size=0,
         random_state=random_state,
@@ -58,7 +58,7 @@ def spatial_split_points(
     parent_h3_resolution: int,
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
-    n_buckets: int = 7,
+    n_bins: int = 7,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -72,7 +72,7 @@ def spatial_split_points(
     parent_h3_resolution: int,
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
-    n_buckets: int = 7,
+    n_bins: int = 7,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -85,7 +85,7 @@ def spatial_split_points(
     parent_h3_resolution: int,
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
-    n_buckets: int = 7,
+    n_bins: int = 7,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -102,7 +102,7 @@ def spatial_split_points(
             If None, split generated on basis of number of points within a hex ov given resolution.
             In this case values are normalized to [0-1] scale.
             Defaults to preset dataset target column.
-        n_buckets (int, optional): Bucket number used to stratify target data. Defaults to 7.
+        n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
         validation_size (Union[float, int], optional): Size of the validation dataset.
@@ -154,12 +154,12 @@ def spatial_split_points(
     if target_column == "count":
         h3_cells_stats = _gdf.groupby("h3").size().reset_index(name="points")
         h3_cells_stats["bucket"] = pd.qcut(
-            h3_cells_stats["points"], n_buckets, labels=False, duplicates="drop"
+            h3_cells_stats["points"], n_bins, labels=False, duplicates="drop"
         )
     else:
         h3_cells_stats = _gdf.copy()
         h3_cells_stats["bucket"] = pd.qcut(
-            h3_cells_stats[target_column], n_buckets, labels=False, duplicates="drop"
+            h3_cells_stats[target_column], n_bins, labels=False, duplicates="drop"
         )
         h3_cells_stats = h3_cells_stats.groupby(["h3", "bucket"]).size().reset_index(name="points")
 
