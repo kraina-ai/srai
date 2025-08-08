@@ -7,6 +7,8 @@ import h3
 import pandas as pd
 from tqdm import tqdm
 
+from srai.constants import FORCE_TERMINAL
+
 
 def train_test_spatial_split(
     input_gdf: gpd.GeoDataFrame,
@@ -184,7 +186,9 @@ def spatial_split_points(
     }
 
     # Iterate unique H3 cells from the shuffled dataset
-    for h3_cell in tqdm(h3_cells_stats_shuffled["h3"].unique(), desc="Splitting H3 cells"):
+    for h3_cell in tqdm(
+        h3_cells_stats_shuffled["h3"].unique(), desc="Splitting H3 cells", disable=FORCE_TERMINAL
+    ):
         # Find all statistics per bucket for this parent H3 cell
         rows = h3_cells_stats_shuffled[h3_cells_stats_shuffled["h3"] == h3_cell].to_dict(
             orient="records"
