@@ -245,7 +245,7 @@ class PortoTaxiDataset(TrajectoryDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        if version == "TTE" or version == "HMP":
+        if version in ("TTE", "HMP"):
             self.resolution = 9
         elif version == "all":
             if resolution is None:
