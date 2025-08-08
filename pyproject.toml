@@ -27,7 +27,7 @@ dependencies = [
     "polars>=0.19.4",
     "omegaconf",
     "python-dotenv",
-    "datasets",
+    "datasets<4",
     "fastdtw",
 ]
 requires-python = ">=3.9"
