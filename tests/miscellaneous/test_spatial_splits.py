@@ -22,13 +22,11 @@ def get_random_points_gdf(number_of_points: int, seed: int) -> gpd.GeoDataFrame:
     )
 
 
-@pytest.mark.parametrize("n_buckets", [3, 7, 10])  # type: ignore
+@pytest.mark.parametrize("n_bins", [3, 7, 10])  # type: ignore
 @pytest.mark.parametrize("target", ["count", "target"])  # type: ignore
 @pytest.mark.parametrize("test_size", [0.2, 0.5, 25_000])  # type: ignore
 @pytest.mark.parametrize("validation_size", [0, 0.2, 15_000])  # type: ignore
-def test_spatial_splits(
-    n_buckets: int, target: str, test_size: float, validation_size: float
-) -> None:
+def test_spatial_splits(n_bins: int, target: str, test_size: float, validation_size: float) -> None:
     """Test checks if regions are generated correctly."""
     seed = np.random.default_rng().integers(100_000_000)
     points = get_random_points_gdf(100_000, seed)
@@ -37,7 +35,7 @@ def test_spatial_splits(
         input_gdf=points,
         parent_h3_resolution=6,
         target_column=target,
-        n_buckets=n_buckets,
+        n_bins=n_bins,
         test_size=test_size,
         validation_size=validation_size,
         return_split_stats=True,
