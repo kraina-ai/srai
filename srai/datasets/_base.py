@@ -260,17 +260,17 @@ class PointDataset(HuggingFaceDataset):
             self.test_gdf = test
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, \
-                test len: {test_len}"
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)},"
+                f"test len: {test_len}"
             )
         else:
             self.val_gdf = test
             val_len = len(self.val_gdf) if self.val_gdf is not None else 0
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and val_gdf. Test split remains unchanged. \
-                   Train len: {len(self.train_gdf)}, val len: {len(val_len)}, \
-                    test len: {test_len}"
+                f"Created new train_gdf and val_gdf. Test split remains unchanged."
+                f"Train len: {len(self.train_gdf)}, val len: {val_len},"
+                f"test len: {test_len}"
             )
         return train, test
 
@@ -552,7 +552,7 @@ class TrajectoryDataset(HuggingFaceDataset):
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
                 f"Created new train_gdf and val_gdf. Test split remains unchanged."
-                f"Train len: {len(self.train_gdf)}, dev len: {val_len},"
+                f"Train len: {len(self.train_gdf)}, val len: {val_len},"
                 f"test len: {test_len}"
             )
         return train_gdf, test_gdf
