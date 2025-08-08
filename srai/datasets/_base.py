@@ -209,7 +209,7 @@ class PointDataset(HuggingFaceDataset):
                 or validation split is already present.
                 - With `validation_split=False`, regenerates and overwrites the test split.
                 - With `validation_split=True`, regenerates and overwrites the validation split.
-            task (Optional[str], optional): Currentlu not supported. Ignored in this subclass.
+            task (Optional[str], optional): Currently not supported. Ignored in this subclass.
 
         Returns:
             tuple(gpd.GeoDataFrame, gpd.GeoDataFrame): Train-test or train-val split made on\
