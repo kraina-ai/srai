@@ -27,9 +27,8 @@ def train_test_spatial_split(
         parent_h3_resolution (int): H3 resolution used to split the data.
         geometry_column (str, optional): Name of the geometry column.
         target_column: Target column name used to stratify the data distribution.
-            If None, split generated on basis of number of points within a hex ov given resolution.
-            In this case values are normalized to [0-1] scale.
-            Defaults to preset dataset target column.
+            If None, split is generated based on number of points within a hex of a given
+            resolution. Defaults to None.
         n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
@@ -99,9 +98,8 @@ def spatial_split_points(
         parent_h3_resolution (int): H3 resolution used to split the data.
         geometry_column (str, optional): Name of the geometry column.
         target_column: Target column name used to stratify the data distribution.
-            If None, split generated on basis of number of points within a hex ov given resolution.
-            In this case values are normalized to [0-1] scale.
-            Defaults to preset dataset target column.
+            If None, split is generated based on number of points within a hex of a given
+            resolution. Defaults to None.
         n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.

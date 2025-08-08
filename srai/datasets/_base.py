@@ -191,10 +191,9 @@ class PointDataset(HuggingFaceDataset):
         Method to generate splits from GeoDataFrame, based on the target_column values.
 
         Args:
-            target_column (Optional[str], optional): Target column name. If None, split generated\
-                on basis of number \
-                of points within a hex ov given resolution. In this case values are normalized to\
-                    [0,1] scale. Defaults to preset dataset target column.
+            target_column (Optional[str], optional): Target column name. If None, split is\
+                generated based on number of points within a hex of a given resolution.\
+                Defaults to preset dataset target column.
             resolution (int, optional): h3 resolution to regionalize data. Defaults to default\
                 value from the dataset.
             test_size (float, optional): Percentage of test set. Defaults to 0.2.
@@ -283,7 +282,6 @@ class PointDataset(HuggingFaceDataset):
 
         Points are aggregated to hexes and target column values are averaged or if target column \
         is None, then the number of points is calculted within a hex and scaled to [0,1].
-
 
         Returns:
             tuple[gpd.GeoDataFrame, Optional[gpd.GeoDataFrame], Optional[gpd.GeoDataFrame]]:\
