@@ -1,2 +1,5 @@
 [strategy]
 save = "wildcard"
+
+[lock]
+format = "pdm"
