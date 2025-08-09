@@ -46,6 +46,9 @@ def train_test_spatial_split(
     Returns:
         tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
     """
+    if test_size <= 0:
+        raise ValueError("test_size must be greater than 0.")
+
     splits = spatial_split_points(
         input_gdf=input_gdf,
         parent_h3_resolution=parent_h3_resolution,
@@ -73,7 +76,7 @@ def spatial_split_points(
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
     return_split_stats: Literal[False] = False,
-) -> dict[str, Optional[str]]: ...
+) -> dict[str, Optional[gpd.GeoDataFrame]]: ...
 
 
 @overload
@@ -88,7 +91,7 @@ def spatial_split_points(
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
     return_split_stats: Literal[True] = True,
-) -> tuple[dict[str, Optional[str]], pd.DataFrame]: ...
+) -> tuple[dict[str, Optional[gpd.GeoDataFrame]], pd.DataFrame]: ...
 
 
 def spatial_split_points(
@@ -102,7 +105,10 @@ def spatial_split_points(
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
     return_split_stats: Optional[bool] = False,
-) -> Union[dict[str, Optional[str]], tuple[dict[str, Optional[str]], pd.DataFrame]]:
+) -> Union[
+    dict[str, Optional[gpd.GeoDataFrame]],
+    tuple[dict[str, Optional[gpd.GeoDataFrame]], pd.DataFrame],
+]:
     """
     Split data based on parent H3 cell and stratify the data using specified target.
 
@@ -191,7 +197,6 @@ def spatial_split_points(
 
     # Save list of all buckets in the input table
     stratification_buckets = sorted(h3_cells_stats[BUCKET_COLUMN_NAME].unique())
-    print(stratification_buckets)
     # Shuffle statistics using random_state
     h3_cells_stats_shuffled = h3_cells_stats.sample(frac=1, random_state=random_state)
 
@@ -363,7 +368,7 @@ def spatial_split_points(
             continue
 
         matching_indexes = _gdf[_gdf[H3_COLUMN_NAME].isin(h3_cell_buckets[split])].index
-        splitted_data[split] = _gdf.loc[matching_indexes]
+        splitted_data[split] = input_gdf.loc[matching_indexes]
 
     # Return dict with split name and corresponding dataframe
     if return_split_stats:

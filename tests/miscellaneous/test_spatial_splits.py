@@ -1,11 +1,16 @@
 """Spatial splitting tests."""
 
+from typing import cast
+from unittest import TestCase
+
 import geopandas as gpd
 import numpy as np
 import pytest
 from sklearn.preprocessing import MinMaxScaler
 
 from srai.spatial_split import spatial_split_points
+
+ut = TestCase()
 
 
 def get_random_points_gdf(number_of_points: int, seed: int) -> gpd.GeoDataFrame:
@@ -49,6 +54,12 @@ def test_spatial_splits(n_bins: int, target: str, test_size: float, validation_s
 
     assert len(points) == sum(len(_df) for _df in splits.values() if _df is not None), (
         "Returned splits don't sum to original dataframe length."
+    )
+
+    ut.assertListEqual(
+        points.columns.to_list(),
+        cast("gpd.GeoDataFrame", splits["train"]).columns.to_list(),
+        "Columns in splits do not match original dataframe.",
     )
 
     for _, row in table_summary_df.iterrows():
