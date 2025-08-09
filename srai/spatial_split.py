@@ -140,6 +140,12 @@ def spatial_split_points(
             " Use centroids if you want to split other types of geometries."
         )
 
+    if test_size < 0:
+        raise ValueError("test_size cannot be negative.")
+
+    if validation_size < 0:
+        raise ValueError("validation_size cannot be negative.")
+
     total_numer_rows = len(input_gdf)
 
     if validation_size < 1:
