@@ -9,6 +9,11 @@ from tqdm import tqdm
 
 from srai.constants import FORCE_TERMINAL
 
+BUCKET_COLUMN_NAME = "bucket"
+COUNT_COLUMN_NAME = "count"
+H3_COLUMN_NAME = "h3"
+POINTS_COLUMN_NAME = "points"
+
 
 def train_test_spatial_split(
     input_gdf: gpd.GeoDataFrame,
@@ -16,6 +21,7 @@ def train_test_spatial_split(
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
     n_bins: int = 7,
+    categorical: bool = False,
     test_size: Union[float, int] = 0.2,
     random_state: Optional[int] = None,
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
@@ -29,7 +35,10 @@ def train_test_spatial_split(
         target_column: Target column name used to stratify the data distribution.
             If None, split is generated based on number of points within a hex of a given
             resolution. Defaults to None.
-        n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
+        n_bins (int, optional): Bucket number used to stratify target data.
+            Only used when categorical is False. Defaults to 7.
+        categorical (bool, optional): If True, target column is treated as categorical.
+            Target column must be specified in this case. Defaults to False.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
         random_state (Optional[int], optional): Random state for reproducibility. Defaults to None.
@@ -43,6 +52,7 @@ def train_test_spatial_split(
         geometry_column=geometry_column,
         target_column=target_column,
         n_bins=n_bins,
+        categorical=categorical,
         test_size=test_size,
         validation_size=0,
         random_state=random_state,
@@ -58,6 +68,7 @@ def spatial_split_points(
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
     n_bins: int = 7,
+    categorical: bool = False,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -72,6 +83,7 @@ def spatial_split_points(
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
     n_bins: int = 7,
+    categorical: bool = False,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -85,6 +97,7 @@ def spatial_split_points(
     geometry_column: str = "geometry",
     target_column: Optional[str] = None,
     n_bins: int = 7,
+    categorical: bool = False,
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
@@ -100,7 +113,10 @@ def spatial_split_points(
         target_column: Target column name used to stratify the data distribution.
             If None, split is generated based on number of points within a hex of a given
             resolution. Defaults to None.
-        n_bins (int, optional): Bucket number used to stratify target data. Defaults to 7.
+        n_bins (int, optional): Bucket number used to stratify target data.
+            Only used when categorical is False. Defaults to 7.
+        categorical (bool, optional): If True, target column is treated as categorical.
+            Target column must be specified in this case. Defaults to False.
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
         validation_size (Union[float, int], optional): Size of the validation dataset.
@@ -138,31 +154,44 @@ def spatial_split_points(
 
     # Calculate statistics per H3 parent cell and bucket
     # (number of point per bucket within H3 parent cell)
-    target_column = target_column or "count"
+    if categorical and target_column is None:
+        raise ValueError(
+            "If categorical is True, target_column must be specified."
+            " It should contain categorical values to stratify the data."
+        )
+    target_column = target_column or COUNT_COLUMN_NAME
 
     columns_to_keep = [geometry_column]
-    if target_column != "count":
+    if target_column != COUNT_COLUMN_NAME:
         columns_to_keep.append(target_column)
 
     _gdf = input_gdf[columns_to_keep].copy()
-    _gdf["h3"] = _gdf[geometry_column].apply(
+    _gdf[H3_COLUMN_NAME] = _gdf[geometry_column].apply(
         lambda pt: h3.latlng_to_cell(pt.y, pt.x, parent_h3_resolution)
     )
 
-    if target_column == "count":
-        h3_cells_stats = _gdf.groupby("h3").size().reset_index(name="points")
-        h3_cells_stats["bucket"] = pd.qcut(
-            h3_cells_stats["points"], n_bins, labels=False, duplicates="drop"
+    if target_column == COUNT_COLUMN_NAME:
+        h3_cells_stats = _gdf.groupby(H3_COLUMN_NAME).size().reset_index(name=POINTS_COLUMN_NAME)
+        h3_cells_stats[BUCKET_COLUMN_NAME] = pd.qcut(
+            h3_cells_stats[POINTS_COLUMN_NAME], n_bins, labels=False, duplicates="drop"
         )
     else:
         h3_cells_stats = _gdf.copy()
-        h3_cells_stats["bucket"] = pd.qcut(
-            h3_cells_stats[target_column], n_bins, labels=False, duplicates="drop"
+        if categorical:
+            h3_cells_stats.rename(columns={target_column: BUCKET_COLUMN_NAME}, inplace=True)
+        else:
+            h3_cells_stats[BUCKET_COLUMN_NAME] = pd.qcut(
+                h3_cells_stats[target_column], n_bins, labels=False, duplicates="drop"
+            )
+        h3_cells_stats = (
+            h3_cells_stats.groupby([H3_COLUMN_NAME, BUCKET_COLUMN_NAME])
+            .size()
+            .reset_index(name=POINTS_COLUMN_NAME)
         )
-        h3_cells_stats = h3_cells_stats.groupby(["h3", "bucket"]).size().reset_index(name="points")
 
     # Save list of all buckets in the input table
-    stratification_buckets = sorted(h3_cells_stats["bucket"].unique())
+    stratification_buckets = sorted(h3_cells_stats[BUCKET_COLUMN_NAME].unique())
+    print(stratification_buckets)
     # Shuffle statistics using random_state
     h3_cells_stats_shuffled = h3_cells_stats.sample(frac=1, random_state=random_state)
 
@@ -185,10 +214,12 @@ def spatial_split_points(
 
     # Iterate unique H3 cells from the shuffled dataset
     for h3_cell in tqdm(
-        h3_cells_stats_shuffled["h3"].unique(), desc="Splitting H3 cells", disable=FORCE_TERMINAL
+        h3_cells_stats_shuffled[H3_COLUMN_NAME].unique(),
+        desc="Splitting H3 cells",
+        disable=FORCE_TERMINAL,
     ):
         # Find all statistics per bucket for this parent H3 cell
-        rows = h3_cells_stats_shuffled[h3_cells_stats_shuffled["h3"] == h3_cell].to_dict(
+        rows = h3_cells_stats_shuffled[h3_cells_stats_shuffled[H3_COLUMN_NAME] == h3_cell].to_dict(
             orient="records"
         )
 
@@ -207,8 +238,8 @@ def spatial_split_points(
             ratio_difference_for_all_buckets = 0
             # Iterate all buckets existing in the current H3 cell
             for row in rows:
-                current_stratification_bucket = row["bucket"]
-                current_number_of_cells = row["points"]
+                current_stratification_bucket = row[BUCKET_COLUMN_NAME]
+                current_number_of_cells = row[POINTS_COLUMN_NAME]
 
                 # Calculate what will be the new total sum of all points so far
                 new_total_sum = (
@@ -246,8 +277,8 @@ def spatial_split_points(
         # Modify list of sums after selecting best matching split
         # We have to add all points for each bucket separately to the dict.
         for row in rows:
-            current_stratification_bucket = row["bucket"]
-            current_number_of_cells = row["points"]
+            current_stratification_bucket = row[BUCKET_COLUMN_NAME]
+            current_number_of_cells = row[POINTS_COLUMN_NAME]
             sums[current_stratification_bucket][cast("str", split_to_add_h3_cell)] += (
                 current_number_of_cells
             )
@@ -278,7 +309,8 @@ def spatial_split_points(
     for stratification_bucket in stratification_buckets:
         bucket_ratios = {
             split: round(
-                sums[stratification_bucket][split] / sum(sums[stratification_bucket].values()), 5
+                sums[stratification_bucket][split] / sum(sums[stratification_bucket].values()),
+                5,
             )
             for split in splits
         }
@@ -289,7 +321,7 @@ def spatial_split_points(
 
         table_summary_data.append(
             {
-                "bucket": stratification_bucket,
+                BUCKET_COLUMN_NAME: stratification_bucket,
                 **{f"{k}_ratio": v for k, v in bucket_ratios.items()},
                 **{f"{k}_ratio_difference": v for k, v in bucket_ratios_differences.items()},
                 **{f"{k}_points": v for k, v in bucket_points.items()},
@@ -330,7 +362,7 @@ def spatial_split_points(
         if split not in h3_cell_buckets or not h3_cell_buckets[split]:
             continue
 
-        matching_indexes = _gdf[_gdf["h3"].isin(h3_cell_buckets[split])].index
+        matching_indexes = _gdf[_gdf[H3_COLUMN_NAME].isin(h3_cell_buckets[split])].index
         splitted_data[split] = _gdf.loc[matching_indexes]
 
     # Return dict with split name and corresponding dataframe
