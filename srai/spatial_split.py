@@ -14,6 +14,9 @@ COUNT_COLUMN_NAME = "count"
 H3_COLUMN_NAME = "h3"
 POINTS_COLUMN_NAME = "points"
 
+# NOTE: Add option to pass regions_gdf instead of using H3 cells?
+# And group based on intersected points.
+
 
 def train_test_spatial_split(
     input_gdf: gpd.GeoDataFrame,
