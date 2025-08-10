@@ -24,6 +24,7 @@ def train_test_spatial_split(
     categorical: bool = False,
     test_size: Union[float, int] = 0.2,
     random_state: Optional[int] = None,
+    verbose: bool = True,
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """
     Split data based on parent H3 cell and stratify the data using specified target.
@@ -42,6 +43,7 @@ def train_test_spatial_split(
         test_size (Union[float, int], optional): Size of the test dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.2.
         random_state (Optional[int], optional): Random state for reproducibility. Defaults to None.
+        verbose (bool, optional): Print the progress and report output. Defaults to True.
 
     Returns:
         tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]: Train and test GeoDataFrames.
@@ -59,6 +61,7 @@ def train_test_spatial_split(
         test_size=test_size,
         validation_size=0,
         random_state=random_state,
+        verbose=verbose,
     )
 
     return splits["train"], splits["test"]
@@ -76,6 +79,7 @@ def spatial_split_points(
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
     return_split_stats: Literal[False] = False,
+    verbose: bool = True,
 ) -> dict[str, Optional[gpd.GeoDataFrame]]: ...
 
 
@@ -91,6 +95,7 @@ def spatial_split_points(
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
     return_split_stats: Literal[True] = True,
+    verbose: bool = True,
 ) -> tuple[dict[str, Optional[gpd.GeoDataFrame]], pd.DataFrame]: ...
 
 
@@ -104,7 +109,8 @@ def spatial_split_points(
     test_size: Union[float, int] = 0.2,
     validation_size: Union[float, int] = 0,
     random_state: Optional[int] = None,
-    return_split_stats: Optional[bool] = False,
+    return_split_stats: bool = False,
+    verbose: bool = True,
 ) -> Union[
     dict[str, Optional[gpd.GeoDataFrame]],
     tuple[dict[str, Optional[gpd.GeoDataFrame]], pd.DataFrame],
@@ -128,12 +134,13 @@ def spatial_split_points(
         validation_size (Union[float, int], optional): Size of the validation dataset.
             Can be a fraction (0-1 range) or a total number of rows. Defaults to 0.
         random_state (Optional[int], optional): Random state for reproducibility. Defaults to None.
-        return_split_stats (Optional[bool], optional): Return split statistics. Defaults to False.
+        return_split_stats (bool, optional): Return split statistics. Defaults to False.
+        verbose (bool, optional): Print the progress and report output. Defaults to True.
 
     Returns:
         dict[str, Optional[str]]: _description_
     """
-    geom_types = input_gdf.geom_type.unique()
+    geom_types = input_gdf[geometry_column].geom_type.unique()
     if len(geom_types) > 1 or geom_types[0] != "Point":
         raise ValueError(
             "Only point geometries can be parsed."
@@ -227,7 +234,7 @@ def spatial_split_points(
     for h3_cell in tqdm(
         h3_cells_stats_shuffled[H3_COLUMN_NAME].unique(),
         desc="Splitting H3 cells",
-        disable=FORCE_TERMINAL,
+        disable=FORCE_TERMINAL or not verbose,
     ):
         # Find all statistics per bucket for this parent H3 cell
         rows = h3_cells_stats_shuffled[h3_cells_stats_shuffled[H3_COLUMN_NAME] == h3_cell].to_dict(
@@ -342,28 +349,29 @@ def spatial_split_points(
     table_summary_df = pd.DataFrame(table_summary_data)
 
     # Display splitting results
-    print("Summary of the split:\n")
-    train_h3_cells = len(h3_cell_buckets["train"])
-    train_points = total_sums["train"]
+    if verbose:
+        print("Summary of the split:\n")
+        train_h3_cells = len(h3_cell_buckets["train"])
+        train_points = total_sums["train"]
 
-    val_h3_cells = len(h3_cell_buckets.get("validation", []))
-    val_points = total_sums.get("validation", 0)
+        val_h3_cells = len(h3_cell_buckets.get("validation", []))
+        val_points = total_sums.get("validation", 0)
 
-    test_h3_cells = len(h3_cell_buckets.get("test", []))
-    test_points = total_sums.get("test", 0)
+        test_h3_cells = len(h3_cell_buckets.get("test", []))
+        test_points = total_sums.get("test", 0)
 
-    print(f"  Train: {train_h3_cells} H3 cells ({train_points} points)")
-    if val_points:
-        print(f"  Validation: {val_h3_cells} H3 cells ({val_points} points)")
-    if test_points:
-        print(f"  Validation: {test_h3_cells} H3 cells ({test_points} points)")
+        print(f"  Train: {train_h3_cells} H3 cells ({train_points} points)")
+        if val_points:
+            print(f"  Validation: {val_h3_cells} H3 cells ({val_points} points)")
+        if test_points:
+            print(f"  Test: {test_h3_cells} H3 cells ({test_points} points)")
 
-    print()
-    print("  Expected ratios:", expected_ratios)
-    print("  Actual ratios:", actual_ratios)
-    print("  Actual ratios difference:", actual_ratios_differences)
+        print()
+        print("  Expected ratios:", expected_ratios)
+        print("  Actual ratios:", actual_ratios)
+        print("  Actual ratios difference:", actual_ratios_differences)
 
-    print(table_summary_df)
+        print(table_summary_df)
 
     # Split input table into three dataframes
     # (Can skip data if the expected ratio is 0 and there are no H3 cells in the bucket)
