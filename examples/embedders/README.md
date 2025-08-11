@@ -1,3 +1,8 @@
+---
+title: Embedders
+weight: 10
+---
+
 # Embedders
 
 Examples illustrating the usage of every Joiner.

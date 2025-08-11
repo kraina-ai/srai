@@ -128,6 +128,7 @@ docs = [
     "mkdocs-mermaid2-plugin",
     "mkdocstrings[python]",
     "mkdocs-jupyter",
+    "mkdocs-nav-weight",
     "ipykernel",
     "mkdocs-gen-files",
     "mkdocs-awesome-pages-plugin",

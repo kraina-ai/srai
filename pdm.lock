@@ -5,7 +5,7 @@
 groups = ["default", "all", "datasets", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ea209efbeef624074f7a80660b98b012bfd01b8eb806609fb9194a8543e3ae3a"
+content_hash = "sha256:9e409abee6438c2ae62c7cffd68c88503d5d4629b9125a7b4bf6d871c3d2c996"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -2868,6 +2868,19 @@ dependencies = [
 files = [
     {file = "mkdocs_mermaid2_plugin-1.2.1-py3-none-any.whl", hash = "sha256:22d2cf2c6867d4959a5e0903da2dde78d74581fc0b107b791bc4c7ceb9ce9741"},
     {file = "mkdocs_mermaid2_plugin-1.2.1.tar.gz", hash = "sha256:9c7694c73a65905ac1578f966e5c193325c4d5a5bc1836727e74ac9f99d0e921"},
+]
+
+[[package]]
+name = "mkdocs-nav-weight"
+version = "0.2.0"
+summary = "A simple mkdocs plugin, enables to organize Navigation in a more markdownic way."
+groups = ["docs"]
+dependencies = [
+    "mkdocs>=1",
+]
+files = [
+    {file = "mkdocs-nav-weight-0.2.0.tar.gz", hash = "sha256:3a9531209fabb08ee7d18fa491cc5556d05f09631ff837c3b8d076f277e9b54b"},
+    {file = "mkdocs_nav_weight-0.2.0-py3-none-any.whl", hash = "sha256:a6ed14bb57c6679f52ce8516e6576a5dbdf1a644e0725870d9ab4977d23270c3"},
 ]
 
 [[package]]
