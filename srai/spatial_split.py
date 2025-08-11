@@ -17,6 +17,8 @@ POINTS_COLUMN_NAME = "points"
 # NOTE: Add option to pass regions_gdf instead of using H3 cells?
 # And group based on intersected points.
 
+# NOTE: Add option to create k-folds
+
 
 def train_test_spatial_split(
     input_gdf: gpd.GeoDataFrame,
