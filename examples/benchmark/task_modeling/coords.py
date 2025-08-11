@@ -72,12 +72,18 @@ class CubeHexCoords:
         """Check for equality with another CubeHexCoords or tuple."""
         # if isinstance(other, tuple):
         # return self.q == other[0] and self.r == other[1] and self.s == other[2]
-        if isinstance(other, tuple) and len(other) == 3 and all(isinstance(x, int) for x in other):
+        if (
+            isinstance(other, tuple)
+            and len(other) == 3
+            and all(isinstance(x, int) for x in other)
+        ):
             return (self.q, self.r, self.s) == other
         if isinstance(other, CubeHexCoords):
             other_coords = other
             return (
-                self.q == other_coords.q and self.r == other_coords.r and self.s == other_coords.s
+                self.q == other_coords.q
+                and self.r == other_coords.r
+                and self.s == other_coords.s
             )
         return False
 
@@ -251,7 +257,9 @@ class SpiralH3NeighbourhoodIndexer:
         results: list[CubeHexCoords] = []
         hex_coords: CubeHexCoords = (
             CubeHexCoords.origin()
-            + SpiralH3NeighbourhoodIndexer.CUBE_NEIGHBOURS[self.starting_direction].scale(radius)
+            + SpiralH3NeighbourhoodIndexer.CUBE_NEIGHBOURS[
+                self.starting_direction
+            ].scale(radius)
         )
 
         for direction in range(6):
@@ -283,6 +291,10 @@ def get_coords(
     """
     # global SPIRAL_INDEXERS
     if neighbourhood_size not in SPIRAL_INDEXERS:
-        SPIRAL_INDEXERS[neighbourhood_size] = SpiralH3NeighbourhoodIndexer(neighbourhood_size)
+        SPIRAL_INDEXERS[neighbourhood_size] = SpiralH3NeighbourhoodIndexer(
+            neighbourhood_size
+        )
 
-    return np.asarray(SPIRAL_INDEXERS[neighbourhood_size].get_hexes_order(regions, center))
+    return np.asarray(
+        SPIRAL_INDEXERS[neighbourhood_size].get_hexes_order(regions, center)
+    )
