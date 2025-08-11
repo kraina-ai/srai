@@ -1,8 +1,9 @@
 """Optional dependencies tests."""
 
 import sys
+from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
-from typing import Any
+from typing import Any, Callable
 
 import geopandas as gpd
 import pytest
@@ -31,11 +32,13 @@ def optional_packages() -> list[str]:
         "kaleido",
         "pytorch-lightning",
         "torch",
+        "datasets",
+        "fastdtw",
     ]
 
 
 @pytest.fixture(autouse=True)  # type: ignore
-def cleanup_imports():
+def cleanup_imports() -> Generator[Any, Any, Any]:
     """Clean imports."""
     yield
     sys.modules.pop("srai", None)
@@ -55,7 +58,9 @@ class PackageDiscarder:
 
 
 @pytest.fixture  # type: ignore
-def no_optional_dependencies(monkeypatch, optional_packages):
+def no_optional_dependencies(
+    monkeypatch: Any, optional_packages: list[str]
+) -> Generator[Any, Any, Any]:
     """Mock environment without optional dependencies."""
     d = PackageDiscarder()
 
@@ -132,6 +137,12 @@ def _test_gtfs() -> None:
     GTFSLoader()
 
 
+def _test_dataset() -> None:
+    from srai.datasets import AirbnbMulticityDataset
+
+    AirbnbMulticityDataset()
+
+
 def _get_regions_gdf() -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(
         data={
@@ -158,14 +169,15 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
+        (_test_dataset),
     ],
 )
-def test_optional_available(test_fn):
+def test_optional_available(test_fn: Callable[..., None]) -> None:
     """Test if defined functions are working with optional packages."""
     test_fn()
 
 
-@pytest.mark.usefixtures("no_optional_dependencies")
+@pytest.mark.usefixtures("no_optional_dependencies")  # type: ignore
 @pytest.mark.parametrize(  # type: ignore
     "test_fn",
     [
@@ -175,9 +187,10 @@ def test_optional_available(test_fn):
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
+        (_test_dataset),
     ],
 )
-def test_optional_missing(test_fn):
+def test_optional_missing(test_fn: Callable[..., None]) -> None:
     """Test if defined functions are failing without optional packages."""
     with pytest.raises(ImportError):
         test_fn()
