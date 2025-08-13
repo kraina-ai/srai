@@ -136,13 +136,17 @@ class ParquetDataTable(Sized):
 
     def __repr__(self) -> str:
         """Create representation string."""
-        content = f"{self.__class__.__name__} ({self.rows} rows)\n"
+        columns = len(self.columns)
+        rows_clause = "1 row" if self.rows == 1 else f"{self.rows} rows"
+        columns_clause = "1 column" if columns == 1 else f"{columns} columns"
+        content = f"{self.__class__.__name__} ({rows_clause}, {columns_clause})\n"
         content += f"  Parquet files ({bytes2human(self.size)}):\n"
         for path in self.parquet_paths:
             content += f"    {path.as_posix()} ({bytes2human(path.stat().st_size)})\n"
         content += "  Index columns:\n"
         for index_column in self.index_column_names or []:
             content += f"    {index_column}\n"
+        content += f"  Persists: {self.persist_files}\n"
         try:
             duckdb_output = self.to_duckdb().__repr__()
             content += duckdb_output
