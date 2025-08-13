@@ -18,7 +18,7 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from geoarrow.pyarrow.io import _geoparquet_guess_geometry_columns
 from geoarrow.rust.core import (
-    ChunkedGeometryArray,
+    GeoArray,
     to_shapely,
 )
 from psutil._common import bytes2human
@@ -594,7 +594,10 @@ class GeoDataTable(ParquetDataTable):
         if len(geometries) == 1:
             return geometries[0]
 
-        return union_fn(geometries)
+        try:
+            return union_fn(geometries)
+        except GEOSException:
+            return union_all(geometries)
 
 
 VALID_GEO_INPUT = Union[Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable]
@@ -628,7 +631,7 @@ def _union_geometries(
     parquet_path, row_group = parquet_info_tuple
     return union_fn(
         to_shapely(
-            ChunkedGeometryArray.from_arrow(
+            GeoArray.from_arrow(
                 pq.ParquetFile(parquet_path).read_row_group(row_group, columns=[GEOMETRY_COLUMN])[
                     GEOMETRY_COLUMN
                 ]

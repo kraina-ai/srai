@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:111196447f49cd50f5b4ada12cfd5db9df8a753a39aaf5fbe11ea141aceb3c7b"
+content_hash = "sha256:415604eedd8fe518e92ab259fdf77562bcdbf1062be9d37dd98354aabff43742"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1574,7 +1574,7 @@ name = "geoarrow-rust-core"
 version = "0.4.1"
 requires_python = ">=3.9"
 summary = "Efficient, vectorized geospatial operations in Python."
-groups = ["all", "overturemaps"]
+groups = ["default", "all", "overturemaps"]
 dependencies = [
     "arro3-core>=0.4",
     "pyproj",

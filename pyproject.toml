@@ -27,6 +27,7 @@ dependencies = [
     "polars>=0.19.4",
     "duckdb>=1.2.0",
     "rq-geo-toolkit>=2025.5.1",
+    "geoarrow-rust-core>=0.4.0",
     "pooch>=1.6.0",
 ]
 requires-python = ">=3.9"

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `rq-geo-toolkit` and `pooch` libraries to the dependencies
+- Added `rq-geo-toolkit`, `geoarrow-rust-core` and `pooch` libraries to the dependencies
 
 ### Changed
 
