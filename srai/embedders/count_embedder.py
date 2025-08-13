@@ -97,8 +97,8 @@ class CountEmbedder(Embedder):
                     f"""
                     SELECT
                         regions.{regions_pdt.index_name},
-                        {','.join(select_clauses)}
-                    FROM read_parquet([{','.join(paths)}]) regions
+                        {",".join(select_clauses)}
+                    FROM read_parquet([{",".join(paths)}]) regions
                     """
                 )
 
