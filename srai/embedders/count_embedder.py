@@ -203,12 +203,12 @@ class CountEmbedder(Embedder):
 
         if is_expected_type(expected_output_features, OsmTagsFilter):
             expected_output_features_list = self._parse_osm_tags_filter_to_expected_features(
-                cast(OsmTagsFilter, expected_output_features)
+                cast("OsmTagsFilter", expected_output_features)
             )
         elif is_expected_type(expected_output_features, GroupedOsmTagsFilter):
             expected_output_features_list = (
                 self._parse_grouped_osm_tags_filter_to_expected_features(
-                    cast(GroupedOsmTagsFilter, expected_output_features)
+                    cast("GroupedOsmTagsFilter", expected_output_features)
                 )
             )
         elif isinstance(expected_output_features, list):

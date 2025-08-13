@@ -145,12 +145,12 @@ def test_osm_pbf_loader(
     )
     result = loader.load(area, tags=query, ignore_cache=True)
 
-    assert (
-        len(result) == expected_result_length
-    ), f"Mismatched result length ({len(result)}, {expected_result_length})"
-    assert (
-        len(result.columns) == expected_features_columns_length + 1
-    ), f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
+    assert len(result) == expected_result_length, (
+        f"Mismatched result length ({len(result)}, {expected_result_length})"
+    )
+    assert len(result.columns) == expected_features_columns_length + 1, (
+        f"Mismatched columns length ({len(result.columns)}, {expected_features_columns_length + 1})"
+    )
     ut.assertCountEqual(
         result.columns,
         expected_features_columns_names + [GEOMETRY_COLUMN],

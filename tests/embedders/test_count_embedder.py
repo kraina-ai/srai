@@ -34,6 +34,21 @@ def expected_embedding_df() -> pd.DataFrame:
 
 
 @pytest.fixture  # type: ignore
+def expected_embedding_df_int() -> pd.DataFrame:
+    """Get expected CountEmbedder output for the default case."""
+    expected_df = pd.DataFrame(
+        {
+            REGIONS_INDEX: [0, 1, 2],
+            "leisure": [0, 1, 1],
+            "amenity": [1, 0, 1],
+        },
+    )
+    expected_df.set_index(REGIONS_INDEX, inplace=True)
+
+    return expected_df
+
+
+@pytest.fixture  # type: ignore
 def expected_subcategories_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output with subcategories for the default case."""
     expected_df = pd.DataFrame(
@@ -114,6 +129,22 @@ def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
             "gdf_features_boolean",
             "gdf_joint_boolean",
             "expected_embedding_df",
+            False,
+            None,
+        ),
+        (
+            "gdf_regions_int",
+            "gdf_features_int",
+            "gdf_joint_int",
+            "expected_embedding_df_int",
+            False,
+            None,
+        ),
+        (
+            "gdf_regions_int",
+            "gdf_features_boolean_int",
+            "gdf_joint_boolean_int",
+            "expected_embedding_df_int",
             False,
             None,
         ),

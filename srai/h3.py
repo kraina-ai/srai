@@ -206,9 +206,9 @@ def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int)
     Returns:
         List[str]: Buffered list of H3 cells containing both original and new cells.
     """
-    assert all(
-        h3.is_valid_cell(h3_cell) for h3_cell in h3_indexes
-    ), "Not all values in h3_indexes are valid H3 cells."
+    assert all(h3.is_valid_cell(h3_cell) for h3_cell in h3_indexes), (
+        "Not all values in h3_indexes are valid H3 cells."
+    )
 
     h3_int_indexes = list(
         h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_indexes

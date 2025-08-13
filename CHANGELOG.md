@@ -14,8 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bumped `QuackOSM` version to `0.14.0`
-- Bumped `OvertureMaestro` version to `0.4.2`
+- Bumped `OvertureMaestro` version to `0.5.0`
 - Refactored download function to use `pooch` library instead of `requests`
+
+### Fixed
+
+- Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)
 
 ## [0.9.7] - 2025-05-21
 
