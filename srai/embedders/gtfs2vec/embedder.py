@@ -131,7 +131,7 @@ class GTFS2VecEmbedder(Embedder):
         )
 
         if not self._skip_autoencoder:
-            self._model = self._train_model_unsupervised(gtfs_features)
+            self._model = self._train_model_unsupervised(gtfs_features, trainer_kwargs)
 
     def fit_transform(
         self,
