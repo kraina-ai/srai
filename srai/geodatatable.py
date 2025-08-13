@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Union, cast, override
+from typing import TYPE_CHECKING, Literal, Optional, Union, cast
 
 import duckdb
 import geopandas as gpd
@@ -618,7 +618,6 @@ class GeoDataTable(ParquetDataTable):
         except GEOSException:
             return union_all(geometries)
 
-    @override
     def drop_columns(
         self: "GeoDataTable", columns: Union[str, Iterable[str]], missing_ok: bool = False
     ) -> Union["ParquetDataTable", "GeoDataTable"]:
