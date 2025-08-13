@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:14f40e0398ea0c08486da073c88948ee7d66014e7e94ae5b4ae1515a45a779ff"
+content_hash = "sha256:f300d807bb9336c97212b5d6383131b1147ef810d53d0bb1194608605e4499f5"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1492,7 +1492,7 @@ name = "geoarrow-c"
 version = "0.1.2"
 requires_python = ">=3.8"
 summary = ""
-groups = ["all", "osm"]
+groups = ["default", "all", "osm"]
 files = [
     {file = "geoarrow-c-0.1.2.tar.gz", hash = "sha256:73be8739c10c7c2261c54ddca77c977c71ee4285af4b3d812c12192bd1f46a24"},
     {file = "geoarrow_c-0.1.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e4bf2355867ee30615e3a0e47fd20685056c4146edafcc002853222584d14068"},
@@ -1542,7 +1542,7 @@ name = "geoarrow-pyarrow"
 version = "0.1.2"
 requires_python = ">=3.8"
 summary = ""
-groups = ["all", "osm"]
+groups = ["default", "all", "osm"]
 dependencies = [
     "geoarrow-c",
     "pyarrow",
@@ -3959,7 +3959,7 @@ name = "pyarrow-hotfix"
 version = "0.6"
 requires_python = ">=3.5"
 summary = ""
-groups = ["all", "osm"]
+groups = ["default", "all", "osm"]
 files = [
     {file = "pyarrow_hotfix-0.6-py3-none-any.whl", hash = "sha256:dcc9ae2d220dff0083be6a9aa8e0cdee5182ad358d4931fce825c545e5c89178"},
     {file = "pyarrow_hotfix-0.6.tar.gz", hash = "sha256:79d3e030f7ff890d408a100ac16d6f00b14d44a502d7897cd9fc3e3a534e9945"},

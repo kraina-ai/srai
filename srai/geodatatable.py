@@ -541,7 +541,8 @@ class GeoDataTable(ParquetDataTable):
 
     def to_geodataframe(self) -> gpd.GeoDataFrame:
         """Get GeoDataFrame."""
-        gdf = gpd.read_parquet(self.parquet_paths)
+        ds = pq.ParquetDataset(self.parquet_paths)
+        gdf = gpd.GeoDataFrame.from_arrow(ds.read(), geometry=GEOMETRY_COLUMN)
         if self.index_column_names is not None:
             gdf.set_index(self.index_column_names, inplace=True)
         return gdf

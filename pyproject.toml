@@ -28,6 +28,7 @@ dependencies = [
     "duckdb>=1.2.0",
     "rq-geo-toolkit>=2025.8.3",
     "geoarrow-rust-core>=0.4.0",
+    "geoarrow-pyarrow>=0.1.2",
     "pooch>=1.6.0",
 ]
 requires-python = ">=3.9"
