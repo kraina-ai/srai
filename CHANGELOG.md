@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)
 
+### Removed
+
+- `GeoparquetLoader`
+
 ## [0.9.7] - 2025-05-21
 
 ### Added
