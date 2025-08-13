@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:415604eedd8fe518e92ab259fdf77562bcdbf1062be9d37dd98354aabff43742"
+content_hash = "sha256:14f40e0398ea0c08486da073c88948ee7d66014e7e94ae5b4ae1515a45a779ff"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -1535,22 +1535,6 @@ files = [
     {file = "geoarrow_c-0.1.2-pp39-pypy39_pp73-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3e8185af88bbf852f8de43f10c3fbfbf37e0a80b238770f224adbf4d427bfd71"},
     {file = "geoarrow_c-0.1.2-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d9a93d1b348aea2177989c346476fdd9476cde380309ece10909ace3fceb0162"},
     {file = "geoarrow_c-0.1.2-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:10973c80c774f22d598eb034930452355a272abe1fdf011fec05c0db63922a21"},
-]
-
-[[package]]
-name = "geoarrow-pandas"
-version = "0.1.1"
-requires_python = ">=3.8"
-summary = ""
-groups = ["all", "osm"]
-dependencies = [
-    "geoarrow-pyarrow",
-    "pandas",
-    "pyarrow",
-]
-files = [
-    {file = "geoarrow-pandas-0.1.1.tar.gz", hash = "sha256:feb909eb5f5b98addc9bbb7e34d73208a43ec74df68d02f94aa2b54bab52aa50"},
-    {file = "geoarrow_pandas-0.1.1-py3-none-any.whl", hash = "sha256:85413f2a9fb8468f04d02bb7c167ebb1caa6b78c683997bcdf89b3274713be44"},
 ]
 
 [[package]]
@@ -3704,7 +3688,7 @@ name = "polars"
 version = "1.18.0"
 requires_python = ">=3.9"
 summary = "Blazingly fast DataFrame library"
-groups = ["default", "all", "osm", "overturemaps"]
+groups = ["default", "all", "overturemaps"]
 files = [
     {file = "polars-1.18.0-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:27a6c7e5d2d15afb5f06291433019411c9a28e59e49741442d11a6a945f21daa"},
     {file = "polars-1.18.0-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:6431563aee2dfa6787b0debbed3f565ebb4322da32317d95c8eac3e48330bc28"},
@@ -4559,32 +4543,30 @@ files = [
 
 [[package]]
 name = "quackosm"
-version = "0.14.0"
+version = "0.16.2"
 requires_python = ">=3.9"
 summary = "An open-source tool for reading OpenStreetMap PBF files using DuckDB"
 groups = ["all", "osm"]
 dependencies = [
     "beautifulsoup4",
     "duckdb>=1.1.2",
-    "geoarrow-pandas>=0.1.1",
     "geoarrow-pyarrow>=0.1.2",
     "geopandas>=0.6",
     "geopy>=2.0.0",
     "numpy>=1.26.0",
-    "polars>=1.9",
     "pooch>=1.6.0",
     "psutil>=5.6.2",
     "pyarrow>=16.0.0",
     "requests",
     "rich>=12.0.0",
-    "rq-geo-toolkit>=2025.5.1",
+    "rq-geo-toolkit>=2025.8.3",
     "shapely>=2",
     "tqdm>=4.42.0",
     "typeguard>=3.0.0",
 ]
 files = [
-    {file = "quackosm-0.14.0-py3-none-any.whl", hash = "sha256:523fe677e7e26a99e287e3d3411a2433f91efacb78a3528a61e889765e29eeb8"},
-    {file = "quackosm-0.14.0.tar.gz", hash = "sha256:b57b767f44b115ff93caf000a89656e334bab745b95e82290b67185be75f4189"},
+    {file = "quackosm-0.16.2-py3-none-any.whl", hash = "sha256:05ba7d459c9bbf2aca8ed94b266b337d696c1bc31fc42982645ad0dfd990adfb"},
+    {file = "quackosm-0.16.2.tar.gz", hash = "sha256:8f54de418e6184ae02f01277f52c90e7aa56df397261c5783fa33781980b6a11"},
 ]
 
 [[package]]
@@ -4838,7 +4820,7 @@ files = [
 
 [[package]]
 name = "rq-geo-toolkit"
-version = "2025.8.0"
+version = "2025.8.3"
 requires_python = ">=3.9"
 summary = "Collection of geo related functions for reuse in other libraries"
 groups = ["default", "all", "osm", "overturemaps"]
@@ -4853,8 +4835,8 @@ dependencies = [
     "shapely>=2.0.6",
 ]
 files = [
-    {file = "rq_geo_toolkit-2025.8.0-py3-none-any.whl", hash = "sha256:02e2917573bbb392ad935bdae1d162f76adce3608ca080fdb3656d04294155b6"},
-    {file = "rq_geo_toolkit-2025.8.0.tar.gz", hash = "sha256:0e61fcb0e7dd14e3740308104cd8e36a9faddf4d47e26b40faf43b45c898c905"},
+    {file = "rq_geo_toolkit-2025.8.3-py3-none-any.whl", hash = "sha256:74aefdfbff64807f79b1e1ae6796df84089b494ee60c4fd3986aa65e0b492b0d"},
+    {file = "rq_geo_toolkit-2025.8.3.tar.gz", hash = "sha256:371bb985ebc693731567ba151d9b54e0bc8257323415cdf6a7ac3e682683d8ff"},
 ]
 
 [[package]]
