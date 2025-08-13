@@ -17,10 +17,7 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from geoarrow.pyarrow.io import _geoparquet_guess_geometry_columns
-from geoarrow.rust.core import (
-    GeoArray,
-    to_shapely,
-)
+from geoarrow.rust.core import GeoArray
 from psutil._common import bytes2human
 from rq_geo_toolkit.constants import (
     PARQUET_COMPRESSION,
@@ -53,7 +50,7 @@ class ParquetDataTable(Sized):
     It is a wrapper around parquet files with utility functions.
     """
 
-    FILES_DIRECTORY = Path("files")
+    FILES_DIRECTORY = Path("files/pdt")
 
     def __init__(
         self,
@@ -98,16 +95,21 @@ class ParquetDataTable(Sized):
     @property
     def index_names(self) -> Optional[list[str]]:
         """Get all index names."""
-        return list(self.index_column_names) if self.index_column_names is not None else None
+        return self.index_column_names
 
     @property
     def columns(self) -> list[str]:
         """Get available columns."""
-        return list(
+        return [
             column_name
             for column_name in ds.dataset(self.parquet_paths).schema.names
             if column_name not in (self.index_column_names or [])
-        )
+        ]
+
+    @property
+    def physical_columns(self) -> list[str]:
+        """Get available columns."""
+        return [column_name for column_name in ds.dataset(self.parquet_paths).schema.names]
 
     @property
     def size(self) -> int:
@@ -228,7 +230,7 @@ class ParquetDataTable(Sized):
             prefix_path = cls.generate_filename()
             h = hashlib.new("sha256")
             h.update(dataframe.values.tobytes())
-            gdf_hash = h.hexdigest()
+            gdf_hash = h.hexdigest()[:8]
             parquet_path = cls.get_directory() / f"{prefix_path}_{gdf_hash}.parquet"
 
         Path(parquet_path).parent.mkdir(exist_ok=True, parents=True)
@@ -341,7 +343,7 @@ class ParquetDataTable(Sized):
         if isinstance(columns, str):
             columns = [columns]
 
-        existing_columns = self.columns
+        existing_columns = self.physical_columns
         missing_columns = set(columns).difference(existing_columns)
         print(f"{missing_columns=}")
         if missing_columns and not missing_ok:
@@ -364,7 +366,7 @@ class ParquetDataTable(Sized):
 
             h = hashlib.new("sha256")
             h.update(relation.sql_query().encode())
-            relation_hash = h.hexdigest()
+            relation_hash = h.hexdigest()[:8]
 
             new_parquet_path = self.get_directory() / f"{prefix_path}_{relation_hash}.parquet"
             relation.to_parquet(
@@ -400,6 +402,8 @@ class GeoDataTable(ParquetDataTable):
 
     It is a wrapper around parquet files with utility functions.
     """
+
+    FILES_DIRECTORY = Path("files/gdt")
 
     def __init__(
         self,
@@ -630,7 +634,7 @@ def _union_geometries(
 ) -> BaseGeometry:
     parquet_path, row_group = parquet_info_tuple
     return union_fn(
-        to_shapely(
+        gpd.GeoSeries.from_arrow(
             GeoArray.from_arrow(
                 pq.ParquetFile(parquet_path).read_row_group(row_group, columns=[GEOMETRY_COLUMN])[
                     GEOMETRY_COLUMN
