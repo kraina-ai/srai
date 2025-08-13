@@ -83,7 +83,6 @@ class ParquetDataTable(Sized):
         self.parquet_paths = parquet_paths
         self.persist_files = persist_files
         self._finalizer: Optional[weakref.finalize[[Iterable[Path]], ParquetDataTable]] = None
-        # self._finalizer = None
 
         if not self.persist_files:
             self._configure_finalizer()
