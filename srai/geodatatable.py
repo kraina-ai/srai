@@ -621,7 +621,11 @@ class GeoDataTable(ParquetDataTable):
     def drop_columns(
         self: "GeoDataTable", columns: Union[str, Iterable[str]], missing_ok: bool = False
     ) -> Union["ParquetDataTable", "GeoDataTable"]:
-        """Drop columns from the data table in place."""
+        """
+        Drop columns from the data table in place.
+
+        If geometry column is dropped, then the returned object will be ParquetDataTable.
+        """
         columns_drop_result = self._drop_columns(columns=columns, missing_ok=missing_ok)
 
         if columns_drop_result is None:
@@ -635,12 +639,12 @@ class GeoDataTable(ParquetDataTable):
                 index_column_names=new_index_column_names,
                 persist_files=False,
             )
-        else:
-            return GeoDataTable.from_parquet(
-                parquet_path=new_parquet_paths,
-                index_column_names=new_index_column_names,
-                persist_files=False,
-            )
+
+        return GeoDataTable.from_parquet(
+            parquet_path=new_parquet_paths,
+            index_column_names=new_index_column_names,
+            persist_files=False,
+        )
 
 
 VALID_GEO_INPUT = Union[Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable]
