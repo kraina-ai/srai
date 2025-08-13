@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Literal, Optional, Union, cast, override
 
 import duckdb
 import geopandas as gpd
@@ -338,7 +338,28 @@ class ParquetDataTable(Sized):
 
     def drop_columns(
         self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
-    ) -> _Self:
+    ) -> "ParquetDataTable":
+        """Drop columns from the data table in place."""
+        columns_drop_result = self._drop_columns(columns=columns, missing_ok=missing_ok)
+
+        if columns_drop_result is None:
+            return self
+
+        new_parquet_paths, new_index_column_names = columns_drop_result
+
+        return self.from_parquet(
+            parquet_path=new_parquet_paths,
+            index_column_names=new_index_column_names,
+            persist_files=False,
+        )
+
+    def persist(self) -> None:
+        """Disable parquet file removal."""
+        self._detach_finalizer()
+
+    def _drop_columns(
+        self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
+    ) -> Optional[tuple[list[Path], Optional[list[str]]]]:
         """Drop columns from the data table in place."""
         if isinstance(columns, str):
             columns = [columns]
@@ -352,7 +373,7 @@ class ParquetDataTable(Sized):
         columns_to_drop = set(columns).intersection(existing_columns)
         print(f"{columns_to_drop=}")
         if not columns_to_drop:
-            return self
+            return None
 
         columns_to_keep = set(existing_columns).difference(columns)
         columns_to_keep_in_order = [c for c in existing_columns if c in columns_to_keep]
@@ -385,13 +406,7 @@ class ParquetDataTable(Sized):
             if not new_index_column_names:
                 new_index_column_names = None
 
-        return self.from_parquet(
-            parquet_path=new_parquet_paths, index_column_names=new_index_column_names
-        )
-
-    def persist(self) -> None:
-        """Disable parquet file removal."""
-        self._detach_finalizer()
+        return new_parquet_paths, new_index_column_names
 
 
 class GeoDataTable(ParquetDataTable):
@@ -603,6 +618,31 @@ class GeoDataTable(ParquetDataTable):
         except GEOSException:
             return union_all(geometries)
 
+    @override
+    def drop_columns(
+        self: "GeoDataTable", columns: Union[str, Iterable[str]], missing_ok: bool = False
+    ) -> Union["ParquetDataTable", "GeoDataTable"]:
+        """Drop columns from the data table in place."""
+        columns_drop_result = self._drop_columns(columns=columns, missing_ok=missing_ok)
+
+        if columns_drop_result is None:
+            return self
+
+        new_parquet_paths, new_index_column_names = columns_drop_result
+
+        if GEOMETRY_COLUMN in columns:
+            return ParquetDataTable.from_parquet(
+                parquet_path=new_parquet_paths,
+                index_column_names=new_index_column_names,
+                persist_files=False,
+            )
+        else:
+            return GeoDataTable.from_parquet(
+                parquet_path=new_parquet_paths,
+                index_column_names=new_index_column_names,
+                persist_files=False,
+            )
+
 
 VALID_GEO_INPUT = Union[Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable]
 VALID_DATA_INPUT = Union[Path, str, Iterable[Union[Path, str]], pd.DataFrame, ParquetDataTable]
@@ -636,9 +676,9 @@ def _union_geometries(
     return union_fn(
         gpd.GeoSeries.from_arrow(
             GeoArray.from_arrow(
-                pq.ParquetFile(parquet_path).read_row_group(row_group, columns=[GEOMETRY_COLUMN])[
-                    GEOMETRY_COLUMN
-                ]
+                pq.ParquetFile(parquet_path)
+                .read_row_group(row_group, columns=[GEOMETRY_COLUMN])[GEOMETRY_COLUMN]
+                .combine_chunks()
             )
         )
     )
