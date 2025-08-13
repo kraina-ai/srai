@@ -55,8 +55,9 @@ class SavingDataCollector(DataCollector):
         """
         path = self.save_path / f"{idx}.{self.format}"
         path.parent.mkdir(exist_ok=True, parents=True)
-        data.save(path)
-        return str(path.resolve())
+        resolved_path = path.resolve()
+        data.save(resolved_path)
+        return str(resolved_path)
 
 
 class InMemoryDataCollector(DataCollector):
