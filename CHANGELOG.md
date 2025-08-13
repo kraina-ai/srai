@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped `QuackOSM` version to `0.14.0`
 - Bumped `OvertureMaestro` version to `0.5.0`
 - Refactored download function to use `pooch` library instead of `requests`
+- Serialization logic in `InMemoryDataCollector` from `PIL.Image` to `bytes`
+- Default `DataCollector` in `OSMTileLoader` from `InMemoryDataCollector` to `SavingDataCollector`
 
 ### Fixed
 
