@@ -16,6 +16,7 @@ import geopandas as gpd
 import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
+from geoarrow.pyarrow import as_geoarrow
 from geoarrow.pyarrow.io import _geoparquet_guess_geometry_columns
 from geoarrow.rust.core import GeoArray
 from psutil._common import bytes2human
@@ -546,7 +547,11 @@ class GeoDataTable(ParquetDataTable):
     def to_geodataframe(self) -> gpd.GeoDataFrame:
         """Get GeoDataFrame."""
         ds = pq.ParquetDataset(self.parquet_paths)
-        gdf = gpd.GeoDataFrame.from_arrow(ds.read(), geometry=GEOMETRY_COLUMN)
+        tbl = ds.read()
+        tbl = tbl.set_column(
+            tbl.schema.get_field_index("geometry"), "geometry", as_geoarrow(tbl["geometry"])
+        )
+        gdf = gpd.GeoDataFrame.from_arrow(tbl, geometry=GEOMETRY_COLUMN)
         if self.index_column_names is not None:
             gdf.set_index(self.index_column_names, inplace=True)
         return gdf
