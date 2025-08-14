@@ -31,7 +31,7 @@ from shapely.errors import GEOSException
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
-from srai.constants import GEOMETRY_COLUMN
+from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.duckdb import prepare_duckdb_extensions
 
 if TYPE_CHECKING:
@@ -548,10 +548,17 @@ class GeoDataTable(ParquetDataTable):
         """Get GeoDataFrame."""
         ds = pq.ParquetDataset(self.parquet_paths)
         tbl = ds.read()
-        tbl = tbl.set_column(
-            tbl.schema.get_field_index("geometry"), "geometry", as_geoarrow(tbl["geometry"])
-        )
-        gdf = gpd.GeoDataFrame.from_arrow(tbl, geometry=GEOMETRY_COLUMN)
+
+        if self.empty:
+            gdf = gpd.GeoDataFrame(tbl.drop(GEOMETRY_COLUMN), geometry=[], crs=WGS84_CRS)
+        else:
+            tbl = tbl.set_column(
+                tbl.schema.get_field_index(GEOMETRY_COLUMN),
+                GEOMETRY_COLUMN,
+                as_geoarrow(tbl[GEOMETRY_COLUMN]),
+            )
+            gdf = gpd.GeoDataFrame.from_arrow(tbl, geometry=GEOMETRY_COLUMN)
+
         if self.index_column_names is not None:
             gdf.set_index(self.index_column_names, inplace=True)
         return gdf
