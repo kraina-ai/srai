@@ -18,10 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored download function to use `pooch` library instead of `requests`
 - Serialization logic in `InMemoryDataCollector` from `PIL.Image` to `bytes`
 - Default `DataCollector` in `OSMTileLoader` from `InMemoryDataCollector` to `SavingDataCollector`
+- BREAKING! Renamed `tiles_style` to `tiles` and `map` to `m` arguments in folium plotting wrapper
+- Added support for both int and str H3 indexes in Neighbourhoods and H3 functions [#541](https://github.com/kraina-ai/srai/issues/541)
+- BREAKING! Default H3 index form from str to int
 
 ### Fixed
 
 - Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)
+- Categorical colouring for plotting neighbouthood in folium plotting wrapper
 
 ### Removed
 
