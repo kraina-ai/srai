@@ -2,7 +2,7 @@
 
 import pytest
 
-from srai.neighbourhoods.h3_neighbourhood import H3IndexType, H3Neighbourhood
+from srai.neighbourhoods.h3_neighbourhood import H3IndexGenericType, H3Neighbourhood
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -131,14 +131,16 @@ from srai.neighbourhoods.h3_neighbourhood import H3IndexType, H3Neighbourhood
     ],
 )
 def test_get_neighbours(
-    index: H3IndexType, expected: set[H3IndexType], expected_with_include_center: set[H3IndexType]
+    index: H3IndexGenericType,
+    expected: set[H3IndexGenericType],
+    expected_with_include_center: set[H3IndexGenericType],
 ) -> None:
     """Test get_neighbours of H3Neighbourhood."""
-    neighbourhood: H3Neighbourhood[H3IndexType] = H3Neighbourhood()
+    neighbourhood: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood()
     assert neighbourhood.get_neighbours(index) == expected
     assert neighbourhood.get_neighbours(index, include_center=True) == expected_with_include_center
 
-    neighbourhood_with_include_center: H3Neighbourhood[H3IndexType] = H3Neighbourhood(
+    neighbourhood_with_include_center: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood(
         include_center=True
     )
     assert neighbourhood_with_include_center.get_neighbours(index) == expected_with_include_center
@@ -289,20 +291,20 @@ def test_get_neighbours(
     ],
 )
 def test_get_neighbours_up_to_distance(
-    index: H3IndexType,
+    index: H3IndexGenericType,
     distance: int,
-    expected: set[H3IndexType],
-    expected_with_include_center: set[H3IndexType],
+    expected: set[H3IndexGenericType],
+    expected_with_include_center: set[H3IndexGenericType],
 ) -> None:
     """Test get_neighbours_up_to_distance of H3Neighbourhood."""
-    neighbourhood: H3Neighbourhood[H3IndexType] = H3Neighbourhood()
+    neighbourhood: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood()
     assert neighbourhood.get_neighbours_up_to_distance(index, distance) == expected
     assert (
         neighbourhood.get_neighbours_up_to_distance(index, distance, include_center=True)
         == expected_with_include_center
     )
 
-    neighbourhood_with_include_center: H3Neighbourhood[H3IndexType] = H3Neighbourhood(
+    neighbourhood_with_include_center: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood(
         include_center=True
     )
     assert (
@@ -433,20 +435,20 @@ def test_get_neighbours_up_to_distance(
     ],
 )
 def test_get_neighbours_at_distance(
-    index: H3IndexType,
+    index: H3IndexGenericType,
     distance: int,
-    expected: set[H3IndexType],
-    expected_with_include_center: set[H3IndexType],
+    expected: set[H3IndexGenericType],
+    expected_with_include_center: set[H3IndexGenericType],
 ) -> None:
     """Test get_neighbours_at_distance of H3Neighbourhood."""
-    neighbourhood: H3Neighbourhood[H3IndexType] = H3Neighbourhood()
+    neighbourhood: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood()
     assert neighbourhood.get_neighbours_at_distance(index, distance) == expected
     assert (
         neighbourhood.get_neighbours_at_distance(index, distance, include_center=True)
         == expected_with_include_center
     )
 
-    neighbourhood_with_include_center: H3Neighbourhood[H3IndexType] = H3Neighbourhood(
+    neighbourhood_with_include_center: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood(
         include_center=True
     )
     assert (

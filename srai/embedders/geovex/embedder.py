@@ -24,7 +24,7 @@ from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-from srai.neighbourhoods.h3_neighbourhood import H3IndexType
+from srai.neighbourhoods.h3_neighbourhood import H3IndexGenericType
 
 try:  # pragma: no cover
     from torch.utils.data import DataLoader
@@ -33,7 +33,7 @@ except ImportError:
     from srai.embedders._pytorch_stubs import DataLoader
 
 
-class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
+class GeoVexEmbedder(CountEmbedder, Generic[H3IndexGenericType]):
     """GeoVex Embedder."""
 
     def __init__(
@@ -113,7 +113,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
         """
         self._check_is_fitted()
 
-        neighbourhood: H3Neighbourhood[H3IndexType] = H3Neighbourhood(
+        neighbourhood: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood(
             regions_gdf=regions_gdf,
         )
 
@@ -130,7 +130,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
 
     def _transform(
         self,
-        dataset: HexagonalDataset[H3IndexType],
+        dataset: HexagonalDataset[H3IndexGenericType],
         dataloader: Optional[DataLoader] = None,
     ) -> pd.DataFrame:
         if dataloader is None:
@@ -154,7 +154,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood[H3IndexType],
+        neighbourhood: H3Neighbourhood[H3IndexGenericType],
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -206,12 +206,12 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood[H3IndexType],
+        neighbourhood: H3Neighbourhood[H3IndexGenericType],
         batch_size: Optional[int],
         shuffle: bool = True,
-    ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[H3IndexType]]:
+    ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[H3IndexGenericType]]:
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
-        dataset: HexagonalDataset[H3IndexType] = HexagonalDataset(
+        dataset: HexagonalDataset[H3IndexGenericType] = HexagonalDataset(
             counts_df,
             neighbourhood,
             neighbor_k_ring=self._r,
@@ -224,7 +224,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood[H3IndexType],
+        neighbourhood: H3Neighbourhood[H3IndexGenericType],
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
@@ -333,7 +333,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
             json.dump(config, f, ensure_ascii=False, indent=4)
 
     @classmethod
-    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder[H3IndexType]":
+    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder[H3IndexGenericType]":
         """
         Load the model from a directory.
 
@@ -349,7 +349,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
     @classmethod
     def _load(
         cls, path: Union[Path, str], model_module: type[ModelT]
-    ) -> "GeoVexEmbedder[H3IndexType]":
+    ) -> "GeoVexEmbedder[H3IndexGenericType]":
         if isinstance(path, str):
             path = Path(path)
         with (path / "config.json").open("r") as f:

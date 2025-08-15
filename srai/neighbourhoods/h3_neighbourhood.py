@@ -12,10 +12,10 @@ import h3.api.basic_str as h3str
 
 from srai.neighbourhoods import Neighbourhood
 
-H3IndexType = TypeVar("H3IndexType", int, str)
+H3IndexGenericType = TypeVar("H3IndexGenericType", int, str)
 
 
-class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
+class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericType]):
     """
     H3 Neighbourhood.
 
@@ -49,8 +49,8 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
             self._available_indices = set(regions_gdf.index)
 
     def get_neighbours(
-        self, index: H3IndexType, include_center: Optional[bool] = None
-    ) -> set[H3IndexType]:
+        self, index: H3IndexGenericType, include_center: Optional[bool] = None
+    ) -> set[H3IndexGenericType]:
         """
         Get the direct neighbours of an H3 region using its index.
 
@@ -66,11 +66,11 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
 
     def get_neighbours_up_to_distance(
         self,
-        index: H3IndexType,
+        index: H3IndexGenericType,
         distance: int,
         include_center: Optional[bool] = None,
         unchecked: bool = False,
-    ) -> set[H3IndexType]:
+    ) -> set[H3IndexGenericType]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
@@ -87,7 +87,7 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[H3IndexType]
+        neighbours: set[H3IndexGenericType]
 
         if isinstance(index, str):
             neighbours = set(h3str.grid_disk(index, distance))
@@ -102,8 +102,8 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         return self._select_available(neighbours)
 
     def get_neighbours_at_distance(
-        self, index: H3IndexType, distance: int, include_center: Optional[bool] = None
-    ) -> set[H3IndexType]:
+        self, index: H3IndexGenericType, distance: int, include_center: Optional[bool] = None
+    ) -> set[H3IndexGenericType]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
@@ -119,7 +119,7 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[H3IndexType]
+        neighbours: set[H3IndexGenericType]
 
         if isinstance(index, str):
             neighbours = set(h3str.grid_ring(index, distance))
@@ -131,7 +131,7 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         )
         return self._select_available(neighbours)
 
-    def _select_available(self, indices: set[H3IndexType]) -> set[H3IndexType]:
+    def _select_available(self, indices: set[H3IndexGenericType]) -> set[H3IndexGenericType]:
         if self._available_indices is None:
             return indices
         return indices.intersection(self._available_indices)
