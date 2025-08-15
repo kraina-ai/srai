@@ -381,6 +381,6 @@ class GTFS2VecEmbedder(Embedder):
             path (Path): Path to the directory.
 
         Returns:
-            Hex2VecEmbedder: The loaded embedder.
+            GTFS2VecEmbedder: The loaded embedder.
         """
         return cls._load(path, GTFS2VecModel)

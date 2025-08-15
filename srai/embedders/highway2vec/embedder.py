@@ -230,6 +230,6 @@ class Highway2VecEmbedder(Embedder):
             path (Path): Path to the directory.
 
         Returns:
-            Hex2VecEmbedder: The loaded embedder.
+            Highway2VecEmbedder: The loaded embedder.
         """
         return cls._load(path, Highway2VecModel)
