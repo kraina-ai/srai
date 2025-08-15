@@ -185,7 +185,7 @@ regionalizer = H3Regionalizer(resolution=7)
 regions = regionalizer.transform(area)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles="CartoDB positron")
-plot_regions(regions_gdf=regions, map=folium_map)
+plot_regions(regions_gdf=regions, m=folium_map)
 ```
 
 <p align="center">
@@ -225,7 +225,7 @@ embedder = CountEmbedder()
 embeddings = embedder.transform(regions, features, joint)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles="CartoDB positron")
-plot_numeric_data(regions, "amenity_bicycle_parking", embeddings, map=folium_map)
+plot_numeric_data(regions, "amenity_bicycle_parking", embeddings, m=folium_map)
 ```
 
 <p align="center">
@@ -265,7 +265,7 @@ embedder = Hex2VecEmbedder([15, 10, 3])
 embeddings = embedder.fit_transform(regions, features, joint, neighbourhood, batch_size=128)
 
 folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles="CartoDB positron")
-plot_numeric_data(regions, 0, embeddings, map=folium_map)
+plot_numeric_data(regions, 0, embeddings, m=folium_map)
 ```
 
 <p align="center">
