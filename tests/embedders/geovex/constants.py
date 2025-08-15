@@ -8,7 +8,7 @@ TRAINER_KWARGS = {"max_epochs": 1, "accelerator": "cpu", "deterministic": True}
 PREDEFINED_TEST_CASES = [
     {
         "test_case_name": "wro_9",
-        "root_region_index": "891e2040887ffff",
+        "root_region_index": 617523130877345791,
         "region_gen_radius": 2,
         "model_radius": 2,
         "seed": 42,
@@ -24,7 +24,7 @@ PREDEFINED_TEST_CASES = [
     },
     {
         "test_case_name": "AL_10",
-        "root_region_index": "8a44ed664c27fff",
+        "root_region_index": 622709331204407295,
         "region_gen_radius": 3,
         "model_radius": 3,
         "seed": 5555,
