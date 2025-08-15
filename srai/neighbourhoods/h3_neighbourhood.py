@@ -4,7 +4,7 @@ H3 neighbourhood.
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
 
-from typing import Generic, Optional, TypeVar, Union, overload
+from typing import Generic, Optional, TypeVar, Union
 
 import geopandas as gpd
 import h3.api.basic_int as h3int
@@ -21,20 +21,6 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
 
     This class allows to get the neighbours of an H3 region.
     """
-
-    @overload
-    def __init__(
-        self: "H3Neighbourhood[int]",
-        regions_gdf: Optional[gpd.GeoDataFrame] = None,
-        include_center: bool = False,
-    ) -> None: ...
-
-    @overload
-    def __init__(
-        self: "H3Neighbourhood[str]",
-        regions_gdf: Optional[gpd.GeoDataFrame] = None,
-        include_center: bool = False,
-    ) -> None: ...
 
     def __init__(
         self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_center: bool = False
@@ -62,12 +48,6 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 
-    # @overload
-    # def get_neighbours(self, index: int, include_center: Optional[bool] = None) -> set[int]: ...
-
-    # @overload
-    # def get_neighbours(self, index: str, include_center: Optional[bool] = None) -> set[str]: ...
-
     def get_neighbours(
         self, index: H3IndexType, include_center: Optional[bool] = None
     ) -> set[H3IndexType]:
@@ -83,24 +63,6 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
             set[H3IndexType]: Indexes of the neighbours.
         """
         return self.get_neighbours_up_to_distance(index, 1, include_center)
-
-    # @overload
-    # def get_neighbours_up_to_distance(
-    #     self,
-    #     index: int,
-    #     distance: int,
-    #     include_center: Optional[bool] = None,
-    #     unchecked: bool = False,
-    # ) -> set[int]: ...
-
-    # @overload
-    # def get_neighbours_up_to_distance(
-    #     self,
-    #     index: str,
-    #     distance: int,
-    #     include_center: Optional[bool] = None,
-    #     unchecked: bool = False,
-    # ) -> set[str]: ...
 
     def get_neighbours_up_to_distance(
         self,
@@ -138,16 +100,6 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
         if unchecked:
             return neighbours
         return self._select_available(neighbours)
-
-    # @overload
-    # def get_neighbours_at_distance(
-    #     self, index: int, distance: int, include_center: Optional[bool] = None
-    # ) -> set[int]: ...
-
-    # @overload
-    # def get_neighbours_at_distance(
-    #     self, index: str, distance: int, include_center: Optional[bool] = None
-    # ) -> set[str]: ...
 
     def get_neighbours_at_distance(
         self, index: H3IndexType, distance: int, include_center: Optional[bool] = None
