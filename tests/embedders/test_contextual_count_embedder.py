@@ -33,7 +33,7 @@ def expected_embedding_df_squashed_distance_0() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure": [0, 1, 1],
             "amenity": [1, 0, 1],
         }
@@ -49,7 +49,7 @@ def expected_embedding_df_squashed_distance_1() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure": [0.25, 1.125, 1.125],
             "amenity": [1.125, 0.25, 1.125],
         },
@@ -65,7 +65,7 @@ def expected_embedding_df_concatenated_distance_0() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
         }
@@ -81,7 +81,7 @@ def expected_embedding_df_concatenated_distance_1() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [1, 0.5, 0.5],
@@ -99,7 +99,7 @@ def expected_embedding_df_concatenated_distance_2() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [1, 0.5, 0.5],
@@ -119,7 +119,7 @@ def expected_embedding_df_concatenated_distance_2_median() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [1, 0.5, 0.5],
@@ -139,7 +139,7 @@ def expected_embedding_df_concatenated_distance_2_sum() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [2, 1, 1],
@@ -159,7 +159,7 @@ def expected_embedding_df_concatenated_distance_2_min() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [1, 0, 0],
@@ -179,7 +179,7 @@ def expected_embedding_df_concatenated_distance_2_max() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_0": [0, 1, 1],
             "amenity_0": [1, 0, 1],
             "leisure_1": [1, 1, 1],
@@ -199,7 +199,7 @@ def expected_subcategories_embedding_df_squashed_distance_0() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre": [0, 0, 1],
             "leisure_playground": [0, 1, 0],
             "amenity_pub": [1, 0, 1],
@@ -216,7 +216,7 @@ def expected_subcategories_embedding_df_squashed_distance_1() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre": [0.125, 0.125, 1],
             "leisure_playground": [0.125, 1, 0.125],
             "amenity_pub": [1.125, 0.25, 1.125],
@@ -233,7 +233,7 @@ def expected_subcategories_embedding_df_concatenated_distance_0() -> pd.DataFram
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -250,7 +250,7 @@ def expected_subcategories_embedding_df_concatenated_distance_1() -> pd.DataFram
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -270,7 +270,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2() -> pd.DataFram
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -293,7 +293,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2_median() -> pd.D
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -316,7 +316,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2_sum() -> pd.Data
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -339,7 +339,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2_min() -> pd.Data
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -362,7 +362,7 @@ def expected_subcategories_embedding_df_concatenated_distance_2_max() -> pd.Data
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre_0": [0, 0, 1],
             "leisure_playground_0": [0, 1, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -402,7 +402,7 @@ def specified_features_expected_embedding_df_squashed_empty() -> pd.DataFrame:
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [0, 0, 0],
@@ -419,7 +419,7 @@ def specified_features_expected_subcategories_embedding_df_squashed_distance_0()
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [1, 0, 1],
@@ -436,7 +436,7 @@ def specified_features_expected_subcategories_embedding_df_squashed_distance_1()
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [1.125, 0.25, 1.125],
@@ -453,7 +453,7 @@ def specified_features_expected_embedding_df_concatenated_distance_0() -> pd.Dat
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [0, 0, 0],
@@ -470,7 +470,7 @@ def specified_features_expected_embedding_df_concatenated_distance_1() -> pd.Dat
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [0, 0, 0],
@@ -490,7 +490,7 @@ def specified_features_expected_embedding_df_concatenated_distance_2() -> pd.Dat
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [0, 0, 0],
@@ -515,7 +515,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -534,7 +534,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [1, 0, 1],
@@ -556,7 +556,7 @@ def specified_features_expected_subcategories_embedding_df_concatenated_distance
     """
     return _create_features_dataframe(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking_0": [0, 0, 0],
             "leisure_park_0": [0, 0, 0],
             "amenity_pub_0": [1, 0, 1],

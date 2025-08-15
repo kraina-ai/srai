@@ -1,7 +1,7 @@
 """CountEmbedder tests."""
 
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 from unittest import TestCase
 
 import pandas as pd
@@ -23,7 +23,7 @@ def expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output for the default case."""
     expected_df = pd.DataFrame(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure": [0, 1, 1],
             "amenity": [1, 0, 1],
         },
@@ -53,7 +53,7 @@ def expected_subcategories_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output with subcategories for the default case."""
     expected_df = pd.DataFrame(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "leisure_adult_gaming_centre": [0, 0, 1],
             "leisure_playground": [0, 1, 0],
             "amenity_pub": [1, 0, 1],
@@ -86,7 +86,7 @@ def specified_features_expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output for the case with specified features."""
     expected_df = pd.DataFrame(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [0, 0, 0],
@@ -102,7 +102,7 @@ def specified_subcategories_features_expected_embedding_df() -> pd.DataFrame:
     """Get expected CountEmbedder output with subcategories for the case with specified features."""
     expected_df = pd.DataFrame(
         {
-            REGIONS_INDEX: ["891e2040897ffff", "891e2040d4bffff", "891e2040d5bffff"],
+            REGIONS_INDEX: [617523130878394367, 617523130957299711, 617523130958348287],
             "amenity_parking": [0, 0, 0],
             "leisure_park": [0, 0, 0],
             "amenity_pub": [1, 0, 1],
@@ -466,4 +466,6 @@ def test_osm_tags_filter_parsing(
             count_subcategories=count_subcategories,
         )
 
-        ut.assertCountEqual(embedder.expected_output_features, expected_output_features)
+        ut.assertCountEqual(
+            cast("pd.Series", embedder.expected_output_features), expected_output_features
+        )

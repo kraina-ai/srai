@@ -127,11 +127,19 @@ class CountEmbedder(Embedder):
         features_schema = features_df.collect_schema()
         joint_schema = joint_df.collect_schema()
 
-        if regions_schema.get(REGIONS_INDEX) != joint_schema.get(REGIONS_INDEX):
+        original_regions_df_index_type = regions_schema.get(REGIONS_INDEX)
+
+        if (
+            regions_schema.get(REGIONS_INDEX).to_python()
+            != joint_schema.get(REGIONS_INDEX).to_python()
+        ):
             regions_df = regions_df.cast({REGIONS_INDEX: pl.String})
             joint_df = joint_df.cast({REGIONS_INDEX: pl.String})
 
-        if features_schema.get(FEATURES_INDEX) != joint_schema.get(FEATURES_INDEX):
+        if (
+            features_schema.get(FEATURES_INDEX).to_python()
+            != joint_schema.get(FEATURES_INDEX).to_python()
+        ):
             features_df = features_df.cast({FEATURES_INDEX: pl.String})
             joint_df = joint_df.cast({FEATURES_INDEX: pl.String})
 
@@ -187,7 +195,7 @@ class CountEmbedder(Embedder):
             .fill_null(0)
             .with_columns(
                 [
-                    pl.col(REGIONS_INDEX),
+                    pl.col(REGIONS_INDEX).cast(original_regions_df_index_type),
                     *(pl.col(col).cast(pl.Int32) for col in feature_columns),
                 ]
             )

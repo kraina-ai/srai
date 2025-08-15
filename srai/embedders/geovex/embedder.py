@@ -10,7 +10,7 @@ References:
 import json
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Optional, Union, cast
 
 import geopandas as gpd
 import numpy as np
@@ -24,8 +24,7 @@ from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
-
-T = TypeVar("T")
+from srai.neighbourhoods.h3_neighbourhood import H3IndexType
 
 try:  # pragma: no cover
     from torch.utils.data import DataLoader
@@ -34,7 +33,7 @@ except ImportError:
     from srai.embedders._pytorch_stubs import DataLoader
 
 
-class GeoVexEmbedder(CountEmbedder):
+class GeoVexEmbedder(CountEmbedder, Generic[H3IndexType]):
     """GeoVex Embedder."""
 
     def __init__(
@@ -114,7 +113,7 @@ class GeoVexEmbedder(CountEmbedder):
         """
         self._check_is_fitted()
 
-        neighbourhood = H3Neighbourhood(
+        neighbourhood: H3Neighbourhood[H3IndexType] = H3Neighbourhood(
             regions_gdf=regions_gdf,
         )
 
@@ -131,7 +130,7 @@ class GeoVexEmbedder(CountEmbedder):
 
     def _transform(
         self,
-        dataset: HexagonalDataset[T],
+        dataset: HexagonalDataset[H3IndexType],
         dataloader: Optional[DataLoader] = None,
     ) -> pd.DataFrame:
         if dataloader is None:
@@ -155,7 +154,7 @@ class GeoVexEmbedder(CountEmbedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood,
+        neighbourhood: H3Neighbourhood[H3IndexType],
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
@@ -175,7 +174,7 @@ class GeoVexEmbedder(CountEmbedder):
         import pytorch_lightning as pl
 
         trainer_kwargs = self._prepare_trainer_kwargs(trainer_kwargs)
-        counts_df, dataloader, dataset = self._prepare_dataset(  # type: ignore
+        counts_df, dataloader, dataset = self._prepare_dataset(
             regions_gdf,
             features_gdf,
             joint_gdf,
@@ -207,12 +206,12 @@ class GeoVexEmbedder(CountEmbedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood,
+        neighbourhood: H3Neighbourhood[H3IndexType],
         batch_size: Optional[int],
         shuffle: bool = True,
-    ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[T]]:
+    ) -> tuple[pd.DataFrame, DataLoader, HexagonalDataset[H3IndexType]]:
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
-        dataset: HexagonalDataset[T] = HexagonalDataset(
+        dataset: HexagonalDataset[H3IndexType] = HexagonalDataset(
             counts_df,
             neighbourhood,
             neighbor_k_ring=self._r,
@@ -225,7 +224,7 @@ class GeoVexEmbedder(CountEmbedder):
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
         joint_gdf: gpd.GeoDataFrame,
-        neighbourhood: H3Neighbourhood,
+        neighbourhood: H3Neighbourhood[H3IndexType],
         learning_rate: float = 0.001,
         trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> pd.DataFrame:
@@ -334,7 +333,7 @@ class GeoVexEmbedder(CountEmbedder):
             json.dump(config, f, ensure_ascii=False, indent=4)
 
     @classmethod
-    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder":
+    def load(cls, path: Union[Path, str]) -> "GeoVexEmbedder[H3IndexType]":
         """
         Load the model from a directory.
 
@@ -348,7 +347,9 @@ class GeoVexEmbedder(CountEmbedder):
         return cls._load(path, GeoVexModel)
 
     @classmethod
-    def _load(cls, path: Union[Path, str], model_module: type[ModelT]) -> "GeoVexEmbedder":
+    def _load(
+        cls, path: Union[Path, str], model_module: type[ModelT]
+    ) -> "GeoVexEmbedder[H3IndexType]":
         if isinstance(path, str):
             path = Path(path)
         with (path / "config.json").open("r") as f:

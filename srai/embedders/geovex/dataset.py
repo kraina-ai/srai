@@ -8,7 +8,7 @@ References:
     [1] https://openreview.net/forum?id=7bvWopYY1H
 """
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic
 
 import numpy as np
 import pandas as pd
@@ -18,6 +18,7 @@ from srai._optional import import_optional_dependencies
 from srai.constants import FORCE_TERMINAL
 from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import H3Neighbourhood
+from srai.neighbourhoods.h3_neighbourhood import H3IndexType
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -28,16 +29,13 @@ try:  # pragma: no cover
 except ImportError:
     from srai.embedders._pytorch_stubs import Dataset
 
-
-T = TypeVar("T")
-
 # define a type for the dataset item
 Ij_Index = tuple[int, int]
 Neighbors = list[tuple[int, Ij_Index]]
-CellInfo = tuple[str, int, Neighbors]
+CellInfo = tuple[H3IndexType, int, Neighbors]
 
 
-class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
+class HexagonalDataset(Dataset["torch.Tensor"], Generic[H3IndexType]):  # type: ignore
     """
     Dataset for the hexagonal encoder model.
 
@@ -48,7 +46,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
     def __init__(
         self,
         data: pd.DataFrame,
-        neighbourhood: H3Neighbourhood,
+        neighbourhood: H3Neighbourhood[H3IndexType],
         neighbor_k_ring: int = 6,
     ):
         """
@@ -71,10 +69,11 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         # number of columns in the dataset
         self._N: int = data.shape[1]
         # store the list of valid h3 indices (have all the neighbors in the dataset)
-        self._valid_cells: list[CellInfo] = []
+        self._valid_cells: list[CellInfo[H3IndexType]] = []
         # store the data as a torch tensor
         self._data_torch = torch.Tensor(data.to_numpy(dtype=np.float32))
         # iterate over the data and build the valid h3 indices
+        self._invalid_cells: set[H3IndexType] = set()
         self._invalid_cells, self._valid_cells = self._seperate_valid_invalid_cells(
             data, neighbourhood, neighbor_k_ring, set(data.index)
         )
@@ -82,10 +81,10 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
     def _seperate_valid_invalid_cells(
         self,
         data: pd.DataFrame,
-        neighbourhood: H3Neighbourhood,
+        neighbourhood: H3Neighbourhood[H3IndexType],
         neighbor_k_ring: int,
-        all_indices: set[str],
-    ) -> tuple[set[str], list[CellInfo]]:
+        all_indices: set[H3IndexType],
+    ) -> tuple[set[H3IndexType], list[CellInfo[H3IndexType]]]:
         invalid_h3s = set()
         valid_h3s = []
 
@@ -170,7 +169,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         if k_ring < 2:
             raise ValueError(f"k_ring must be at least 2, but was {k_ring}")
 
-    def _assert_h3_neighbourhood(self, neighbourhood: H3Neighbourhood) -> None:
+    def _assert_h3_neighbourhood(self, neighbourhood: H3Neighbourhood[H3IndexType]) -> None:
         # force that the neighbourhood is an H3Neighbourhood,
         # because we need the get_ij_index method
         if not isinstance(neighbourhood, H3Neighbourhood):
@@ -178,7 +177,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
                 f"neighbourhood has to be an H3Neighbourhood, but was {type(neighbourhood)}"
             )
 
-    def get_valid_cells(self) -> list[str]:
+    def get_valid_cells(self) -> list[H3IndexType]:
         """
         Returns the list of valid h3 indices in the dataset.
 
@@ -187,7 +186,7 @@ class HexagonalDataset(Dataset["torch.Tensor"], Generic[T]):  # type: ignore
         """
         return [h3_index for h3_index, _, _ in self._valid_cells]
 
-    def get_invalid_cells(self) -> list[str]:
+    def get_invalid_cells(self) -> list[H3IndexType]:
         """
         Returns the list of invalid h3 indices in the dataset.
 
