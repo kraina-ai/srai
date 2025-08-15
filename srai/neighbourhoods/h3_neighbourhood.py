@@ -4,7 +4,7 @@ H3 neighbourhood.
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
 
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union, overload
 
 import geopandas as gpd
 import h3.api.basic_int as h3int
@@ -21,6 +21,20 @@ class H3Neighbourhood(Neighbourhood[H3IndexType], Generic[H3IndexType]):
 
     This class allows to get the neighbours of an H3 region.
     """
+
+    @overload
+    def __init__(
+        self: "H3Neighbourhood[int]",
+        regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        include_center: bool = False,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: "H3Neighbourhood[str]",
+        regions_gdf: Optional[gpd.GeoDataFrame] = None,
+        include_center: bool = False,
+    ) -> None: ...
 
     def __init__(
         self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_center: bool = False
