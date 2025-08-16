@@ -217,11 +217,11 @@ def test_correct_embedding(
     ).to_dataframe()
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
     print(expected_embedding_fixture)
-    print(expected_result_df)
-    print(embedding_df)
+    print(expected_result_df.sort_index(axis=0).sort_index(axis=1))
+    print(embedding_df.sort_index(axis=0).sort_index(axis=1))
     assert_frame_equal(
-        embedding_df.sort_index(axis=1),
-        expected_result_df.sort_index(axis=1),
+        embedding_df.sort_index(axis=0).sort_index(axis=1),
+        expected_result_df.sort_index(axis=0).sort_index(axis=1),
         check_dtype=False,
     )
 
