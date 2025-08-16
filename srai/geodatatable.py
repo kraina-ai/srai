@@ -99,18 +99,18 @@ class ParquetDataTable(Sized):
         return self.index_column_names
 
     @property
+    def physical_columns(self) -> list[str]:
+        """Get available columns."""
+        return [column_name for column_name in self.to_pyarrow_dataset().schema.names]
+
+    @property
     def columns(self) -> list[str]:
         """Get available columns."""
         return [
             column_name
-            for column_name in ds.dataset(self.parquet_paths).schema.names
+            for column_name in self.physical_columns
             if column_name not in (self.index_column_names or [])
         ]
-
-    @property
-    def physical_columns(self) -> list[str]:
-        """Get available columns."""
-        return [column_name for column_name in ds.dataset(self.parquet_paths).schema.names]
 
     @property
     def size(self) -> int:
@@ -340,6 +340,10 @@ class ParquetDataTable(Sized):
             return connection.sql(sql_query)
 
         return duckdb.sql(sql_query)
+
+    def to_pyarrow_dataset(self) -> pq.ParquetDataset:
+        """Get Pyarrow dataset."""
+        return ds.dataset(self.parquet_paths)
 
     def drop_columns(
         self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
@@ -596,10 +600,8 @@ class GeoDataTable(ParquetDataTable):
         else:
             raise ValueError(f"Method '{method}' not recognized. Use 'coverage' or 'unary'.")
 
-        dataset = ds.dataset(self.parquet_paths)
-
         tuples_to_queue = []
-        for pq_file in dataset.files:
+        for pq_file in self.to_pyarrow_dataset().files:
             for row_group in range(pq.ParquetFile(pq_file).num_row_groups):
                 tuples_to_queue.append((pq_file, row_group))
 
