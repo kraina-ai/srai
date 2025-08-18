@@ -10,7 +10,12 @@ from typing import Optional, Union, cast
 import duckdb
 import pandas as pd
 import polars as pl
-from rq_geo_toolkit.duckdb import sql_escape
+from rq_geo_toolkit.constants import (
+    PARQUET_COMPRESSION,
+    PARQUET_COMPRESSION_LEVEL,
+    PARQUET_ROW_GROUP_SIZE,
+)
+from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring, sql_escape
 
 from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
@@ -257,7 +262,20 @@ class CountEmbedder(Embedder):
         ON {region_joint_join_clause}
         """
 
-        duckdb.sql(joined_query).to_parquet(str(result_parquet_path))
+        save_query = f"""
+        COPY ({joined_query}) TO '{result_parquet_path}' (
+            FORMAT parquet,
+            COMPRESSION {PARQUET_COMPRESSION},
+            COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
+            ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
+        );
+        """
+
+        run_query_with_memory_monitoring(
+            sql_query=save_query,
+            tmp_dir_path=result_parquet_path.parent,
+            preserve_insertion_order=False,
+        )
 
         return ParquetDataTable.from_parquet(result_parquet_path, index_column_names=REGIONS_INDEX)
 
