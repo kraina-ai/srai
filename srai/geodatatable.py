@@ -341,7 +341,7 @@ class ParquetDataTable(Sized):
 
         return duckdb.sql(sql_query)
 
-    def to_pyarrow_dataset(self) -> pq.ParquetDataset:
+    def to_pyarrow_dataset(self) -> ds.FileSystemDataset:
         """Get Pyarrow dataset."""
         return ds.dataset(self.parquet_paths)
 
@@ -548,10 +548,10 @@ class GeoDataTable(ParquetDataTable):
             sort_extent=sort_extent,
         )
 
-    def to_geodataframe(self) -> gpd.GeoDataFrame:
+    def to_dataframe(self) -> gpd.GeoDataFrame:
         """Get GeoDataFrame."""
-        ds = pq.ParquetDataset(self.parquet_paths)
-        tbl = ds.read()
+        ds = self.to_pyarrow_dataset()
+        tbl = ds.to_table()
 
         if self.empty:
             gdf = gpd.GeoDataFrame(tbl.drop(GEOMETRY_COLUMN), geometry=[], crs=WGS84_CRS)
@@ -566,6 +566,14 @@ class GeoDataTable(ParquetDataTable):
         if self.index_column_names is not None:
             gdf.set_index(self.index_column_names, inplace=True)
         return gdf
+
+    def to_geodataframe(self) -> gpd.GeoDataFrame:
+        """
+        Get GeoDataFrame.
+
+        Alias for `to_dataframe`
+        """
+        return self.to_dataframe()
 
     def _sort_geometries(
         self, sort_extent: Optional[tuple[float, float, float, float]]
