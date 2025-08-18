@@ -99,6 +99,11 @@ class ParquetDataTable(Sized):
         return self.index_column_names
 
     @property
+    def has_multiindex(self) -> bool:
+        """Has multiple columns used as index."""
+        return self.index_column_names is not None and len(self.index_column_names) > 1
+
+    @property
     def physical_columns(self) -> list[str]:
         """Get available columns."""
         return [column_name for column_name in self.to_pyarrow_dataset().schema.names]

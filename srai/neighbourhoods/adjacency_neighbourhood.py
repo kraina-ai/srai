@@ -8,9 +8,11 @@ region based on its borders.
 from collections.abc import Hashable
 from typing import Optional
 
-import geopandas as gpd
+import duckdb
+import pandas as pd
 
 from srai.constants import GEOMETRY_COLUMN
+from srai.geodatatable import VALID_GEO_INPUT, prepare_geo_input
 from srai.neighbourhoods import Neighbourhood
 
 
@@ -25,12 +27,12 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
     `generate_neighbourhoods` allows for precalculation of all the neighbourhoods at once.
     """
 
-    def __init__(self, regions_gdf: gpd.GeoDataFrame, include_center: bool = False) -> None:
+    def __init__(self, regions: VALID_GEO_INPUT, include_center: bool = False) -> None:
         """
         Init AdjacencyNeighbourhood.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): regions for which a neighbourhood will be calculated.
+            regions (VALID_GEO_INPUT): regions for which a neighbourhood will be calculated.
             include_center (bool): Whether to include the region itself in the neighbours.
             This is the default value used for all the methods of the class,
             unless overridden in the function call.
@@ -39,16 +41,66 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
             ValueError: If regions_gdf doesn't have geometry column.
         """
         super().__init__(include_center)
-        if GEOMETRY_COLUMN not in regions_gdf.columns:
-            raise ValueError("Regions must have a geometry column.")
-        self.regions_gdf = regions_gdf
+        self.regions_gdt = prepare_geo_input(regions)
         self.lookup: dict[Hashable, set[Hashable]] = {}
+        self._has_generated_neighbourhood = False
 
     def generate_neighbourhoods(self) -> None:
         """Generate the lookup table for all regions."""
-        for region_id in self.regions_gdf.index:
-            if region_id not in self.lookup:
-                self.lookup[region_id] = self._get_adjacent_neighbours(region_id)
+        relation = self.regions_gdt.to_duckdb()
+
+        if self.regions_gdt.has_multiindex:
+            _index_col = "joined_index"
+            index_names = self.regions_gdt.index_column_names or []
+            index_lookup = duckdb.sql(
+                f"""
+                SELECT
+                    {",".join(index_names)},
+                    CONCAT_WS('_', {",".join(index_names)}) as {_index_col}
+                FROM ({relation.sql_query()})
+                """
+            ).to_df()
+            index_lookup_dict = (
+                pd.Series(index_lookup[index_names].values.tolist(), index=index_lookup[_index_col])
+                .apply(tuple)
+                .to_dict()
+            )
+            relation = relation.project(
+                f"CONCAT_WS('_', {','.join(index_names)}) as {_index_col}, {GEOMETRY_COLUMN}"
+            )
+        elif self.regions_gdt.index_name:
+            _index_col = self.regions_gdt.index_name
+        else:
+            raise ValueError("Provided GeoDataTable has not index.")
+
+        regions_with_neighbours = (
+            relation.set_alias("current")
+            .join(
+                relation.set_alias("other"),
+                condition=f"ST_Touches(current.{GEOMETRY_COLUMN}, other.{GEOMETRY_COLUMN})",
+            )
+            .project(f"current.{_index_col}, other.{_index_col} as neighbour_id")
+            .aggregate(
+                f"{_index_col}, ARRAY_AGG(DISTINCT neighbour_id) as neighbour_ids", _index_col
+            )
+        )
+
+        for batch in (
+            relation.join(regions_with_neighbours, _index_col, how="left")
+            .project(f"{_index_col}, COALESCE(neighbour_ids, []) as neighbour_ids")
+            .fetch_arrow_reader()
+        ):
+            for region_id, neighbour_ids in zip(batch[_index_col], batch["neighbour_ids"]):
+                lookup_region_id = region_id.as_py()
+                lookup_neighbour_ids = neighbour_ids.as_py()
+                if self.regions_gdt.has_multiindex:
+                    lookup_region_id = index_lookup_dict[lookup_region_id]
+                    lookup_neighbour_ids = [
+                        index_lookup_dict[region_id] for region_id in lookup_neighbour_ids
+                    ]
+                self.lookup[lookup_region_id] = set(lookup_neighbour_ids)
+
+        self._has_generated_neighbourhood = True
 
     def get_neighbours(
         self, index: Hashable, include_center: Optional[bool] = None
@@ -64,11 +116,11 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         Returns:
             Set[Hashable]: Indexes of the neighbours.
         """
+        if not self._has_generated_neighbourhood:
+            self.generate_neighbourhoods()
+
         if self._index_incorrect(index):
             return set()
-
-        if index not in self.lookup:
-            self.lookup[index] = self._get_adjacent_neighbours(index)
 
         neighbours = self.lookup[index]
         neighbours = self._handle_center(
@@ -76,24 +128,5 @@ class AdjacencyNeighbourhood(Neighbourhood[Hashable]):
         )
         return neighbours
 
-    def _get_adjacent_neighbours(self, index: Hashable) -> set[Hashable]:
-        """
-        Get the direct neighbours of a region using `touches` [1] operator from the Shapely library.
-
-        Args:
-            index (Hashable): Unique identifier of the region.
-
-        Returns:
-            Set[Hashable]: Indexes of the neighbours.
-
-        References:
-            1. https://shapely.readthedocs.io/en/stable/reference/shapely.touches.html
-        """
-        current_region = self.regions_gdf.loc[index]
-        neighbours = self.regions_gdf[
-            self.regions_gdf.geometry.touches(current_region[GEOMETRY_COLUMN])
-        ]
-        return set(neighbours.index)
-
     def _index_incorrect(self, index: Hashable) -> bool:
-        return index not in self.regions_gdf.index
+        return index not in self.lookup
