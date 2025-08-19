@@ -163,7 +163,7 @@ class ParquetDataTable(Sized):
 
     @staticmethod
     def _cleanup_files(paths: Iterable[Path]) -> None:
-        print(f"cleanup! ({paths})")
+        # print(f"cleanup! ({paths})")
         for path in paths:
             path.unlink(missing_ok=True)
 
@@ -386,19 +386,19 @@ class ParquetDataTable(Sized):
 
         existing_columns = self.physical_columns
         missing_columns = set(columns).difference(existing_columns)
-        print(f"{missing_columns=}")
+        # print(f"{missing_columns=}")
         if missing_columns and not missing_ok:
             raise ValueError(f"Columns {missing_columns} are not present in the data table.")
 
         columns_to_drop = set(columns).intersection(existing_columns)
-        print(f"{columns_to_drop=}")
+        # print(f"{columns_to_drop=}")
         if not columns_to_drop:
             return None
 
         columns_to_keep = set(existing_columns).difference(columns)
         columns_to_keep_in_order = [c for c in existing_columns if c in columns_to_keep]
-        print(f"{columns_to_keep_in_order=}")
-        print(f"{self.parquet_paths=}")
+        # print(f"{columns_to_keep_in_order=}")
+        # print(f"{self.parquet_paths=}")
 
         new_parquet_paths = []
         for parquet_path in self.parquet_paths:
@@ -417,7 +417,7 @@ class ParquetDataTable(Sized):
             )
             new_parquet_paths.append(new_parquet_path)
 
-        print(f"{new_parquet_paths=}")
+        # print(f"{new_parquet_paths=}")
 
         if self.index_column_names is not None:
             new_index_column_names: Optional[list[str]] = list(
