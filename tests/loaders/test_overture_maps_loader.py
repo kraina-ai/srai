@@ -79,7 +79,7 @@ TEST_OVERTUREMAPS_RELEASE_VERSION = "2024-08-20.0"
             0.9,
             False,
             327,
-            207,
+            205,
         ),
     ],
 )
