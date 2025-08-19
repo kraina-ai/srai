@@ -1007,8 +1007,8 @@ def test_correct_embedding(
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
     assert_frame_equal(
-        embedding_df.sort_index(axis=0).sort_index(axis=1),
-        expected_result_df.sort_index(axis=0).sort_index(axis=1),
+        embedding_df.sort_index(axis=1),
+        expected_result_df.sort_index(axis=1),
         check_dtype=False,
     )
 

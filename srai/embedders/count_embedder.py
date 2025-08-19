@@ -257,9 +257,10 @@ class CountEmbedder(Embedder):
         SELECT
             regions.{REGIONS_INDEX},
             {", ".join(select_clauses)}
-        FROM ({regions_pdt.to_duckdb().sql_query()}) regions
+        FROM ({regions_pdt.to_duckdb(with_row_number=True).sql_query()}) regions
         LEFT JOIN ({region_embeddings.sql_query()}) joint
         ON {region_joint_join_clause}
+        ORDER BY regions.row_number
         """
 
         save_query = f"""
@@ -274,7 +275,7 @@ class CountEmbedder(Embedder):
         run_query_with_memory_monitoring(
             sql_query=save_query,
             tmp_dir_path=result_parquet_path.parent,
-            preserve_insertion_order=False,
+            preserve_insertion_order=True,
         )
 
         return ParquetDataTable.from_parquet(result_parquet_path, index_column_names=REGIONS_INDEX)

@@ -336,11 +336,17 @@ class ParquetDataTable(Sized):
         return df
 
     def to_duckdb(
-        self, connection: Optional[duckdb.DuckDBPyConnection] = None
+        self, connection: Optional[duckdb.DuckDBPyConnection] = None, with_row_number: bool = False
     ) -> duckdb.DuckDBPyRelation:
         """Get DuckDB relation."""
         paths = list(map(lambda x: f"'{x}'", self.parquet_paths))
-        sql_query = f"SELECT * FROM read_parquet([{','.join(paths)}])"
+        if with_row_number:
+            sql_query = f"""
+            SELECT *, row_number() OVER () as row_number FROM read_parquet([{",".join(paths)}])
+            """
+        else:
+            sql_query = f"SELECT * FROM read_parquet([{','.join(paths)}])"
+
         if connection is not None:
             return connection.sql(sql_query)
 
