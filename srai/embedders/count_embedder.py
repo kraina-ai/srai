@@ -171,10 +171,10 @@ class CountEmbedder(Embedder):
             for col in sorted(feature_columns):
                 subcategories[col] = (
                     features_pdt.to_duckdb()
-                    .project(col)
-                    .filter(f"{col} IS NOT NULL")
+                    .project(f'"{col}"')
+                    .filter(f'"{col}" IS NOT NULL')
                     .distinct()
-                    .order(col)
+                    .order(f'"{col}"')
                     .fetchnumpy()[col]
                 )
 
