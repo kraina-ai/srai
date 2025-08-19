@@ -18,7 +18,7 @@ from rq_geo_toolkit.constants import (
 from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring, sql_escape
 
 from srai._typing import is_expected_type
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.constants import GEOMETRY_COLUMN
 from srai.embedders import Embedder
 from srai.geodatatable import (
     VALID_DATA_INPUT,
@@ -93,6 +93,9 @@ class CountEmbedder(Embedder):
 
         self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
 
+        regions_index_name = cast("str", regions_pdt.index_name)
+        features_index_name = cast("str", features_pdt.index_name)
+
         if features_pdt.empty:
             if self.expected_output_features is not None:
                 paths = list(map(lambda x: f"'{x}'", regions_pdt.parquet_paths))
@@ -133,34 +136,34 @@ class CountEmbedder(Embedder):
         ).schema
         joint_schema = pl.from_arrow(joint_pdt.to_pyarrow_dataset().schema.empty_table()).schema
 
-        feature_columns = [col for col in features_schema.names() if col != FEATURES_INDEX]
+        feature_columns = [col for col in features_schema.names() if col != features_index_name]
         dtypes = features_schema.dtypes()
         are_all_columns_bool = all(
             dtypes[idx] == pl.Boolean
             for idx, col in enumerate(features_schema.names())
-            if col != FEATURES_INDEX
+            if col != features_index_name
         )
 
         region_id_schema_mismatch = (
-            regions_schema.get(REGIONS_INDEX).to_python()
-            != joint_schema.get(REGIONS_INDEX).to_python()
+            regions_schema.get(regions_index_name).to_python()
+            != joint_schema.get(regions_index_name).to_python()
         )
 
         region_joint_join_clause = (
-            f"regions.{REGIONS_INDEX} = joint.{REGIONS_INDEX}"
+            f"regions.{regions_index_name} = joint.{regions_index_name}"
             if not region_id_schema_mismatch
-            else f"regions.{REGIONS_INDEX}::VARCHAR = joint.{REGIONS_INDEX}::VARCHAR"
+            else f"regions.{regions_index_name}::VARCHAR = joint.{regions_index_name}::VARCHAR"
         )
 
         feature_id_schema_mismatch = (
-            features_schema.get(FEATURES_INDEX).to_python()
-            != joint_schema.get(FEATURES_INDEX).to_python()
+            features_schema.get(features_index_name).to_python()
+            != joint_schema.get(features_index_name).to_python()
         )
 
         feature_joint_join_clause = (
-            f"features.{FEATURES_INDEX} = joint.{FEATURES_INDEX}"
+            f"features.{features_index_name} = joint.{features_index_name}"
             if not feature_id_schema_mismatch
-            else f"features.{FEATURES_INDEX}::VARCHAR = joint.{FEATURES_INDEX}::VARCHAR"
+            else f"features.{features_index_name}::VARCHAR = joint.{features_index_name}::VARCHAR"
         )
 
         if self.count_subcategories:
@@ -192,7 +195,7 @@ class CountEmbedder(Embedder):
                     feature_columns.append(new_feature_name)
 
             features_select_relation = duckdb.sql(f"""
-            SELECT {FEATURES_INDEX}, {", ".join(dummy_expressions)}
+            SELECT {features_index_name}, {", ".join(dummy_expressions)}
             FROM ({features_pdt.to_duckdb().sql_query()})
             """)
         elif are_all_columns_bool:
@@ -200,7 +203,7 @@ class CountEmbedder(Embedder):
                 f'CAST("{col}" AS INT) AS "{col}"' for col in sorted(feature_columns)
             ]
             features_select_relation = duckdb.sql(f"""
-            SELECT {FEATURES_INDEX}, {", ".join(cast_expressions)}
+            SELECT {features_index_name}, {", ".join(cast_expressions)}
             FROM ({features_pdt.to_duckdb().sql_query()})
             """)
         else:
@@ -209,13 +212,13 @@ class CountEmbedder(Embedder):
                 for col in sorted(feature_columns)
             ]
             features_select_relation = duckdb.sql(f"""
-            SELECT {FEATURES_INDEX}, {", ".join(case_expressions)}
+            SELECT {features_index_name}, {", ".join(case_expressions)}
             FROM ({features_pdt.to_duckdb().sql_query()})
             """)
 
         joint_with_encodings = duckdb.sql(
             f"""
-            SELECT joint.{REGIONS_INDEX}, features.* EXCLUDE ({FEATURES_INDEX})
+            SELECT joint.{regions_index_name}, features.* EXCLUDE ({features_index_name})
             FROM ({joint_pdt.to_duckdb().sql_query()}) joint
             LEFT JOIN ({features_select_relation.sql_query()}) features
             ON {feature_joint_join_clause}
@@ -230,7 +233,7 @@ class CountEmbedder(Embedder):
         region_embeddings = duckdb.sql(
             f"""
             SELECT
-                {REGIONS_INDEX},
+                {regions_index_name},
                 {", ".join(group_by_expressions)}
             FROM ({joint_with_encodings.sql_query()})
             GROUP BY 1
@@ -238,7 +241,9 @@ class CountEmbedder(Embedder):
         )
 
         region_embeddings, feature_columns = self._maybe_filter_to_expected_features(
-            region_embeddings, feature_columns
+            region_embeddings=region_embeddings,
+            regions_index_name=regions_index_name,
+            current_embedding_columns=feature_columns,
         )
 
         result_file_name = ParquetDataTable.generate_filename()
@@ -255,13 +260,15 @@ class CountEmbedder(Embedder):
 
         joined_query = f"""
         SELECT
-            regions.{REGIONS_INDEX},
+            regions.{regions_index_name},
             {", ".join(select_clauses)}
         FROM ({regions_pdt.to_duckdb(with_row_number=True).sql_query()}) regions
         LEFT JOIN ({region_embeddings.sql_query()}) joint
         ON {region_joint_join_clause}
         ORDER BY regions.row_number
         """
+
+        print(joined_query)
 
         save_query = f"""
         COPY ({joined_query}) TO '{result_parquet_path}' (
@@ -278,7 +285,9 @@ class CountEmbedder(Embedder):
             preserve_insertion_order=True,
         )
 
-        return ParquetDataTable.from_parquet(result_parquet_path, index_column_names=REGIONS_INDEX)
+        return ParquetDataTable.from_parquet(
+            result_parquet_path, index_column_names=regions_index_name
+        )
 
     def _parse_expected_output_features(
         self,
@@ -350,13 +359,17 @@ class CountEmbedder(Embedder):
         return sorted(list(expected_output_features))
 
     def _maybe_filter_to_expected_features(
-        self, region_embeddings: duckdb.DuckDBPyRelation, current_embedding_columns: list[str]
+        self,
+        region_embeddings: duckdb.DuckDBPyRelation,
+        regions_index_name: str,
+        current_embedding_columns: list[str],
     ) -> tuple[duckdb.DuckDBPyRelation, list[str]]:
         """
         Add missing and remove excessive columns from embeddings.
 
         Args:
             region_embeddings (duckdb.DuckDBPyRelation): Counted frequencies of each feature value.
+            regions_index_name (str): Name of index used in regions relation.
             current_embedding_columns (list[str]): List of current embedding columns.
 
         Returns:
@@ -381,7 +394,7 @@ class CountEmbedder(Embedder):
         new_relation = duckdb.sql(
             f"""
             SELECT
-                {REGIONS_INDEX},
+                {regions_index_name},
                 {", ".join(select_clauses)}
             FROM ({region_embeddings.sql_query()})
             """

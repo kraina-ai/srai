@@ -8,6 +8,8 @@ from shapely import geometry
 from srai.constants import FEATURES_INDEX, REGIONS_INDEX, WGS84_CRS
 
 TRAINER_KWARGS = {"max_epochs": 1, "accelerator": "cpu", "deterministic": True}
+EXAMPLE_REGIONS_INDEX_NAME = "example_regions_index_name"
+EXAMPLE_FEATURES_INDEX_NAME = "example_features_index_name"
 
 
 @pytest.fixture  # type: ignore
@@ -123,7 +125,7 @@ def gdf_regions_int(gdf_regions: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     regions_gdf = gdf_regions.copy()
     regions_gdf.index = pd.Index(
         data=[0, 1, 2],
-        name=REGIONS_INDEX,
+        name=EXAMPLE_REGIONS_INDEX_NAME,
     )
     return regions_gdf
 
@@ -188,7 +190,7 @@ def gdf_features_int(gdf_features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     features_gdf = gdf_features.copy()
     features_gdf.index = pd.Index(
         data=[0, 1, 2, 3],
-        name=FEATURES_INDEX,
+        name=EXAMPLE_FEATURES_INDEX_NAME,
     )
     return features_gdf
 
@@ -258,7 +260,7 @@ def gdf_features_boolean_int(gdf_features_boolean: gpd.GeoDataFrame) -> gpd.GeoD
     features_gdf = gdf_features_boolean.copy()
     features_gdf.index = pd.Index(
         data=[0, 1, 2, 3],
-        name=FEATURES_INDEX,
+        name=EXAMPLE_FEATURES_INDEX_NAME,
     )
     return features_gdf
 
@@ -324,7 +326,7 @@ def gdf_joint_int(gdf_joint: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     joint_gdf = gdf_joint.copy()
     joint_gdf.index = pd.MultiIndex.from_arrays(
         arrays=[[1, 0, 0, 2], [0, 1, 3, 2]],
-        names=[REGIONS_INDEX, FEATURES_INDEX],
+        names=[EXAMPLE_REGIONS_INDEX_NAME, EXAMPLE_FEATURES_INDEX_NAME],
     )
     return joint_gdf
 
@@ -395,6 +397,6 @@ def gdf_joint_boolean_int(gdf_joint_boolean: gpd.GeoDataFrame) -> gpd.GeoDataFra
     joint_gdf = gdf_joint_boolean.copy()
     joint_gdf.index = pd.MultiIndex.from_arrays(
         arrays=[[1, 0, 0, 2], [0, 1, 3, 2]],
-        names=[REGIONS_INDEX, FEATURES_INDEX],
+        names=[EXAMPLE_REGIONS_INDEX_NAME, EXAMPLE_FEATURES_INDEX_NAME],
     )
     return joint_gdf

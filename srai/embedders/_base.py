@@ -5,9 +5,7 @@ from pathlib import Path
 from typing import Any, TypeVar, Union
 
 import geopandas as gpd
-import pandas as pd
 
-from srai.constants import GEOMETRY_COLUMN
 from srai.geodatatable import ParquetDataTable
 
 try:  # pragma: no cover
@@ -125,10 +123,10 @@ class Embedder(abc.ABC):
         joint_pdt: ParquetDataTable,
     ) -> None:
         if regions_pdt.index_name is None:
-            raise ValueError("regions_pdt must have a named index.")
+            raise ValueError("regions_pdt must have a single index.")
 
         if features_pdt.index_name is None:
-            raise ValueError("features_pdt must have a named index.")
+            raise ValueError("features_pdt must have a single index.")
 
         if joint_pdt.index_names is None or len(joint_pdt.index_names) != 2:
             raise ValueError(
@@ -146,11 +144,6 @@ class Embedder(abc.ABC):
                 f"Name of features_pdt.index ({features_pdt.index_name}) must exist"
                 f" in the joint_gdf.index ({joint_pdt.index_names})"
             )
-
-    def _remove_geometry_if_present(self, data: gpd.GeoDataFrame) -> pd.DataFrame:
-        if GEOMETRY_COLUMN in data.columns:
-            data = data.drop(columns=GEOMETRY_COLUMN)
-        return pd.DataFrame(data)
 
 
 ModelT = TypeVar("ModelT", bound=Model)

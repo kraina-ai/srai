@@ -11,6 +11,7 @@ from pandas.testing import assert_frame_equal
 from srai.constants import REGIONS_INDEX
 from srai.embedders import CountEmbedder
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
+from tests.embedders.conftest import EXAMPLE_REGIONS_INDEX_NAME
 
 if TYPE_CHECKING:  # pragma: no cover
     import geopandas as gpd
@@ -38,12 +39,12 @@ def expected_embedding_df_int() -> pd.DataFrame:
     """Get expected CountEmbedder output for the default case."""
     expected_df = pd.DataFrame(
         {
-            REGIONS_INDEX: [0, 1, 2],
+            EXAMPLE_REGIONS_INDEX_NAME: [0, 1, 2],
             "leisure": [0, 1, 1],
             "amenity": [1, 0, 1],
         },
     )
-    expected_df.set_index(REGIONS_INDEX, inplace=True)
+    expected_df.set_index(EXAMPLE_REGIONS_INDEX_NAME, inplace=True)
 
     return expected_df
 
