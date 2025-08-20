@@ -1,14 +1,18 @@
 """DuckDB extensions helper."""
 
+from typing import Optional
+
 import duckdb
 
 
-def prepare_duckdb_extensions() -> None:
+def prepare_duckdb_extensions(conn: Optional[duckdb.DuckDBPyConnection] = None) -> None:
     """Install and load required DuckDB extensions."""
-    duckdb.install_extension("spatial")
-    duckdb.install_extension("h3", repository="community")
-    duckdb.install_extension("geography", repository="community")
+    _conn = conn or duckdb
 
-    duckdb.load_extension("spatial")
-    duckdb.load_extension("h3")
-    duckdb.load_extension("geography")
+    _conn.install_extension("spatial")
+    _conn.install_extension("h3", repository="community")
+    _conn.install_extension("geography", repository="community")
+
+    _conn.load_extension("spatial")
+    _conn.load_extension("h3")
+    _conn.load_extension("geography")

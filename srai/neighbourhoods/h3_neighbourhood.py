@@ -4,8 +4,12 @@ H3 neighbourhood.
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
 
+from datetime import datetime
+from random import choice
+from string import ascii_lowercase
 from typing import Generic, Optional, TypeVar, Union
 
+import duckdb
 import geopandas as gpd
 import h3.api.basic_int as h3int
 import h3.api.basic_str as h3str
@@ -138,3 +142,81 @@ class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericT
 
     def _distance_incorrect(self, distance: int) -> bool:
         return distance < 0
+
+    def register_duckdb_functions(self, conn: duckdb.DuckDBPyConnection) -> dict[str, str]:
+        """
+        Register DuckDB functions for all H3Neighbourhood operations.
+
+        Will wrap native H3 functions inside DuckDB environment.
+
+        Args:
+            conn (duckdb.DuckDBPyConnection): Connection where to register custom functions.
+
+        Returns:
+            dict[str, str]: Dictionary with Python function name and registered function name.
+        """
+        random_str = "".join(choice(ascii_lowercase) for _ in range(8))
+        timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+
+        function_pretfix = self.__class__.__name__
+        function_postfix = f"{random_str}_{timestr}"
+
+        registered_functions = {}
+
+        # get_neighbours
+        original_get_neighbours_name = self.get_neighbours.__name__
+        registered_fn_name = f"{function_pretfix}_{original_get_neighbours_name}_{function_postfix}"
+        include_center_default_fn = (
+            "h3_grid_disk_unsafe(h3_index, 1)"
+            if self.include_center
+            else "h3_grid_ring_unsafe(h3_index, 1)"
+        )
+        conn.sql(
+            f"""
+            CREATE OR REPLACE MACRO {registered_fn_name}
+                (
+                    h3_index
+                ) AS {include_center_default_fn},
+                (
+                    h3_index, include_center
+                ) AS CASE WHEN include_center
+                THEN h3_grid_disk_unsafe(h3_index, 1)
+                ELSE h3_grid_ring_unsafe(h3_index, 1)
+                END
+            ;
+            """
+        )
+        registered_functions[original_get_neighbours_name] = registered_fn_name
+
+        # get_neighbours_up_to_distance
+        original_get_neighbours_up_to_distance_name = self.get_neighbours_up_to_distance.__name__
+        registered_fn_name = (
+            f"{function_pretfix}_{original_get_neighbours_up_to_distance_name}_{function_postfix}"
+        )
+        include_center_default_fn = (
+            "h3_grid_disk_unsafe(h3_index, distance)"
+            if self.include_center
+            else "list_filter(h3_grid_disk_unsafe(h3_index, distance), x -> x != h3_index)"
+        )
+        conn.sql(
+            f"""
+            CREATE OR REPLACE MACRO {registered_fn_name}
+                (
+                    h3_index, distance
+                ) AS {include_center_default_fn},
+                (
+                    h3_index, distance, include_center
+                ) AS CASE WHEN include_center
+                THEN h3_grid_disk_unsafe(h3_index, distance)
+                ELSE list_filter(h3_grid_disk_unsafe(h3_index, distance), x -> x != h3_index)
+                END
+            ;
+            """
+        )
+        registered_functions[original_get_neighbours_up_to_distance_name] = registered_fn_name
+
+        # get_neighbours_at_distance
+        original_get_neighbours_at_distance_name = self.get_neighbours_at_distance.__name__
+        registered_functions[original_get_neighbours_at_distance_name] = "h3_grid_ring_unsafe"
+
+        return registered_functions
