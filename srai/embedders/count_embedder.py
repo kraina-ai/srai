@@ -78,13 +78,13 @@ class CountEmbedder(Embedder):
             joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
 
         Returns:
-            ParquetDataTable: Embedding for each region in regions_gdf.
+            ParquetDataTable: Embedding for each region in regions.
 
         Raises:
             ValueError: If features is empty and self.expected_output_features is not set.
-            ValueError: If any of the gdfs index names is None.
+            ValueError: If any of the input index names is None.
             ValueError: If joint.index doesn't have 2 levels.
-            ValueError: If index levels in gdfs don't overlap correctly.
+            ValueError: If index levels in inputs don't overlap correctly.
             ValueError: If features contains boolean columns and count_subcategories is True.
         """
         regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
