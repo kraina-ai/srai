@@ -68,6 +68,7 @@ class HexRegressionEvaluator(BaseEvaluator):
         if h3_test is None:
             raise ValueError("The function 'get_h3_with_labels' returned None for h3_test.")
         else:
+            h3_test = h3_test.reset_index()
             h3_indexes = h3_test["region_id"].to_list()
             labels = h3_test[target_column].to_numpy()
 
