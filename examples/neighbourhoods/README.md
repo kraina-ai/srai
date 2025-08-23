@@ -1,3 +1,8 @@
+---
+title: Neighbourhoods
+weight: 40
+---
+
 # Neighbourhoods
 
 Examples illustrating the usage of every Neighbourhood.

@@ -1,3 +1,8 @@
+---
+title: Loaders
+weight: 30
+---
+
 # Loaders
 
 Examples illustrating the usage of every Loader.
