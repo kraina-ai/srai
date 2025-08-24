@@ -7,7 +7,7 @@ This module contains the H3Neighbourhood class, that allows to get the neighbour
 from datetime import datetime
 from random import choice
 from string import ascii_lowercase
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar
 
 import duckdb
 import geopandas as gpd
@@ -48,7 +48,7 @@ class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericT
             unless overridden in the function call.
         """
         super().__init__(include_center)
-        self._available_indices: Optional[Union[set[int], set[str]]] = None
+        self._available_indices: Optional[set[H3IndexGenericType]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 

@@ -1002,10 +1002,13 @@ def test_correct_embedding(
         aggregation_function=aggregation_function,
     )
     embedding_df = embedder.transform(
-        regions_gdf=gdf_regions, features_gdf=gdf_features, joint_gdf=gdf_joint
-    )
+        regions=gdf_regions, features=gdf_features, joint=gdf_joint
+    ).to_dataframe()
 
     expected_result_df = request.getfixturevalue(expected_embedding_fixture)
+    print(gdf_regions)
+    print(embedding_df)
+    print(expected_result_df)
     assert_frame_equal(
         embedding_df.sort_index(axis=1),
         expected_result_df.sort_index(axis=1),
@@ -1085,6 +1088,8 @@ def test_empty(
 
     with expectation:
         embedding = embedder.transform(gdf_regions, gdf_features, gdf_joint)
+        embedding = embedding.to_dataframe()
+
         assert len(embedding) == len(gdf_regions)
         assert embedding.index.name == gdf_regions.index.name
         if expected_output_features:
@@ -1160,7 +1165,7 @@ def test_incorrect_indexes(
             count_subcategories=count_subcategories,
             concatenate_vectors=concatenate_features,
             neighbourhood_distance=neighbourhood_distance,
-        ).transform(regions_gdf=regions_gdf, features_gdf=features_gdf, joint_gdf=joint_gdf)
+        ).transform(regions=regions_gdf, features=features_gdf, joint=joint_gdf)
 
 
 def test_bigger_example() -> None:
@@ -1192,7 +1197,7 @@ def test_bigger_example() -> None:
         neighbourhood=H3Neighbourhood(),
         neighbourhood_distance=10,
         expected_output_features=GEOFABRIK_LAYERS,
-    ).transform(regions_gdf=regions, features_gdf=features, joint_gdf=joint)
+    ).transform(regions=regions, features=features, joint=joint)
 
     assert len(embeddings) == len(regions), (
         f"Mismatched number of rows ({len(embeddings)}, {len(regions)})"

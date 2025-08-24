@@ -32,7 +32,7 @@ from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
-from srai.duckdb import prepare_duckdb_extensions
+from srai.duckdb import prepare_duckdb_extensions, relation_from_parquet_paths
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -339,18 +339,9 @@ class ParquetDataTable(Sized):
         self, connection: Optional[duckdb.DuckDBPyConnection] = None, with_row_number: bool = False
     ) -> duckdb.DuckDBPyRelation:
         """Get DuckDB relation."""
-        paths = list(map(lambda x: f"'{x}'", self.parquet_paths))
-        if with_row_number:
-            sql_query = f"""
-            SELECT *, row_number() OVER () as row_number FROM read_parquet([{",".join(paths)}])
-            """
-        else:
-            sql_query = f"SELECT * FROM read_parquet([{','.join(paths)}])"
-
-        if connection is not None:
-            return connection.sql(sql_query)
-
-        return duckdb.sql(sql_query)
+        return relation_from_parquet_paths(
+            parquet_paths=self.parquet_paths, connection=connection, with_row_number=with_row_number
+        )
 
     def to_pyarrow_dataset(self) -> ds.FileSystemDataset:
         """Get Pyarrow dataset."""

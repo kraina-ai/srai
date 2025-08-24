@@ -268,8 +268,6 @@ class CountEmbedder(Embedder):
         ORDER BY regions.row_number
         """
 
-        print(joined_query)
-
         save_query = f"""
         COPY ({joined_query}) TO '{result_parquet_path}' (
             FORMAT parquet,
