@@ -1,5 +1,7 @@
 """H3 IJ coordinates tests."""
 
+from typing import Union
+
 import h3
 import numpy as np
 import pytest
@@ -14,9 +16,10 @@ from srai.h3 import get_local_ij_index
         "871e20400ffffff",
         "821f77fffffffff",
         "81743ffffffffff",
+        608537065201598463,
     ],
 )  # type: ignore
-def test_self_ok(h3_origin: str) -> None:
+def test_self_ok(h3_origin: Union[str, int]) -> None:
     """Test checks if self coordinates are in origin."""
     coordinates = get_local_ij_index(origin_index=h3_origin, h3_index=h3_origin)
     assert coordinates == (0, 0)
@@ -32,6 +35,21 @@ def test_self_ok(h3_origin: str) -> None:
     ],
 )  # type: ignore
 def test_string_ok(h3_origin: str, h3_cell: str) -> None:
+    """Test checks if pairs are in right orientation."""
+    coordinates = get_local_ij_index(origin_index=h3_origin, h3_index=h3_cell)
+    assert coordinates == (0, 1)
+
+
+@pytest.mark.parametrize(
+    "h3_origin, h3_cell",
+    [
+        (608537065201598463, 608537065168044031),
+        (604039673748127743, 604039674419216383),
+        (582538852581769215, 582085853791125503),
+        (597819341198589951, 597819324018720767),
+    ],
+)  # type: ignore
+def test_int_ok(h3_origin: str, h3_cell: str) -> None:
     """Test checks if pairs are in right orientation."""
     coordinates = get_local_ij_index(origin_index=h3_origin, h3_index=h3_cell)
     assert coordinates == (0, 1)

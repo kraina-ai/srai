@@ -4,15 +4,22 @@ H3 neighbourhood.
 This module contains the H3Neighbourhood class, that allows to get the neighbours of an H3 region.
 """
 
-from typing import Optional
+from datetime import datetime
+from random import choice
+from string import ascii_lowercase
+from typing import Generic, Optional, TypeVar
 
+import duckdb
 import geopandas as gpd
-import h3
+import h3.api.basic_int as h3int
+import h3.api.basic_str as h3str
 
 from srai.neighbourhoods import Neighbourhood
 
+H3IndexGenericType = TypeVar("H3IndexGenericType", int, str)
 
-class H3Neighbourhood(Neighbourhood[str]):
+
+class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericType]):
     """
     H3 Neighbourhood.
 
@@ -41,48 +48,56 @@ class H3Neighbourhood(Neighbourhood[str]):
             unless overridden in the function call.
         """
         super().__init__(include_center)
-        self._available_indices: Optional[set[str]] = None
+        self._available_indices: Optional[set[H3IndexGenericType]] = None
         if regions_gdf is not None:
             self._available_indices = set(regions_gdf.index)
 
-    def get_neighbours(self, index: str, include_center: Optional[bool] = None) -> set[str]:
+    def get_neighbours(
+        self, index: H3IndexGenericType, include_center: Optional[bool] = None
+    ) -> set[H3IndexGenericType]:
         """
         Get the direct neighbours of an H3 region using its index.
 
         Args:
-            index (str): H3 index of the region.
+            index (H3IndexType): H3 index of the region.
             include_center (Optional[bool]): Whether to include the region itself in the neighbours.
             If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
-            Set[str]: Indexes of the neighbours.
+            set[H3IndexType]: Indexes of the neighbours.
         """
         return self.get_neighbours_up_to_distance(index, 1, include_center)
 
     def get_neighbours_up_to_distance(
         self,
-        index: str,
+        index: H3IndexGenericType,
         distance: int,
         include_center: Optional[bool] = None,
         unchecked: bool = False,
-    ) -> set[str]:
+    ) -> set[H3IndexGenericType]:
         """
         Get the neighbours of an H3 region up to a certain distance.
 
         Args:
-            index (str): H3 index of the region.
+            index (H3IndexType): H3 index of the region.
             distance (int): Distance to the neighbours.
             include_center (Optional[bool]): Whether to include the region itself in the neighbours.
                 If None, the value set in __init__ is used. Defaults to None.
             unchecked (bool): Whether to check if the neighbours are in the available indices.
 
         Returns:
-            Set[str]: Indexes of the neighbours up to the given distance.
+            set[H3IndexType]: Indexes of the neighbours up to the given distance.
         """
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[str] = set(h3.grid_disk(index, distance))
+        neighbours: set[H3IndexGenericType]
+
+        if isinstance(index, str):
+            neighbours = set(h3str.grid_disk(index, distance))
+        else:
+            neighbours = set(h3int.grid_disk(index, distance))
+
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=False, include_center_override=include_center
         )
@@ -91,33 +106,117 @@ class H3Neighbourhood(Neighbourhood[str]):
         return self._select_available(neighbours)
 
     def get_neighbours_at_distance(
-        self, index: str, distance: int, include_center: Optional[bool] = None
-    ) -> set[str]:
+        self, index: H3IndexGenericType, distance: int, include_center: Optional[bool] = None
+    ) -> set[H3IndexGenericType]:
         """
         Get the neighbours of an H3 region at a certain distance.
 
         Args:
-            index (str): H3 index of the region.
+            index (H3IndexType): H3 index of the region.
             distance (int): Distance to the neighbours.
             include_center (Optional[bool]): Whether to include the region itself in the neighbours.
             If None, the value set in __init__ is used. Defaults to None.
 
         Returns:
-            Set[str]: Indexes of the neighbours at the given distance.
+            set[H3IndexType]: Indexes of the neighbours at the given distance.
         """
         if self._distance_incorrect(distance):
             return set()
 
-        neighbours: set[str] = set(h3.grid_ring(index, distance))
+        neighbours: set[H3IndexGenericType]
+
+        if isinstance(index, str):
+            neighbours = set(h3str.grid_ring(index, distance))
+        else:
+            neighbours = set(h3int.grid_ring(index, distance))
+
         neighbours = self._handle_center(
             index, distance, neighbours, at_distance=True, include_center_override=include_center
         )
         return self._select_available(neighbours)
 
-    def _select_available(self, indices: set[str]) -> set[str]:
+    def _select_available(self, indices: set[H3IndexGenericType]) -> set[H3IndexGenericType]:
         if self._available_indices is None:
             return indices
         return indices.intersection(self._available_indices)
 
     def _distance_incorrect(self, distance: int) -> bool:
         return distance < 0
+
+    def register_duckdb_functions(self, conn: duckdb.DuckDBPyConnection) -> dict[str, str]:
+        """
+        Register DuckDB functions for all H3Neighbourhood operations.
+
+        Will wrap native H3 functions inside DuckDB environment.
+
+        Args:
+            conn (duckdb.DuckDBPyConnection): Connection where to register custom functions.
+
+        Returns:
+            dict[str, str]: Dictionary with Python function name and registered function name.
+        """
+        random_str = "".join(choice(ascii_lowercase) for _ in range(8))
+        timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+
+        function_pretfix = self.__class__.__name__
+        function_postfix = f"{random_str}_{timestr}"
+
+        registered_functions = {}
+
+        # get_neighbours
+        original_get_neighbours_name = self.get_neighbours.__name__
+        registered_fn_name = f"{function_pretfix}_{original_get_neighbours_name}_{function_postfix}"
+        include_center_default_fn = (
+            "h3_grid_disk_unsafe(h3_index, 1)"
+            if self.include_center
+            else "h3_grid_ring_unsafe(h3_index, 1)"
+        )
+        conn.sql(
+            f"""
+            CREATE OR REPLACE MACRO {registered_fn_name}
+                (
+                    h3_index
+                ) AS {include_center_default_fn},
+                (
+                    h3_index, include_center
+                ) AS CASE WHEN include_center
+                THEN h3_grid_disk_unsafe(h3_index, 1)
+                ELSE h3_grid_ring_unsafe(h3_index, 1)
+                END
+            ;
+            """
+        )
+        registered_functions[original_get_neighbours_name] = registered_fn_name
+
+        # get_neighbours_up_to_distance
+        original_get_neighbours_up_to_distance_name = self.get_neighbours_up_to_distance.__name__
+        registered_fn_name = (
+            f"{function_pretfix}_{original_get_neighbours_up_to_distance_name}_{function_postfix}"
+        )
+        include_center_default_fn = (
+            "h3_grid_disk_unsafe(h3_index, distance)"
+            if self.include_center
+            else "list_filter(h3_grid_disk_unsafe(h3_index, distance), x -> x != h3_index)"
+        )
+        conn.sql(
+            f"""
+            CREATE OR REPLACE MACRO {registered_fn_name}
+                (
+                    h3_index, distance
+                ) AS {include_center_default_fn},
+                (
+                    h3_index, distance, include_center
+                ) AS CASE WHEN include_center
+                THEN h3_grid_disk_unsafe(h3_index, distance)
+                ELSE list_filter(h3_grid_disk_unsafe(h3_index, distance), x -> x != h3_index)
+                END
+            ;
+            """
+        )
+        registered_functions[original_get_neighbours_up_to_distance_name] = registered_fn_name
+
+        # get_neighbours_at_distance
+        original_get_neighbours_at_distance_name = self.get_neighbours_at_distance.__name__
+        registered_functions[original_get_neighbours_at_distance_name] = "h3_grid_ring_unsafe"
+
+        return registered_functions

@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Union
 
@@ -30,13 +31,13 @@ class SavingDataCollector(DataCollector):
     Store paths.
     """
 
-    def __init__(self, save_path: Union[str, Path], file_extension: str) -> None:
+    def __init__(self, save_path: Union[str, Path], file_extension: str, **kwargs: Any) -> None:  # noqa: D417
         """
         Initialize SavingDataCollector.
 
         Args:
-            save_path (Union[str, Path]): root path for data
-            file_extension (str): file name extension
+            save_path (Union[str, Path]): Root path for saving data.
+            file_extension (str): File name extension.
         """
         super().__init__()
         if save_path is None or file_extension is None:
@@ -44,7 +45,7 @@ class SavingDataCollector(DataCollector):
         self.save_path = Path(save_path)
         self.format = file_extension
 
-    def store(self, idx: str, data: "Image.Image") -> Path:
+    def store(self, idx: str, data: "Image.Image") -> str:
         """
         Save image on disk. Returns path.
 
@@ -53,18 +54,29 @@ class SavingDataCollector(DataCollector):
             data (Image.Image): tile
         """
         path = self.save_path / f"{idx}.{self.format}"
-        data.save(path)
-        return path
+        path.parent.mkdir(exist_ok=True, parents=True)
+        resolved_path = path.resolve()
+        data.save(resolved_path)
+        return str(resolved_path)
 
 
 class InMemoryDataCollector(DataCollector):
     """Store data in object memory."""
 
-    def __init__(self) -> None:
-        """Initialize InMemoryDataCollector."""
-        super().__init__()
+    def __init__(self, file_extension: str, **kwargs: Any) -> None:  # noqa: D417
+        """
+        Initialize InMemoryDataCollector.
 
-    def store(self, idx: str, data: "Image.Image") -> "Image.Image":
+        Args:
+            file_extension (str): File name extension. Used to serialize
+                images to bytes.
+        """
+        super().__init__()
+        if file_extension is None:
+            raise ValueError
+        self.format = file_extension
+
+    def store(self, idx: str, data: "Image.Image") -> bytes:
         """
         Simply return object for usage.
 
@@ -72,7 +84,9 @@ class InMemoryDataCollector(DataCollector):
             idx (str): id of tile
             data (Image.Image): tile
         """
-        return data
+        img_bytes = BytesIO()
+        data.save(img_bytes, self.format)
+        return img_bytes.getvalue()
 
 
 class DataCollectorType(str, Enum):
@@ -97,6 +111,6 @@ def get_collector(collector_type: Union[DataCollectorType, str], **kwargs: Any) 
     if collector_type == DataCollectorType.SAVE:
         return SavingDataCollector(**kwargs)
     elif collector_type == DataCollectorType.RETURN:
-        return InMemoryDataCollector()
+        return InMemoryDataCollector(**kwargs)
     else:
         raise ValueError

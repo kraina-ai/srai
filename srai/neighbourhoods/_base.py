@@ -2,9 +2,13 @@
 
 import operator
 from abc import ABC, abstractmethod
+from datetime import datetime
 from queue import Queue
-from typing import Generic, Optional, TypeVar
+from random import choice
+from string import ascii_lowercase
+from typing import Generic, Optional, TypeVar, Union
 
+import duckdb
 from functional import seq
 
 IndexType = TypeVar("IndexType")
@@ -165,3 +169,53 @@ class Neighbourhood(ABC, Generic[IndexType]):
                 else:
                     neighbours.discard(index)
         return neighbours
+
+    def register_duckdb_functions(self, conn: duckdb.DuckDBPyConnection) -> dict[str, str]:
+        """
+        Register DuckDB functions for all Neighbourhood operations.
+
+        Will wrap Python functions into DuckDB environment.
+
+        Args:
+            conn (duckdb.DuckDBPyConnection): Connection where to register custom functions.
+
+        Returns:
+            dict[str, str]: Dictionary with Python function name and registered function name.
+        """
+        random_str = "".join(choice(ascii_lowercase) for _ in range(8))
+        timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+
+        function_pretfix = self.__class__.__name__
+        function_postfix = f"{random_str}_{timestr}"
+
+        registered_functions = {}
+
+        def partial_get_neighbours(index: IndexType) -> list[IndexType]:
+            return list(self.get_neighbours(index))
+
+        def partial_get_neighbours_at_distance(index: IndexType, distance: int) -> list[IndexType]:
+            return list(self.get_neighbours_at_distance(index, distance))
+
+        def partial_get_neighbours_up_to_distance(
+            index: IndexType, distance: int
+        ) -> list[IndexType]:
+            return list(self.get_neighbours_up_to_distance(index, distance))
+
+        for original_function in (
+            partial_get_neighbours,
+            partial_get_neighbours_at_distance,
+            partial_get_neighbours_up_to_distance,
+        ):
+            original_fn_name = original_function.__name__[8:]
+            registered_fn_name = f"{function_pretfix}_{original_fn_name}_{function_postfix}"
+
+            conn.create_function(
+                name=registered_fn_name,
+                function=original_function,
+                return_type=duckdb.typing.DuckDBPyType(list[Union[int, str]]),
+                null_handling="special",
+            )
+
+            registered_functions[original_fn_name] = registered_fn_name
+
+        return registered_functions

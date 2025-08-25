@@ -9,7 +9,7 @@ PREDEFINED_TEST_CASES = [
     {
         "test_case_name": "wro_9",
         "geocoding_name": "Wrocław, Poland",
-        "root_region_index": "891e2040887ffff",
+        "root_region_index": 617523130877345791,
         "h3_res": 9,
         "radius": 7,
         "seed": 42,
@@ -24,7 +24,7 @@ PREDEFINED_TEST_CASES = [
     {
         "test_case_name": "poz_8",
         "geocoding_name": "Poznań, Poland",
-        "root_region_index": "881e24a125fffff",
+        "root_region_index": 613019832062836735,
         "h3_res": 8,
         "radius": 6,
         "seed": 5555,

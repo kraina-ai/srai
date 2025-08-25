@@ -84,4 +84,4 @@ def test_full_coverage() -> None:
 
     assert all(len(value) > 0 for value in intersections.values())
     assert len(intersections["way/843232154"]) == 1
-    assert "8a2ab5760167fff" in intersections["way/843232154"]
+    assert 622248090293141503 in intersections["way/843232154"]
