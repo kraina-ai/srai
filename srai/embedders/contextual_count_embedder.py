@@ -269,40 +269,40 @@ def _parse_single_batch(
             columns=["region_id", "neighbour_id", "distance"],
         ).to_parquet(precalculated_neighbours_path)
 
-        current_regions_lf = current_regions
+        current_regions_lf = current_regions.lazy()
         neighbours_lf = pl.scan_parquet(precalculated_neighbours_path)
         embeddings_lf = pl.scan_parquet(counts_parquet_files)
 
-        neighbours_joined_with_embeddings_df = neighbours_lf.join(
+        neighbours_joined_with_embeddings_lf = neighbours_lf.join(
             embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
-        ).collect()
+        )
 
         if concatenate_vectors:
             embeddings = _generate_concatenated_embeddings_lazyframe(
-                neighbours_joined_with_embeddings_df=neighbours_joined_with_embeddings_df,
+                neighbours_joined_with_embeddings_lf=neighbours_joined_with_embeddings_lf,
                 feature_column_names=feature_column_names,
                 neighbourhood_distance=neighbourhood_distance,
                 aggregation_function=aggregation_function,
             )
         else:
             embeddings = _generate_squashed_embeddings_lazyframe(
-                neighbours_joined_with_embeddings_df=neighbours_joined_with_embeddings_df,
+                neighbours_joined_with_embeddings_lf=neighbours_joined_with_embeddings_lf,
                 feature_column_names=feature_column_names,
                 aggregation_function=aggregation_function,
             )
 
         current_regions_lf.join(
             embeddings, left_on=index_name, right_on="region_id", how="left"
-        ).fill_null(0).sort("row_number").drop("row_number").write_parquet(result_file_path)
+        ).fill_null(0).sort("row_number").drop("row_number").sink_parquet(result_file_path)
 
 
 def _generate_squashed_embeddings_lazyframe(
-    neighbours_joined_with_embeddings_df: pl.DataFrame,
+    neighbours_joined_with_embeddings_lf: pl.LazyFrame,
     feature_column_names: list[str],
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
 ) -> pl.LazyFrame:
     return (
-        neighbours_joined_with_embeddings_df.group_by(["region_id", "distance"])
+        neighbours_joined_with_embeddings_lf.group_by(["region_id", "distance"])
         .agg(
             (_apply_polars_aggregation(pl.col(column), aggregation_function).alias(column))
             for column in feature_column_names
@@ -315,12 +315,12 @@ def _generate_squashed_embeddings_lazyframe(
 
 
 def _generate_concatenated_embeddings_lazyframe(
-    neighbours_joined_with_embeddings_df: pl.DataFrame,
+    neighbours_joined_with_embeddings_lf: pl.LazyFrame,
     feature_column_names: list[str],
     neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
 ) -> pl.DataFrame:
-    return neighbours_joined_with_embeddings_df.group_by("region_id").agg(
+    return neighbours_joined_with_embeddings_lf.group_by("region_id").agg(
         (
             _apply_polars_aggregation(
                 pl.col(column).filter(pl.col("distance") == distance), aggregation_function
