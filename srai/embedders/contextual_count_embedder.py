@@ -208,7 +208,7 @@ class ContextualCountEmbedder(CountEmbedder):
 
                     warnings.warn(
                         f"Encountered {ex.__class__.__name__} during operation."
-                        f" Re trying with lower number of rows per batch ({current_limit} rows).",
+                        f" Retrying with lower number of rows per batch ({current_limit} rows).",
                         stacklevel=1,
                     )
 
@@ -319,7 +319,7 @@ def _generate_concatenated_embeddings_lazyframe(
     feature_column_names: list[str],
     neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
-) -> pl.DataFrame:
+) -> pl.LazyFrame:
     return neighbours_joined_with_embeddings_lf.group_by("region_id").agg(
         (
             _apply_polars_aggregation(
