@@ -206,6 +206,11 @@ class ContextualCountEmbedder(CountEmbedder):
                     if current_limit == 1:
                         raise
 
+                    print(
+                        f"Encountered {ex.__class__.__name__} during operation."
+                        f" Re trying with lower number of rows per batch ({current_limit} rows).",
+                    )
+
                     warnings.warn(
                         f"Encountered {ex.__class__.__name__} during operation."
                         f" Re trying with lower number of rows per batch ({current_limit} rows).",
@@ -273,13 +278,9 @@ def _parse_single_batch(
         neighbours_lf = pl.scan_parquet(precalculated_neighbours_path)
         embeddings_lf = pl.scan_parquet(counts_parquet_files)
 
-        neighbours_joined_with_embeddings_df = (
-            neighbours_lf.join(
-                embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
-            )
-            .fill_null(0)
-            .collect()
-        )
+        neighbours_joined_with_embeddings_df = neighbours_lf.join(
+            embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
+        ).collect()
 
         if concatenate_vectors:
             embeddings = _generate_concatenated_embeddings_lazyframe(
