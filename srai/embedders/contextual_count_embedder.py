@@ -206,11 +206,6 @@ class ContextualCountEmbedder(CountEmbedder):
                     if current_limit == 1:
                         raise
 
-                    print(
-                        f"Encountered {ex.__class__.__name__} during operation."
-                        f" Re trying with lower number of rows per batch ({current_limit} rows).",
-                    )
-
                     warnings.warn(
                         f"Encountered {ex.__class__.__name__} during operation."
                         f" Re trying with lower number of rows per batch ({current_limit} rows).",
