@@ -6,6 +6,7 @@ from string import ascii_lowercase, digits
 
 import geopandas as gpd
 import numpy as np
+import pytest
 from shapely import box
 
 from srai.constants import FEATURES_INDEX
@@ -16,7 +17,8 @@ from srai.neighbourhoods import H3Neighbourhood
 from srai.regionalizers import H3Regionalizer, S2Regionalizer
 
 
-def test_large_area_embedding() -> None:
+@pytest.mark.parametrize("concatenate_vectors", [False, True])  # type: ignore
+def test_large_area_embedding(concatenate_vectors: bool) -> None:
     """Test if large area embedding can be calculated on a single machine."""
     # TODO: increase later
     H3_RESOLUTION = 5
@@ -51,6 +53,7 @@ def test_large_area_embedding() -> None:
         neighbourhood=H3Neighbourhood(),
         neighbourhood_distance=H3_DISTANCE,
         count_subcategories=True,
+        concatenate_vectors=concatenate_vectors,
     ).transform(buffered_h3_regions, s2_regions, joint)
 
     assert len(embeddings) == len(buffered_h3_regions)
