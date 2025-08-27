@@ -20,12 +20,7 @@ from typing import Literal, Optional, Union, cast
 
 import duckdb
 import pandas as pd
-from rq_geo_toolkit.constants import (
-    PARQUET_COMPRESSION,
-    PARQUET_COMPRESSION_LEVEL,
-    PARQUET_ROW_GROUP_SIZE,
-)
-from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring, sql_escape
+import polars as pl
 from rq_geo_toolkit.multiprocessing_utils import WorkerProcess, run_process_with_memory_monitoring
 from tqdm import tqdm
 
@@ -167,8 +162,9 @@ class ContextualCountEmbedder(CountEmbedder):
         current_limit = 10_000_000
 
         result_dir_name = ParquetDataTable.generate_filename()
+        embedding_type = "concatenated" if self.concatenate_vectors else "squashed"
         result_dir_path = (
-            ParquetDataTable.get_directory() / f"{result_dir_name}_concatenated_embeddings"
+            ParquetDataTable.get_directory() / f"{result_dir_name}_{embedding_type}_embeddings"
         )
         result_dir_path.mkdir(parents=True, exist_ok=True)
         saved_result_files = []
@@ -248,7 +244,10 @@ def _parse_single_batch(
             parquet_paths=counts_parquet_files, connection=connection, with_row_number=True
         )
         current_batch_relation = full_relation.limit(n=limit, offset=offset)
-        current_region_ids = current_batch_relation.select(index_name).fetchdf()[index_name]
+        current_regions = (
+            current_batch_relation.sort("row_number").select(index_name, "row_number").pl()
+        )
+        current_region_ids = current_regions[index_name]
 
         all_neighbours = set((region_id, region_id, 0) for region_id in current_region_ids)
 
@@ -270,168 +269,86 @@ def _parse_single_batch(
             columns=["region_id", "neighbour_id", "distance"],
         ).to_parquet(precalculated_neighbours_path)
 
+        current_regions_lf = current_regions
+        neighbours_lf = pl.scan_parquet(precalculated_neighbours_path)
+        embeddings_lf = pl.scan_parquet(counts_parquet_files)
+
+        neighbours_joined_with_embeddings_df = (
+            neighbours_lf.join(
+                embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
+            )
+            .fill_null(0)
+            .collect()
+        )
+
         if concatenate_vectors:
-            joined_relation = _generate_concatenated_embeddings_query(
-                connection=connection,
-                counts_relation=full_relation,
-                index_name=index_name,
+            embeddings = _generate_concatenated_embeddings_lazyframe(
+                neighbours_joined_with_embeddings_df=neighbours_joined_with_embeddings_df,
                 feature_column_names=feature_column_names,
-                precalculated_neighbours_path=precalculated_neighbours_path,
                 neighbourhood_distance=neighbourhood_distance,
                 aggregation_function=aggregation_function,
             )
         else:
-            joined_relation = _generate_squashed_embeddings_query(
-                connection=connection,
-                counts_relation=full_relation,
-                index_name=index_name,
+            embeddings = _generate_squashed_embeddings_lazyframe(
+                neighbours_joined_with_embeddings_df=neighbours_joined_with_embeddings_df,
                 feature_column_names=feature_column_names,
-                precalculated_neighbours_path=precalculated_neighbours_path,
-                neighbourhood_distance=neighbourhood_distance,
                 aggregation_function=aggregation_function,
             )
 
-        save_query = f"""
-        COPY ({joined_relation.sql_query()}) TO '{result_file_path}' (
-            FORMAT parquet,
-            COMPRESSION {PARQUET_COMPRESSION},
-            COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
-            ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
-        );
-        """
-
-        run_query_with_memory_monitoring(
-            sql_query=save_query,
-            connection=connection,
-            preserve_insertion_order=True,
-        )
+        current_regions_lf.join(
+            embeddings, left_on=index_name, right_on="region_id", how="left"
+        ).fill_null(0).sort("row_number").drop("row_number").write_parquet(result_file_path)
 
 
-def _generate_squashed_embeddings_query(
-    connection: duckdb.DuckDBPyConnection,
-    counts_relation: duckdb.DuckDBPyRelation,
-    index_name: str,
+def _generate_squashed_embeddings_lazyframe(
+    neighbours_joined_with_embeddings_df: pl.DataFrame,
     feature_column_names: list[str],
-    precalculated_neighbours_path: Path,
+    aggregation_function: Literal["average", "median", "sum", "min", "max"],
+) -> pl.LazyFrame:
+    return (
+        neighbours_joined_with_embeddings_df.group_by(["region_id", "distance"])
+        .agg(
+            (_apply_polars_aggregation(pl.col(column), aggregation_function).alias(column))
+            for column in feature_column_names
+        )
+        .with_columns((pl.col("distance") + 1).pow(2).alias("divisor"))
+        .with_columns(pl.col(column) / pl.col("divisor") for column in feature_column_names)
+        .group_by("region_id")
+        .agg((pl.col(column).sum().alias(column)) for column in feature_column_names)
+    )
+
+
+def _generate_concatenated_embeddings_lazyframe(
+    neighbours_joined_with_embeddings_df: pl.DataFrame,
+    feature_column_names: list[str],
     neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
-) -> duckdb.DuckDBPyRelation:
-    agg_fn = ContextualCountEmbedder.DUCKDB_AGGREGATION_FUNCTION_MAPPING[aggregation_function]
-
-    aggregation_clauses = []
-    contextual_feature_column_names = []
-
-    for column in feature_column_names:
-        escaped_column_name = sql_escape(column)
-        distance_clauses = []
-        for distance in range(neighbourhood_distance + 1):
-            divisor = (distance + 1) ** 2
-            distance_clauses.append(
-                f"""
-                COALESCE(
-                    {agg_fn}(
-                        CASE WHEN neighbours.distance = {distance}
-                        THEN embeddings."{escaped_column_name}"
-                        ELSE NULL
-                        END
-                    ),
-                    0
-                ) / {divisor}
-                """
-            )
-        aggregation_clauses.append(f'{" + ".join(distance_clauses)} AS "{escaped_column_name}"')
-        contextual_feature_column_names.append(escaped_column_name)
-
-    coalesce_clauses = [
-        f"""
-        COALESCE(
-            contextual_embeddings."{contextual_feature_column_name}",
-        0) AS "{contextual_feature_column_name}"
-        """
-        for contextual_feature_column_name in contextual_feature_column_names
-    ]
-    joined_query = f"""
-    WITH contextual_embeddings AS (
-        SELECT
-            neighbours.region_id as "{index_name}",
-            {",".join(aggregation_clauses)}
-        FROM read_parquet('{precalculated_neighbours_path}') neighbours
-        LEFT JOIN ({counts_relation.sql_query()}) embeddings
-        ON neighbours.neighbour_id = embeddings."{index_name}"
-        GROUP BY 1
-    )
-    SELECT
-        regions."{index_name}",
-        {",".join(coalesce_clauses)}
-    FROM ({counts_relation.sql_query()}) regions
-    JOIN contextual_embeddings USING ("{index_name}")
-    ORDER BY regions.row_number
-    """
-    joined_relation = connection.sql(joined_query)
-
-    return joined_relation
-
-
-def _generate_concatenated_embeddings_query(
-    connection: duckdb.DuckDBPyConnection,
-    counts_relation: duckdb.DuckDBPyRelation,
-    index_name: str,
-    feature_column_names: list[str],
-    precalculated_neighbours_path: Path,
-    neighbourhood_distance: int,
-    aggregation_function: Literal["average", "median", "sum", "min", "max"],
-) -> duckdb.DuckDBPyRelation:
-    agg_fn = ContextualCountEmbedder.DUCKDB_AGGREGATION_FUNCTION_MAPPING[aggregation_function]
-
-    aggregation_clauses = []
-    contextual_feature_column_names = []
-
-    for distance, column in product(range(neighbourhood_distance + 1), feature_column_names):
-        escaped_column_name = sql_escape(column)
-        contextual_feature_column_name = f"{escaped_column_name}_{distance}"
-        aggregation_clauses.append(
-            f"""
-            COALESCE(
-                {agg_fn}(
-                    CASE WHEN neighbours.distance = {distance}
-                    THEN embeddings."{escaped_column_name}"
-                    ELSE NULL
-                    END
-                ),
-                0
-            ) as "{contextual_feature_column_name}"
-            """
+) -> pl.DataFrame:
+    return neighbours_joined_with_embeddings_df.group_by("region_id").agg(
+        (
+            _apply_polars_aggregation(
+                pl.col(column).filter(pl.col("distance") == distance), aggregation_function
+            ).alias(f"{column}_{distance}")
         )
-        contextual_feature_column_names.append(contextual_feature_column_name)
-
-    coalesce_clauses = [
-        f"""
-        COALESCE(
-            contextual_embeddings."{contextual_feature_column_name}",
-        0) AS "{contextual_feature_column_name}"
-        """
-        for contextual_feature_column_name in contextual_feature_column_names
-    ]
-    joined_query = f"""
-    WITH contextual_embeddings AS (
-        SELECT
-            neighbours.region_id as "{index_name}",
-            {",".join(aggregation_clauses)}
-        FROM read_parquet('{precalculated_neighbours_path}') neighbours
-        LEFT JOIN ({counts_relation.sql_query()}) embeddings
-        ON neighbours.neighbour_id = embeddings."{index_name}"
-        GROUP BY 1
+        for distance, column in product(range(neighbourhood_distance + 1), feature_column_names)
     )
-    SELECT
-        regions."{index_name}",
-        {",".join(coalesce_clauses)}
-    FROM ({counts_relation.sql_query()}) regions
-    JOIN contextual_embeddings USING ("{index_name}")
-    ORDER BY regions.row_number
-    """
-    joined_relation = connection.sql(joined_query)
 
-    return joined_relation
+
+def _apply_polars_aggregation(
+    expr: pl.Expr, aggregation_function: Literal["average", "median", "sum", "min", "max"]
+) -> pl.Expr:
+    if aggregation_function == "average":
+        return expr.mean()
+    elif aggregation_function == "median":
+        return expr.median()
+    elif aggregation_function == "sum":
+        return expr.sum()
+    elif aggregation_function == "min":
+        return expr.min()
+    elif aggregation_function == "max":
+        return expr.max()
+    else:
+        raise ValueError(f"Unknown aggregation function: {aggregation_function}")
 
 
 def _get_existing_neighbours_at_distance(
