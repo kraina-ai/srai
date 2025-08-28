@@ -74,9 +74,6 @@ class IntersectionJoiner(Joiner):
         regions_pdt = prepare_geo_input(regions)
         features_pdt = prepare_geo_input(features)
 
-        print(regions_pdt)
-        print(features_pdt)
-
         if GEOMETRY_COLUMN not in regions_pdt.columns:
             raise ValueError("Regions must have a geometry column.")
         if GEOMETRY_COLUMN not in features_pdt.columns:
