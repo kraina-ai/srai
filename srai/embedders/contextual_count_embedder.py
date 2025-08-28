@@ -8,7 +8,9 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
+import multiprocessing
 import tempfile
+import traceback
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
@@ -16,12 +18,12 @@ from itertools import product
 from math import ceil
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 import duckdb
 import pandas as pd
 import polars as pl
-from rq_geo_toolkit.multiprocessing_utils import WorkerProcess, run_process_with_memory_monitoring
+from rq_geo_toolkit.multiprocessing_utils import run_process_with_memory_monitoring
 from tqdm import tqdm
 
 from srai.constants import FORCE_TERMINAL
@@ -31,6 +33,31 @@ from srai.geodatatable import VALID_DATA_INPUT, ParquetDataTable
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
+
+ctx: multiprocessing.context.SpawnContext = multiprocessing.get_context("spawn")
+
+
+class WorkerSpawnProcess(  # noqa: D101
+    ctx.Process  # type: ignore[name-defined,misc]
+):
+    def __init__(self, *args: Any, **kwargs: Any):  # noqa: D107
+        multiprocessing.Process.__init__(self, *args, **kwargs)
+        self._pconn, self._cconn = multiprocessing.Pipe()
+        self._exception: Optional[tuple[Exception, str]] = None
+
+    def run(self) -> None:  # noqa: D102, pragma: no cover
+        try:
+            multiprocessing.Process.run(self)
+            self._cconn.send(None)
+        except Exception as e:
+            tb: str = traceback.format_exc()
+            self._cconn.send((e, tb))
+
+    @property
+    def exception(self) -> Optional[tuple[Exception, str]]:  # noqa: D102
+        if self._pconn.poll():
+            self._exception = self._pconn.recv()
+        return self._exception
 
 
 class ContextualCountEmbedder(CountEmbedder):
@@ -177,7 +204,7 @@ class ContextualCountEmbedder(CountEmbedder):
             while current_offset < total_rows:
                 try:
                     current_result_file_path = result_dir_path / f"{current_file_idx}.parquet"
-                    process = WorkerProcess(
+                    process = WorkerSpawnProcess(
                         target=_parse_single_batch,
                         kwargs=dict(
                             neighbourhood=self.neighbourhood,
