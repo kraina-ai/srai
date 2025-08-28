@@ -16,7 +16,7 @@ from srai.neighbourhoods import H3Neighbourhood
 from srai.regionalizers import H3Regionalizer, S2Regionalizer
 
 
-def test_large_area_embedding(concatenate_vectors: bool) -> None:
+def test_large_area_embedding() -> None:
     """Test if large area embedding can be calculated on a single machine."""
     # TODO: increase later
     H3_RESOLUTION = 5
