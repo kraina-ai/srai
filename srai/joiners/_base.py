@@ -26,3 +26,20 @@ class Joiner(abc.ABC):
             which contains a MultiIndex and optionally a geometry with the intersection.
         """
         raise NotImplementedError
+
+    def _validate_indexes(
+        self,
+        regions_gdt: GeoDataTable,
+        features_gdt: GeoDataTable,
+    ) -> None:
+        if regions_gdt.index_column_names is None:
+            raise ValueError("regions_pdt must have an index.")
+
+        if features_gdt.index_column_names is None:
+            raise ValueError("features_pdt must have an index.")
+
+        shared_index_names = set(regions_gdt.index_column_names).intersection(
+            features_gdt.index_column_names
+        )
+        if shared_index_names:
+            raise ValueError(f"Shared index names detected {sorted(shared_index_names)}.")
