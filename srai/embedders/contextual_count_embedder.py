@@ -36,14 +36,6 @@ from srai.neighbourhoods._base import IndexType
 class ContextualCountEmbedder(CountEmbedder):
     """ContextualCountEmbedder."""
 
-    DUCKDB_AGGREGATION_FUNCTION_MAPPING = {
-        "average": "AVG",
-        "median": "MEDIAN",
-        "sum": "SUM",
-        "min": "MIN",
-        "max": "MAX",
-    }
-
     def __init__(
         self,
         neighbourhood: Neighbourhood[IndexType],
