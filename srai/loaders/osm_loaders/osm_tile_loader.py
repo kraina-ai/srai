@@ -13,8 +13,8 @@ import pandas as pd
 import requests
 
 from srai._optional import import_optional_dependencies
-from srai.geodatatable import GeoDataTable
-from srai.loaders._base import VALID_AREA_INPUT, Loader
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
+from srai.loaders._base import Loader
 from srai.loaders.osm_loaders.osm_tile_data_collector import (
     DataCollector,
     DataCollectorType,
@@ -94,18 +94,18 @@ class OSMTileLoader(Loader):
 
     def load(
         self,
-        area: VALID_AREA_INPUT,
+        area: VALID_GEO_INPUT,
     ) -> GeoDataTable:
         """
         Return all tiles of region.
 
         Args:
-            area (VALID_AREA_INPUT): Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
 
         Returns:
             gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
         """
-        area_wgs84 = self._prepare_area_input(area).to_geodataframe()
+        area_wgs84 = prepare_geo_input(area).to_geodataframe()
         regions = self.regionalizer.transform(gdf=area_wgs84)
         regions["tile"] = regions.apply(self._get_tile_for_area, axis=1)
         return GeoDataTable.from_geodataframe(regions)

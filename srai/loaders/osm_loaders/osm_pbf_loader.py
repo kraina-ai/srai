@@ -7,12 +7,9 @@ This module contains loader capable of loading OpenStreetMap features from `*.os
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
-import geopandas as gpd
-
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX
-from srai.geodatatable import GeoDataTable
-from srai.loaders._base import VALID_AREA_INPUT
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
@@ -75,7 +72,7 @@ class OSMPbfLoader(OSMLoader):
 
     def load(
         self,
-        area: VALID_AREA_INPUT,
+        area: VALID_GEO_INPUT,
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
         ignore_cache: bool = False,
         explode_tags: bool = True,
@@ -93,7 +90,7 @@ class OSMPbfLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (VALID_AREA_INPUT): Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -118,7 +115,7 @@ class OSMPbfLoader(OSMLoader):
         Returns:
             GeoDataTable: Downloaded features as a GeoDataTable.
         """
-        area_wgs84 = self._prepare_area_input(area)
+        area_wgs84 = prepare_geo_input(area)
 
         pbf_reader = self._get_pbf_file_reader(area_wgs84, tags)
 
@@ -143,7 +140,7 @@ class OSMPbfLoader(OSMLoader):
         return features_gdt
 
     def _get_pbf_file_reader(
-        self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
+        self, area_wgs84: GeoDataTable, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
     ) -> "PbfFileReader":
         from quackosm import PbfFileReader
         from quackosm.osm_extracts import OsmExtractSource

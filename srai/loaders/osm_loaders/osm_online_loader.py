@@ -19,8 +19,8 @@ from tqdm import tqdm
 from srai._optional import import_optional_dependencies
 from srai._typing import is_expected_type
 from srai.constants import FEATURES_INDEX, FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
+from srai.geodatatable import VALID_GEO_INPUT, prepare_geo_input
 from srai.geometry import flatten_geometry
-from srai.loaders._base import VALID_AREA_INPUT
 from srai.loaders.osm_loaders._base import OSMLoader
 from srai.loaders.osm_loaders.filters import (
     GroupedOsmTagsFilter,
@@ -70,7 +70,7 @@ class OSMOnlineLoader(OSMLoader):
 
     def load(
         self,
-        area: VALID_AREA_INPUT,
+        area: VALID_GEO_INPUT,
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> gpd.GeoDataFrame:
         """
@@ -83,7 +83,7 @@ class OSMOnlineLoader(OSMLoader):
             simply because there are no such objects in the given area.
 
         Args:
-            area (VALID_AREA_INPUT): Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): A dictionary
                 specifying which tags to download.
                 The keys should be OSM tags (e.g. `building`, `amenity`).
@@ -101,7 +101,7 @@ class OSMOnlineLoader(OSMLoader):
 
         polygons = [
             g
-            for g in flatten_geometry(self._prepare_area_input(area).union_all())
+            for g in flatten_geometry(prepare_geo_input(area).union_all())
             if isinstance(g, Polygon)
         ]
 

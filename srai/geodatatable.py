@@ -31,6 +31,7 @@ from shapely.errors import GEOSException
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
+from srai._typing import is_expected_type
 from srai.constants import GEOMETRY_COLUMN, WGS84_CRS
 from srai.duckdb import prepare_duckdb_extensions, relation_from_parquet_paths
 
@@ -676,18 +677,52 @@ class GeoDataTable(ParquetDataTable):
         )
 
 
-VALID_GEO_INPUT = Union[Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable]
+VALID_BASE_GEOMETRIES_INPUT = Union[
+    BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame
+]
+VALID_GEO_DATA_TABLE_INPUT = Union[
+    Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable
+]
+VALID_GEO_INPUT = Union[VALID_BASE_GEOMETRIES_INPUT, VALID_GEO_DATA_TABLE_INPUT]
 VALID_DATA_INPUT = Union[Path, str, Iterable[Union[Path, str]], pd.DataFrame, ParquetDataTable]
 
 
-def prepare_geo_input(data_input: VALID_GEO_INPUT) -> GeoDataTable:
-    """Transform input to GeoDataTable."""
-    if isinstance(data_input, GeoDataTable):
-        return data_input
-    elif isinstance(data_input, gpd.GeoDataFrame):
-        return GeoDataTable.from_geodataframe(data_input)
+def prepare_geo_input(
+    data_input: VALID_GEO_INPUT, index_name: Optional[str] = None
+) -> GeoDataTable:
+    """
+    Transform input to GeoDataTable.
 
-    return GeoDataTable.from_parquet(data_input)
+    Args:
+        data_input (VALID_GEO_INPUT): Input to be transformed into GeoDataTable.
+        index_name (str, optional): Index name to set in case of using list of geometries.
+            Defaults to None.
+
+    Returns:
+        GeoDataTable: Prepared GeoDataTable with geometries.
+    """
+    if is_expected_type(data_input, VALID_GEO_DATA_TABLE_INPUT):
+        # Already a GeoDataTable
+        if isinstance(data_input, GeoDataTable):
+            return data_input
+        # GeoDataFrame -> use dedicated function
+        elif isinstance(data_input, gpd.GeoDataFrame):
+            return GeoDataTable.from_geodataframe(data_input.to_crs(WGS84_CRS))
+        # parquet file(s)
+        return GeoDataTable.from_parquet(data_input)
+    elif isinstance(data_input, gpd.GeoSeries):
+        # Create a GeoDataTable from GeoDataFrame with GeoSeries
+        return prepare_geo_input(gpd.GeoDataFrame(geometry=data_input, crs=WGS84_CRS))
+    elif isinstance(data_input, Iterable):
+        # Create a GeoSeries with a list of geometries
+        gs = gpd.GeoSeries(data_input, crs=WGS84_CRS)
+        if index_name is not None:
+            gs.index.rename(index_name, inplace=True)
+            print(gs)
+        return prepare_geo_input(gs)
+
+    # Wrap a single geometry with a list
+    return prepare_geo_input([data_input])
 
 
 def prepare_data_input(data_input: VALID_DATA_INPUT) -> ParquetDataTable:

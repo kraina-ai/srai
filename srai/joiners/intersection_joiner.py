@@ -16,7 +16,7 @@ from rq_geo_toolkit.constants import (
 )
 from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring
 
-from srai.constants import GEOMETRY_COLUMN
+from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.duckdb import prepare_duckdb_extensions
 from srai.geodatatable import (
     VALID_GEO_INPUT,
@@ -79,8 +79,8 @@ class IntersectionJoiner(Joiner):
             ParquetDataTable or GeoDataTable with an intersection of regions and features,
             which contains a MultiIndex and optionaly a geometry with the intersection.
         """
-        regions_gdt = prepare_geo_input(regions)
-        features_gdt = prepare_geo_input(features)
+        regions_gdt = prepare_geo_input(regions, index_name=REGIONS_INDEX)
+        features_gdt = prepare_geo_input(features, index_name=FEATURES_INDEX)
 
         self._validate_indexes(regions_gdt, features_gdt)
 

@@ -3,9 +3,8 @@
 import abc
 from typing import Union
 
-from srai.geodatatable import GeoDataTable
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable
 from srai.loaders import Loader
-from srai.loaders._base import VALID_AREA_INPUT
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
@@ -17,14 +16,14 @@ class OSMLoader(Loader, abc.ABC):
     @abc.abstractmethod
     def load(
         self,
-        area: VALID_AREA_INPUT,
+        area: VALID_GEO_INPUT,
         tags: Union[OsmTagsFilter, GroupedOsmTagsFilter],
     ) -> GeoDataTable:  # pragma: no cover
         """
         Load data for a given area.
 
         Args:
-            area (VALID_AREA_INPUT): Geometry with the area of interest.
+            area (VALID_GEO_INPUT): Geometry with the area of interest.
             tags (Union[OsmTagsFilter, GroupedOsmTagsFilter]): OSM tags filter.
 
         Returns:

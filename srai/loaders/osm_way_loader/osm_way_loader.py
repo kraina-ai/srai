@@ -18,9 +18,8 @@ from tqdm.auto import tqdm
 from srai._optional import import_optional_dependencies
 from srai.constants import FEATURES_INDEX, FORCE_TERMINAL, GEOMETRY_COLUMN, WGS84_CRS
 from srai.exceptions import LoadedDataIsEmptyException
-from srai.geodatatable import GeoDataTable
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
 from srai.loaders import Loader
-from srai.loaders._base import VALID_AREA_INPUT
 
 from . import constants
 
@@ -97,12 +96,12 @@ class OSMWayLoader(Loader):
             .to_list()
         )
 
-    def load(self, area: VALID_AREA_INPUT) -> tuple[GeoDataTable, GeoDataTable]:
+    def load(self, area: VALID_GEO_INPUT) -> tuple[GeoDataTable, GeoDataTable]:
         """
         Load road infrastructure for a given GeoDataFrame.
 
         Args:
-            area (VALID_AREA_INPUT): (Multi)Polygons for which to download road infrastructure data.
+            area (VALID_GEO_INPUT): (Multi)Polygons for which to download road infrastructure data.
 
         Raises:
             ValueError: If provided GeoDataFrame has no crs defined.
@@ -114,7 +113,7 @@ class OSMWayLoader(Loader):
         Returns:
             Tuple[GeoDataTable, GeoDataTable]: Road infrastructure as (intersections, roads)
         """
-        area_gdf = self._prepare_area_input(area).to_geodataframe()
+        area_gdf = prepare_geo_input(area).to_geodataframe()
         import osmnx as ox
 
         ox.settings.useful_tags_way = constants.OSMNX_WAY_KEYS
@@ -303,9 +302,7 @@ class OSMWayLoader(Loader):
         max_osm_keys_str_len = max(map(len, self.osm_keys))
         for col in (pbar := tqdm(self.osm_keys, leave=False, disable=FORCE_TERMINAL)):
             pbar.set_description(f"Preprocessing {col:{max_osm_keys_str_len}}")
-            gdf[col] = gdf[col].apply(
-                lambda x, c=col: self._sanitize_and_normalize(x, c)  # noqa: FURB111
-            )
+            gdf[col] = gdf[col].apply(lambda x, c=col: self._sanitize_and_normalize(x, c))
 
         return gdf if not inplace else None
 

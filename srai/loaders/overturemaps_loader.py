@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 from srai._optional import import_optional_dependencies
-from srai.geodatatable import GeoDataTable
-from srai.loaders._base import VALID_AREA_INPUT, Loader
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
+from srai.loaders._base import Loader
 
 
 class OvertureMapsLoader(Loader):
@@ -86,7 +86,7 @@ class OvertureMapsLoader(Loader):
 
     def load(
         self,
-        area: VALID_AREA_INPUT,
+        area: VALID_GEO_INPUT,
         ignore_cache: bool = False,
     ) -> GeoDataTable:
         """
@@ -104,7 +104,7 @@ class OvertureMapsLoader(Loader):
             the given area.
 
         Args:
-            area (VALID_AREA_INPUT): Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
             ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
@@ -116,7 +116,7 @@ class OvertureMapsLoader(Loader):
             convert_geometry_to_wide_form_parquet_for_multiple_types,
         )
 
-        area_wgs84 = self._prepare_area_input(area)
+        area_wgs84 = prepare_geo_input(area)
 
         if self.theme_type_pairs:
             features_parquet_path = convert_geometry_to_wide_form_parquet_for_multiple_types(
