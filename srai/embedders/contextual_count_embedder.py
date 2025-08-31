@@ -176,7 +176,7 @@ class ContextualCountEmbedder(CountEmbedder):
                             neighbourhood_distance=self.neighbourhood_distance,
                             aggregation_function=self.aggregation_function,
                             concatenate_vectors=self.concatenate_vectors,
-                            counts_parquet_files=list(counts_pdt.parquet_paths),
+                            counts_parquet_files=counts_pdt.parquet_paths,
                             index_name=cast("str", counts_pdt.index_name),
                             feature_column_names=counts_pdt.columns,
                             limit=current_limit,
