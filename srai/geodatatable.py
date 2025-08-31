@@ -79,7 +79,7 @@ class ParquetDataTable(Sized):
             if index_column_names is not None
             else None
         )
-        self.parquet_paths = parquet_paths
+        self.parquet_paths = list(parquet_paths)
         self.persist_files = persist_files
         self._finalizer: Optional[weakref.finalize[[Iterable[Path]], ParquetDataTable]] = None
 
@@ -712,7 +712,12 @@ def prepare_geo_input(
         return GeoDataTable.from_parquet(data_input)
     elif isinstance(data_input, gpd.GeoSeries):
         # Create a GeoDataTable from GeoDataFrame with GeoSeries
-        return prepare_geo_input(gpd.GeoDataFrame(geometry=data_input, crs=WGS84_CRS))
+        if data_input.crs is not None:
+            data_input = data_input.to_crs(WGS84_CRS)
+        else:
+            data_input = data_input.set_crs(WGS84_CRS)
+
+        return prepare_geo_input(gpd.GeoDataFrame(geometry=data_input))
     elif isinstance(data_input, Iterable):
         # Create a GeoSeries with a list of geometries
         gs = gpd.GeoSeries(data_input, crs=WGS84_CRS)
