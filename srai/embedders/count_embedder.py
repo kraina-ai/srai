@@ -250,6 +250,7 @@ class CountEmbedder(Embedder):
         result_parquet_path = (
             ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
         )
+        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         select_clauses = []
         for col in feature_columns:

@@ -231,7 +231,7 @@ def _parse_single_batch(
         ProcessPoolExecutor(max_workers=num_of_multiprocessing_workers) as executor,
     ):
         tmp_dir_path = Path(tmp_dir_name)
-        prepare_duckdb_extensions(conn=connection)
+        prepare_duckdb_extensions(connection=connection)
         full_relation = relation_from_parquet_paths(
             parquet_paths=counts_parquet_files, connection=connection, with_row_number=True
         )

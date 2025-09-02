@@ -119,7 +119,7 @@ class IntersectionJoiner(Joiner):
             ) as connection,
         ):
             tmp_dir_path = Path(tmp_dir_name)
-            prepare_duckdb_extensions(conn=connection)
+            prepare_duckdb_extensions(connection=connection)
             regions_relation = regions.to_duckdb(connection=connection)
             features_relation = features.to_duckdb(connection=connection)
 
@@ -152,6 +152,7 @@ class IntersectionJoiner(Joiner):
             result_parquet_path = (
                 ParquetDataTable.get_directory() / f"{result_file_name}_joint.parquet"
             )
+            result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
             save_query = f"""
             COPY ({joined_query}) TO '{result_parquet_path}' (

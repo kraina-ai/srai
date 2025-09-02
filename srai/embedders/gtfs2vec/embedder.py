@@ -91,6 +91,7 @@ class GTFS2VecEmbedder(Embedder):
         result_parquet_path = (
             ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
         )
+        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         if self._skip_autoencoder:
             return ParquetDataTable.from_dataframe(gtfs_features, result_parquet_path)
@@ -172,6 +173,7 @@ class GTFS2VecEmbedder(Embedder):
         result_parquet_path = (
             ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
         )
+        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         if self._skip_autoencoder:
             return ParquetDataTable.from_dataframe(gtfs_features, result_parquet_path)

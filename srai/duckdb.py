@@ -7,9 +7,9 @@ from typing import Optional
 import duckdb
 
 
-def prepare_duckdb_extensions(conn: Optional[duckdb.DuckDBPyConnection] = None) -> None:
+def prepare_duckdb_extensions(connection: Optional[duckdb.DuckDBPyConnection] = None) -> None:
     """Install and load required DuckDB extensions."""
-    _conn = conn or duckdb
+    _conn = connection or duckdb
 
     _conn.install_extension("spatial")
     _conn.install_extension("h3", repository="community")
