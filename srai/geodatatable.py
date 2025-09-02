@@ -261,7 +261,6 @@ class ParquetDataTable(Sized):
             ParquetDataTable: Created object.
         """
         directory_path = Path(directory_path)
-        print(sorted(directory_path.glob("**/*.parquet")))
         return cls(
             parquet_paths=sorted(directory_path.glob("**/*.parquet")),
             index_column_names=index_column_names,
@@ -428,19 +427,15 @@ class ParquetDataTable(Sized):
 
         existing_columns = self.physical_columns
         missing_columns = set(columns).difference(existing_columns)
-        # print(f"{missing_columns=}")
         if missing_columns and not missing_ok:
             raise ValueError(f"Columns {missing_columns} are not present in the data table.")
 
         columns_to_drop = set(columns).intersection(existing_columns)
-        # print(f"{columns_to_drop=}")
         if not columns_to_drop:
             return None
 
         columns_to_keep = set(existing_columns).difference(columns)
         columns_to_keep_in_order = [c for c in existing_columns if c in columns_to_keep]
-        # print(f"{columns_to_keep_in_order=}")
-        # print(f"{self.parquet_paths=}")
 
         new_parquet_paths = []
         for parquet_path in self.parquet_paths:
@@ -458,8 +453,6 @@ class ParquetDataTable(Sized):
                 compression=PARQUET_COMPRESSION,
             )
             new_parquet_paths.append(new_parquet_path)
-
-        # print(f"{new_parquet_paths=}")
 
         if self.index_column_names is not None:
             new_index_column_names: Optional[list[str]] = list(
@@ -596,7 +589,6 @@ class GeoDataTable(ParquetDataTable):
             GeoDataTable: Created object.
         """
         directory_path = Path(directory_path)
-        print(sorted(directory_path.glob("**/*.parquet")))
         return cls(
             parquet_paths=sorted(directory_path.glob("**/*.parquet")),
             index_column_names=index_column_names,
@@ -814,7 +806,6 @@ def prepare_geo_input(
         gs = gpd.GeoSeries(data_input, crs=WGS84_CRS)
         if index_name is not None:
             gs.index.rename(index_name, inplace=True)
-            print(gs)
         return prepare_geo_input(gs)
 
     # Wrap a single geometry with a list
