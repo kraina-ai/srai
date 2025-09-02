@@ -42,6 +42,8 @@ from typing import TypeVar
 
 _Self = TypeVar("_Self", bound="ParquetDataTable")
 
+# TODO: add option to pass directory path and load parquet files from inside
+
 
 class ParquetDataTable(Sized):
     """
