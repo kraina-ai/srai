@@ -3,6 +3,7 @@
 import hashlib
 import inspect
 import multiprocessing
+import shutil
 import weakref
 from collections.abc import Callable, Iterable, Sized
 from concurrent.futures import ProcessPoolExecutor
@@ -61,15 +62,20 @@ class ParquetDataTable(Sized):
         parquet_paths: Iterable[Path],
         index_column_names: Optional[Union[str, Iterable[str]]] = None,
         persist_files: bool = False,
+        directory_to_clean: Optional[Path] = None,
     ):
         """
         Initialize ParquetDataTable.
+
+        It is discouraged to call directly.
 
         Args:
             parquet_paths (Iterable[Path]): List of parquet files.
             index_column_names (Optional[Union[str, Iterable[str]]], optional): Index column names.
             persist_files (bool, optional): Whether to keep the files after object removal or
                 delete them from disk. Defaults to False.
+            directory_to_clean (Optional[Path], optional): Directory to clean after object removal
+                instead of single files.
         """
         prepare_duckdb_extensions()
         self.index_column_names = (
@@ -83,7 +89,13 @@ class ParquetDataTable(Sized):
         )
         self.parquet_paths = list(parquet_paths)
         self.persist_files = persist_files
-        self._finalizer: Optional[weakref.finalize[[Iterable[Path]], ParquetDataTable]] = None
+        self.directory_to_clean = directory_to_clean
+        self._finalizer: Optional[
+            Union[
+                weakref.finalize[[Iterable[Path]], ParquetDataTable],
+                weakref.finalize[[Path], ParquetDataTable],
+            ]
+        ] = None
 
         if not self.persist_files:
             self._configure_finalizer()
@@ -166,9 +178,12 @@ class ParquetDataTable(Sized):
 
     @staticmethod
     def _cleanup_files(paths: Iterable[Path]) -> None:
-        # print(f"cleanup! ({paths})")
         for path in paths:
             path.unlink(missing_ok=True)
+
+    @staticmethod
+    def _cleanup_directory(path: Path) -> None:
+        shutil.rmtree(path, ignore_errors=True)
 
     def _detach_finalizer(self) -> None:
         if self._finalizer is not None:
@@ -176,7 +191,12 @@ class ParquetDataTable(Sized):
 
     def _configure_finalizer(self) -> None:
         self._detach_finalizer()
-        self._finalizer = weakref.finalize(self, self._cleanup_files, self.parquet_paths)
+        if self.directory_to_clean is not None:
+            self._finalizer = weakref.finalize(
+                self, self._cleanup_directory, self.directory_to_clean
+            )
+        else:
+            self._finalizer = weakref.finalize(self, self._cleanup_files, self.parquet_paths)
 
     @classmethod
     def get_directory(cls) -> Path:
@@ -219,6 +239,34 @@ class ParquetDataTable(Sized):
             parquet_paths=[Path(p) for p in parquet_path],
             index_column_names=index_column_names,
             persist_files=persist_files,
+        )
+
+    @classmethod
+    def from_parquet_directory(
+        cls: type[_Self],
+        directory_path: Union[Path, str],
+        index_column_names: Optional[Union[str, Iterable[str]]] = None,
+        persist_files: bool = False,
+    ) -> _Self:
+        """
+        Create ParquetDataTable object from parquet files.
+
+        Args:
+            directory_path (Union[Path, str]): Path to the directory of parquet files..
+            index_column_names (Optional[Union[str, Iterable[str]]]): Index column name or names.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
+
+        Returns:
+            ParquetDataTable: Created object.
+        """
+        directory_path = Path(directory_path)
+        print(sorted(directory_path.glob("**/*.parquet")))
+        return cls(
+            parquet_paths=sorted(directory_path.glob("**/*.parquet")),
+            index_column_names=index_column_names,
+            persist_files=persist_files,
+            directory_to_clean=directory_path,
         )
 
     @classmethod
@@ -439,23 +487,28 @@ class GeoDataTable(ParquetDataTable):
         parquet_paths: Iterable[Path],
         index_column_names: Optional[Union[str, Iterable[str]]] = None,
         persist_files: bool = False,
+        directory_to_clean: Optional[Path] = None,
         sort_geometries: bool = True,
         sort_extent: Optional[tuple[float, float, float, float]] = None,
     ):
         """
         Initialize GeoDataTable.
 
+        It is discouraged to call directly.
+
         Args:
             parquet_paths (Iterable[Path]): List of parquet files.
             index_column_names (Optional[Union[str, Iterable[str]]]): Index column names.
             persist_files (bool, optional): Whether to keep the files after object removal or
                 delete them from disk. Defaults to False.
+            directory_to_clean (Optional[Path], optional): Directory to clean after object removal
+                instead of single files.
             sort_geometries (bool, optional): Whether to sort geometries to keep geometries
                 organized. Defaults to True.
             sort_extent (Optional[tuple[float, float, float, float]], optional): Extent to use
                 in the ST_Hilbert sorting. Defaults to None.
         """
-        super().__init__(parquet_paths, index_column_names, persist_files)
+        super().__init__(parquet_paths, index_column_names, persist_files, directory_to_clean)
 
         schema = ds.dataset(parquet_paths).schema
         geometry_columns = _geoparquet_guess_geometry_columns(schema)
@@ -513,6 +566,42 @@ class GeoDataTable(ParquetDataTable):
             parquet_paths=[Path(p) for p in parquet_path],
             index_column_names=index_column_names,
             persist_files=persist_files,
+            sort_geometries=sort_geometries,
+            sort_extent=sort_extent,
+        )
+
+    @classmethod
+    def from_parquet_directory(
+        cls,
+        directory_path: Union[Path, str],
+        index_column_names: Optional[Union[str, Iterable[str]]] = None,
+        persist_files: bool = False,
+        sort_geometries: bool = False,
+        sort_extent: Optional[tuple[float, float, float, float]] = None,
+    ) -> "GeoDataTable":
+        """
+        Create ParquetDataTable object from parquet files.
+
+        Args:
+            directory_path (Union[Path, str]): Path to the directory of parquet files..
+            index_column_names (Optional[Union[str, Iterable[str]]]): Index column name or names.
+            persist_files (bool, optional): Whether to keep the files after object removal or
+                delete them from disk. Defaults to False.
+            sort_geometries (bool, optional): Whether to sort geometries to keep geometries
+                organized. Defaults to True.
+            sort_extent (Optional[tuple[float, float, float, float]], optional): Extent to use
+                in the ST_Hilbert sorting. Defaults to None.
+
+        Returns:
+            GeoDataTable: Created object.
+        """
+        directory_path = Path(directory_path)
+        print(sorted(directory_path.glob("**/*.parquet")))
+        return cls(
+            parquet_paths=sorted(directory_path.glob("**/*.parquet")),
+            index_column_names=index_column_names,
+            persist_files=persist_files,
+            directory_to_clean=directory_path,
             sort_geometries=sort_geometries,
             sort_extent=sort_extent,
         )

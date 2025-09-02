@@ -11,6 +11,7 @@ References:
 import tempfile
 import warnings
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 from functools import partial
 from itertools import product
 from math import ceil
@@ -149,7 +150,6 @@ class ContextualCountEmbedder(CountEmbedder):
 
     def _iterate_parquet_data(self, counts_pdt: ParquetDataTable) -> ParquetDataTable:
         total_rows = counts_pdt.rows
-        current_file_idx = 0
         current_offset = 0
         current_limit = 10_000_000
 
@@ -159,7 +159,6 @@ class ContextualCountEmbedder(CountEmbedder):
             ParquetDataTable.get_directory() / f"{result_dir_name}_{embedding_type}_embeddings"
         )
         result_dir_path.mkdir(parents=True, exist_ok=True)
-        saved_result_files = []
 
         with tqdm(
             total=total_rows,
@@ -168,7 +167,8 @@ class ContextualCountEmbedder(CountEmbedder):
         ) as pbar:
             while current_offset < total_rows:
                 try:
-                    current_result_file_path = result_dir_path / f"{current_file_idx}.parquet"
+                    timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                    current_result_file_path = result_dir_path / f"{timestr}.parquet"
                     process = WorkerProcess(
                         target=_parse_single_batch,
                         kwargs=dict(
@@ -186,9 +186,6 @@ class ContextualCountEmbedder(CountEmbedder):
                     )
                     run_process_with_memory_monitoring(process)
 
-                    saved_result_files.append(current_result_file_path)
-
-                    current_file_idx += 1
                     current_offset += current_limit
                     pbar.n = min(current_offset, total_rows)
                     pbar.refresh()
@@ -204,8 +201,8 @@ class ContextualCountEmbedder(CountEmbedder):
                         stacklevel=1,
                     )
 
-        return ParquetDataTable.from_parquet(
-            parquet_path=saved_result_files, index_column_names=counts_pdt.index_name
+        return ParquetDataTable.from_parquet_directory(
+            directory_path=result_dir_path, index_column_names=counts_pdt.index_name
         )
 
 
