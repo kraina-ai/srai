@@ -1,6 +1,7 @@
 """Tests for AdjacencyNeighbourhood."""
 
 import geopandas as gpd
+import pandas as pd
 import pytest
 from shapely import geometry
 
@@ -88,6 +89,53 @@ def rounded_regions_fixture() -> gpd.GeoDataFrame:
     return regions
 
 
+@pytest.fixture  # type: ignore
+def squares_regions_multiindex_fixture() -> gpd.GeoDataFrame:
+    """
+    Get 9 square regions.
+
+    This GeoDataFrame represents 9 squares on a cartesian plane in a 3 by 3 grid pattern. Squares
+    are adjacent by edges and by vertices. Squares are given compass directions. Visually it looks
+    like this ("C" means "CENTER"):
+
+    [["NW", "N", "NE"],
+     [ "W", "C",  "E"],
+     ["SW", "S", "SE"]]
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame containing square regions.
+    """
+    regions = gpd.GeoDataFrame(
+        geometry=[
+            geometry.box(minx=0, maxx=1, miny=0, maxy=1),
+            geometry.box(minx=1, maxx=2, miny=0, maxy=1),
+            geometry.box(minx=2, maxx=3, miny=0, maxy=1),
+            geometry.box(minx=0, maxx=1, miny=1, maxy=2),
+            geometry.box(minx=1, maxx=2, miny=1, maxy=2),
+            geometry.box(minx=2, maxx=3, miny=1, maxy=2),
+            geometry.box(minx=0, maxx=1, miny=2, maxy=3),
+            geometry.box(minx=1, maxx=2, miny=2, maxy=3),
+            geometry.box(minx=2, maxx=3, miny=2, maxy=3),
+        ],
+        index=pd.MultiIndex.from_tuples(
+            [
+                ("SW", 0),
+                ("S", 1),
+                ("SE", 2),
+                ("W", 3),
+                ("CENTER", 4),
+                ("E", 5),
+                ("NW", 6),
+                ("N", 7),
+                ("NE", 8),
+            ],
+            names=["direction", "id"],
+        ),  # compass directions
+        crs=WGS84_CRS,
+    )
+    return regions
+
+
 def test_no_geometry_gdf_attribute_error(no_geometry_gdf: gpd.GeoDataFrame) -> None:
     """Test checks if GeoDataFrames without geometry are disallowed."""
     with pytest.raises(ValueError):
@@ -116,26 +164,6 @@ def test_lazy_loading_empty_set_include_center(squares_regions_fixture: gpd.GeoD
     """Test checks if lookup table is empty after init."""
     neighbourhood = AdjacencyNeighbourhood(squares_regions_fixture, include_center=True)
     assert not neighbourhood.lookup
-
-
-def test_adjacency_lazy_loading(rounded_regions_fixture: gpd.GeoDataFrame) -> None:
-    """Test checks if lookup table is lazily populated."""
-    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture)
-    neighbours = neighbourhood.get_neighbours("SW")
-    assert neighbours == {"W", "S"}
-    assert neighbourhood.lookup == {
-        "SW": {"W", "S"},
-    }
-
-
-def test_adjacency_lazy_loading_include_center(rounded_regions_fixture: gpd.GeoDataFrame) -> None:
-    """Test checks if lookup table is lazily populated."""
-    neighbourhood = AdjacencyNeighbourhood(rounded_regions_fixture, include_center=True)
-    neighbours = neighbourhood.get_neighbours("SW")
-    assert neighbours == {"W", "S", "SW"}
-    assert neighbourhood.lookup == {
-        "SW": {"W", "S", "SW"},
-    }
 
 
 def test_generate_all_neighbourhoods_rounded_regions(
@@ -173,6 +201,34 @@ def test_generate_all_neighbourhoods_squares_regions(
         "NW": {"W", "N", "CENTER"},
         "N": {"W", "CENTER", "E", "NW", "NE"},
         "NE": {"E", "N", "CENTER"},
+    }
+
+
+def test_generate_all_neighbourhoods_squares_multiindex_regions(
+    squares_regions_multiindex_fixture: gpd.GeoDataFrame,
+) -> None:
+    """Test checks `generate_neighbourhoods` function with square regions."""
+    neighbourhood = AdjacencyNeighbourhood(squares_regions_multiindex_fixture)
+    neighbourhood.generate_neighbourhoods()
+    assert neighbourhood.lookup == {
+        ("SW", 0): {("W", 3), ("S", 1), ("CENTER", 4)},
+        ("S", 1): {("SW", 0), ("W", 3), ("CENTER", 4), ("SE", 2), ("E", 5)},
+        ("SE", 2): {("E", 5), ("S", 1), ("CENTER", 4)},
+        ("W", 3): {("N", 7), ("SW", 0), ("S", 1), ("CENTER", 4), ("NW", 6)},
+        ("CENTER", 4): {
+            ("SW", 0),
+            ("N", 7),
+            ("W", 3),
+            ("S", 1),
+            ("SE", 2),
+            ("E", 5),
+            ("NW", 6),
+            ("NE", 8),
+        },
+        ("E", 5): {("N", 7), ("S", 1), ("CENTER", 4), ("SE", 2), ("NE", 8)},
+        ("NW", 6): {("W", 3), ("N", 7), ("CENTER", 4)},
+        ("N", 7): {("W", 3), ("CENTER", 4), ("E", 5), ("NW", 6), ("NE", 8)},
+        ("NE", 8): {("E", 5), ("N", 7), ("CENTER", 4)},
     }
 
 

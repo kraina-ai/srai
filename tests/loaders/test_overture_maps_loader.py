@@ -100,7 +100,7 @@ def test_overture_maps_loader(
         hierarchy_depth=hierarchy_depth,
         places_minimal_confidence=places_confidence_score,
     )
-    result = loader.load(area=test_geometries, ignore_cache=True)
+    result = loader.load(area=test_geometries, ignore_cache=True).to_geodataframe()
 
     assert len(result) == expected_result_length, (
         f"Mismatched result length ({len(result)}, {expected_result_length})"

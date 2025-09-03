@@ -25,11 +25,11 @@ import_optional_dependencies(dependency_group="plotting", modules=["folium", "pl
 
 def plot_regions(
     regions_gdf: gpd.GeoDataFrame,
-    tiles_style: str = "OpenStreetMap",
+    tiles: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.qualitative.Bold,
-    map: Optional[folium.Map] = None,
+    m: Optional[folium.Map] = None,
     show_borders: bool = True,
 ) -> folium.Map:
     """
@@ -37,14 +37,14 @@ def plot_regions(
 
     Args:
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
             Defaults to `px.colors.qualitative.Bold` from plotly library.
-        map (folium.Map, optional): Existing map instance on which to draw the plot.
+        m (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
         show_borders (bool, optional): Whether to show borders between regions or not.
             Defaults to True.
@@ -55,14 +55,14 @@ def plot_regions(
     return regions_gdf.reset_index().explore(
         column=REGIONS_INDEX,
         tooltip=REGIONS_INDEX,
-        tiles=tiles_style,
+        tiles=tiles,
         height=height,
         width=width,
         legend=False,
         cmap=colormap,
         categorical=True,
         style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.5),
-        m=map,
+        m=m,
     )
 
 
@@ -70,11 +70,11 @@ def plot_numeric_data(
     regions_gdf: gpd.GeoDataFrame,
     data_column: str,
     embedding_df: Optional[Union[pd.DataFrame, gpd.GeoDataFrame]] = None,
-    tiles_style: str = "CartoDB positron",
+    tiles: str = "CartoDB positron",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.sequential.Sunsetdark,
-    map: Optional[folium.Map] = None,
+    m: Optional[folium.Map] = None,
     show_borders: bool = False,
     opacity: float = 0.8,
 ) -> folium.Map:
@@ -86,14 +86,14 @@ def plot_numeric_data(
         embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame], optional): Region indexes and numerical
             data to plot. If not provided, will use regions_gdf.
         data_column (str): Name of the column used to colour the regions.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "CartoDB positron".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
             Defaults to px.colors.sequential.Sunsetdark.
-        map (folium.Map, optional): Existing map instance on which to draw the plot.
+        m (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
         show_borders (bool, optional): Whether to show borders between regions or not.
             Defaults to False.
@@ -122,14 +122,14 @@ def plot_numeric_data(
     return regions_gdf_copy.reset_index().explore(
         column="value",
         tooltip=[REGIONS_INDEX, "value"],
-        tiles=tiles_style,
+        tiles=tiles,
         height=height,
         width=width,
         legend=True,
         cmap=colormap,
         categorical=False,
         style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=opacity),
-        m=map,
+        m=m,
     )
 
 
@@ -137,10 +137,10 @@ def plot_neighbours(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
     neighbours_ids: set[IndexType],
-    tiles_style: str = "OpenStreetMap",
+    tiles: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
-    map: Optional[folium.Map] = None,
+    m: Optional[folium.Map] = None,
     show_borders: bool = True,
 ) -> folium.Map:
     """
@@ -150,12 +150,12 @@ def plot_neighbours(
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbours_ids (Set[IndexType]): List of neighbours to highlight.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
-        map (folium.Map, optional): Existing map instance on which to draw the plot.
+        m (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
         show_borders (bool, optional): Whether to show borders between regions or not.
             Defaults to True.
@@ -173,7 +173,7 @@ def plot_neighbours(
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=REGIONS_INDEX,
-        tiles=tiles_style,
+        tiles=tiles,
         height=height,
         width=width,
         cmap=[
@@ -184,7 +184,7 @@ def plot_neighbours(
         categorical=True,
         categories=["selected", "neighbour", "other"],
         style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
-        m=map,
+        m=m,
     )
 
 
@@ -193,11 +193,11 @@ def plot_all_neighbourhood(
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
     neighbourhood_max_distance: int = 100,
-    tiles_style: str = "OpenStreetMap",
+    tiles: str = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.sequential.Agsunset_r,
-    map: Optional[folium.Map] = None,
+    m: Optional[folium.Map] = None,
     show_borders: bool = True,
 ) -> folium.Map:
     """
@@ -211,14 +211,14 @@ def plot_all_neighbourhood(
         neighbourhood_max_distance (int, optional): Max distance for rendering neighbourhoods.
             Neighbours farther away won't be coloured, and will be left as "other" regions.
             Defaults to 100.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles (str, optional): Map style background. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the neighbourhoods.
             Defaults to `px.colors.sequential.Agsunset_r` from plotly library.
-        map (folium.Map, optional): Existing map instance on which to draw the plot.
+        m (folium.Map, optional): Existing map instance on which to draw the plot.
             Defaults to None.
         show_borders (bool, optional): Whether to show borders between regions or not.
             Defaults to True.
@@ -238,11 +238,13 @@ def plot_all_neighbourhood(
         regions_gdf.index
     )
     while neighbours_ids and distance <= neighbourhood_max_distance:
-        regions_gdf_copy.loc[list(neighbours_ids), "region"] = distance
+        regions_gdf_copy.loc[list(neighbours_ids), "region"] = str(distance)
         distance += 1
         neighbours_ids = neighbourhood.get_neighbours_at_distance(region_id, distance).intersection(
             regions_gdf.index
         )
+
+    categories = ["selected", *list(map(str, range(distance)))[1:], "other"]
 
     if not isinstance(colormap, str):
         colormap = _generate_colormap(
@@ -252,15 +254,15 @@ def plot_all_neighbourhood(
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=[REGIONS_INDEX, "region"],
-        tiles=tiles_style,
+        tiles=tiles,
         height=height,
         width=width,
         cmap=colormap,
         categorical=True,
-        categories=["selected", *list(range(distance))[1:], "other"],
+        categories=categories,
         style_kwds=dict(color="#444", opacity=0.5 if show_borders else 0, fillOpacity=0.8),
         legend=distance <= 11,
-        m=map,
+        m=m,
     )
 
 

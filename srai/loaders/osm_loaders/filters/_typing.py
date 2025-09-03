@@ -99,13 +99,11 @@ def _merge_multiple_osm_tags_filters(osm_tags_filters: Iterable[OsmTagsFilter]) 
     Returns:
         osm_tags_type: Merged filter.
     """
-    if not is_expected_type(osm_tags_filters, Iterable[OsmTagsFilter]):
-        raise ValueError(
-            "Provided filter doesn't match required `Iterable[OsmTagsFilter]` definition."
-        )
-
     result: OsmTagsFilter = {}
     for osm_tags_filter in osm_tags_filters:
+        if not is_expected_type(osm_tags_filter, OsmTagsFilter):
+            raise ValueError("Provided filter doesn't match required `OsmTagsFilter` definition.")
+
         for osm_tag_key, osm_tag_value in osm_tags_filter.items():
             if osm_tag_key not in result:
                 result[osm_tag_key] = []

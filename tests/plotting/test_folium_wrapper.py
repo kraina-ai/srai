@@ -12,7 +12,7 @@ def test_wroclaw_neighbourhood_edge_case() -> None:
     regions_gdf = H3Regionalizer(8).transform(gdf_wro)
     neighbourhood_with_regions = H3Neighbourhood(regions_gdf)
 
-    edge_region_id = "881e2050bdfffff"
+    edge_region_id = 613019535601041407
     neighbours_ids = neighbourhood_with_regions.get_neighbours(edge_region_id)
 
     plot_neighbours(regions_gdf, edge_region_id, neighbours_ids)
