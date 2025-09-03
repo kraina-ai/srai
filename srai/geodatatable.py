@@ -647,7 +647,7 @@ class GeoDataTable(ParquetDataTable):
                 GEOMETRY_COLUMN,
                 as_geoarrow(tbl[GEOMETRY_COLUMN]),
             )
-            gdf = gpd.GeoDataFrame.from_arrow(tbl, geometry=GEOMETRY_COLUMN)
+            gdf = gpd.GeoDataFrame.from_arrow(tbl, geometry=GEOMETRY_COLUMN).set_crs(WGS84_CRS)
 
         if self.index_column_names is not None:
             gdf.set_index(self.index_column_names, inplace=True)
