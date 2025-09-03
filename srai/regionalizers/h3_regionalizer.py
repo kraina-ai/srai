@@ -17,16 +17,11 @@ import tempfile
 from pathlib import Path
 
 import duckdb
-from rq_geo_toolkit.constants import (
-    PARQUET_COMPRESSION,
-    PARQUET_COMPRESSION_LEVEL,
-    PARQUET_ROW_GROUP_SIZE,
-)
-from rq_geo_toolkit.duckdb import DUCKDB_ABOVE_130, run_query_with_memory_monitoring
+from rq_geo_toolkit.duckdb import DUCKDB_ABOVE_130
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
-from srai.duckdb import prepare_duckdb_extensions
-from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, ParquetDataTable, prepare_geo_input
+from srai.duckdb import prepare_duckdb_extensions, relation_to_parquet
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
 from srai.regionalizers import Regionalizer
 
 
@@ -114,25 +109,15 @@ class H3Regionalizer(Regionalizer):
             FROM h3_cells
             """
 
-            result_file_name = ParquetDataTable.generate_filename()
+            result_file_name = GeoDataTable.generate_filename()
             result_parquet_path = (
-                ParquetDataTable.get_directory() / f"{result_file_name}_regions.parquet"
+                GeoDataTable.get_directory() / f"{result_file_name}_regions.parquet"
             )
-            result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
-            save_query = f"""
-            COPY ({h3_coverage_query}) TO '{result_parquet_path}' (
-                FORMAT parquet,
-                COMPRESSION {PARQUET_COMPRESSION},
-                COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
-                ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
-            );
-            """
-
-            run_query_with_memory_monitoring(
-                sql_query=save_query,
+            relation_to_parquet(
+                relation=h3_coverage_query,
+                result_parquet_path=result_parquet_path,
                 connection=connection,
-                preserve_insertion_order=True,
             )
 
             return GeoDataTable.from_parquet(

@@ -2,9 +2,15 @@
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import duckdb
+from rq_geo_toolkit.constants import (
+    PARQUET_COMPRESSION,
+    PARQUET_COMPRESSION_LEVEL,
+    PARQUET_ROW_GROUP_SIZE,
+)
+from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring
 
 
 def prepare_duckdb_extensions(connection: Optional[duckdb.DuckDBPyConnection] = None) -> None:
@@ -38,3 +44,43 @@ def relation_from_parquet_paths(
         return connection.sql(sql_query)
 
     return duckdb.sql(sql_query)
+
+
+def relation_to_parquet(
+    relation: Union[str, duckdb.DuckDBPyRelation],
+    result_parquet_path: Path,
+    connection: Optional[duckdb.DuckDBPyConnection] = None,
+    tmp_dir_path: Optional[Path] = None,
+) -> None:
+    """
+    Save SQL query to parquet file.
+
+    Will run in external process or use existing DuckDB connection.
+
+    Args:
+        relation (Union[str, duckdb.DuckDBPyRelation]): Relation or SQL query to be saved.
+        result_parquet_path (Path): Location where to save parquet file.
+        connection (duckdb.DuckDBPyConnection, optional): Existing connection to reuse.
+            Defaults to None.
+        tmp_dir_path (Path, optional): Directory where to create a new DuckDB connection.
+            Defaults to None.
+    """
+    result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
+
+    sql_query = relation if isinstance(relation, str) else relation.sql_query()
+
+    save_query = f"""
+    COPY ({sql_query}) TO '{result_parquet_path}' (
+        FORMAT parquet,
+        COMPRESSION {PARQUET_COMPRESSION},
+        COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
+        ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
+    );
+    """
+
+    run_query_with_memory_monitoring(
+        sql_query=save_query,
+        connection=connection,
+        tmp_dir_path=tmp_dir_path,
+        preserve_insertion_order=True,
+    )

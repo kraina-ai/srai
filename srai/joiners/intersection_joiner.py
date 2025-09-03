@@ -9,15 +9,9 @@ from pathlib import Path
 from typing import Literal, Union, cast, overload
 
 import duckdb
-from rq_geo_toolkit.constants import (
-    PARQUET_COMPRESSION,
-    PARQUET_COMPRESSION_LEVEL,
-    PARQUET_ROW_GROUP_SIZE,
-)
-from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
-from srai.duckdb import prepare_duckdb_extensions
+from srai.duckdb import prepare_duckdb_extensions, relation_to_parquet
 from srai.geodatatable import (
     VALID_GEO_INPUT,
     GeoDataTable,
@@ -111,6 +105,7 @@ class IntersectionJoiner(Joiner):
             ParquetDataTable or GeoDataTable with an intersection of regions and features,
             which contains a MultiIndex and optionaly a geometry with the intersection.
         """
+        base_datatable_class = GeoDataTable if return_geom else ParquetDataTable
         with (
             tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
             duckdb.connect(
@@ -148,28 +143,18 @@ class IntersectionJoiner(Joiner):
             ON ST_Intersects(regions.geometry, features.geometry)
             """
 
-            result_file_name = ParquetDataTable.generate_filename()
+            result_file_name = base_datatable_class.generate_filename()
             result_parquet_path = (
-                ParquetDataTable.get_directory() / f"{result_file_name}_joint.parquet"
+                base_datatable_class.get_directory() / f"{result_file_name}_joint.parquet"
             )
-            result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
-            save_query = f"""
-            COPY ({joined_query}) TO '{result_parquet_path}' (
-                FORMAT parquet,
-                COMPRESSION {PARQUET_COMPRESSION},
-                COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
-                ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
-            );
-            """
-
-            run_query_with_memory_monitoring(
-                sql_query=save_query,
+            relation_to_parquet(
+                relation=joined_query,
+                result_parquet_path=result_parquet_path,
                 tmp_dir_path=tmp_dir_path,
-                preserve_insertion_order=True,
             )
 
-            return (GeoDataTable if return_geom else ParquetDataTable).from_parquet(
+            return base_datatable_class.from_parquet(
                 result_parquet_path,
                 index_column_names=regions_index_column_names + features_index_column_names,
             )

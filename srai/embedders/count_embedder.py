@@ -10,15 +10,11 @@ from typing import Optional, Union, cast
 import duckdb
 import pandas as pd
 import polars as pl
-from rq_geo_toolkit.constants import (
-    PARQUET_COMPRESSION,
-    PARQUET_COMPRESSION_LEVEL,
-    PARQUET_ROW_GROUP_SIZE,
-)
-from rq_geo_toolkit.duckdb import run_query_with_memory_monitoring, sql_escape
+from rq_geo_toolkit.duckdb import sql_escape
 
 from srai._typing import is_expected_type
 from srai.constants import GEOMETRY_COLUMN
+from srai.duckdb import relation_to_parquet
 from srai.embedders import Embedder
 from srai.geodatatable import (
     VALID_DATA_INPUT,
@@ -250,7 +246,6 @@ class CountEmbedder(Embedder):
         result_parquet_path = (
             ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
         )
-        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         select_clauses = []
         for col in feature_columns:
@@ -259,7 +254,7 @@ class CountEmbedder(Embedder):
                 f'COALESCE(joint."{escaped_column_name}", 0)::INT AS "{escaped_column_name}"'
             )
 
-        joined_query = f"""
+        joined_query = duckdb.sql(f"""
         SELECT
             regions.{regions_index_name},
             {", ".join(select_clauses)}
@@ -267,21 +262,12 @@ class CountEmbedder(Embedder):
         LEFT JOIN ({region_embeddings.sql_query()}) joint
         ON {region_joint_join_clause}
         ORDER BY regions.row_number
-        """
+        """)
 
-        save_query = f"""
-        COPY ({joined_query}) TO '{result_parquet_path}' (
-            FORMAT parquet,
-            COMPRESSION {PARQUET_COMPRESSION},
-            COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
-            ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
-        );
-        """
-
-        run_query_with_memory_monitoring(
-            sql_query=save_query,
+        relation_to_parquet(
+            relation=joined_query,
+            result_parquet_path=result_parquet_path,
             tmp_dir_path=result_parquet_path.parent,
-            preserve_insertion_order=True,
         )
 
         return ParquetDataTable.from_parquet(
