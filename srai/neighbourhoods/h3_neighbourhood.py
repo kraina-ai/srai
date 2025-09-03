@@ -6,10 +6,10 @@ This module contains the H3Neighbourhood class, that allows to get the neighbour
 
 from typing import Generic, Optional, TypeVar
 
-import geopandas as gpd
 import h3.api.basic_int as h3int
 import h3.api.basic_str as h3str
 
+from srai.geodatatable import GeoDataTable
 from srai.neighbourhoods import Neighbourhood
 
 H3IndexGenericType = TypeVar("H3IndexGenericType", int, str)
@@ -23,20 +23,20 @@ class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericT
     """
 
     def __init__(
-        self, regions_gdf: Optional[gpd.GeoDataFrame] = None, include_center: bool = False
+        self, regions: Optional[GeoDataTable] = None, include_center: bool = False
     ) -> None:
         """
         Initializes the H3Neighbourhood.
 
-        If a regions GeoDataFrame is provided, only the neighbours
-        that are in the regions GeoDataFrame will be returned by the methods of this instance.
+        If a regions GeoDataTable is provided, only the neighbours
+        that are in the regions GeoDataTable will be returned by the methods of this instance.
         NOTICE: If a region is a part of the k-th ring of a region
-            and is included in the GeoDataFrame, it will be returned
+            and is included in the GeoDataTable, it will be returned
             by get_neighbours_at_distance method with distance k
             even when there is no path of length k between the two regions.
 
         Args:
-            regions_gdf (Optional[gpd.GeoDataFrame], optional): The regions that are being analyzed.
+            regions (Optional[GeoDataTable], optional): The regions that are being analyzed.
                 The H3Neighbourhood will only look for neighbours among these regions.
                 Defaults to None.
             include_center (bool): Whether to include the region itself in the neighbours.
@@ -45,8 +45,11 @@ class H3Neighbourhood(Neighbourhood[H3IndexGenericType], Generic[H3IndexGenericT
         """
         super().__init__(include_center)
         self._available_indices: Optional[set[H3IndexGenericType]] = None
-        if regions_gdf is not None:
-            self._available_indices = set(regions_gdf.index)
+        if regions is not None:
+            index_name = regions.index_name
+            self._available_indices = set(
+                regions.to_duckdb().select(index_name).fetchnumpy()[index_name]
+            )
 
     def get_neighbours(
         self, index: H3IndexGenericType, include_center: Optional[bool] = None
