@@ -19,6 +19,11 @@ POINTS_COLUMN_NAME = "points"
 
 # NOTE: Add option to create k-folds
 
+__all__ = [
+    "train_test_spatial_split",
+    "spatial_split_points",
+]
+
 
 def train_test_spatial_split(
     input_gdf: gpd.GeoDataFrame,
