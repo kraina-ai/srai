@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2025-09-04
+
 ### Added
 
 - New spatial splitting logic for machine learning model training
@@ -424,7 +426,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.7...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.8...HEAD
+
+[0.9.8]: https://github.com/kraina-ai/srai/compare/0.9.7...0.9.8
 
 [0.9.7]: https://github.com/kraina-ai/srai/compare/0.9.6...0.9.7
 
