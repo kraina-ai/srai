@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Added `__all__` const to spatial split module
+
 ## [0.9.8] - 2025-09-04
 
 ### Added
