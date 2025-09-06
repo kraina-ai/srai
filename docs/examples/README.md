@@ -16,3 +16,7 @@ Library API
 * [Loaders](./loaders)
 * [Neighbourhoods](./neighbourhoods)
 * [Regionalizers](./regionalizers)
+
+---
+
+[Datasets for Open Benchmark for Spatial Representations (OBSR)](./datasets)
