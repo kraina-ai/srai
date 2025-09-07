@@ -4,17 +4,29 @@ Geolife dataset loader.
 This module contains Geolife Dataset.
 """
 
-from collections import Counter
+import csv
+import os
+from pathlib import Path
 from typing import Optional, Union
+from urllib.request import urlopen
+from zipfile import ZipFile
 
 import geopandas as gpd
 import h3
 import numpy as np
 import pandas as pd
+import platformdirs
+import pyarrow as pa
+import pyarrow.feather as feather
 from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
 from srai.datasets import TrajectoryDataset
+
+LNG_MIN = 73.33
+LNG_MAX = 135.05
+LAT_MIN = 20.14
+LAT_MAX = 53.55
 
 
 class GeolifeDataset(TrajectoryDataset):
@@ -38,6 +50,178 @@ class GeolifeDataset(TrajectoryDataset):
             categorical_columns=categorical_columns,
             target=target,
         )
+
+    def _get_global_geolife_cache_path(self) -> Path:
+        """
+        Get the root cache directory for the Geolife dataset.
+
+        Returns:
+            Path: Path object pointing to the user-specific cache directory where
+                the Geolife dataset should be stored.
+        """
+        return Path(platformdirs.user_cache_dir("SRAI")) / "geolife"
+
+    def _download_geolife(self, raw_data_path: Path) -> None:
+        """
+        Download and extract the Geolife dataset if not already cached.
+
+        - Downloads a ZIP archive from the official Microsoft Geolife source.
+        - Shows tqdm progress bars for both the download and extraction steps.
+        - Skips download if the dataset already exists in the cache.
+
+        Args:
+            raw_data_path (Path): Directory path where the raw dataset should be\
+                downloaded and extracted.
+        """
+        if not raw_data_path.exists():
+            os.makedirs(raw_data_path, exist_ok=True)
+
+            url = "https://download.microsoft.com/download/F/4/8/F4894AA5-FDBC-481E-9285-D5F8C4C4F039/Geolife%20Trajectories%201.3.zip"
+            zip_path = raw_data_path / "geolife.zip"
+
+            # --- Download with progress ---
+            with urlopen(url) as response:
+                file_size = int(response.headers.get("Content-Length", 0))
+                chunk_size = 1024 * 1024  # 1 MB
+
+                with (
+                    open(zip_path, "wb") as f,
+                    tqdm(
+                        total=file_size,
+                        unit="B",
+                        unit_scale=True,
+                        desc="Downloading Geolife",
+                    ) as pbar,
+                ):
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+
+            # --- Extract with progress ---
+            with ZipFile(zip_path) as zfile:
+                members = zfile.namelist()
+                for member in tqdm(members, desc="Extracting Geolife"):
+                    zfile.extract(member, raw_data_path)
+
+        else:
+            print("Geolife data already exists in cache. Download skipped.")
+
+    def _geolife_clean_plt(
+        self, root: str, user_id: str, input_filepath: str, traj_id: int
+    ) -> list[list[str]]:
+        """
+        Clean header of a Geolife .plt file and prepend metadata.
+
+        Args:
+            root (str): Root path of the Geolife dataset directory.
+            user_id (str): Identifier of the user (subdirectory name).
+            input_filepath (str): File name of the trajectory (.plt) to process.
+            traj_id (int): Numeric trajectory identifier to prepend.
+
+        Returns:
+            list[list[str]]: Rows of the .plt file with user_id and trajectory_id prepended.
+        """
+        with open(f"{root}/{user_id}/Trajectory/{input_filepath}") as fin:
+            cr = csv.reader(fin)
+            filecontents = [line for line in cr][6:]
+            for f in filecontents:
+                f.insert(0, str(traj_id))
+                f.insert(0, str(user_id))
+        return filecontents
+
+    def _geolife_data_to_df(self, geolife_dir: str) -> pd.DataFrame:
+        """
+        Convert raw Geolife user directories into a preprocessed DataFrame.
+
+        Args:
+            geolife_dir (str): Path to the root `Data` directory containing user subdirectories.
+
+        Returns:
+            pd.DataFrame : DataFrame containing all trajectories with columns:
+                [user_id, trajectory_id, latitude, longitude, -, altitude, dayNo, date, time].
+        """
+        data = []
+        col_names = [
+            "user_id",
+            "trajectory_id",
+            "latitude",
+            "longitude",
+            "-",
+            "altitude",
+            "dayNo",
+            "date",
+            "time",
+        ]
+        user_id_dirs = [
+            name
+            for name in os.listdir(geolife_dir)
+            if os.path.isdir(os.path.join(geolife_dir, name))
+        ]
+
+        with tqdm(total=len(user_id_dirs), desc="Preprocessing Geolife data") as pbar:
+            for user_id in np.sort(user_id_dirs):
+                subdirs = [
+                    item
+                    for item in os.listdir(f"{geolife_dir}/{user_id}/Trajectory")
+                    if not item.endswith(".DS_Store")
+                ]
+                traj_id = 0
+                for subdir in subdirs:
+                    data += self._geolife_clean_plt(geolife_dir, user_id, subdir, traj_id)
+                    traj_id += 1
+                pbar.update()
+
+        return pd.DataFrame(data, columns=col_names)
+
+    def _geolife_preprocess(self, raw_data_path: Path, processed_path: Path) -> None:
+        """
+        Preprocess the Geolife dataset into a single Arrow file in the cache.
+
+        - Converts date and time into a unified datetime column.
+        - Normalizes timezone to Asia/Shanghai and removes timezone info.
+        - Converts datetime to UNIX timestamps.
+        - Filters trajectories outside valid latitude/longitude bounds.
+        - Saves as an Apache Arrow file for efficient reuse.
+
+        Args:
+            raw_data_path (Path): Directory where the raw Geolife data was extracted.
+            processed_path (Path): Directory where the processed Arrow file will be saved.
+        """
+        arrow_path = processed_path / "geolife.arrow"
+        if arrow_path.exists():
+            print("Geolife data already preprocessed. Loading from cache.")
+        else:
+            os.makedirs(processed_path, exist_ok=True)
+            geolife_dir = raw_data_path / "Geolife Trajectories 1.3" / "Data"
+            df = self._geolife_data_to_df(str(geolife_dir))
+
+            df["datetime"] = pd.to_datetime(df.date + " " + df.time)
+            df.drop(["date", "time"], inplace=True, axis=1)
+
+            # fix datetime timezone
+            df["datetime"] = (
+                df["datetime"]
+                .dt.tz_localize("GMT")
+                .dt.tz_convert("Asia/Shanghai")
+                .dt.tz_localize(None)
+            )
+            df["timestamp"] = df["datetime"].astype("int64") // 10**9
+
+            df.latitude = df.latitude.astype(float)
+            df.longitude = df.longitude.astype(float)
+
+            df = df[
+                (df.latitude > LAT_MIN)
+                & (df.latitude < LAT_MAX)
+                & (df.longitude > LNG_MIN)
+                & (df.longitude < LNG_MAX)
+            ]
+
+            table = pa.Table.from_pandas(df, preserve_index=False)
+            feather.write_feather(table, arrow_path)
 
     def _aggregate_trajectories_to_hexes(
         self,
@@ -83,14 +267,14 @@ class GeolifeDataset(TrajectoryDataset):
             coords = row.geometry.coords
             altitudes = row["altitude"]
             timestamps = row["timestamp"]
-            mode = row["mode"]
+            # mode = row["mode"]
 
             duration = (timestamps[-1] - timestamps[0]).total_seconds()
 
             raw_h3_seq = []
             hex_metadata = []
 
-            for (lon, lat), alt, ts, m in zip(coords, altitudes, timestamps, mode):
+            for (lon, lat), alt, ts in zip(coords, altitudes, timestamps):
                 hex_id = h3.latlng_to_cell(lat, lon, resolution)
                 raw_h3_seq.append(hex_id)
                 hex_metadata.append(
@@ -98,7 +282,7 @@ class GeolifeDataset(TrajectoryDataset):
                         "hex_id": hex_id,
                         "altitude": alt,
                         "timestamp": ts,
-                        "mode": m,
+                        # "mode": m,
                     }
                 )
 
@@ -112,14 +296,14 @@ class GeolifeDataset(TrajectoryDataset):
             full_seq: list[str] = []
             altitude_interp: list[float] = []
             timestamps_interp: list[pd.Timestamp] = []
-            mode_interp: list[str] = []
+            # mode_interp: list[str] = []
 
             for i in range(len(cleaned_seq) - 1):
                 start = cleaned_seq[i]
                 end = cleaned_seq[i + 1]
                 last_known_altitude = start["altitude"]
                 last_known_ts = start["timestamp"]
-                last_known_mode = start["mode"]
+                # last_known_mode = start["mode"]
 
                 try:
                     path = h3.grid_path_cells(start["hex_id"], end["hex_id"])
@@ -131,19 +315,19 @@ class GeolifeDataset(TrajectoryDataset):
                             full_seq.append(h)
                             altitude_interp.append(last_known_altitude)
                             timestamps_interp.append(last_known_ts)
-                            mode_interp.append(last_known_mode)
+                            # mode_interp.append(last_known_mode)
                 except Exception:
                     full_seq.append(start["hex_id"])
                     altitude_interp.append(last_known_altitude)
                     timestamps_interp.append(last_known_ts)
-                    mode_interp.append(last_known_mode)
+                    # mode_interp.append(last_known_mode)
 
             # Add last
             last = cleaned_seq[-1]
             full_seq.append(last["hex_id"])
             altitude_interp.append(last["altitude"])
             timestamps_interp.append(last["timestamp"])
-            mode_interp.append(last["mode"])
+            # mode_interp.append(last["mode"])
 
             res = {
                 "user_id": row["user_id"],
@@ -156,7 +340,7 @@ class GeolifeDataset(TrajectoryDataset):
 
             if version == "TTE":
                 res["duration"] = duration
-                res["mode"] = [Counter([m]).most_common(1)[0][0] for m in mode_interp]
+                # res["mode"] = [Counter([m]).most_common(1)[0][0] for m in mode_interp]
             elif version == "HMP":
                 split_idx = int(len(full_seq) * 0.85)
                 if split_idx == len(full_seq):
@@ -164,7 +348,7 @@ class GeolifeDataset(TrajectoryDataset):
                 del res["h3_sequence"]
                 res["h3_sequence_x"] = full_seq[:split_idx]
                 res["h3_sequence_y"] = full_seq[split_idx:]
-                res["mode"] = mode_interp
+                # res["mode"] = mode_interp
 
             return pd.Series(res)
 
@@ -190,13 +374,40 @@ class GeolifeDataset(TrajectoryDataset):
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
 
         Args:
-            data: Data of Geolife dataset.
+            data: Data of Geolife dataset with trajectory indexes.
             version: version of a dataset
 
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
+        cache_root = self._get_global_geolife_cache_path()
+        processed_path = cache_root / "preprocessed"
+        arrow_path = processed_path / "geolife.arrow"
+
+        df_original = feather.read_table(arrow_path).to_pandas()
+        # df_original["unique_id"] = df_original["user_id"].astype(str) + df_original[
+        #     "trajectory_id"
+        # ].astype(str)
+        # valid_ids = set(data["trajectory_id"].unique())
+
+        # df = df_original[df_original["unique_id"].isin(valid_ids)]
+        # df = df.drop_duplicates()
+        # df = df.rename(
+        #     columns={"trajectory_id": "trajectory_id_old", "unique_id": "trajectory_id"}
+        # )
+
+        df_original["trajectory_id"] = df_original["user_id"].astype(str) + df_original[
+            "trajectory_id"
+        ].astype(str)
+        valid_ids = set(data["trajectory_id"].unique())
+
+        df = df_original[df_original["trajectory_id"].isin(valid_ids)]
+        df = df.drop_duplicates()
+        # df = df.rename(
+        #     columns={"trajectory_id": "trajectory_id_old", "unique_id": "trajectory_id"}
+        # )
+
+        # df = data.copy()
         if not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
             df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")  # <- fix here
 
@@ -257,4 +468,12 @@ class GeolifeDataset(TrajectoryDataset):
                 self.resolution = resolution
         else:
             raise NotImplementedError("Version not implemented")
+
+        cache_root = self._get_global_geolife_cache_path()
+        raw_data_path = cache_root / "raw"
+        processed_path = cache_root / "preprocessed"
+
+        self._download_geolife(raw_data_path)
+        self._geolife_preprocess(raw_data_path, processed_path)
+
         return super().load(hf_token=hf_token, version=version)
