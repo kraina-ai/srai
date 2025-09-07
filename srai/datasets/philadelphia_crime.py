@@ -193,8 +193,8 @@ class PhiladelphiaCrimeDataset(PointDataset):
 
         if len(str(self.version)) <= 3:
             print("Splitting into train-test subsets ...")
-            valid_ids = set(data["cartodb_id"].unique())
-            df = df[df["cartodb_id"].isin(valid_ids)]
+            valid_ids = set(data["objectid"].unique())
+            df = df[df["objectid"].isin(valid_ids)]
             df = df.drop_duplicates()
 
         # df = data.copy()
@@ -235,6 +235,7 @@ class PhiladelphiaCrimeDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
+        self.resolution = None
         self.download_data(version=version)
 
         from datasets import load_dataset
