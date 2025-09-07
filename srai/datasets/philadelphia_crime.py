@@ -246,10 +246,10 @@ class PhiladelphiaCrimeDataset(PointDataset):
         dataset_name = self.path
         self.version = str(version)
 
-        if self.resolution is None and version is not None:
+        if self.resolution is None and self.version in ["8", "9", "10"]:
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
-                self.resolution = int(version)
+                self.resolution = int(self.version)
 
         if len(str(version)) <= 3:
             data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
