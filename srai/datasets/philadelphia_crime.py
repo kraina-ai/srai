@@ -203,6 +203,8 @@ class PhiladelphiaCrimeDataset(PointDataset):
             geometry=gpd.points_from_xy(df["lng"], df["lat"]),
             crs=WGS84_CRS,
         )
+
+        gdf = gdf[~gdf.geometry.is_empty]
         # TODO: Add numerical and categorical columns
         # if version in years_previous:
         #     self.numerical_columns = None
