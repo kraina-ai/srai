@@ -4,9 +4,20 @@ Philadelphia Crime dataset loader.
 This module contains Philadelphia Crime Dataset.
 """
 
+import io
+from contextlib import suppress
+from pathlib import Path
 from typing import Optional, Union
+from urllib.parse import quote
+from urllib.request import urlopen
 
 import geopandas as gpd
+import pandas as pd
+import platformdirs
+import pyarrow as pa
+import pyarrow.csv as pv
+from datasets import Dataset
+from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
 from srai.datasets import PointDataset
@@ -37,6 +48,26 @@ class PhiladelphiaCrimeDataset(PointDataset):
         type = "point"
         # target = "text_general_code"
         target = "count"
+        self.base_cache_path = Path(platformdirs.user_cache_dir("SRAI")) / "philladelphia_crime"
+        self.base_cache_path.mkdir(parents=True, exist_ok=True)
+        # URL templates
+        self.url_template_2019_and_below = (
+            "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
+            "&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator"
+            "&q=SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
+            "FROM incidents_part1_part2 "
+            "WHERE dispatch_date_time >= '{year}-01-01' "
+            "AND dispatch_date_time < '{next_year}-01-01'"
+        )
+
+        self.url_template_2020_and_above = (
+            "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
+            "&format=csv&q=SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
+            "FROM incidents_part1_part2 "
+            "WHERE dispatch_date_time >= '{year}-01-01' "
+            "AND dispatch_date_time < '{next_year}-01-01'"
+        )
+
         super().__init__(
             "kraina/philadelphia_crime",
             type=type,
@@ -44,6 +75,96 @@ class PhiladelphiaCrimeDataset(PointDataset):
             categorical_columns=categorical_columns,
             target=target,
         )
+
+    def _get_cache_file(self, version: str) -> Path:
+        """
+        Get the path to the Arrow cache file for a given dataset version (year).
+
+        Args:
+            version (str): Year of the dataset or the resolution (e.g., 8, 9 or 2015, 2019, 2020).
+
+        Returns:
+            Path: Path object pointing to the cached Arrow file for the given version.
+        """
+        return self.base_cache_path / f"{version}.arrow"
+
+    def _make_url(self, year: int) -> str:
+        """
+        Dataset download URL for a given year.
+
+        Args:
+            year (int): Year of the dataset (e.g., 2015, 2019, 2020, 2023).
+
+        Returns:
+            str: Appropriate URL-encoded API endpoint to download the dataset in CSV format.
+        """
+        next_year = year + 1
+
+        if year <= 2019:
+            base = (
+                "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
+                "&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator&q="
+            )
+        else:
+            base = "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2&format=csv&q="
+
+        sql = (
+            f"SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
+            f"FROM incidents_part1_part2 "
+            f"WHERE dispatch_date_time >= '{year}-01-01' "
+            f"AND dispatch_date_time < '{next_year}-01-01'"
+        )
+
+        return base + quote(sql)
+
+    def download_data(self, version: Optional[Union[int, str]] = 2023) -> None:
+        """
+        Download and cache the Philadelphia crime dataset for a given year.
+
+        - If the Arrow cache already exists, the download step is skipped.
+        - Otherwise, the CSV is streamed from the API, converted in-memory to Arrow,
+        and cached for future use.
+
+        Args:
+            version (int): Dataset year to download (e.g., 2013–2023).
+                If given as a short H3 resolution code ('8', '9', '10'),
+                defaults to benchmark splits of the year 2023.
+        """
+        if version is None or len(str(version)) <= 3:
+            version = 2023
+
+        cache_file = self._get_cache_file(str(version))
+
+        if not cache_file.exists():
+            # print(f"Loading cached Arrow file for {version}...")
+            # return pa.ipc.open_file(cache_file).read_all()
+
+            url = self._make_url(int(version))
+
+            print(f"Downloading crime data for {version}...")
+            with urlopen(url) as response:
+                file_size = int(response.headers.get("Content-Length", 0)) or None
+                buffer = io.BytesIO()
+
+                chunk_size = 1024 * 1024  # 1 MB
+                with tqdm(total=file_size, unit="B", unit_scale=True, desc="Downloading") as pbar:
+                    while True:
+                        chunk = response.read(chunk_size)
+                        if not chunk:
+                            break
+                        buffer.write(chunk)
+                        pbar.update(len(chunk))
+
+                buffer.seek(0)  # rewind for reading
+
+            # --- Convert CSV (from memory) to Arrow ---
+            print(f"Converting CSV to Arrow for {version}...")
+            table = pv.read_csv(buffer)
+
+            with pa.OSFile(str(cache_file), "wb") as sink:
+                with pa.ipc.new_file(sink, table.schema) as writer:
+                    writer.write_table(table)
+        # return table
 
     def _preprocessing(
         self, data: gpd.GeoDataFrame, version: Optional[str] = None
@@ -58,7 +179,25 @@ class PhiladelphiaCrimeDataset(PointDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
+        if self.version is None or len(self.version) <= 3:
+            version = "2023"
+        else:
+            version = self.version
+
+        cache_file = self._get_cache_file(str(version))
+        df = pd.DataFrame()
+
+        print(f"Loading cached Arrow file for {version}...")
+        table = pa.ipc.open_file(str(cache_file)).read_all()
+        df = table.to_pandas()
+
+        if len(str(self.version)) <= 3:
+            print("Splitting into train-test subsets ...")
+            valid_ids = set(data["cartodb_id"].unique())
+            df = df[df["cartodb_id"].isin(valid_ids)]
+            df = df.drop_duplicates()
+
+        # df = data.copy()
         gdf = gpd.GeoDataFrame(
             df.drop(["lng", "lat"], axis=1),
             geometry=gpd.points_from_xy(df["lng"], df["lat"]),
@@ -94,4 +233,35 @@ class PhiladelphiaCrimeDataset(PointDataset):
             dict[str, gpd.GeoDataFrame]: Dictionary with all splits loaded from the dataset. Will
                 contain keys "train" and "test" if available.
         """
-        return super().load(hf_token=hf_token, version=version)
+        self.download_data(version=version)
+
+        from datasets import load_dataset
+
+        result = {}
+
+        self.train_gdf, self.val_gdf, self.test_gdf = None, None, None
+        dataset_name = self.path
+        self.version = str(version)
+
+        if self.resolution is None and version is not None:
+            with suppress(ValueError):
+                # Try to parse version as int (e.g. "8" or "9")
+                self.resolution = int(version)
+
+        if len(str(version)) <= 3:
+            data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
+        else:
+            empty_dataset = Dataset.from_pandas(pd.DataFrame())
+            data = {"train": empty_dataset}
+        train = data["train"].to_pandas()
+        processed_train = self._preprocessing(train)
+        self.train_gdf = processed_train
+        result["train"] = processed_train
+        if "test" in data:
+            test = data["test"].to_pandas()
+            processed_test = self._preprocessing(test)
+            self.test_gdf = processed_test
+            result["test"] = processed_test
+
+        return result
+        # return super().load(hf_token=hf_token, version=version)
