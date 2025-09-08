@@ -4,20 +4,15 @@ Philadelphia Crime dataset loader.
 This module contains Philadelphia Crime Dataset.
 """
 
-import io
 from contextlib import suppress
 from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import quote
-from urllib.request import urlopen
 
+import duckdb
 import geopandas as gpd
 import pandas as pd
-import platformdirs
-import pyarrow as pa
-import pyarrow.csv as pv
 from datasets import Dataset
-from tqdm import tqdm
 
 from srai.constants import WGS84_CRS
 from srai.datasets import PointDataset
@@ -48,8 +43,6 @@ class PhiladelphiaCrimeDataset(PointDataset):
         type = "point"
         # target = "text_general_code"
         target = "count"
-        self.base_cache_path = Path(platformdirs.user_cache_dir("SRAI")) / "philladelphia_crime"
-        self.base_cache_path.mkdir(parents=True, exist_ok=True)
         # URL templates
         self.url_template_2019_and_below = (
             "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
@@ -78,15 +71,15 @@ class PhiladelphiaCrimeDataset(PointDataset):
 
     def _get_cache_file(self, version: str) -> Path:
         """
-        Get the path to the Arrow cache file for a given dataset version (year).
+        Get the path to the Parquet cache file for a given dataset version (year).
 
         Args:
             version (str): Year of the dataset or the resolution (e.g., 8, 9 or 2015, 2019, 2020).
 
         Returns:
-            Path: Path object pointing to the cached Arrow file for the given version.
+            Path: Path object pointing to the cached Parquet file for the given version.
         """
-        return self.base_cache_path / f"{version}.arrow"
+        return self._get_global_dataset_cache_path() / f"{version}.parquet"
 
     def _make_url(self, year: int) -> str:
         """
@@ -121,12 +114,12 @@ class PhiladelphiaCrimeDataset(PointDataset):
         """
         Download and cache the Philadelphia crime dataset for a given year.
 
-        - If the Arrow cache already exists, the download step is skipped.
-        - Otherwise, the CSV is streamed from the API, converted in-memory to Arrow,
+        - If the Parquet cache already exists, the download step is skipped.
+        - Otherwise, the CSV is streamed from the API, converted in-memory to Parquet,
         and cached for future use.
 
         Args:
-            version (int): Dataset year to download (e.g., 2013–2023).
+            version (int): Dataset year to download (e.g., 2013-2023).
                 If given as a short H3 resolution code ('8', '9', '10'),
                 defaults to benchmark splits of the year 2023.
         """
@@ -134,37 +127,13 @@ class PhiladelphiaCrimeDataset(PointDataset):
             version = 2023
 
         cache_file = self._get_cache_file(str(version))
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
 
         if not cache_file.exists():
-            # print(f"Loading cached Arrow file for {version}...")
-            # return pa.ipc.open_file(cache_file).read_all()
-
             url = self._make_url(int(version))
 
             print(f"Downloading crime data for {version}...")
-            with urlopen(url) as response:
-                file_size = int(response.headers.get("Content-Length", 0)) or None
-                buffer = io.BytesIO()
-
-                chunk_size = 1024 * 1024  # 1 MB
-                with tqdm(total=file_size, unit="B", unit_scale=True, desc="Downloading") as pbar:
-                    while True:
-                        chunk = response.read(chunk_size)
-                        if not chunk:
-                            break
-                        buffer.write(chunk)
-                        pbar.update(len(chunk))
-
-                buffer.seek(0)  # rewind for reading
-
-            # --- Convert CSV (from memory) to Arrow ---
-            print(f"Converting CSV to Arrow for {version}...")
-            table = pv.read_csv(buffer)
-
-            with pa.OSFile(str(cache_file), "wb") as sink:
-                with pa.ipc.new_file(sink, table.schema) as writer:
-                    writer.write_table(table)
-        # return table
+            duckdb.read_csv(url).to_parquet(str(cache_file), compression="zstd")
 
     def _preprocessing(
         self, data: gpd.GeoDataFrame, version: Optional[str] = None
@@ -185,11 +154,10 @@ class PhiladelphiaCrimeDataset(PointDataset):
             version = self.version
 
         cache_file = self._get_cache_file(str(version))
-        df = pd.DataFrame()
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
 
-        print(f"Loading cached Arrow file for {version}...")
-        table = pa.ipc.open_file(str(cache_file)).read_all()
-        df = table.to_pandas()
+        print(f"Loading cached Parquet file for {version}...")
+        df = pd.read_parquet(cache_file)
 
         if len(str(self.version)) <= 3:
             print("Splitting into train-test subsets ...")

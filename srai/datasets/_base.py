@@ -3,11 +3,13 @@
 import abc
 import operator
 from contextlib import suppress
+from pathlib import Path
 from typing import Optional, Union
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import platformdirs
 from shapely.geometry import LineString
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
@@ -154,6 +156,16 @@ class HuggingFaceDataset(abc.ABC):
                 Train, Val, Test indexes with target labels in GeoDataFrames
         """
         raise NotImplementedError
+
+    def _get_global_dataset_cache_path(self) -> Path:
+        """
+        Get the root cache directory for the dataset.
+
+        Returns:
+            Path: Path object pointing to the user-specific cache directory where
+                the dataset should be stored.
+        """
+        return Path(platformdirs.user_cache_dir("srai")) / self.__class__.__name__
 
 
 class PointDataset(HuggingFaceDataset):
