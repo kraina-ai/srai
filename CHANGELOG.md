@@ -11,20 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `rq-geo-toolkit`, `geoarrow-rust-core` and `pooch` libraries to the dependencies
 
-### Fixed
-
-- Added `__all__` const to spatial split module
-
-## [0.9.8] - 2025-09-04
-
-### Added
-
-- New spatial splitting logic for machine learning model training
-
 ### Changed
 
 - Bumped `QuackOSM` version to `0.16.2`
-- Bumped `OvertureMaestro` version to `0.5.0`
 - Refactored download function to use `pooch` library instead of `requests`
 - Serialization logic in `InMemoryDataCollector` from `PIL.Image` to `bytes`
 - Default `DataCollector` in `OSMTileLoader` from `InMemoryDataCollector` to `SavingDataCollector`
@@ -34,12 +23,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)
+- Added `__all__` const to spatial split module
 - Categorical colouring for plotting neighbouthood in folium plotting wrapper
 
 ### Removed
 
 - `GeoparquetLoader`
+
+## [0.9.8] - 2025-09-04
+
+### Added
+
+- New spatial splitting logic for machine learning model training
+
+### Changed
+
+- Bumped minimal `overturemaestro` version to `0.5.0`
+
+### Fixed
+
+- Enabled `CountEmbedder` to parse dataframes with indexes other than string type [#537](https://github.com/kraina-ai/srai/issues/537)
 
 ## [0.9.7] - 2025-05-21
 
