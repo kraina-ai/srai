@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `rq-geo-toolkit`, `geoarrow-rust-core` and `pooch` libraries to the dependencies
 
+### Fixed
+
+- Added `__all__` const to spatial split module
+
+## [0.9.8] - 2025-09-04
+
+### Added
+
+- New spatial splitting logic for machine learning model training
+
 ### Changed
 
 - Bumped `QuackOSM` version to `0.16.2`
@@ -436,7 +446,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.7...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.8...HEAD
+
+[0.9.8]: https://github.com/kraina-ai/srai/compare/0.9.7...0.9.8
 
 [0.9.7]: https://github.com/kraina-ai/srai/compare/0.9.6...0.9.7
 
