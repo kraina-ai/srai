@@ -191,6 +191,7 @@ class ContextualCountEmbedder(CountEmbedder):
                     pbar.refresh()
 
                 except (duckdb.OutOfMemoryException, MemoryError) as ex:
+                    current_result_file_path.unlink(missing_ok=True)
                     current_limit //= 10
                     if current_limit == 1:
                         raise

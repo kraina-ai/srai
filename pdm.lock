@@ -5,7 +5,7 @@
 groups = ["default", "all", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d8c68d2609700259e9fd6746651283f0819edb92a0d0cf088c80379d607d9c31"
+content_hash = "sha256:4609e1994bf32bc357822e6b174ffbccd24e8136c1b540902dcf31c0b477bceb"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -4820,7 +4820,7 @@ files = [
 
 [[package]]
 name = "rq-geo-toolkit"
-version = "2025.8.7"
+version = "2025.9.0"
 requires_python = ">=3.9"
 summary = "Collection of geo related functions for reuse in other libraries"
 groups = ["default", "all", "osm", "overturemaps"]
@@ -4835,8 +4835,8 @@ dependencies = [
     "shapely>=2.0.6",
 ]
 files = [
-    {file = "rq_geo_toolkit-2025.8.7-py3-none-any.whl", hash = "sha256:8ab43720a1940e34dd6f862b21809f31fe29f9af09d7efcc3c35f12485b8addb"},
-    {file = "rq_geo_toolkit-2025.8.7.tar.gz", hash = "sha256:5c79a506df85e88752369440f2400549b765320cff8455c1dc392e92b469a482"},
+    {file = "rq_geo_toolkit-2025.9.0-py3-none-any.whl", hash = "sha256:83452c239f6443b950c7762ee3e03b24ce82c7bf1264536e5ef288ddb438be96"},
+    {file = "rq_geo_toolkit-2025.9.0.tar.gz", hash = "sha256:28b198336f4253a955dc3e259b4a18e0ed324c3bbbe871fd7f753f302266ea0b"},
 ]
 
 [[package]]

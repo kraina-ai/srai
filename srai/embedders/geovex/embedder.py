@@ -22,6 +22,7 @@ from srai.embedders import CountEmbedder, ModelT
 from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.embedders.geovex.model import GeoVexModel
 from srai.exceptions import ModelNotFitException
+from srai.geodatatable import prepare_geo_input
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 from srai.neighbourhoods.h3_neighbourhood import H3IndexGenericType
@@ -114,7 +115,7 @@ class GeoVexEmbedder(CountEmbedder, Generic[H3IndexGenericType]):
         self._check_is_fitted()
 
         neighbourhood: H3Neighbourhood[H3IndexGenericType] = H3Neighbourhood(
-            regions_gdf=regions_gdf,
+            regions=prepare_geo_input(regions_gdf),
         )
 
         _, dataloader, self._dataset = self._prepare_dataset(

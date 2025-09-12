@@ -78,9 +78,19 @@ def relation_to_parquet(
     );
     """
 
-    run_query_with_memory_monitoring(
-        sql_query=save_query,
-        connection=connection,
-        tmp_dir_path=tmp_dir_path,
-        preserve_insertion_order=True,
-    )
+    try:
+        run_query_with_memory_monitoring(
+            sql_query=save_query,
+            connection=connection,
+            tmp_dir_path=tmp_dir_path,
+            preserve_insertion_order=True,
+            limit_memory=False,
+        )
+    except:
+        # Remove file if wasn't properly created
+        result_parquet_path.unlink(missing_ok=True)
+        raise
+    finally:
+        # Remove DuckDB tmp file if still exists
+        tmp_path = result_parquet_path.with_stem(f"tmp_{result_parquet_path.stem}")
+        tmp_path.unlink(missing_ok=True)
