@@ -5,7 +5,10 @@ This module contains Geolife Dataset.
 """
 
 import csv
+import hashlib
 import os
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Optional, Union
 from zipfile import ZipFile
@@ -34,12 +37,23 @@ class GeolifeDataset(TrajectoryDataset):
     GPS trajectories that were collected in (Microsoft Research Asia) Geolife Project by 182 users
     """
 
+    RAW_ZIP_DOWNLOAD_URL = (
+        "https://download.microsoft.com/download"
+        "/F/4/8/F4894AA5-FDBC-481E-9285-D5F8C4C4F039/Geolife%20Trajectories%201.3.zip"
+    )
+
     def __init__(self) -> None:
         """Create the dataset."""
         numerical_columns = ["altitude"]
         categorical_columns = ["mode"]
         type = "trajectory"
         target = "trajectory_id"
+
+        self.cache_root = self._get_global_dataset_cache_path()
+        self.raw_data_path = self.cache_root / "raw"
+        self.processed_path = self.cache_root / "preprocessed"
+        self.prepared_path = self.cache_root / "prepared"
+
         # target = None
         super().__init__(
             "kraina/geolife",
@@ -49,30 +63,25 @@ class GeolifeDataset(TrajectoryDataset):
             target=target,
         )
 
-    def _download_geolife(self, raw_data_path: Path) -> None:
+    def _download_geolife(self) -> None:
         """
         Download and extract the Geolife dataset if not already cached.
 
         - Downloads a ZIP archive from the official Microsoft Geolife source.
         - Shows tqdm progress bars for both the download and extraction steps.
         - Skips download if the dataset already exists in the cache.
-
-        Args:
-            raw_data_path (Path): Directory path where the raw dataset should be\
-                downloaded and extracted.
         """
-        zip_path = raw_data_path / "geolife.zip"
+        zip_path = self.raw_data_path / "geolife.zip"
         if not zip_path.exists():
             zip_path.parent.mkdir(exist_ok=True, parents=True)
 
-            url = "https://download.microsoft.com/download/F/4/8/F4894AA5-FDBC-481E-9285-D5F8C4C4F039/Geolife%20Trajectories%201.3.zip"
-            download_file(url=url, fname=zip_path)
+            download_file(url=GeolifeDataset.RAW_ZIP_DOWNLOAD_URL, fname=zip_path)
 
             # --- Extract with progress ---
             with ZipFile(zip_path) as zfile:
                 members = zfile.namelist()
                 for member in tqdm(members, desc="Extracting Geolife"):
-                    zfile.extract(member, raw_data_path)
+                    zfile.extract(member, self.raw_data_path)
 
         else:
             print("Geolife data already exists in cache. Download skipped.")
@@ -100,58 +109,6 @@ class GeolifeDataset(TrajectoryDataset):
                 f.insert(0, str(user_id))
         return filecontents
 
-    def _geolife_data_to_df(self, geolife_dir: Path, processed_dir: Path) -> list[Path]:
-        """
-        Convert raw Geolife user directories into a preprocessed DataFrame.
-
-        Args:
-            geolife_dir (Path): Path to the root `Data` directory containing user subdirectories.
-            processed_dir (Path): Path where to save preprocessed DataFrames containing all
-                trajectories with columns:
-                [user_id, trajectory_id, latitude, longitude, -, altitude, dayNo, date, time].
-
-        Returns:
-             list[Path]: List of saved file paths.
-        """
-        saved_files = []
-        col_names = [
-            "user_id",
-            "trajectory_id",
-            "latitude",
-            "longitude",
-            "-",
-            "altitude",
-            "dayNo",
-            "date",
-            "time",
-        ]
-        user_id_dirs = [
-            name
-            for name in os.listdir(geolife_dir)
-            if os.path.isdir(os.path.join(geolife_dir, name))
-        ]
-
-        with tqdm(total=len(user_id_dirs), desc="Preprocessing Geolife data") as pbar:
-            for user_id in np.sort(user_id_dirs):
-                user_result_path = processed_dir / f"{user_id}.parquet"
-                data = []
-                subdirs = [
-                    item
-                    for item in os.listdir(geolife_dir / user_id / "Trajectory")
-                    if not item.endswith(".DS_Store")
-                ]
-                traj_id = 0
-                for subdir in subdirs:
-                    data += self._geolife_clean_plt(geolife_dir, user_id, subdir, traj_id)
-                    traj_id += 1
-
-                user_df = pd.DataFrame(data, columns=col_names)
-                self._preprocess_geolife_trajectories_df(user_df, result_path=user_result_path)
-                saved_files.append(user_result_path)
-                pbar.update()
-
-        return saved_files
-
     def _preprocess_geolife_trajectories_df(self, df: pd.DataFrame, result_path: Path) -> None:
         df["datetime"] = pd.to_datetime(df.date + " " + df.time)
         df.drop(["date", "time"], inplace=True, axis=1)
@@ -174,7 +131,7 @@ class GeolifeDataset(TrajectoryDataset):
 
         df.to_parquet(result_path, compression="zstd")
 
-    def _geolife_preprocess(self, raw_data_path: Path, processed_path: Path) -> None:
+    def _geolife_preprocess(self) -> None:
         """
         Preprocess the Geolife dataset into a single Parquet file in the cache.
 
@@ -183,24 +140,48 @@ class GeolifeDataset(TrajectoryDataset):
         - Converts datetime to UNIX timestamps.
         - Filters trajectories outside valid latitude/longitude bounds.
         - Saves as an Apache Parquet file for efficient reuse.
-
-        Args:
-            raw_data_path (Path): Directory where the raw Geolife data was extracted.
-            processed_path (Path): Directory where the processed Parquet file will be saved.
         """
-        parquet_path = processed_path / "geolife.parquet"
-        if parquet_path.exists():
-            print("Geolife data already preprocessed. Loading from cache.")
-        else:
-            processed_path.mkdir(exist_ok=True, parents=True)
-            geolife_dir = raw_data_path / "Geolife Trajectories 1.3" / "Data"
-            all_saved_parquet_paths = self._geolife_data_to_df(geolife_dir, processed_path)
+        geolife_dir = self.raw_data_path / "Geolife Trajectories 1.3" / "Data"
+        col_names = [
+            "user_id",
+            "trajectory_id",
+            "latitude",
+            "longitude",
+            "-",
+            "altitude",
+            "dayNo",
+            "date",
+            "time",
+        ]
+        user_id_dirs = [
+            name
+            for name in os.listdir(geolife_dir)
+            if os.path.isdir(os.path.join(geolife_dir, name))
+        ]
 
-            duckdb.read_parquet(f"{processed_path}/*.parquet").to_parquet(
-                str(parquet_path), compression="zstd"
-            )
-            for saved_path in all_saved_parquet_paths:
-                saved_path.unlink()
+        self.processed_path.mkdir(exist_ok=True, parents=True)
+
+        with tqdm(total=len(user_id_dirs), desc="Loading Geolife user trajectories") as pbar:
+            for user_id in np.sort(user_id_dirs):
+                user_result_path = self.processed_path / f"{user_id}.parquet"
+                if user_result_path.exists():
+                    pbar.update()
+                    continue
+
+                data = []
+                subdirs = [
+                    item
+                    for item in os.listdir(geolife_dir / user_id / "Trajectory")
+                    if not item.endswith(".DS_Store")
+                ]
+                traj_id = 0
+                for subdir in subdirs:
+                    data += self._geolife_clean_plt(geolife_dir, user_id, subdir, traj_id)
+                    traj_id += 1
+
+                user_df = pd.DataFrame(data, columns=col_names)
+                self._preprocess_geolife_trajectories_df(user_df, result_path=user_result_path)
+                pbar.update()
 
     def _aggregate_trajectories_to_hexes(
         self,
@@ -348,22 +329,10 @@ class GeolifeDataset(TrajectoryDataset):
 
         return hexes_gdf
 
-    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
-        """
-        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
-
-        Args:
-            data: Data of Geolife dataset with trajectory indexes.
-            version: version of a dataset
-
-        Returns:
-            gpd.GeoDataFrame: preprocessed data.
-        """
-        cache_root = self._get_global_dataset_cache_path()
-        processed_path = cache_root / "preprocessed"
-        parquet_path = processed_path / "geolife.parquet"
-
-        df_original = pd.read_parquet(parquet_path)
+    def _transform_single_user_data(
+        self, data: pd.DataFrame, input_parquet_path: Path
+    ) -> gpd.GeoDataFrame:
+        df_original = pd.read_parquet(input_parquet_path)
         # df_original["unique_id"] = df_original["user_id"].astype(str) + df_original[
         #     "trajectory_id"
         # ].astype(str)
@@ -399,21 +368,57 @@ class GeolifeDataset(TrajectoryDataset):
         assert self.target is not None
         assert self.resolution is not None
         assert self.version is not None
+
         trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
 
         hexes_gdf = self._aggregate_trajectories_to_hexes(
             gdf=trajectory_gdf, resolution=self.resolution, version=self.version
         )
-        lengths = hexes_gdf.geometry.length
-
-        # Compute 5th and 95th percentiles
-        lower = np.percentile(lengths, 5)
-        upper = np.percentile(lengths, 95)
-
-        # Filter based on length
-        hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
 
         return hexes_gdf
+
+    def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
+        """
+        Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
+
+        Args:
+            data: Data of Geolife dataset with trajectory indexes.
+            version: version of a dataset
+
+        Returns:
+            gpd.GeoDataFrame: preprocessed data.
+        """
+        hasher = hashlib.new("sha256")
+        hasher.update(str(data.values).encode())
+        data_hash = hasher.hexdigest()
+        parquet_path = self.prepared_path / f"geolife_{data_hash}.parquet"
+
+        if not parquet_path.exists():
+            parquet_path.parent.mkdir(parents=True, exist_ok=True)
+            user_trajectories_parquet_files = sorted(self.processed_path.glob("*.parquet"))
+            with (
+                tempfile.TemporaryDirectory(dir=self.prepared_path.resolve()) as tmp_dir_name,
+                duckdb.connect() as db_conn,
+            ):
+                tmp_dir_path = Path(tmp_dir_name)
+                transformed_file_paths = []
+                for user_trajectories_parquet_file in tqdm(
+                    user_trajectories_parquet_files, desc="Transforming Geolife user trajectories"
+                ):
+                    save_file_path = tmp_dir_path / user_trajectories_parquet_file.name
+                    hexes_gdf = self._transform_single_user_data(
+                        data, input_parquet_path=user_trajectories_parquet_file
+                    )
+                    hexes_gdf.to_parquet(save_file_path)
+                    transformed_file_paths.append(str(save_file_path))
+
+                db_conn.install_extension("spatial")
+                db_conn.load_extension("spatial")
+                db_conn.sql(f"SELECT * FROM read_parquet({transformed_file_paths})").to_parquet(
+                    str(parquet_path), compression="zstd"
+                )
+
+        return gpd.read_parquet(parquet_path)
 
     def load(
         self,
@@ -448,11 +453,11 @@ class GeolifeDataset(TrajectoryDataset):
         else:
             raise NotImplementedError("Version not implemented")
 
-        cache_root = self._get_global_dataset_cache_path()
-        raw_data_path = cache_root / "raw"
-        processed_path = cache_root / "preprocessed"
+        if not self.prepared_path.exists():
+            self._download_geolife()
+            self._geolife_preprocess()
 
-        self._download_geolife(raw_data_path)
-        self._geolife_preprocess(raw_data_path, processed_path)
+        # Remove raw downloaded data from cache and keep only preprocessed files
+        shutil.rmtree(self.raw_data_path, ignore_errors=True)
 
         return super().load(hf_token=hf_token, version=version)
