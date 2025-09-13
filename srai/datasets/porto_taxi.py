@@ -205,22 +205,24 @@ class PortoTaxiDataset(TrajectoryDataset):
         )
 
         assert self.target is not None
-        assert self.resolution is not None
         assert self.version is not None
         trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
 
-        hexes_gdf = self._aggregate_trajectories_to_hexes(
-            gdf=trajectory_gdf, resolution=self.resolution, version=self.version
-        )
-        lengths = hexes_gdf.geometry.length
+        if self.resolution is not None:
+            hexes_gdf = self._aggregate_trajectories_to_hexes(
+                gdf=trajectory_gdf, resolution=self.resolution, version=self.version
+            )
+            lengths = hexes_gdf.geometry.length
 
-        # Compute 5th and 95th percentiles
-        lower = np.percentile(lengths, 5)
-        upper = np.percentile(lengths, 95)
+            # Compute 5th and 95th percentiles
+            lower = np.percentile(lengths, 5)
+            upper = np.percentile(lengths, 95)
 
-        # Filter based on length
-        hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
-        return hexes_gdf
+            # Filter based on length
+            hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
+            return hexes_gdf
+        else:
+            return trajectory_gdf
 
     def load(
         self,

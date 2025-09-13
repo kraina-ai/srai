@@ -365,8 +365,10 @@ class GeolifeDataset(TrajectoryDataset):
             crs=WGS84_CRS,
         )
 
-        assert self.target is not None
+        if gdf.empty:
+            return gpd.GeoDataFrame(columns=["trajectory_id"], geometry=[], crs=WGS84_CRS)
 
+        assert self.target is not None
         assert self.version is not None
 
         trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
@@ -375,6 +377,12 @@ class GeolifeDataset(TrajectoryDataset):
             hexes_gdf = self._aggregate_trajectories_to_hexes(
                 gdf=trajectory_gdf, resolution=self.resolution, version=self.version
             )
+            lengths = hexes_gdf.geometry.length
+
+            # Compute 5th and 95th percentiles
+            lower = np.percentile(lengths, 5)
+            upper = np.percentile(lengths, 95)
+            hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
 
             return hexes_gdf
         else:
@@ -412,8 +420,9 @@ class GeolifeDataset(TrajectoryDataset):
                     hexes_gdf = self._transform_single_user_data(
                         data, input_parquet_path=user_trajectories_parquet_file
                     )
-                    hexes_gdf.to_parquet(save_file_path)
-                    transformed_file_paths.append(str(save_file_path))
+                    if not hexes_gdf.empty:
+                        hexes_gdf.to_parquet(save_file_path)
+                        transformed_file_paths.append(str(save_file_path))
 
                 db_conn.install_extension("spatial")
                 db_conn.load_extension("spatial")
