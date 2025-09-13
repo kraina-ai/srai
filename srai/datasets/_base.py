@@ -121,14 +121,17 @@ class HuggingFaceDataset(abc.ABC):
         from datasets import load_dataset
 
         result = {}
-        self.resolution = None
+
         self.train_gdf, self.val_gdf, self.test_gdf = None, None, None
         dataset_name = self.path
         self.version = str(version)
-        if self.resolution is None and self.version in ["8", "9", "10"]:
+        if (self.resolution is None and self.version in ["8", "9", "10"]) or (
+            self.version in ["8", "9", "10"] and str(self.resolution) != self.version
+        ):
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(self.version)
+
         data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
         processed_train = self._preprocessing(train)
