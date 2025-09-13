@@ -650,7 +650,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         return _train_gdf, _val_gdf, _test_gdf
 
     def _agg_points_to_trajectories(
-        self, gdf: gpd.GeoDataFrame, target_column: str
+        self, gdf: gpd.GeoDataFrame, target_column: str, progress_bar: bool = True
     ) -> gpd.GeoDataFrame:
         """
         Preprocess the dataset from HuggingFace to trajectories.
@@ -658,12 +658,14 @@ class TrajectoryDataset(HuggingFaceDataset):
         Args:
             gdf (pd.DataFrame): a dataset to preprocess
             target_column (str): a column to aggregate trajectories (trip_id)
+            progress_bar (bool, optional): whether to show tqdm progress bar or not
 
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
         _gdf = gdf.copy()
-        tqdm.pandas(desc="Building linestring trajectories")
+        if progress_bar:
+            tqdm.pandas(desc="Building linestring trajectories")
 
         _gdf = gdf.sort_values(by=[target_column, "timestamp"]).copy()
         geometry_col = _gdf.geometry.name
@@ -672,7 +674,10 @@ class TrajectoryDataset(HuggingFaceDataset):
 
         aggregated = _gdf.groupby(target_column).agg(lambda x: x.tolist())
         aggregated = aggregated[aggregated[geometry_col].apply(lambda x: len(x) > 1)]
-        aggregated[geometry_col] = aggregated[geometry_col].progress_apply(LineString)
+        if progress_bar:
+            aggregated[geometry_col] = aggregated[geometry_col].progress_apply(LineString)
+        else:
+            aggregated[geometry_col] = aggregated[geometry_col].apply(LineString)
 
         traj_gdf = gpd.GeoDataFrame(aggregated.reset_index(), geometry=geometry_col, crs=_gdf.crs)
 

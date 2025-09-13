@@ -10,7 +10,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from zipfile import ZipFile
 
 import duckdb
@@ -200,7 +200,6 @@ class GeolifeDataset(TrajectoryDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        tqdm.pandas(desc="Building h3 trajectories")
         _gdf = gdf.copy()
         # if version == "TTE":
 
@@ -313,7 +312,7 @@ class GeolifeDataset(TrajectoryDataset):
             return pd.Series(res)
 
         # Apply with progress bar
-        hexes_df = _gdf.progress_apply(process_row, axis=1)
+        hexes_df = _gdf.apply(process_row, axis=1)
 
         if version == "HMP":
             hexes_df = hexes_df[
@@ -371,10 +370,11 @@ class GeolifeDataset(TrajectoryDataset):
         assert self.target is not None
         assert self.version is not None
 
-        trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
+        trajectory_gdf = self._agg_points_to_trajectories(
+            gdf=gdf, target_column=self.target, progress_bar=False
+        )
 
         if self.resolution is not None:
-            print(f"Resolution set to: {self.resolution}. Mapping linestrings into h3 sequences.")
             hexes_gdf = self._aggregate_trajectories_to_hexes(
                 gdf=trajectory_gdf, resolution=self.resolution, version=self.version
             )
@@ -397,7 +397,9 @@ class GeolifeDataset(TrajectoryDataset):
         hasher = hashlib.new("sha256")
         hasher.update(str(data.values).encode())
         data_hash = hasher.hexdigest()
-        parquet_path = self.prepared_path / f"geolife_{data_hash}.parquet"
+        parquet_path = (
+            self.prepared_path / f"geolife_{self.version}_{self.resolution}_{data_hash}.parquet"
+        )
 
         if not parquet_path.exists():
             parquet_path.parent.mkdir(parents=True, exist_ok=True)
@@ -421,9 +423,29 @@ class GeolifeDataset(TrajectoryDataset):
 
                 db_conn.install_extension("spatial")
                 db_conn.load_extension("spatial")
-                db_conn.sql(f"SELECT * FROM read_parquet({transformed_file_paths})").to_parquet(
-                    str(parquet_path), compression="zstd"
+
+                # Filter outlier linestrings
+                percentiles = cast(
+                    "tuple[list[float]]",
+                    db_conn.sql(
+                        f"""
+                    SELECT quantile_cont(ST_Length(geometry), [0.05, 0.95])
+                    FROM read_parquet({transformed_file_paths})
+                    """
+                    ).fetchone(),
+                )[0]
+                lower = percentiles[0]
+                upper = percentiles[1]
+
+                all_trajectories = db_conn.sql(
+                    f"""
+                    SELECT *
+                    FROM read_parquet({transformed_file_paths})
+                    WHERE ST_Length(geometry) BETWEEN {lower} AND {upper}
+                    """
                 )
+
+                all_trajectories.to_parquet(str(parquet_path), compression="zstd")
 
         return gpd.read_parquet(parquet_path)
 
