@@ -366,16 +366,19 @@ class GeolifeDataset(TrajectoryDataset):
         )
 
         assert self.target is not None
-        assert self.resolution is not None
+
         assert self.version is not None
 
         trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
 
-        hexes_gdf = self._aggregate_trajectories_to_hexes(
-            gdf=trajectory_gdf, resolution=self.resolution, version=self.version
-        )
+        if self.resolution is not None:
+            hexes_gdf = self._aggregate_trajectories_to_hexes(
+                gdf=trajectory_gdf, resolution=self.resolution, version=self.version
+            )
 
-        return hexes_gdf
+            return hexes_gdf
+        else:
+            return trajectory_gdf
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
