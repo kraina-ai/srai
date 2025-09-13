@@ -374,6 +374,7 @@ class GeolifeDataset(TrajectoryDataset):
         trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
 
         if self.resolution is not None:
+            print(f"Resolution set to: {self.resolution}. Mapping linestrings into h3 sequences.")
             hexes_gdf = self._aggregate_trajectories_to_hexes(
                 gdf=trajectory_gdf, resolution=self.resolution, version=self.version
             )
@@ -452,10 +453,7 @@ class GeolifeDataset(TrajectoryDataset):
         if version in ("TTE", "HMP"):
             self.resolution = 9
         elif version == "all":
-            if resolution is None:
-                raise ValueError("Pass the resolution parameter to generate h3 trajectories.")
-            else:
-                self.resolution = resolution
+            self.resolution = resolution if resolution is not None else None
         else:
             raise NotImplementedError("Version not implemented")
 

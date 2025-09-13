@@ -134,8 +134,6 @@ class HuggingFaceDataset(abc.ABC):
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(self.version)
-        elif self.version not in ["8", "9", "10"]:
-            self.resolution = None
 
         data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
