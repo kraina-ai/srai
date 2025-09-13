@@ -125,12 +125,17 @@ class HuggingFaceDataset(abc.ABC):
         self.train_gdf, self.val_gdf, self.test_gdf = None, None, None
         dataset_name = self.path
         self.version = str(version)
-        if (self.resolution is None and self.version in ["8", "9", "10"]) or (
-            self.version in ["8", "9", "10"] and str(self.resolution) != self.version
+
+        if (
+            self.resolution is None
+            and self.version in ["8", "9", "10"]
+            or (self.version in ["8", "9", "10"] and str(self.resolution) != self.version)
         ):
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(self.version)
+        elif self.version not in ["8", "9", "10"]:
+            self.resolution = None
 
         data = load_dataset(dataset_name, str(version), token=hf_token, trust_remote_code=True)
         train = data["train"].to_pandas()
@@ -484,7 +489,11 @@ class TrajectoryDataset(HuggingFaceDataset):
                 gdf_copy["stratify_col"] = gdf_copy["duration"]
             elif "duration" not in gdf_copy.columns and "timestamp" in gdf_copy.columns:
                 gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
-                    lambda ts: (0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds())
+                    #     lambda ts: (0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds())
+                    # )
+                    lambda ts: (
+                        0.0 if len(ts) < 2 else pd.Timedelta(ts[-1] - ts[0]).total_seconds()
+                    )
                 )
             else:
                 raise ValueError(
