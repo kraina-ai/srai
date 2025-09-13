@@ -377,12 +377,6 @@ class GeolifeDataset(TrajectoryDataset):
             hexes_gdf = self._aggregate_trajectories_to_hexes(
                 gdf=trajectory_gdf, resolution=self.resolution, version=self.version
             )
-            lengths = hexes_gdf.geometry.length
-
-            # Compute 5th and 95th percentiles
-            lower = np.percentile(lengths, 5)
-            upper = np.percentile(lengths, 95)
-            hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
 
             return hexes_gdf
         else:
