@@ -63,6 +63,6 @@ Requirements for a new spatial dataset:
 
 - Publicly available.
 - Has a spatial component - points with a target, collection of points that will be agrgegated, trajectories, regions for classification, etc...
-- Available train and test splits should be split spatially (there is a `train_test_spatial_split` function available in the `srai.spatial_split` module) - we want to ensure that both splits don't cover the same regions. If the dataset covers multiple cities (like Airbnb), consider splitting the data for each city / region individually and combine the results a the end.
+- Available train and test splits should be split spatially (there is a `train_test_spatial_split` function available in the `srai.spatial_split` module) - we want to ensure that both splits don't cover the same regions. If the dataset covers multiple cities (like Airbnb), consider splitting the data for each city / region individually and combine the results a the end. Can be omitted in trajectory based tasks - hard to achieve proper separation.
 - Should have a default H3 aggregation resolution with an optional list of available other resolutions to test different levels.
 - Doesn't violate any licenses (can be Non-Commercial) - for example, `GeoLife` and `Philadelphia Crime` datasets are downloaded from their original sources, and only splits with IDs are saved on HuggingFace, because their licenses don't allow for redistribution. Required processing of raw data is automatically done on the user side with attached code.
