@@ -4,13 +4,16 @@ Porto Taxi dataset loader.
 This module contains Porto Taxi Dataset.
 """
 
-from typing import Optional, Union
+import hashlib
+import tempfile
+from pathlib import Path
+from typing import Optional, Union, cast
 
+import duckdb
 import geopandas as gpd
 import h3
-import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm import trange
 
 from srai.constants import WGS84_CRS
 from srai.datasets import TrajectoryDataset
@@ -61,7 +64,6 @@ class PortoTaxiDataset(TrajectoryDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        tqdm.pandas(desc="Building h3 trajectories")
         _gdf = gdf.copy()
         # if version == "TTE":
 
@@ -169,7 +171,7 @@ class PortoTaxiDataset(TrajectoryDataset):
             return pd.Series(res)
 
         # Apply with progress bar
-        hexes_df = _gdf.progress_apply(process_row, axis=1)
+        hexes_df = _gdf.apply(process_row, axis=1)
         if version == "HMP":
             hexes_df = hexes_df[
                 hexes_df["h3_sequence_x"].apply(lambda x: len(x) > 0)
@@ -184,6 +186,29 @@ class PortoTaxiDataset(TrajectoryDataset):
 
         return hexes_gdf
 
+    def _preprocess_single_batch(self, df: pd.DataFrame) -> gpd.GeoDataFrame:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")  # <- fix here
+
+        gdf = gpd.GeoDataFrame(
+            df.drop(["longitude", "latitude"], axis=1),
+            geometry=gpd.points_from_xy(df["longitude"], df["latitude"]),
+            crs=WGS84_CRS,
+        )
+
+        assert self.target is not None
+        assert self.version is not None
+        trajectory_gdf = self._agg_points_to_trajectories(
+            gdf=gdf, target_column=self.target, progress_bar=False
+        )
+
+        if self.resolution is not None:
+            hexes_gdf = self._aggregate_trajectories_to_hexes(
+                gdf=trajectory_gdf, resolution=self.resolution, version=self.version
+            )
+            return hexes_gdf
+        else:
+            return trajectory_gdf
+
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """
         Preprocessing to get GeoDataFrame with location data, based on GEO_EDA files.
@@ -195,34 +220,60 @@ class PortoTaxiDataset(TrajectoryDataset):
         Returns:
             gpd.GeoDataFrame: preprocessed data.
         """
-        df = data.copy()
-        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")  # <- fix here
-
-        gdf = gpd.GeoDataFrame(
-            df.drop(["longitude", "latitude"], axis=1),
-            geometry=gpd.points_from_xy(df["longitude"], df["latitude"]),
-            crs=WGS84_CRS,
+        hasher = hashlib.new("sha256")
+        hasher.update(str(data.values).encode())
+        data_hash = hasher.hexdigest()
+        parquet_path = (
+            self._get_global_dataset_cache_path()
+            / f"porto_{self.version}_{self.resolution}_{data_hash}.parquet"
         )
+        if not parquet_path.exists():
+            parquet_path.parent.mkdir(parents=True, exist_ok=True)
+            with (
+                tempfile.TemporaryDirectory(
+                    dir=self._get_global_dataset_cache_path().resolve()
+                ) as tmp_dir_name,
+                duckdb.connect() as db_conn,
+            ):
+                tmp_dir_path = Path(tmp_dir_name)
+                transformed_file_paths = []
+                batch_size = 100_000
+                for row_id in trange(
+                    0, len(data), batch_size, desc="Transforming Porto taxi trajectories"
+                ):
+                    save_file_path = tmp_dir_path / f"{row_id}.parquet"
+                    batch_df = data.iloc[row_id : row_id + batch_size].copy()
+                    preprocessed_batch_gdf = self._preprocess_single_batch(batch_df)
+                    preprocessed_batch_gdf.to_parquet(save_file_path)
+                    transformed_file_paths.append(str(save_file_path))
 
-        assert self.target is not None
-        assert self.version is not None
-        trajectory_gdf = self._agg_points_to_trajectories(gdf=gdf, target_column=self.target)
+                db_conn.install_extension("spatial")
+                db_conn.load_extension("spatial")
 
-        if self.resolution is not None:
-            hexes_gdf = self._aggregate_trajectories_to_hexes(
-                gdf=trajectory_gdf, resolution=self.resolution, version=self.version
-            )
-            lengths = hexes_gdf.geometry.length
+                # Filter outlier linestrings
+                percentiles = cast(
+                    "tuple[list[float]]",
+                    db_conn.sql(
+                        f"""
+                    SELECT quantile_cont(ST_Length(geometry), [0.05, 0.95])
+                    FROM read_parquet({transformed_file_paths})
+                    """
+                    ).fetchone(),
+                )[0]
+                lower = percentiles[0]
+                upper = percentiles[1]
 
-            # Compute 5th and 95th percentiles
-            lower = np.percentile(lengths, 5)
-            upper = np.percentile(lengths, 95)
+                all_trajectories = db_conn.sql(
+                    f"""
+                    SELECT *
+                    FROM read_parquet({transformed_file_paths})
+                    WHERE ST_Length(geometry) BETWEEN {lower} AND {upper}
+                    """
+                )
 
-            # Filter based on length
-            hexes_gdf = hexes_gdf[(lengths >= lower) & (lengths <= upper)]
-            return hexes_gdf
-        else:
-            return trajectory_gdf
+                all_trajectories.to_parquet(str(parquet_path), compression="zstd")
+
+        return gpd.read_parquet(parquet_path)
 
     def load(
         self,
@@ -250,8 +301,7 @@ class PortoTaxiDataset(TrajectoryDataset):
         if version in ("TTE", "HMP"):
             self.resolution = 9
         elif version == "all":
-            if resolution is None:
-                self.resolution = resolution if resolution is not None else None
+            self.resolution = resolution if resolution is not None else None
         else:
             raise NotImplementedError("Version not implemented")
         return super().load(hf_token=hf_token, version=version)
