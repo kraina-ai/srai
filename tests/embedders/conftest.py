@@ -118,7 +118,7 @@ def gdf_regions() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_regions_int(gdf_regions) -> gpd.GeoDataFrame:
+def gdf_regions_int(gdf_regions: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Get GeoDataFrame with 3 hexagonal regions with int index."""
     regions_gdf = gdf_regions.copy()
     regions_gdf.index = pd.Index(
@@ -183,7 +183,7 @@ def gdf_features() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_features_int(gdf_features) -> gpd.GeoDataFrame:
+def gdf_features_int(gdf_features: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Get GeoDataFrame with example OSM-like features with int index."""
     features_gdf = gdf_features.copy()
     features_gdf.index = pd.Index(
@@ -253,7 +253,7 @@ def gdf_features_boolean() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_features_boolean_int(gdf_features_boolean) -> gpd.GeoDataFrame:
+def gdf_features_boolean_int(gdf_features_boolean: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Get GeoDataFrame with example OvertureMaps-like features with int index."""
     features_gdf = gdf_features_boolean.copy()
     features_gdf.index = pd.Index(
@@ -324,7 +324,7 @@ def gdf_joint() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_joint_int(gdf_joint) -> gpd.GeoDataFrame:
+def gdf_joint_int(gdf_joint: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Get joint GeoDataFrame for matching regions and features from this module."""
     joint_gdf = gdf_joint.copy()
     joint_gdf.index = pd.MultiIndex.from_arrays(
@@ -400,7 +400,7 @@ def gdf_joint_boolean() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def gdf_joint_boolean_int(gdf_joint_boolean) -> gpd.GeoDataFrame:
+def gdf_joint_boolean_int(gdf_joint_boolean: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """Get joint GeoDataFrame for matching regions and features from this module."""
     joint_gdf = gdf_joint_boolean.copy()
     joint_gdf.index = pd.MultiIndex.from_arrays(
