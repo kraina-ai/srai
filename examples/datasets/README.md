@@ -10,15 +10,32 @@ Examples showcasing the available datasets from the Open Benchmark for Spatial R
 
 ## Available prediction tasks
 
-Region-based tasks:
+The benchmark tasks are split into two main categories: point-based and trajectory-based.
 
-- Price prediction
-- Crime activity prediction
+Below is the list of example tasks:
 
-Trajectory-based tasks:
+# TODO - finish definitions and remove this header after
 
-- Human Mobility Prediction (HMC)
-- Travel Time Estimation (TTE)
+### Point-based tasks
+
+#### Price prediction
+
+- Short term rental price - ... (Airbnb)
+- House sale price - ... (House Sales in King County)
+
+#### Activity prediction
+
+- Crime activity prediction - ... (Chicago Crime, Philadelphia Crime, SFPD Incident Report Datatset)
+
+### Trajectory-based tasks
+
+#### Human Mobility Prediction (HMC)
+
+- Auto-regression classification of user trajectories - ... (Geolife, Porto Taxi)
+
+#### Travel Time Estimation (TTE)
+
+- Predict estimated travel time - ... (Geolife, Porto Taxi)
 
 |  | Price prediction | Crime activity prediction | Human Mobility Prediction (HMC) | Travel Time Estimation (TTE) |
 |---|:---:|:---:|:---:|:---:|
