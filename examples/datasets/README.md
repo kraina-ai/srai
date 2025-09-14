@@ -13,14 +13,14 @@ Examples showcasing the available datasets from the Open Benchmark for Spatial R
 Region-based tasks:
 
 - Price prediction
-- Activity prediction
+- Crime activity prediction
 
 Trajectory-based tasks:
 
 - Human Mobility Prediction (HMC)
 - Travel Time Estimation (TTE)
 
-|  | Price prediction | Activity prediction | Human Mobility Prediction (HMC) | Travel Time Estimation (TTE) |
+|  | Price prediction | Crime activity prediction | Human Mobility Prediction (HMC) | Travel Time Estimation (TTE) |
 |---|:---:|:---:|:---:|:---:|
 | [Airbnb Multicity](airbnb_multicity.ipynb) | ✅ |  |  |  |
 | [Chicago Crime](chicago_crime.ipynb) |  | ✅ |  |  |
