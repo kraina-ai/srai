@@ -527,7 +527,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         trajectory_indices = gdf_copy[trajectory_id_column].unique()
         duration_bins = (
             gdf_copy[[trajectory_id_column, "stratification_bin"]]
-            .drop_duplicates(subset=trajectory_id_column)
+            .drop_duplicates()
             .set_index(trajectory_id_column)["stratification_bin"]
         )
 
