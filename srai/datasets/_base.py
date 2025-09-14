@@ -527,7 +527,7 @@ class TrajectoryDataset(HuggingFaceDataset):
         trajectory_indices = gdf_copy[trajectory_id_column].unique()
         duration_bins = (
             gdf_copy[[trajectory_id_column, "stratification_bin"]]
-            .drop_duplicates()
+            .drop_duplicates(subset=trajectory_id_column)
             .set_index(trajectory_id_column)["stratification_bin"]
         )
 
@@ -571,7 +571,7 @@ class TrajectoryDataset(HuggingFaceDataset):
             self.test_gdf = test_gdf
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)},"
+                f"Created new train_gdf and test_gdf. Train len: {len(self.train_gdf)}, "
                 f"test len: {test_len}"
             )
         else:
@@ -579,8 +579,8 @@ class TrajectoryDataset(HuggingFaceDataset):
             val_len = len(self.val_gdf) if self.val_gdf is not None else 0
             test_len = len(self.test_gdf) if self.test_gdf is not None else 0
             print(
-                f"Created new train_gdf and val_gdf. Test split remains unchanged."
-                f"Train len: {len(self.train_gdf)}, val len: {val_len},"
+                f"Created new train_gdf and val_gdf. Test split remains unchanged. "
+                f"Train len: {len(self.train_gdf)}, val len: {val_len}, "
                 f"test len: {test_len}"
             )
         return train_gdf, test_gdf
