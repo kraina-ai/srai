@@ -237,12 +237,17 @@ class PortoTaxiDataset(TrajectoryDataset):
             ):
                 tmp_dir_path = Path(tmp_dir_name)
                 transformed_file_paths = []
-                batch_size = 100_000
+                unique_trajectory_ids = data[self.target].unique()
+                batch_size = 4_000
                 for row_id in trange(
-                    0, len(data), batch_size, desc="Transforming Porto taxi trajectories"
+                    0,
+                    len(unique_trajectory_ids),
+                    batch_size,
+                    desc="Transforming Porto taxi trajectories",
                 ):
+                    batch_trajectory_ids = unique_trajectory_ids[row_id : row_id + batch_size]
                     save_file_path = tmp_dir_path / f"{row_id}.parquet"
-                    batch_df = data.iloc[row_id : row_id + batch_size].copy()
+                    batch_df = data[data[self.target].isin(batch_trajectory_ids)].copy()
                     preprocessed_batch_gdf = self._preprocess_single_batch(batch_df)
                     preprocessed_batch_gdf.to_parquet(save_file_path)
                     transformed_file_paths.append(str(save_file_path))
