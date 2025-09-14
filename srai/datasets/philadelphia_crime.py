@@ -43,23 +43,6 @@ class PhiladelphiaCrimeDataset(PointDataset):
         type = "point"
         # target = "text_general_code"
         target = "count"
-        # URL templates
-        self.url_template_2019_and_below = (
-            "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
-            "&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator"
-            "&q=SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
-            "FROM incidents_part1_part2 "
-            "WHERE dispatch_date_time >= '{year}-01-01' "
-            "AND dispatch_date_time < '{next_year}-01-01'"
-        )
-
-        self.url_template_2020_and_above = (
-            "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
-            "&format=csv&q=SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
-            "FROM incidents_part1_part2 "
-            "WHERE dispatch_date_time >= '{year}-01-01' "
-            "AND dispatch_date_time < '{next_year}-01-01'"
-        )
 
         super().__init__(
             "kraina/philadelphia_crime",
@@ -93,13 +76,10 @@ class PhiladelphiaCrimeDataset(PointDataset):
         """
         next_year = year + 1
 
-        if year <= 2019:
-            base = (
-                "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
-                "&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator&q="
-            )
-        else:
-            base = "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2&format=csv&q="
+        base = (
+            "https://phl.carto.com/api/v2/sql?filename=incidents_part1_part2"
+            "&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator&q="
+        )
 
         sql = (
             f"SELECT * , ST_Y(the_geom) AS lat, ST_X(the_geom) AS lng "
