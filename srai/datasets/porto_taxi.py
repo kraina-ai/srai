@@ -301,10 +301,7 @@ class PortoTaxiDataset(TrajectoryDataset):
         if version in ("TTE", "HMP"):
             self.resolution = 9
         elif version == "all":
-            if resolution is None:
-                raise ValueError("Pass the resolution parameter to generate h3 trajectories.")
-            else:
-                self.resolution = resolution
+            self.resolution = resolution if resolution is not None else None
         else:
             raise NotImplementedError("Version not implemented")
         return super().load(hf_token=hf_token, version=version)
