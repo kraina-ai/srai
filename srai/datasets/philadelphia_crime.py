@@ -194,7 +194,7 @@ class PhiladelphiaCrimeDataset(PointDataset):
         dataset_name = self.path
         self.version = str(version)
 
-        if self.resolution is None and self.version in ["8", "9", "10"]:
+        if self.resolution is None and self.version in ("8", "9", "10"):
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
                 self.resolution = int(self.version)

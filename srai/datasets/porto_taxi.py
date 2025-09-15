@@ -206,8 +206,8 @@ class PortoTaxiDataset(TrajectoryDataset):
                 gdf=trajectory_gdf, resolution=self.resolution, version=self.version
             )
             return hexes_gdf
-        else:
-            return trajectory_gdf
+
+        return trajectory_gdf
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """

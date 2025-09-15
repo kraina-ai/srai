@@ -101,12 +101,12 @@ class GeolifeDataset(TrajectoryDataset):
         Returns:
             list[list[str]]: Rows of the .plt file with user_id and trajectory_id prepended.
         """
-        with open(root / user_id / "Trajectory" / input_filepath) as fin:
+        with (root / user_id / "Trajectory" / input_filepath).open() as fin:
             cr = csv.reader(fin)
             filecontents = [line for line in cr][6:]
             for f in filecontents:
                 f.insert(0, str(traj_id))
-                f.insert(0, str(user_id))
+                f.insert(0, user_id)
         return filecontents
 
     def _preprocess_geolife_trajectories_df(self, df: pd.DataFrame, result_path: Path) -> None:
@@ -380,8 +380,8 @@ class GeolifeDataset(TrajectoryDataset):
             )
 
             return hexes_gdf
-        else:
-            return trajectory_gdf
+
+        return trajectory_gdf
 
     def _preprocessing(self, data: pd.DataFrame, version: Optional[str] = None) -> gpd.GeoDataFrame:
         """

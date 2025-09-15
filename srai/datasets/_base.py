@@ -128,8 +128,8 @@ class HuggingFaceDataset(abc.ABC):
 
         if (
             self.resolution is None
-            and self.version in ["8", "9", "10"]
-            or (self.version in ["8", "9", "10"] and str(self.resolution) != self.version)
+            and self.version in ("8", "9", "10")
+            or (self.version in ("8", "9", "10") and str(self.resolution) != self.version)
         ):
             with suppress(ValueError):
                 # Try to parse version as int (e.g. "8" or "9")
