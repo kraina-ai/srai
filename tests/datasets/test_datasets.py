@@ -31,3 +31,13 @@ def test_load_dataset(dataset_class: type[srai.datasets.HuggingFaceDataset]) -> 
     assert dataset_obj.train_gdf is not None, "Train gdf is empty"
     assert dataset_obj.test_gdf is not None, "Test gdf is empty"
     assert len(dataset_obj.train_gdf) > len(dataset_obj.test_gdf), "Test split bigger than train"
+
+    # run additional split
+    dataset_obj.train_test_split(validation_split=True)
+
+    assert dataset_obj.train_gdf is not None, "Train gdf is empty"
+    assert dataset_obj.test_gdf is not None, "Test gdf is empty"
+    assert dataset_obj.val_gdf is not None, "Validation gdf is empty"
+    assert len(dataset_obj.train_gdf) > len(dataset_obj.val_gdf), (
+        "Validation split bigger than train"
+    )
