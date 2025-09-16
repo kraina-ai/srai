@@ -38,7 +38,7 @@ def test_model_raises_with_incorrect_layer_sizes(radius: int, expectation: Any) 
     "radius",
     [4, 9],
 )
-def test_layers_initialized_correctly(radius) -> None:
+def test_layers_initialized_correctly(radius: int) -> None:
     """Test if GeoVexModel layers are initialized correctly."""
     k_dim = 512
     conv_layers = 3

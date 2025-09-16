@@ -232,10 +232,10 @@ def test_contract(
     expected_result: Optional[tuple[int, int]],
     loader_params: Optional[dict[str, Any]],
     file_name: Optional[str],
-    expectation,
+    expectation: Any,
     request: pytest.FixtureRequest,
     mocker: MockerFixture,
-):
+) -> None:
     """Test `OSMWayLoader.load`'s contract."""
     from packaging import version
 

@@ -64,7 +64,7 @@ def test_raises_with_incorrect_ring_distance(
     "ring_distance",
     [2, 3, 4],
 )  # type: ignore
-def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame):
+def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame) -> None:
     """Test if HexagonalDataset constructs lookup tables correctly."""
     neighbourhood: H3Neighbourhood = H3Neighbourhood(regions_data_df)
     dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)  # type: ignore

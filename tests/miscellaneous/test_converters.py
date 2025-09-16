@@ -30,7 +30,7 @@ TEST_COLUMN_NAME = "test"
 )
 def test_region_gdf_converter(
     input: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-):
+) -> None:
     """Test that region gdf converter works."""
     regions_gdf = convert_to_regions_gdf(input)
     assert regions_gdf.index.name == REGIONS_INDEX

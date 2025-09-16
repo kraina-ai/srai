@@ -85,7 +85,7 @@ def test_get_popular_tags(
     min_fraction: float,
     expectation: Any,
     request: Any,
-):
+) -> None:
     """Test downloading popular tags from taginfo API."""
     requests_mock = request.getfixturevalue("requests_mock")
     api_response = request.getfixturevalue("popular_filter_api_data")

@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import geopandas as gpd
 import h3
@@ -12,7 +12,6 @@ from pytorch_lightning import seed_everything
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.embedders.geovex.embedder import GeoVexEmbedder
-from srai.embedders.geovex.model import GeoVexModel
 from srai.h3 import ring_buffer_h3_regions_gdf
 from srai.joiners import IntersectionJoiner
 from srai.loaders.osm_loaders import OSMPbfLoader
@@ -20,6 +19,9 @@ from srai.loaders.osm_loaders.filters import HEX2VEC_FILTER, OsmTagsFilter
 from srai.neighbourhoods import H3Neighbourhood
 from tests.embedders.conftest import TRAINER_KWARGS
 from tests.embedders.geovex.constants import EMBEDDING_SIZE
+
+if TYPE_CHECKING:
+    from srai.embedders.geovex.model import GeoVexModel
 
 
 def generate_test_case(

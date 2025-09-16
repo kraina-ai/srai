@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets
+- New optional dependency group: `datasets`
+- Weight-based examples sorting in documentation with `mkdocs-nav-weight`
+
+### Changed
+
+- Reduced line-length in example notebooks from 100 to 88
+- Improved typing in the codebase
+
 ### Fixed
 
 - Added `__all__` const to spatial split module

@@ -33,7 +33,7 @@ from tests.embedders.geovex.constants import (
     ],
 )
 def test_checking_encoder_sizes(
-    target_features: Union[str, list[str]], conv_layer_size, expectation: Any
+    target_features: Union[str, list[str]], conv_layer_size: int, expectation: Any
 ) -> None:
     """Test that incorrect encoder sizes raise ValueError."""
     target_tags: dict[str, list[str]] = target_features or HEX2VEC_FILTER  # type: ignore
