@@ -49,6 +49,17 @@ jobs:
           key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
           restore-keys: |
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
+      - name: Set run benchmark tests flag
+        run: |
+          if [[ ${{contains(github.event.issue.labels.*.name, 'Benchmark')}} ]]; then
+            echo "RUN_BENCHMARK_TESTS=true" >> "$GITHUB_ENV"
+          else
+            echo "RUN_BENCHMARK_TESTS=false" >> "$GITHUB_ENV"
+          fi
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
       - name: Upload coverage to Codecov
