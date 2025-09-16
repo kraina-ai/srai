@@ -428,7 +428,7 @@ class TrajectoryDataset(HuggingFaceDataset):
 
     def train_test_split(
         self,
-        target_column: Optional[str] = "trip_id",
+        target_column: Optional[str] = None,
         resolution: Optional[int] = None,
         test_size: float = 0.2,
         n_bins: int = 4,
