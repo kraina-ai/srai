@@ -171,7 +171,7 @@ class HuggingFaceDataset(abc.ABC):
             Path: Path object pointing to the user-specific cache directory where
                 the dataset should be stored.
         """
-        return Path(platformdirs.user_cache_dir("srai")) / self.__class__.__name__
+        return Path(platformdirs.user_cache_dir("srai")) / "datasets" / self.__class__.__name__
 
 
 class PointDataset(HuggingFaceDataset):
