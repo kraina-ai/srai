@@ -55,10 +55,6 @@ jobs:
       - name: Set run datasets tests flag
         if: ${{ !contains(github.event.issue.labels.*.name, 'Datasets')}}
         run: echo "RUN_DATASET_TESTS=false" >> "$GITHUB_ENV"
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
       - name: Upload coverage to Codecov
