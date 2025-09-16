@@ -1,11 +1,14 @@
 """Test if datasets are loaded properly."""
 
 import inspect
+import os
 import sys
 
 import pytest
 
 import srai.datasets
+
+RUN_DATASET_TESTS = os.getenv("RUN_DATASET_TESTS", "true").lower() == "true"
 
 dataset_classes = [
     dataset_cls
@@ -16,6 +19,7 @@ dataset_classes = [
 ]
 
 
+@pytest.mark.skipif(not RUN_DATASET_TESTS, reason="Skipping dataset tests")  # type: ignore
 @pytest.mark.parametrize("dataset_class", dataset_classes)  # type: ignore
 def test_load_dataset(dataset_class: type[srai.datasets.HuggingFaceDataset]) -> None:
     """Test if dataset is loaded properly."""

@@ -49,12 +49,12 @@ jobs:
           key: tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pdm.lock') }}
           restore-keys: |
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
-      - name: Set run benchmark tests flag
+      - name: Set run datasets tests flag
         run: |
-          if [[ ${{contains(github.event.issue.labels.*.name, 'Benchmark')}} ]]; then
-            echo "RUN_BENCHMARK_TESTS=true" >> "$GITHUB_ENV"
+          if [[ ${{contains(github.event.issue.labels.*.name, 'Datasets')}} ]]; then
+            echo "RUN_DATASET_TESTS=true" >> "$GITHUB_ENV"
           else
-            echo "RUN_BENCHMARK_TESTS=false" >> "$GITHUB_ENV"
+            echo "RUN_DATASET_TESTS=false" >> "$GITHUB_ENV"
           fi
       - name: Dump GitHub context
         env:
