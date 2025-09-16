@@ -50,10 +50,10 @@ jobs:
           restore-keys: |
             tox-cache-${{ matrix.os }}-${{ matrix.python-version }}-
       - name: Set run datasets tests flag
-        if: ${{contains(github.event.issue.labels.*.name, 'Datasets')}}
+        if: ${{ github.event.label.name == 'Datasets' }}
         run: echo "RUN_DATASET_TESTS=true" >> "$GITHUB_ENV"
       - name: Set run datasets tests flag
-        if: ${{ !contains(github.event.issue.labels.*.name, 'Datasets')}}
+        if: ${{ !(github.event.label.name == 'Datasets') }}
         run: echo "RUN_DATASET_TESTS=false" >> "$GITHUB_ENV"
       - name: Run tests with tox
         run: pdm run tox -e python${{ matrix.python-version }}
