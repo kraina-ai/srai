@@ -22,5 +22,6 @@ PREDEFINED_TEST_CASES = [
         "embedding_dim": 256,
         "decoder_dim": 128,
         "mask_ratio": 0.75,
+        "dropout_prob": 0.2,
     },
 ]

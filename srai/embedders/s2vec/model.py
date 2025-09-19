@@ -10,8 +10,6 @@ References:
 
 from typing import TYPE_CHECKING, Any, Union
 
-from timm.models.vision_transformer import Block
-
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
 from srai.embedders.s2vec.positional_encoding import get_2d_sincos_pos_embed
@@ -31,7 +29,7 @@ except ImportError:
 class MAEEncoder(nn.Module):  # type: ignore
     """Masked Autoencoder Encoder."""
 
-    def __init__(self, embed_dim: int, depth: int, num_heads: int):
+    def __init__(self, embed_dim: int, depth: int, num_heads: int, dropout_prob: float):
         """
         Initialize the MAEEncoder.
 
@@ -39,11 +37,23 @@ class MAEEncoder(nn.Module):  # type: ignore
             embed_dim (int): The dimension of the embedding.
             depth (int): The number of encoder layers.
             num_heads (int): The number of attention heads.
+            dropout_prob (float): The dropout probability.
         """
+        from timm.models.vision_transformer import Block
+
         super().__init__()
         self.norm = nn.LayerNorm(embed_dim)
         self.blocks = nn.ModuleList(
-            [Block(embed_dim, num_heads=num_heads, qkv_bias=True) for _ in range(depth)]
+            [
+                Block(
+                    embed_dim,
+                    num_heads=num_heads,
+                    qkv_bias=True,
+                    proj_drop=dropout_prob,
+                    attn_drop=dropout_prob,
+                )
+                for _ in range(depth)
+            ]
         )
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":
@@ -65,7 +75,9 @@ class MAEEncoder(nn.Module):  # type: ignore
 class MAEDecoder(nn.Module):  # type: ignore
     """Masked Autoencoder Decoder."""
 
-    def __init__(self, decoder_dim: int, patch_dim: int, depth: int, num_heads: int):
+    def __init__(
+        self, decoder_dim: int, patch_dim: int, depth: int, num_heads: int, dropout_prob: float
+    ):
         """
         Initialize the MAEDecoder.
 
@@ -74,11 +86,23 @@ class MAEDecoder(nn.Module):  # type: ignore
             patch_dim (int): The dimension of the patches.
             depth (int): The number of decoder layers.
             num_heads (int): The number of attention heads.
+            dropout_prob (float): The dropout probability.
         """
+        from timm.models.vision_transformer import Block
+
         super().__init__()
         self.norm = nn.LayerNorm(decoder_dim)
         self.blocks = nn.ModuleList(
-            [Block(decoder_dim, num_heads=num_heads, qkv_bias=True) for _ in range(depth)]
+            [
+                Block(
+                    decoder_dim,
+                    num_heads=num_heads,
+                    qkv_bias=True,
+                    proj_drop=dropout_prob,
+                    attn_drop=dropout_prob,
+                )
+                for _ in range(depth)
+            ]
         )
         self.output = nn.Linear(decoder_dim, patch_dim)
 
@@ -120,6 +144,7 @@ class S2VecModel(Model):
         embed_dim: int = 256,
         decoder_dim: int = 128,
         mask_ratio: float = 0.75,
+        dropout_prob: float = 0.2,
         lr: float = 5e-4,
         weight_decay: float = 1e-3,
     ):
@@ -136,6 +161,7 @@ class S2VecModel(Model):
             embed_dim (int): The dimension of the encoder. Defaults to 256.
             decoder_dim (int): The dimension of the decoder. Defaults to 128.
             mask_ratio (float): The ratio of masked patches. Defaults to 0.75.
+            dropout_prob (float): The dropout probability. Defaults to 0.2.
             lr (float): The learning rate. Defaults to 5e-4.
             weight_decay (float): The weight decay. Defaults to 1e-3.
         """
@@ -157,6 +183,8 @@ class S2VecModel(Model):
             raise ValueError("decoder_dim must be a positive integer.")
         if not (0.0 < mask_ratio < 1.0):
             raise ValueError("mask_ratio must be between 0 and 1 (exclusive).")
+        if not (0.0 <= dropout_prob <= 1.0):
+            raise ValueError("dropout_prob must be between 0 and 1 (inclusive).")
 
         import_optional_dependencies(
             dependency_group="torch", modules=["timm", "torch", "pytorch_lightning"]
@@ -174,14 +202,14 @@ class S2VecModel(Model):
         self.grid_size = img_size // patch_size
         self.patch_embed = nn.Linear(patch_dim, embed_dim)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.encoder = MAEEncoder(embed_dim, encoder_layers, num_heads)
+        self.num_heads = num_heads
+        self.encoder_layers = encoder_layers
+        self.decoder_layers = decoder_layers
+        self.decoder_dim = decoder_dim
+        self.dropout_prob = dropout_prob
+        self.encoder = MAEEncoder(embed_dim, encoder_layers, num_heads, dropout_prob)
         self.decoder_embed = nn.Linear(embed_dim, decoder_dim)
-        self.decoder = MAEDecoder(
-            decoder_dim,
-            patch_dim,
-            decoder_layers,
-            num_heads,
-        )
+        self.decoder = MAEDecoder(decoder_dim, patch_dim, decoder_layers, num_heads, dropout_prob)
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_dim))
         self.mask_ratio = mask_ratio
         pos_embed = get_2d_sincos_pos_embed(embed_dim, self.grid_size, cls_token=True)
@@ -388,7 +416,12 @@ class S2VecModel(Model):
             "img_size": self.img_size,
             "patch_size": self.patch_size,
             "in_ch": self.in_ch,
+            "num_heads": self.num_heads,
             "embed_dim": self.embed_dim,
+            "decoder_dim": self.decoder_dim,
+            "encoder_layers": self.encoder_layers,
+            "decoder_layers": self.decoder_layers,
             "mask_ratio": self.mask_ratio,
+            "dropout_prob": self.dropout_prob,
             "lr": self.lr,
         }

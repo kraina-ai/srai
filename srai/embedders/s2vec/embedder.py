@@ -44,12 +44,13 @@ class S2VecEmbedder(CountEmbedder):
         batch_size: Optional[int] = 64,
         img_res: int = 8,
         patch_res: int = 12,
-        num_heads: int = 2,
+        num_heads: int = 8,
         encoder_layers: int = 6,
         decoder_layers: int = 2,
         embedding_dim: int = 256,
         decoder_dim: int = 128,
         mask_ratio: float = 0.75,
+        dropout_prob: float = 0.2,
     ) -> None:
         """
         Initialize S2Vec Embedder.
@@ -64,7 +65,7 @@ class S2VecEmbedder(CountEmbedder):
             batch_size (int, optional): Batch size. Defaults to 64.
             img_res (int, optional): Image resolution. Defaults to 8.
             patch_res (int, optional): Patch resolution. Defaults to 12.
-            num_heads (int, optional): Number of heads in the transformer. Defaults to 2.
+            num_heads (int, optional): Number of heads in the transformer. Defaults to 8.
             encoder_layers (int, optional): Number of encoder layers in the transformer.
                 Defaults to 6.
             decoder_layers (int, optional): Number of decoder layers in the transformer.
@@ -72,6 +73,7 @@ class S2VecEmbedder(CountEmbedder):
             embedding_dim (int, optional): Embedding dimension. Defaults to 256.
             decoder_dim (int, optional): Decoder dimension. Defaults to 128.
             mask_ratio (float, optional): Mask ratio for the transformer. Defaults to 0.75.
+            dropout_prob (float, optional): The dropout probability. Defaults to 0.2.
         """
         import_optional_dependencies(
             dependency_group="torch", modules=["torch", "pytorch_lightning"]
@@ -83,6 +85,7 @@ class S2VecEmbedder(CountEmbedder):
         )
 
         assert 0.0 <= mask_ratio <= 1.0, "Mask ratio must be between 0 and 1."
+        assert 0.0 <= dropout_prob <= 1.0, "Dropout probability must be between 0 and 1."
 
         self._model: Optional[S2VecModel] = None
         self._is_fitted = False
@@ -95,12 +98,13 @@ class S2VecEmbedder(CountEmbedder):
         self._embedding_dim = embedding_dim
         self._decoder_dim = decoder_dim
         self._mask_ratio = mask_ratio
+        self._dropout_prob = dropout_prob
 
         self._batch_size = batch_size
 
         self._dataset: DataLoader = None
 
-    def transform(
+    def transform(  # type: ignore[override]
         self,
         regions_gdf: gpd.GeoDataFrame,
         features_gdf: gpd.GeoDataFrame,
@@ -122,6 +126,7 @@ class S2VecEmbedder(CountEmbedder):
             features_gdf,
             self._batch_size,
             shuffle=False,
+            is_fitting=False,
         )
 
         return self._transform(dataset=self._dataset, dataloader=dataloader)
@@ -131,13 +136,18 @@ class S2VecEmbedder(CountEmbedder):
         dataset: S2VecDataset[T],
         dataloader: Optional[DataLoader] = None,
     ) -> pd.DataFrame:
+        import torch
+
         if dataloader is None:
             dataloader = DataLoader(dataset, batch_size=self._batch_size, shuffle=False)
 
-        embeddings = [
-            self._model.encode(batch, mask_ratio=0)[0].detach().numpy()  # type: ignore
-            for batch in dataloader
-        ]
+        self._model.encoder.eval()  # type: ignore[union-attr]
+        with torch.no_grad():
+            embeddings = [
+                self._model.encode(batch, mask_ratio=0)[0].detach().numpy()  # type: ignore[union-attr]
+                for batch in dataloader
+            ]
+        self._model.encoder.train()  # type: ignore[union-attr]
 
         trimmed = [embedding[:, 1:, :] for embedding in embeddings]  # remove cls token
 
@@ -172,6 +182,7 @@ class S2VecEmbedder(CountEmbedder):
             features_gdf,
             self._batch_size,
             shuffle=True,
+            is_fitting=True,
         )
 
         self._prepare_model(counts_df, learning_rate)
@@ -193,6 +204,7 @@ class S2VecEmbedder(CountEmbedder):
                 embed_dim=self._embedding_dim,
                 decoder_dim=self._decoder_dim,
                 mask_ratio=self._mask_ratio,
+                dropout_prob=self._dropout_prob,
                 lr=learning_rate,
             )
 
@@ -202,6 +214,7 @@ class S2VecEmbedder(CountEmbedder):
         features_gdf: gpd.GeoDataFrame,
         batch_size: Optional[int],
         shuffle: bool = True,
+        is_fitting: bool = True,
     ) -> tuple[pd.DataFrame, DataLoader, S2VecDataset[T]]:
         patches_gdf, img_patch_joint_gdf = get_patches_from_img_gdf(
             img_gdf=regions_gdf, target_level=self._patch_res
@@ -209,6 +222,20 @@ class S2VecEmbedder(CountEmbedder):
         joiner = IntersectionJoiner()
         patch_feature_joint_gdf = joiner.transform(patches_gdf, features_gdf)
         counts_df = self._get_raw_counts(patches_gdf, features_gdf, patch_feature_joint_gdf)
+
+        # Calculate mean and std from training dataset
+        if is_fitting:
+            eps = 1e-8
+            self._feature_means = np.mean(counts_df.values, axis=0)
+            self._feature_stds = np.std(counts_df.values, axis=0)
+            self._empty_features_mask = self._feature_stds < eps
+            self._feature_stds[self._empty_features_mask] = 1.0
+
+        # Disable features that were empty in the training dataset
+        counts_df.loc[:, self._empty_features_mask] = 0
+        # Normalise raw counts
+        counts_df = (counts_df - self._feature_means) / self._feature_stds
+
         dataset: S2VecDataset[T] = S2VecDataset(counts_df, img_patch_joint_gdf)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
         return counts_df, dataloader, dataset
@@ -279,10 +306,23 @@ class S2VecEmbedder(CountEmbedder):
             "embedding_dim": self._embedding_dim,
             "decoder_dim": self._decoder_dim,
             "mask_ratio": self._mask_ratio,
+            "dropout_prob": self._dropout_prob,
         }
-        self._save(path, embedder_config)
 
-    def _save(self, path: Union[str, Any], embedder_config: dict[str, Any]) -> None:
+        normalisation_config = {
+            "feature_means": self._feature_means.tolist(),
+            "feature_stds": self._feature_stds.tolist(),
+            "empty_features_mask": self._empty_features_mask.tolist(),
+        }
+
+        self._save(path, embedder_config, normalisation_config)
+
+    def _save(
+        self,
+        path: Union[str, Any],
+        embedder_config: dict[str, Any],
+        normalisation_config: dict[str, Any],
+    ) -> None:
         if isinstance(path, str):
             path = Path(path)
 
@@ -298,6 +338,7 @@ class S2VecEmbedder(CountEmbedder):
         config = {
             "model_config": model_config,
             "embedder_config": embedder_config,
+            "normalisation_config": normalisation_config,
         }
 
         with (path / "config.json").open("w") as f:
@@ -332,4 +373,10 @@ class S2VecEmbedder(CountEmbedder):
         model = model_module.load(model_path, **config["model_config"])
         embedder._model = model
         embedder._is_fitted = True
+        embedder._feature_means = np.array(config["normalisation_config"]["feature_means"])
+        embedder._feature_stds = np.array(config["normalisation_config"]["feature_stds"])
+        embedder._empty_features_mask = np.array(
+            config["normalisation_config"]["empty_features_mask"]
+        )
+
         return embedder

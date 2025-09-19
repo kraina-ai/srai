@@ -60,6 +60,7 @@ def test_embedder() -> None:
             embedding_dim=test_case["embedding_dim"],  # type: ignore
             decoder_dim=test_case["decoder_dim"],  # type: ignore
             mask_ratio=test_case["mask_ratio"],  # type: ignore
+            dropout_prob=test_case["dropout_prob"],  # type: ignore
         )
 
         counts_df, _, _ = embedder._prepare_dataset(
@@ -80,7 +81,7 @@ def test_embedder() -> None:
         result_df.columns = result_df.columns.astype(str)
         print(result_df.head())
         print(expected.head())
-        assert_frame_equal(result_df, expected, atol=1e-1)
+        assert_frame_equal(result_df, expected, atol=1e-5)
 
 
 def test_embedder_save_load() -> None:
@@ -135,7 +136,7 @@ def test_embedder_save_load() -> None:
         assert_series_equal(
             embedder.expected_output_features, loaded_embedder.expected_output_features
         )
-        assert_frame_equal(result_df, loaded_result_df, atol=6e-2)
+        assert_frame_equal(result_df, loaded_result_df, atol=1e-5)
 
         # check type of model
         assert isinstance(loaded_embedder._model, S2VecModel)
