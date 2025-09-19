@@ -9,7 +9,7 @@ References:
 
 import json
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union, cast
 
 import geopandas as gpd
 import numpy as np
@@ -295,7 +295,9 @@ class S2VecEmbedder(CountEmbedder):
             path (Union[str, Any]): Path to the directory.
         """
         embedder_config = {
-            "target_features": self.expected_output_features.to_json(orient="records"),
+            "target_features": cast("pd.Series", self.expected_output_features).to_json(
+                orient="records"
+            ),
             "count_subcategories": self.count_subcategories,
             "batch_size": self._batch_size,
             "img_res": self._img_res,

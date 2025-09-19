@@ -105,6 +105,7 @@ class MAEDecoder(nn.Module):  # type: ignore
             ]
         )
         self.output = nn.Linear(decoder_dim, patch_dim)
+        nn.init.xavier_uniform_(self.output.weight)
 
     def forward(self, x: "torch.Tensor") -> "torch.Tensor":
         """
@@ -228,6 +229,9 @@ class S2VecModel(Model):
 
         torch.nn.init.normal_(self.cls_token, std=0.02)
         torch.nn.init.normal_(self.mask_token, std=0.02)
+
+        torch.nn.init.xavier_uniform_(self.patch_embed.weight)
+        torch.nn.init.xavier_uniform_(self.decoder_embed.weight)
 
     def random_masking(
         self, x: "torch.Tensor", mask_ratio: float
