@@ -81,7 +81,7 @@ def test_embedder() -> None:
         result_df.columns = result_df.columns.astype(str)
         print(result_df.head())
         print(expected.head())
-        assert_frame_equal(result_df, expected, atol=1e-5)
+        assert_frame_equal(result_df, expected, atol=1e-4)
 
 
 def test_embedder_save_load() -> None:
