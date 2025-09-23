@@ -1,6 +1,7 @@
 """Optional dependencies tests."""
 
 import sys
+from collections.abc import Callable, Generator
 from contextlib import nullcontext as does_not_raise
 from typing import Any
 
@@ -31,11 +32,12 @@ def optional_packages() -> list[str]:
         "kaleido",
         "pytorch-lightning",
         "torch",
+        "timm",
     ]
 
 
 @pytest.fixture(autouse=True)  # type: ignore
-def cleanup_imports():
+def cleanup_imports() -> Generator[None, None, None]:
     """Clean imports."""
     yield
     sys.modules.pop("srai", None)
@@ -55,7 +57,9 @@ class PackageDiscarder:
 
 
 @pytest.fixture  # type: ignore
-def no_optional_dependencies(monkeypatch, optional_packages):
+def no_optional_dependencies(
+    monkeypatch: Any, optional_packages: list[str]
+) -> Generator[None, None, None]:
     """Mock environment without optional dependencies."""
     d = PackageDiscarder()
 
@@ -101,12 +105,14 @@ def _test_torch() -> None:
         GTFS2VecEmbedder,
         Hex2VecEmbedder,
         Highway2VecEmbedder,
+        S2VecEmbedder,
     )
 
     Highway2VecEmbedder()
     GTFS2VecEmbedder()
     Hex2VecEmbedder()
     GeoVexEmbedder(["a"] * 256)
+    S2VecEmbedder(["a"] * 256)
 
 
 def _test_osm() -> None:
@@ -160,12 +166,12 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_gtfs),
     ],
 )
-def test_optional_available(test_fn):
+def test_optional_available(test_fn: Callable[[], None]) -> None:
     """Test if defined functions are working with optional packages."""
     test_fn()
 
 
-@pytest.mark.usefixtures("no_optional_dependencies")
+@pytest.mark.usefixtures("no_optional_dependencies")  # type: ignore
 @pytest.mark.parametrize(  # type: ignore
     "test_fn",
     [
@@ -177,7 +183,7 @@ def test_optional_available(test_fn):
         (_test_gtfs),
     ],
 )
-def test_optional_missing(test_fn):
+def test_optional_missing(test_fn: Callable[[], None]) -> None:
     """Test if defined functions are failing without optional packages."""
     with pytest.raises(ImportError):
         test_fn()
