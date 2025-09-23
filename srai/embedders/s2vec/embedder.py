@@ -76,7 +76,7 @@ class S2VecEmbedder(CountEmbedder):
             dropout_prob (float, optional): The dropout probability. Defaults to 0.2.
         """
         import_optional_dependencies(
-            dependency_group="torch", modules=["torch", "pytorch_lightning"]
+            dependency_group="torch", modules=["torch", "pytorch_lightning", "timm"]
         )
 
         super().__init__(
