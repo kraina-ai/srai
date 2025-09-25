@@ -27,6 +27,8 @@ from rq_geo_toolkit.constants import (
     PARQUET_ROW_GROUP_SIZE,
 )
 from rq_geo_toolkit.geoparquet_sorting import sort_geoparquet_file_by_geometry
+from sedonadb.context import SedonaContext
+from sedonadb.dataframe import DataFrame as SedonaDataFrame
 from shapely import coverage_union_all, union_all
 from shapely.errors import GEOSException
 from shapely.geometry.base import BaseGeometry
@@ -397,6 +399,10 @@ class ParquetDataTable(Sized):
         """Get Pyarrow dataset."""
         return ds.dataset(self.parquet_paths)
 
+    def to_sedonadb(self, sd: SedonaContext) -> SedonaDataFrame:
+        """Get SedonaDB DataFrame."""
+        return sd.read_parquet(list(map(str, self.parquet_paths)))
+
     def drop_columns(
         self: _Self, columns: Union[str, Iterable[str]], missing_ok: bool = False
     ) -> "ParquetDataTable":
@@ -760,9 +766,7 @@ class GeoDataTable(ParquetDataTable):
         )
 
 
-VALID_BASE_GEOMETRIES_INPUT = Union[
-    BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame
-]
+VALID_BASE_GEOMETRIES_INPUT = Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries]
 VALID_GEO_DATA_TABLE_INPUT = Union[
     Path, str, Iterable[Union[Path, str]], gpd.GeoDataFrame, GeoDataTable
 ]
@@ -785,15 +789,23 @@ def prepare_geo_input(
         GeoDataTable: Prepared GeoDataTable with geometries.
     """
     if is_expected_type(data_input, VALID_GEO_DATA_TABLE_INPUT):
+        data_input = cast("VALID_GEO_DATA_TABLE_INPUT", data_input)
         # Already a GeoDataTable
         if isinstance(data_input, GeoDataTable):
             return data_input
         # GeoDataFrame -> use dedicated function
         elif isinstance(data_input, gpd.GeoDataFrame):
+            # if data_input.crs
+            if data_input.active_geometry_name is None:
+                raise ValueError("Cannot parse GeoDataFrame without geometry.")
             return GeoDataTable.from_geodataframe(data_input.to_crs(WGS84_CRS))
         # parquet file(s)
         return GeoDataTable.from_parquet(data_input)
-    elif isinstance(data_input, gpd.GeoSeries):
+
+    data_input = cast("VALID_BASE_GEOMETRIES_INPUT", data_input)
+
+    # GeoSeries
+    if isinstance(data_input, gpd.GeoSeries):
         # Create a GeoDataTable from GeoDataFrame with GeoSeries
         if data_input.crs is not None:
             data_input = data_input.to_crs(WGS84_CRS)
@@ -801,9 +813,10 @@ def prepare_geo_input(
             data_input = data_input.set_crs(WGS84_CRS)
 
         return prepare_geo_input(gpd.GeoDataFrame(geometry=data_input))
+    # List of geometries
     elif isinstance(data_input, Iterable):
         # Create a GeoSeries with a list of geometries
-        gs = gpd.GeoSeries(data_input, crs=WGS84_CRS)
+        gs = gpd.GeoSeries(list(data_input), crs=WGS84_CRS)
         if index_name is not None:
             gs.index.rename(index_name, inplace=True)
         return prepare_geo_input(gs)

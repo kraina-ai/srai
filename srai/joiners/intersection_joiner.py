@@ -4,14 +4,11 @@ Intersection Joiner.
 This module contains intersection joiner implementation.
 """
 
-import tempfile
-from pathlib import Path
 from typing import Literal, Union, cast, overload
 
-import duckdb
+import sedonadb
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
-from srai.duckdb import prepare_duckdb_extensions, relation_to_parquet
 from srai.geodatatable import (
     VALID_GEO_INPUT,
     GeoDataTable,
@@ -106,55 +103,39 @@ class IntersectionJoiner(Joiner):
             which contains a MultiIndex and optionaly a geometry with the intersection.
         """
         base_datatable_class = GeoDataTable if return_geom else ParquetDataTable
-        with (
-            tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
-            duckdb.connect(
-                database=str(Path(tmp_dir_name) / "db.duckdb"),
-                config=dict(preserve_insertion_order=True),
-            ) as connection,
-        ):
-            tmp_dir_path = Path(tmp_dir_name)
-            prepare_duckdb_extensions(connection=connection)
-            regions_relation = regions.to_duckdb(connection=connection)
-            features_relation = features.to_duckdb(connection=connection)
+        result_file_name = base_datatable_class.generate_filename()
+        result_parquet_path = (
+            base_datatable_class.get_directory() / f"{result_file_name}_joint.parquet"
+        )
 
-            regions_index_column_names = cast("list[str]", regions.index_column_names)
-            features_index_column_names = cast("list[str]", features.index_column_names)
+        sd = sedonadb.connect()
+        regions.to_sedonadb(sd).to_view("regions")
+        features.to_sedonadb(sd).to_view("features")
 
-            regions_select_clauses = ",".join(
-                f'regions."{col}"' for col in regions_index_column_names
-            )
-            features_select_clauses = ",".join(
-                f'features."{col}"' for col in features_index_column_names
-            )
-            geometry_select_clause = (
-                "ST_Intersection(regions.geometry, features.geometry) geometry"
-                if return_geom
-                else ""
-            )
+        regions_index_column_names = cast("list[str]", regions.index_column_names)
+        features_index_column_names = cast("list[str]", features.index_column_names)
 
-            joined_query = f"""
-            SELECT
-                {regions_select_clauses},
-                {features_select_clauses},
-                {geometry_select_clause}
-            FROM ({regions_relation.sql_query()}) regions
-            JOIN ({features_relation.sql_query()}) features
-            ON ST_Intersects(regions.geometry, features.geometry)
-            """
+        regions_select_clauses = ",".join(f'regions."{col}"' for col in regions_index_column_names)
+        features_select_clauses = ",".join(
+            f'features."{col}"' for col in features_index_column_names
+        )
+        geometry_select_clause = (
+            ", ST_Intersection(regions.geometry, features.geometry) geometry" if return_geom else ""
+        )
 
-            result_file_name = base_datatable_class.generate_filename()
-            result_parquet_path = (
-                base_datatable_class.get_directory() / f"{result_file_name}_joint.parquet"
-            )
+        joined_query = f"""
+        SELECT
+            {regions_select_clauses},
+            {features_select_clauses}
+            {geometry_select_clause}
+        FROM regions
+        JOIN features
+        ON ST_Intersects(regions.geometry, features.geometry)
+        """
 
-            relation_to_parquet(
-                relation=joined_query,
-                result_parquet_path=result_parquet_path,
-                tmp_dir_path=tmp_dir_path,
-            )
+        sd.sql(joined_query).to_parquet(path=result_parquet_path, single_file_output=True)
 
-            return base_datatable_class.from_parquet(
-                result_parquet_path,
-                index_column_names=regions_index_column_names + features_index_column_names,
-            )
+        return base_datatable_class.from_parquet(
+            result_parquet_path,
+            index_column_names=regions_index_column_names + features_index_column_names,
+        )
