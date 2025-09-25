@@ -120,7 +120,14 @@ class IntersectionJoiner(Joiner):
             f'features."{col}"' for col in features_index_column_names
         )
         geometry_select_clause = (
-            ", ST_Intersection(regions.geometry, features.geometry) geometry" if return_geom else ""
+            f"""
+            , ST_Intersection(
+                regions.{GEOMETRY_COLUMN},
+                features.{GEOMETRY_COLUMN}
+            ) AS {GEOMETRY_COLUMN}
+            """
+            if return_geom
+            else ""
         )
 
         joined_query = f"""
