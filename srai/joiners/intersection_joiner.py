@@ -137,7 +137,10 @@ class IntersectionJoiner(Joiner):
             {geometry_select_clause}
         FROM regions
         JOIN features
-        ON ST_Intersects(regions.geometry, features.geometry)
+        ON ST_Intersects(
+            regions.{GEOMETRY_COLUMN},
+            features.{GEOMETRY_COLUMN}
+        )
         """
 
         sd.sql(joined_query).to_parquet(path=result_parquet_path, single_file_output=True)
