@@ -8,7 +8,7 @@ repos:
       - id: conventional-pre-commit
         stages: [commit-msg]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.12.2'
+    rev: 'v0.12.11'
     hooks:
       - id: ruff
         types_or: [ python, pyi, jupyter ]
@@ -22,13 +22,13 @@ repos:
         additional_dependencies: [tomli]
         args: [--in-place, --config, ./pyproject.toml]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.1
+    rev: v1.17.1
     hooks:
       - id: mypy
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.25.4
+    rev: 2.25.9
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
