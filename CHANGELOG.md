@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `S2Vec` model as an `S2VecEmbedder` implemented by [@hubkrieb](https://github.com/hubkrieb), proposed by Google Research team (Choudhury et al.)
+
 ### Fixed
 
 - Added `__all__` const to spatial split module
