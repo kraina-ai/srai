@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9] - 2025-09-26
+
 ### Added
 
 - `S2Vec` model as an `S2VecEmbedder` implemented by [@hubkrieb](https://github.com/hubkrieb), proposed by Google Research team (Choudhury et al.)
@@ -434,7 +436,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.8...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.9...HEAD
+
+[0.9.9]: https://github.com/kraina-ai/srai/compare/0.9.8...0.9.9
 
 [0.9.8]: https://github.com/kraina-ai/srai/compare/0.9.7...0.9.8
 
