@@ -1,12 +1,14 @@
 """Tests for DataCollector subclasses."""
 
 import os
+from io import BytesIO
 from pathlib import Path
 from typing import Union
 
 import PIL
 import pytest
 from numpy.random import default_rng
+from PIL import Image
 from pytest_mock import MockerFixture
 
 import srai.loaders.osm_loaders.osm_tile_data_collector as collectors
@@ -19,6 +21,13 @@ FILE_TYPE = "png"
 def create_id(x: int, y: int) -> str:
     """Create test id."""
     return f"{x}_{y}_ZOOM"
+
+
+def to_bytes(img: Image.Image) -> bytes:
+    """Convert image into bytes."""
+    img_bytes = BytesIO()
+    img.save(img_bytes, FILE_TYPE)
+    return img_bytes.getvalue()
 
 
 class TestSavingDataCollector:
@@ -40,11 +49,11 @@ class TestSavingDataCollector:
         )
 
         PIL.Image.Image.save.assert_called_once_with(expected)
-        assert _get_expected_path(x, y) == path
+        assert str(expected) == path
 
 
 def _get_expected_path(x: int, y: int) -> Path:
-    return Path(os.path.join(PATH, f"{create_id(x, y)}.{FILE_TYPE}"))
+    return Path(os.path.join(PATH, f"{create_id(x, y)}.{FILE_TYPE}")).resolve()
 
 
 def _path_image_save(mocker: MockerFixture) -> None:
@@ -57,7 +66,7 @@ class TestInMemoryDataCollector:
     @pytest.fixture  # type: ignore
     def col(self) -> collectors.InMemoryDataCollector:
         """Fixture for InMemoryDataCollector."""
-        return collectors.InMemoryDataCollector()
+        return collectors.InMemoryDataCollector(file_extension=FILE_TYPE)
 
     def test_should_return_stored(self, col: collectors.InMemoryDataCollector) -> None:
         """Test values of collected images."""
@@ -66,7 +75,7 @@ class TestInMemoryDataCollector:
 
         stored = col.store(create_id(x, y), img)
 
-        assert stored == img
+        assert stored == to_bytes(img)
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -76,7 +85,7 @@ def test_in_memory_collector_creation(
     collector_type: Union[str, collectors.DataCollectorType],
 ) -> None:
     """Test if factory creates properly InMemoryDataCollector."""
-    created = collectors.get_collector(collector_type)
+    created = collectors.get_collector(collector_type, file_extension=FILE_TYPE)
 
     assert isinstance(created, collectors.InMemoryDataCollector)
 

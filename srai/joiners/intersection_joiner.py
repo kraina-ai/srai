@@ -4,10 +4,17 @@ Intersection Joiner.
 This module contains intersection joiner implementation.
 """
 
-import geopandas as gpd
-import pandas as pd
+from typing import Literal, Union, cast, overload
+
+import sedonadb
 
 from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.geodatatable import (
+    VALID_GEO_INPUT,
+    GeoDataTable,
+    ParquetDataTable,
+    prepare_geo_input,
+)
 from srai.joiners import Joiner
 
 
@@ -19,94 +26,126 @@ class IntersectionJoiner(Joiner):
     does not apply any grouping or aggregation.
     """
 
+    @overload
     def transform(
         self,
-        regions: gpd.GeoDataFrame,
-        features: gpd.GeoDataFrame,
+        regions: VALID_GEO_INPUT,
+        features: VALID_GEO_INPUT,
+    ) -> ParquetDataTable: ...
+
+    @overload
+    def transform(
+        self,
+        regions: VALID_GEO_INPUT,
+        features: VALID_GEO_INPUT,
+        return_geom: Literal[False],
+    ) -> ParquetDataTable: ...
+
+    @overload
+    def transform(
+        self,
+        regions: VALID_GEO_INPUT,
+        features: VALID_GEO_INPUT,
+        return_geom: Literal[True],
+    ) -> GeoDataTable: ...
+
+    def transform(
+        self,
+        regions: VALID_GEO_INPUT,
+        features: VALID_GEO_INPUT,
         return_geom: bool = False,
-    ) -> gpd.GeoDataFrame:
+    ) -> Union[ParquetDataTable, GeoDataTable]:
         """
         Join features to regions based on an 'intersects' predicate.
 
         Does not apply any grouping to regions.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (VALID_GEO_INPUT): regions with which features are joined
+            features (VALID_GEO_INPUT): features to be joined
             return_geom (bool): whether to return geometry of the joined features.
                 Defaults to False.
 
         Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
-            a MultiIndex and optionaly a geometry with the intersection
+            ParquetDataTable or GeoDataTable with an intersection of regions and features,
+            which contains a MultiIndex and optionaly a geometry with the intersection.
         """
-        if GEOMETRY_COLUMN not in regions.columns:
+        regions_gdt = prepare_geo_input(regions, index_name=REGIONS_INDEX)
+        features_gdt = prepare_geo_input(features, index_name=FEATURES_INDEX)
+
+        self._validate_indexes(regions_gdt, features_gdt)
+
+        if GEOMETRY_COLUMN not in regions_gdt.columns:
             raise ValueError("Regions must have a geometry column.")
-        if GEOMETRY_COLUMN not in features.columns:
+        if GEOMETRY_COLUMN not in features_gdt.columns:
             raise ValueError("Features must have a geometry column.")
 
-        if len(regions) == 0:
+        if regions_gdt.empty:
             raise ValueError("Regions must not be empty.")
-        if len(features) == 0:
+        if features_gdt.empty:
             raise ValueError("Features must not be empty.")
 
-        result_gdf: gpd.GeoDataFrame
+        return self._join_data(regions=regions_gdt, features=features_gdt, return_geom=return_geom)
 
-        if return_geom:
-            result_gdf = self._join_with_geom(regions, features)
-        else:
-            result_gdf = self._join_without_geom(regions, features)
-
-        return result_gdf
-
-    def _join_with_geom(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
-    ) -> gpd.GeoDataFrame:
+    def _join_data(
+        self, regions: GeoDataTable, features: GeoDataTable, return_geom: bool
+    ) -> Union[ParquetDataTable, GeoDataTable]:
         """
         Join features to regions with returning an intersecting geometry.
 
         Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
+            regions (GeoDataTable): regions with which features are joined
+            features (GeoDataTable): features to be joined
+            return_geom (bool): whether to return geometry of the joined features.
 
         Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
-            a MultiIndex and a geometry with the intersection
+            ParquetDataTable or GeoDataTable with an intersection of regions and features,
+            which contains a MultiIndex and optionaly a geometry with the intersection.
         """
-        joined_parts = [
-            gpd.overlay(
-                single[[GEOMETRY_COLUMN]].reset_index(names=FEATURES_INDEX),
-                regions[[GEOMETRY_COLUMN]].reset_index(names=REGIONS_INDEX),
-                how="intersection",
-                keep_geom_type=False,
-            ).set_index([REGIONS_INDEX, FEATURES_INDEX])
-            for _, single in features.groupby(features[GEOMETRY_COLUMN].geom_type)
-        ]
-
-        joint = gpd.GeoDataFrame(pd.concat(joined_parts, ignore_index=False))
-        return joint
-
-    def _join_without_geom(
-        self, regions: gpd.GeoDataFrame, features: gpd.GeoDataFrame
-    ) -> gpd.GeoDataFrame:
-        """
-        Join features to regions without intersection caclulation.
-
-        Args:
-            regions (gpd.GeoDataFrame): regions with which features are joined
-            features (gpd.GeoDataFrame): features to be joined
-
-        Returns:
-            GeoDataFrame with an intersection of regions and features, which contains
-            a MultiIndex
-        """
-        features_idx, region_idx = regions.sindex.query(
-            features[GEOMETRY_COLUMN], predicate="intersects"
+        base_datatable_class = GeoDataTable if return_geom else ParquetDataTable
+        result_file_name = base_datatable_class.generate_filename()
+        result_parquet_path = (
+            base_datatable_class.get_directory() / f"{result_file_name}_joint.parquet"
         )
-        joint = gpd.GeoDataFrame(
-            {
-                REGIONS_INDEX: regions.index[region_idx],
-                FEATURES_INDEX: features.index[features_idx],
-            }
-        ).set_index([REGIONS_INDEX, FEATURES_INDEX])
-        return joint
+
+        sd = sedonadb.connect()
+        regions.to_sedonadb(sd).to_view("regions")
+        features.to_sedonadb(sd).to_view("features")
+
+        regions_index_column_names = cast("list[str]", regions.index_column_names)
+        features_index_column_names = cast("list[str]", features.index_column_names)
+
+        regions_select_clauses = ",".join(f'regions."{col}"' for col in regions_index_column_names)
+        features_select_clauses = ",".join(
+            f'features."{col}"' for col in features_index_column_names
+        )
+        geometry_select_clause = (
+            f"""
+            , ST_Intersection(
+                regions.{GEOMETRY_COLUMN},
+                features.{GEOMETRY_COLUMN}
+            ) AS {GEOMETRY_COLUMN}
+            """
+            if return_geom
+            else ""
+        )
+
+        joined_query = f"""
+        SELECT
+            {regions_select_clauses},
+            {features_select_clauses}
+            {geometry_select_clause}
+        FROM regions
+        JOIN features
+        ON ST_Intersects(
+            regions.{GEOMETRY_COLUMN},
+            features.{GEOMETRY_COLUMN}
+        )
+        """
+
+        sd.sql(joined_query).to_parquet(path=result_parquet_path, single_file_output=True)
+
+        return base_datatable_class.from_parquet(
+            result_parquet_path,
+            index_column_names=regions_index_column_names + features_index_column_names,
+        )

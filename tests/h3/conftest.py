@@ -15,11 +15,9 @@ def gdf_single_point() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def expected_point_h3_index() -> list[str]:
+def expected_point_h3_index() -> list[int]:
     """Get expected h3 index for the point case."""
-    return [
-        "8a1e23c44b5ffff",
-    ]
+    return [622026972032532479]
 
 
 @pytest.fixture  # type: ignore
@@ -88,25 +86,23 @@ def gdf_multipolygon() -> gpd.GeoDataFrame:
 
 
 @pytest.fixture  # type: ignore
-def expected_h3_indexes() -> list[str]:
+def expected_h3_indexes() -> list[int]:
     """Get expected h3 indexes."""
     return [
-        "837559fffffffff",
-        "83754efffffffff",
-        "83754cfffffffff",
-        "837541fffffffff",
-        "83755dfffffffff",
-        "837543fffffffff",
-        "83754afffffffff",
+        592036021705637887,
+        592035265791393791,
+        592035128352440319,
+        592034372438196223,
+        592036296583544831,
+        592034509877149695,
+        592034990913486847,
     ]
 
 
 @pytest.fixture  # type: ignore
-def expected_unbuffered_h3_indexes() -> list[str]:
+def expected_unbuffered_h3_indexes() -> list[int]:
     """Get expected h3 index for the unbuffered case."""
-    return [
-        "83754efffffffff",
-    ]
+    return [592035265791393791]
 
 
 def _gdf_noop(gdf_fixture: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

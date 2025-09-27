@@ -19,25 +19,23 @@ H3_RESOLUTION = 3
 
 
 @pytest.fixture  # type: ignore
-def expected_h3_indexes() -> list[str]:
+def expected_h3_indexes() -> list[int]:
     """Get expected h3 indexes."""
     return [
-        "837559fffffffff",
-        "83754efffffffff",
-        "83754cfffffffff",
-        "837541fffffffff",
-        "83755dfffffffff",
-        "837543fffffffff",
-        "83754afffffffff",
+        592036021705637887,
+        592035265791393791,
+        592035128352440319,
+        592034372438196223,
+        592036296583544831,
+        592034509877149695,
+        592034990913486847,
     ]
 
 
 @pytest.fixture  # type: ignore
-def expected_unbuffered_h3_indexes() -> list[str]:
+def expected_unbuffered_h3_indexes() -> list[int]:
     """Get expected h3 index for the unbuffered case."""
-    return [
-        "83754efffffffff",
-    ]
+    return [592035265791393791]
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -64,7 +62,7 @@ def test_transform(
     gdf: gpd.GeoDataFrame = request.getfixturevalue(gdf_fixture)
     h3_indexes: list[str] = request.getfixturevalue(expected_h3_indexes_fixture)
     with expectation:
-        gdf_h3 = H3Regionalizer(resolution, buffer=buffer).transform(gdf)
+        gdf_h3 = H3Regionalizer(resolution, buffer=buffer).transform(gdf).to_geodataframe()
 
         ut.assertCountEqual(first=gdf_h3.index.to_list(), second=h3_indexes)
         assert GEOMETRY_COLUMN in gdf_h3
@@ -73,8 +71,8 @@ def test_transform(
 def test_wroclaw_edge_case() -> None:
     """Test edge case from H3Neighbourhood example error."""
     gdf_wro = geocode_to_region_gdf("Wrocław, PL")
-    regions_gdf = H3Regionalizer(8).transform(gdf_wro)
+    regions_gdf = H3Regionalizer(8).transform(gdf_wro).to_geodataframe()
 
-    edge_region_id = "881e2050bdfffff"
+    edge_region_id = 613019535601041407
 
     assert edge_region_id in regions_gdf.index, "Edge cell is not in the regions."

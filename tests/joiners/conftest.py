@@ -31,6 +31,23 @@ def regions_gdf() -> gpd.GeoDataFrame:
             geometry.Polygon([(-2, 0.5), (-2, -0.5), (-1, -0.5), (-1, 0.5)]),
         ],
         crs=WGS84_CRS,
+        index=pd.RangeIndex(start=0, stop=4, name=REGIONS_INDEX),
+    )
+    return regions
+
+
+@pytest.fixture  # type: ignore
+def regions_multiindex_gdf() -> gpd.GeoDataFrame:
+    """Get GeoDataFrame with example regions."""
+    regions = gpd.GeoDataFrame(
+        geometry=[
+            geometry.Polygon([(-1, 0), (-1, -1), (0, -1), (0, 0)]),
+            geometry.Polygon([(1, 0), (1, 1), (0, 1), (0, 0)]),
+            geometry.Polygon([(-2, -1), (-2, -2), (-1, -2), (-1, -1)]),
+            geometry.Polygon([(-2, 0.5), (-2, -0.5), (-1, -0.5), (-1, 0.5)]),
+        ],
+        crs=WGS84_CRS,
+        index=pd.MultiIndex.from_tuples([(0, 1), (1, 1), (2, 1), (3, 1)], names=["a", "b"]),
     )
     return regions
 
@@ -47,6 +64,24 @@ def features_gdf() -> gpd.GeoDataFrame:
             geometry.Point((-0.5, -0.5)),
         ],
         crs=WGS84_CRS,
+        index=pd.RangeIndex(start=0, stop=4, name=FEATURES_INDEX),
+    )
+    return features
+
+
+@pytest.fixture  # type: ignore
+def features_multiindex_gdf() -> gpd.GeoDataFrame:
+    """Get GeoDataFrame with example features."""
+    features = gpd.GeoDataFrame(
+        [1, 2, 3, 4],
+        geometry=[
+            geometry.Polygon([(-1.5, 0.5), (-1.5, 0), (-0.5, 0), (-0.5, 0.5)]),
+            geometry.Polygon([(-1.5, -1.5), (-1.5, -2.5), (-0.5, -2.5), (-0.5, -1.5)]),
+            geometry.Point((0, 0)),
+            geometry.Point((-0.5, -0.5)),
+        ],
+        crs=WGS84_CRS,
+        index=pd.MultiIndex.from_tuples([(0, 2), (1, 2), (2, 2), (3, 2)], names=["c", "d"]),
     )
     return features
 
@@ -56,4 +91,13 @@ def joint_multiindex() -> pd.MultiIndex:
     """Get MultiIndex for joint GeoDataFrame."""
     return pd.MultiIndex.from_tuples(
         [(0, 2), (0, 3), (1, 2), (0, 0), (3, 0), (2, 1)], names=[REGIONS_INDEX, FEATURES_INDEX]
+    )
+
+
+@pytest.fixture  # type: ignore
+def joint_multiindex_nested() -> pd.MultiIndex:
+    """Get MultiIndex for joint GeoDataFrame."""
+    return pd.MultiIndex.from_tuples(
+        [(0, 1, 2, 2), (0, 1, 3, 2), (1, 1, 2, 2), (0, 1, 0, 2), (3, 1, 0, 2), (2, 1, 1, 2)],
+        names=["a", "b", "c", "d"],
     )
