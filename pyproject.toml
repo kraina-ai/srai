@@ -69,7 +69,7 @@ voronoi = [
     "spherical-geometry>=1.3.2",
 ]
 # pdm add -G gtfs <library>
-gtfs = ["gtfs-kit"]
+gtfs = ["gtfs-kit==6.*"]
 # pdm add -G plotting <library>
 plotting = [
     "folium>=0.14.0",
