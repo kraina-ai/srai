@@ -29,8 +29,7 @@ from rq_geo_toolkit.constants import (
 from rq_geo_toolkit.geoparquet_sorting import sort_geoparquet_file_by_geometry
 from sedonadb.context import SedonaContext
 from sedonadb.dataframe import DataFrame as SedonaDataFrame
-from shapely import coverage_union_all, union_all
-from shapely.errors import GEOSException
+from shapely import GEOSException, coverage_union_all, union_all
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
@@ -690,6 +689,22 @@ class GeoDataTable(ParquetDataTable):
             sorted_files.append(new_parquet_path)
 
         return sorted_files
+
+    def union_all_sedona(self) -> BaseGeometry:
+        """Return union of all geometries in the GeoDataTable."""
+        sd = SedonaContext()
+        self.to_sedonadb(sd=sd).to_view("geometries")
+        return (
+            sd.sql(
+                f"""
+                SELECT
+                    ST_Buffer(ST_Union_Aggr({GEOMETRY_COLUMN}), 0) as {GEOMETRY_COLUMN}
+                FROM geometries
+                """
+            )
+            .to_pandas()
+            .iloc[0][GEOMETRY_COLUMN]
+        )
 
     def union_all(self, method: Literal["coverage", "unary"] = "coverage") -> BaseGeometry:
         """Return union of all geometries in the GeoDataTable."""
