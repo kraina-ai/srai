@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `S2Vec` model as an `S2VecEmbedder` implemented by [@hubkrieb](https://github.com/hubkrieb), proposed by Google Research team (Choudhury et al.)
+- `timm` to optional dependencies for `S2VecEmbedder`
+
+### Changed
+
+- Locked `gtfs-kit` version to `0.6.*`
 
 ### Fixed
 
