@@ -138,6 +138,7 @@ class Hex2VecEmbedder(CountEmbedder):
 
         counts_df = self._get_raw_counts(regions_gdf, features_gdf, joint_gdf)
 
+        self.expected_output_features: Optional[pd.Series]
         if self.expected_output_features is None:
             self.expected_output_features = pd.Series(counts_df.columns)
 
