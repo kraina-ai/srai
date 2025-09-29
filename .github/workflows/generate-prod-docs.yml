@@ -20,59 +20,58 @@ jobs:
         uses: actions-ecosystem/action-get-latest-tag@v1
         with:
           semver_only: true
-      - run: echo ${{ steps.previoustag.outputs.tag }}
-      # - name: Setup Python
-      #   uses: actions/setup-python@v4
-      #   with:
-      #     python-version: "3.10"
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-pip-dev-
-      # - name: Install pdm
-      #   run: pip install pdm uv
-      # - name: Regenerate lock with environment markers
-      #   run: pdm lock --update-reuse --strategy inherit_metadata
-      # - name: Generate requirements.txt
-      #   run: pdm export --no-default -dG docs -dG visualization -f requirements -o requirements.txt
-      # - name: Install dependencies
-      #   run: uv pip install --no-deps -r requirements.txt --system
-      # - name: Install nbconvert dependency
-      #   run: uv pip install jupyter nbconvert nbformat black --system
-      # - name: Install srai
-      #   run: |
-      #     pdm build -v -d dist
-      #     uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
-      # - name: Configure Git user
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      # - name: Cache Overpass data
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: "**/cache"
-      #     key: mkdocs-overpass-dev-cache-${{ runner.os }}
-      # - name: Execute jupyter notebooks
-      #   run: |
-      #     jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
-      # - uses: jannekem/run-python-script-action@v1
-      #   name: Replace copyright date
-      #   with:
-      #     script: |
-      #       import time
-      #       file_name = "mkdocs.yml"
-      #       with open(file_name) as f:
-      #           data = f.read().replace('{current_year}', time.strftime("%Y"))
-      #       with open(file_name, "w") as f:
-      #           f.write(data)
-      # - name: Create remote for srai-docs repository
-      #   run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
-      # - name: Fetch gh-pages branch
-      #   run: git fetch origin-srai-docs gh-pages --depth=1
-      # - name: Get minor version
-      #   id: get-minor-version
-      #   run: python -c "print('MINOR_VERSION=' + '.'.join('${{steps.previoustag.outputs.tag}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
-      # - name: Publish latest documentation
-      #   run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-dev-
+      - name: Install pdm
+        run: pip install pdm uv
+      - name: Regenerate lock with environment markers
+        run: pdm lock --update-reuse --strategy inherit_metadata
+      - name: Generate requirements.txt
+        run: pdm export --no-default -dG docs -dG visualization -f requirements -o requirements.txt
+      - name: Install dependencies
+        run: uv pip install --no-deps -r requirements.txt --system
+      - name: Install nbconvert dependency
+        run: uv pip install jupyter nbconvert nbformat black --system
+      - name: Install srai
+        run: |
+          pdm build -v -d dist
+          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
+      - name: Configure Git user
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Cache Overpass data
+        uses: actions/cache@v3
+        with:
+          path: "**/cache"
+          key: mkdocs-overpass-dev-cache-${{ runner.os }}
+      - name: Execute jupyter notebooks
+        run: |
+          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb") --ExecutePreprocessor.kernel_name='python3'
+      - uses: jannekem/run-python-script-action@v1
+        name: Replace copyright date
+        with:
+          script: |
+            import time
+            file_name = "mkdocs.yml"
+            with open(file_name) as f:
+                data = f.read().replace('{current_year}', time.strftime("%Y"))
+            with open(file_name, "w") as f:
+                f.write(data)
+      - name: Create remote for srai-docs repository
+        run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
+      - name: Fetch gh-pages branch
+        run: git fetch origin-srai-docs gh-pages --depth=1
+      - name: Get minor version
+        id: get-minor-version
+        run: python -c "print('MINOR_VERSION=' + '.'.join('${{steps.previoustag.outputs.tag}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
+      - name: Publish latest documentation
+        run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
