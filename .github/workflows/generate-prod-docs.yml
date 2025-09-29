@@ -17,8 +17,10 @@ jobs:
           token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: 'Get Previous tag'
         id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-      - run: echo ${{steps.previoustag.outputs.tag}}
+        uses: actions-ecosystem/action-get-latest-tag@v1
+        with:
+          semver_only: true
+      - run: echo ${{ steps.previoustag.outputs.tag }}
       # - name: Setup Python
       #   uses: actions/setup-python@v4
       #   with:
