@@ -1,9 +1,14 @@
 """Optional dependencies tests."""
 
+import importlib
 import sys
+
 from collections.abc import Generator
 from contextlib import nullcontext as does_not_raise
 from typing import Any, Callable
+from collections.abc import Callable, Generator
+from contextlib import nullcontext as does_not_raise
+from typing import Any, Optional
 
 import geopandas as gpd
 import pytest
@@ -34,11 +39,12 @@ def optional_packages() -> list[str]:
         "torch",
         "datasets",
         "fastdtw",
+        "timm",
     ]
 
 
 @pytest.fixture(autouse=True)  # type: ignore
-def cleanup_imports() -> Generator[Any, Any, Any]:
+def cleanup_imports() -> Generator[None, None, None]:
     """Clean imports."""
     yield
     sys.modules.pop("srai", None)
@@ -60,7 +66,7 @@ class PackageDiscarder:
 @pytest.fixture  # type: ignore
 def no_optional_dependencies(
     monkeypatch: Any, optional_packages: list[str]
-) -> Generator[Any, Any, Any]:
+) -> Generator[None, None, None]:
     """Mock environment without optional dependencies."""
     d = PackageDiscarder()
 
@@ -100,18 +106,16 @@ def _test_plotting() -> None:
     plotly_wrapper.plot_regions(_get_regions_gdf(), return_plot=True)
 
 
-def _test_torch() -> None:
-    from srai.embedders import (
-        GeoVexEmbedder,
-        GTFS2VecEmbedder,
-        Hex2VecEmbedder,
-        Highway2VecEmbedder,
-    )
+def _get_test_torch_embedder_fn(
+    embedder_name: str, kwargs: Optional[dict[str, Any]] = None
+) -> Callable[[], None]:
+    def _test_torch_embedder_fn() -> None:
+        embedder_module = importlib.import_module("srai.embedders")
+        embedder_class = getattr(embedder_module, embedder_name)
+        embedder_instance = embedder_class(**(kwargs or {}))
+        print(embedder_instance)
 
-    Highway2VecEmbedder()
-    GTFS2VecEmbedder()
-    Hex2VecEmbedder()
-    GeoVexEmbedder(["a"] * 256)
+    return _test_torch_embedder_fn
 
 
 def _test_osm() -> None:
@@ -165,14 +169,18 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
     [
         (_test_voronoi),
         (_test_plotting),
-        (_test_torch),
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
         (_test_dataset),
+        (_get_test_torch_embedder_fn("Highway2VecEmbedder")),
+        (_get_test_torch_embedder_fn("GTFS2VecEmbedder")),
+        (_get_test_torch_embedder_fn("Hex2VecEmbedder")),
+        (_get_test_torch_embedder_fn("GeoVexEmbedder", dict(target_features=["a"] * 256))),
+        (_get_test_torch_embedder_fn("S2VecEmbedder", dict(target_features=["a"] * 256))),
     ],
 )
-def test_optional_available(test_fn: Callable[..., None]) -> None:
+def test_optional_available(test_fn: Callable[[], None]) -> None:
     """Test if defined functions are working with optional packages."""
     test_fn()
 
@@ -183,14 +191,18 @@ def test_optional_available(test_fn: Callable[..., None]) -> None:
     [
         (_test_voronoi),
         (_test_plotting),
-        (_test_torch),
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
         (_test_dataset),
+        (_get_test_torch_embedder_fn("Highway2VecEmbedder")),
+        (_get_test_torch_embedder_fn("GTFS2VecEmbedder")),
+        (_get_test_torch_embedder_fn("Hex2VecEmbedder")),
+        (_get_test_torch_embedder_fn("GeoVexEmbedder", dict(target_features=["a"] * 256))),
+        (_get_test_torch_embedder_fn("S2VecEmbedder", dict(target_features=["a"] * 256))),
     ],
 )
-def test_optional_missing(test_fn: Callable[..., None]) -> None:
+def test_optional_missing(test_fn: Callable[[], None]) -> None:
     """Test if defined functions are failing without optional packages."""
     with pytest.raises(ImportError):
         test_fn()

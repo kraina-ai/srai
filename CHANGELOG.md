@@ -11,12 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets
 - New optional dependency group: `datasets`
-- Weight-based examples sorting in documentation with `mkdocs-nav-weight`
+- Weight-based examples sorting in documentation with `mkdocs-nav-weight` plugin
 
 ### Changed
 
 - Reduced line-length in example notebooks from 100 to 88
 - Improved typing in the codebase
+
+## [0.9.9] - 2025-09-26
+
+### Added
+
+- `S2Vec` model as an `S2VecEmbedder` implemented by [@hubkrieb](https://github.com/hubkrieb), proposed by Google Research team (Choudhury et al.)
+- `timm` to optional dependencies for `S2VecEmbedder`
+
+### Changed
+
+- Locked `gtfs-kit` version to `0.6.*`
 
 ### Fixed
 
@@ -441,7 +452,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.8...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.9...HEAD
+
+[0.9.9]: https://github.com/kraina-ai/srai/compare/0.9.8...0.9.9
 
 [0.9.8]: https://github.com/kraina-ai/srai/compare/0.9.7...0.9.8
 
