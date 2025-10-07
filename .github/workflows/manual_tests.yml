@@ -7,7 +7,7 @@ on:
 
 jobs:
   run-tests-newest:
-    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (newest dependencies)
+    name: Run tests 🛠️ with newest dependencies
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -42,7 +42,7 @@ jobs:
         run: pytest -v --durations=20 tests
 
   run-tests-oldest:
-    name: Run tests 🛠️ on multiple systems 🖥️ and Python 🐍 versions (oldest dependencies)
+    name: Run tests 🛠️ with oldest dependencies
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

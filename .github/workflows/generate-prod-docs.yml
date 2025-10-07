@@ -9,7 +9,7 @@ jobs:
       contents: write
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
-      MKDOCS_DEV: true
+      MKDOCS_DEV: false
       FORCE_TERMINAL_MODE: true
     steps:
       - uses: actions/checkout@v4
