@@ -45,7 +45,9 @@ def test_raises_with_incorrect_sample_k_distance(
 
 
 @pytest.mark.parametrize("negative_sample_k_distance", [2, 3, 4])  # type: ignore
-def test_lookup_tables_construction(negative_sample_k_distance: int, regions_data_df: pd.DataFrame):
+def test_lookup_tables_construction(
+    negative_sample_k_distance: int, regions_data_df: pd.DataFrame
+) -> None:
     """Test if NeighbourDataset constructs lookup tables correctly."""
     neighbourhood = H3Neighbourhood(regions_data_df)
     dataset = NeighbourDataset(

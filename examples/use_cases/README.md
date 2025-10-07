@@ -1,3 +1,8 @@
+---
+title: Use cases
+weight: 1
+---
+
 # Use cases
 
 Examples illustrating the use of the library in more complex scenarios showing how the different components of the library interact with each other.

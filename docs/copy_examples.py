@@ -61,8 +61,11 @@ banned_directories = [
     "example_files",
     "__pycache__",
     "lightning_logs",
+    ".ruff_cache",
+    # exclude long running notebooks
+    "benchmark",
 ]
-banned_extensions = [".pbf", ".parquet", ".json", ".geojson", ".pt"]
+banned_extensions = [".pbf", ".parquet", ".json", ".geojson", ".pt", ".toml", ".pkl"]
 for i in EXAMPLES_DIRECTORY_PATH.glob("**/*"):
     if i.is_file():
         should_copy = True

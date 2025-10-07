@@ -9,6 +9,10 @@ Here you can find usage examples for all of the functionality provided by `srai`
 
 ---
 
+[Datasets for Open Benchmark for Spatial Representations (OBSR)](./datasets)
+
+---
+
 Library API
 
 * [Embedders](./embedders)

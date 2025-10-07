@@ -33,6 +33,8 @@ def optional_packages() -> list[str]:
         "kaleido",
         "pytorch-lightning",
         "torch",
+        "datasets",
+        "fastdtw",
         "timm",
     ]
 
@@ -135,6 +137,12 @@ def _test_gtfs() -> None:
     GTFSLoader()
 
 
+def _test_dataset() -> None:
+    from srai.datasets import AirbnbMulticityDataset
+
+    AirbnbMulticityDataset()
+
+
 def _get_regions_gdf() -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(
         data={
@@ -160,6 +168,7 @@ def _get_regions_gdf() -> gpd.GeoDataFrame:
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
+        (_test_dataset),
         (_get_test_torch_embedder_fn("Highway2VecEmbedder")),
         (_get_test_torch_embedder_fn("GTFS2VecEmbedder")),
         (_get_test_torch_embedder_fn("Hex2VecEmbedder")),
@@ -181,6 +190,7 @@ def test_optional_available(test_fn: Callable[[], None]) -> None:
         (_test_osm),
         (_test_overturemaps),
         (_test_gtfs),
+        (_test_dataset),
         (_get_test_torch_embedder_fn("Highway2VecEmbedder")),
         (_get_test_torch_embedder_fn("GTFS2VecEmbedder")),
         (_get_test_torch_embedder_fn("Hex2VecEmbedder")),

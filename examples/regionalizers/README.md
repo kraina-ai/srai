@@ -1,3 +1,8 @@
+---
+title: Regionalizers
+weight: 50
+---
+
 # Regionalizers
 
 Examples illustrating the usage of every Regionalizer.

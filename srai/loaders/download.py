@@ -2,6 +2,7 @@
 
 import warnings
 from pathlib import Path
+from typing import Union
 
 import requests
 from tqdm import tqdm
@@ -10,15 +11,15 @@ from srai.constants import FORCE_TERMINAL
 
 
 def download_file(
-    url: str, fname: str, chunk_size: int = 1024, force_download: bool = True
+    url: str, fname: Union[str, Path], chunk_size: int = 1024, force_download: bool = True
 ) -> None:
     """
     Download a file with progress bar.
 
     Args:
         url (str): URL to download.
-        fname (str): File name.
-        chunk_size (str): Chunk size.
+        fname (Union[str, Path]): File name.
+        chunk_size (int): Chunk size.
         force_download (bool): Flag to force download even if file exists.
 
     Source: https://gist.github.com/yanqd0/c13ed29e29432e3cf3e7c38467f42f51
@@ -38,7 +39,7 @@ def download_file(
     with (
         open(fname, "wb") as file,
         tqdm(
-            desc=fname.split("/")[-1],
+            desc=Path(fname).name,
             total=total,
             unit="iB",
             unit_scale=True,

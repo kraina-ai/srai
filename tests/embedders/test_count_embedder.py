@@ -1,7 +1,7 @@
 """CountEmbedder tests."""
 
 from contextlib import nullcontext as does_not_raise
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 from unittest import TestCase
 
 import pandas as pd
@@ -468,4 +468,6 @@ def test_osm_tags_filter_parsing(
             count_subcategories=count_subcategories,
         )
 
-        ut.assertCountEqual(embedder.expected_output_features, expected_output_features)
+        ut.assertCountEqual(
+            cast("pd.Series", embedder.expected_output_features), expected_output_features
+        )
