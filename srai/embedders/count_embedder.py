@@ -4,15 +4,29 @@ Count Embedder.
 This module contains count embedder implementation.
 """
 
+import hashlib
+import math
+import tempfile
+import warnings
+from datetime import datetime
+from pathlib import Path
 from typing import Optional, Union, cast
 
-import geopandas as gpd
+import duckdb
 import pandas as pd
 import polars as pl
+from rq_geo_toolkit.duckdb import sql_escape
+from tqdm import tqdm
 
 from srai._typing import is_expected_type
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.constants import FORCE_TERMINAL, GEOMETRY_COLUMN
+from srai.duckdb import relation_to_parquet
 from srai.embedders import Embedder
+from srai.geodatatable import (
+    VALID_DATA_INPUT,
+    ParquetDataTable,
+    prepare_data_input,
+)
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 
@@ -45,113 +59,319 @@ class CountEmbedder(Embedder):
 
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
-    ) -> pd.DataFrame:
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
+    ) -> ParquetDataTable:
         """
-        Embed a given GeoDataFrame.
+        Embed a given Geo data.
 
         Creates region embeddings by counting the frequencies of each feature value.
         Expects features_gdf to be in wide format with each column
         being a separate type of feature (e.g. amenity, leisure)
         and rows to hold values of these features for each object.
-        The resulting DataFrame will have columns made by combining
+        The resulting output will have columns made by combining
         the feature name (column) and value (row) e.g. amenity_fuel or type_0.
         The rows will hold numbers of this type of feature in each region.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes.
+            features (VALID_DATA_INPUT): Feature indexes and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf.
+            ParquetDataTable: Embedding for each region in regions.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
-            ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
-            ValueError: If index levels in gdfs don't overlap correctly.
-            ValueError: If features_gdf contains boolean columns and count_subcategories is True.
+            ValueError: If features is empty and self.expected_output_features is not set.
+            ValueError: If any of the input index names is None.
+            ValueError: If joint.index doesn't have 2 levels.
+            ValueError: If index levels in inputs don't overlap correctly.
+            ValueError: If features contains boolean columns and count_subcategories is True.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        if features_gdf.empty:
+        regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        features_pdt = prepare_data_input(features).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        joint_pdt = prepare_data_input(joint).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+
+        self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
+
+        if features_pdt.empty:
             if self.expected_output_features is not None:
-                return pd.DataFrame(
-                    0, index=regions_gdf.index, columns=self.expected_output_features
+                paths = list(map(lambda x: f"'{x}'", regions_pdt.parquet_paths))
+                select_clauses = [
+                    f'0 AS "{sql_escape(column)}"' for column in self.expected_output_features
+                ]
+
+                prefix_path = ParquetDataTable.generate_filename()
+                relation = duckdb.sql(
+                    f"""
+                    SELECT
+                        regions.{regions_pdt.index_name},
+                        {",".join(select_clauses)}
+                    FROM read_parquet([{",".join(paths)}]) regions
+                    """
+                )
+
+                h = hashlib.new("sha256")
+                h.update(relation.sql_query().encode())
+                relation_hash = h.hexdigest()
+
+                save_parquet_path = (
+                    ParquetDataTable.get_directory() / f"{prefix_path}_{relation_hash}.parquet"
+                )
+                relation.to_parquet(str(save_parquet_path))
+                return ParquetDataTable.from_parquet(
+                    parquet_path=save_parquet_path,
+                    index_column_names=regions_pdt.index_column_names,
                 )
             else:
                 raise ValueError(
                     "Cannot embed with empty features_gdf and no expected_output_features."
                 )
 
-        regions_df = pl.from_pandas(regions_gdf[[]], include_index=True).lazy()
-        features_df = pl.from_pandas(
-            features_gdf.drop(columns=GEOMETRY_COLUMN), include_index=True
-        ).lazy()
-        joint_df = pl.from_pandas(joint_gdf[[]], include_index=True).lazy()
+        regions_index_name = cast("str", regions_pdt.index_name)
+        features_index_name = cast("str", features_pdt.index_name)
 
-        features_schema = features_df.collect_schema()
-        feature_columns = [col for col in features_schema.names() if col != FEATURES_INDEX]
+        regions_schema = pl.from_arrow(regions_pdt.to_pyarrow_dataset().schema.empty_table()).schema
+        features_schema = pl.from_arrow(
+            features_pdt.to_pyarrow_dataset().schema.empty_table()
+        ).schema
+        joint_schema = pl.from_arrow(joint_pdt.to_pyarrow_dataset().schema.empty_table()).schema
+
+        region_id_schema_mismatch = (
+            regions_schema.get(regions_index_name).to_python()
+            != joint_schema.get(regions_index_name).to_python()
+        )
+
+        region_joint_join_clause = (
+            f"regions.{regions_index_name} = joint.{regions_index_name}"
+            if not region_id_schema_mismatch
+            else f"regions.{regions_index_name}::VARCHAR = joint.{regions_index_name}::VARCHAR"
+        )
+
+        feature_id_schema_mismatch = (
+            features_schema.get(features_index_name).to_python()
+            != joint_schema.get(features_index_name).to_python()
+        )
+
+        feature_joint_join_clause = (
+            f"features.{features_index_name} = joint.{features_index_name}"
+            if not feature_id_schema_mismatch
+            else f"features.{features_index_name}::VARCHAR = joint.{features_index_name}::VARCHAR"
+        )
+
+        features_select_relation, feature_columns = self._prepare_features_select_relation(
+            features_pdt=features_pdt,
+            features_index_name=features_index_name,
+            features_schema=features_schema,
+        )
+
+        group_by_expressions = []
+        for col in feature_columns:
+            escaped_column_name = sql_escape(col)
+            group_by_expressions.append(f'SUM("{escaped_column_name}") AS "{escaped_column_name}"')
+
+        filtered_embedding_select_clauses, feature_columns = (
+            self._maybe_filter_to_expected_features(current_embedding_columns=feature_columns)
+        )
+
+        result_file_name = ParquetDataTable.generate_filename()
+        result_dir_path = ParquetDataTable.get_directory() / f"{result_file_name}_embeddings"
+
+        coalesced_select_clauses = []
+        for col in feature_columns:
+            escaped_column_name = sql_escape(col)
+            coalesced_select_clauses.append(
+                f'COALESCE(joint."{escaped_column_name}", 0)::INT AS "{escaped_column_name}"'
+            )
+
+        self._save_relation_in_batches(
+            regions_pdt=regions_pdt,
+            joint_pdt=joint_pdt,
+            features_select_relation=features_select_relation,
+            regions_index_name=regions_index_name,
+            features_index_name=features_index_name,
+            feature_joint_join_clause=feature_joint_join_clause,
+            region_joint_join_clause=region_joint_join_clause,
+            group_by_expressions=group_by_expressions,
+            filtered_embedding_select_clauses=filtered_embedding_select_clauses,
+            coalesced_select_clauses=coalesced_select_clauses,
+            result_dir_path=result_dir_path,
+        )
+
+        return ParquetDataTable.from_parquet_directory(
+            directory_path=result_dir_path, index_column_names=regions_index_name
+        )
+
+    def _prepare_features_select_relation(
+        self, features_pdt: ParquetDataTable, features_index_name: str, features_schema: pl.Schema
+    ) -> tuple[duckdb.DuckDBPyRelation, list[str]]:
+        feature_columns = [col for col in features_schema.names() if col != features_index_name]
         dtypes = features_schema.dtypes()
         are_all_columns_bool = all(
             dtypes[idx] == pl.Boolean
             for idx, col in enumerate(features_schema.names())
-            if col != FEATURES_INDEX
+            if col != features_index_name
         )
 
         if self.count_subcategories:
             if are_all_columns_bool:
                 raise ValueError("Cannot count subcategories with boolean columns.")
 
-            feature_encodings = (
-                features_df.collect(streaming=True).to_dummies(columns=feature_columns).lazy()
-            )
-            feature_columns = [
-                col
-                for col in feature_encodings.collect_schema().names()
-                if col != FEATURES_INDEX and not col.endswith("_null")
-            ]
-            feature_encodings = feature_encodings.select([FEATURES_INDEX, *feature_columns])
-        elif are_all_columns_bool:
-            feature_encodings = features_df.with_columns(
-                [
-                    pl.col(FEATURES_INDEX),
-                    *(pl.col(col).cast(pl.Int32) for col in feature_columns),
-                ]
-            )
-        else:
-            feature_encodings = features_df.with_columns(
-                [
-                    pl.col(FEATURES_INDEX),
-                    *(pl.col(col).is_not_null().cast(pl.Int32) for col in feature_columns),
-                ]
-            )
-
-        joint_with_encodings = joint_df.join(feature_encodings, on=FEATURES_INDEX, how="left")
-        region_embeddings = joint_with_encodings.drop(FEATURES_INDEX).group_by(REGIONS_INDEX).sum()
-        region_embeddings, feature_columns = self._maybe_filter_to_expected_features(
-            region_embeddings, feature_columns
-        )
-
-        region_embeddings_df = (
-            (
-                regions_df.join(region_embeddings, on=REGIONS_INDEX, how="left")
-                .fill_null(0)
-                .with_columns(
-                    [
-                        pl.col(REGIONS_INDEX),
-                        *(pl.col(col).cast(pl.Int32) for col in feature_columns),
-                    ]
+            subcategories = {}
+            for col in sorted(feature_columns):
+                subcategories[col] = (
+                    features_pdt.to_duckdb()
+                    .project(f'"{col}"')
+                    .filter(f'"{col}" IS NOT NULL')
+                    .distinct()
+                    .order(f'"{col}"')
+                    .fetchnumpy()[col]
                 )
-            )
-            .collect(streaming=True)
-            .to_pandas()
-            .set_index(REGIONS_INDEX)
-        )
 
-        return region_embeddings_df
+            dummy_expressions = []
+            feature_columns = []
+            for col, cats in subcategories.items():
+                for c in cats:
+                    new_feature_name = f"{col}_{c}"
+                    escaped_column_name = sql_escape(new_feature_name)
+                    dummy_expressions.append(
+                        f"""
+                        CASE WHEN "{col}" = '{c}' THEN 1 ELSE 0 END AS "{escaped_column_name}"
+                        """
+                    )
+                    feature_columns.append(new_feature_name)
+
+            features_select_relation = duckdb.sql(f"""
+            SELECT {features_index_name}, {", ".join(dummy_expressions)}
+            FROM ({features_pdt.to_duckdb().sql_query()})
+            """)
+        elif are_all_columns_bool:
+            cast_expressions = [
+                f'CAST("{col}" AS INT) AS "{col}"' for col in sorted(feature_columns)
+            ]
+            features_select_relation = duckdb.sql(f"""
+            SELECT {features_index_name}, {", ".join(cast_expressions)}
+            FROM ({features_pdt.to_duckdb().sql_query()})
+            """)
+        else:
+            case_expressions = [
+                f'CASE WHEN "{col}" IS NOT NULL THEN 1 ELSE 0 END AS "{col}"'
+                for col in sorted(feature_columns)
+            ]
+            features_select_relation = duckdb.sql(f"""
+            SELECT {features_index_name}, {", ".join(case_expressions)}
+            FROM ({features_pdt.to_duckdb().sql_query()})
+            """)
+
+        return features_select_relation, feature_columns
+
+    # TODO: move to rq_geo_toolkit
+    def ceil_to_power_of_10(self, n: int) -> int:
+        """Return the smallest power of 10 greater than or equal to n."""
+        if n <= 0:
+            raise ValueError("Input must be a positive integer.")
+
+        exponent = math.ceil(math.log10(n))
+        return cast("int", 10**exponent)
+
+    def _save_relation_in_batches(
+        self,
+        regions_pdt: ParquetDataTable,
+        joint_pdt: ParquetDataTable,
+        features_select_relation: duckdb.DuckDBPyRelation,
+        regions_index_name: str,
+        features_index_name: str,
+        feature_joint_join_clause: str,
+        region_joint_join_clause: str,
+        group_by_expressions: list[str],
+        filtered_embedding_select_clauses: list[str],
+        coalesced_select_clauses: list[str],
+        result_dir_path: Path,
+    ) -> None:
+        total_rows = regions_pdt.rows
+        current_offset = 0
+        current_limit = min(self.ceil_to_power_of_10(total_rows), 10_000_000)
+
+        force_empty_file_creation = total_rows == 0
+
+        with (
+            tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
+            tqdm(
+                total=total_rows,
+                desc="Saving count embeddings",
+                disable=FORCE_TERMINAL,
+            ) as pbar,
+        ):
+            tmp_dir_path = Path(tmp_dir_name)
+            while current_offset < total_rows or force_empty_file_creation:
+                try:
+                    timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                    current_result_file_path = result_dir_path / f"{timestr}.parquet"
+
+                    limited_relation = regions_pdt.to_duckdb(with_row_number=True).limit(
+                        n=current_limit, offset=current_offset
+                    )
+
+                    joined_query = f"""
+                    WITH joined_features AS (
+                        SELECT
+                            regions.{regions_index_name},
+                            features.* EXCLUDE ({features_index_name})
+                        FROM ({limited_relation.sql_query()}) regions
+                        JOIN ({joint_pdt.to_duckdb().sql_query()}) joint
+                        ON {region_joint_join_clause}
+                        JOIN ({features_select_relation.sql_query()}) features
+                        ON {feature_joint_join_clause}
+                    ), region_embeddings AS (
+                        SELECT
+                            {regions_index_name},
+                            {", ".join(group_by_expressions)}
+                        FROM joined_features
+                        GROUP BY 1
+                    ), filtered_region_embeddings AS (
+                        SELECT
+                            {regions_index_name},
+                            {", ".join(filtered_embedding_select_clauses)}
+                        FROM region_embeddings
+                    )
+                    SELECT
+                        regions.{regions_index_name},
+                        {", ".join(coalesced_select_clauses)}
+                    FROM ({limited_relation.sql_query()}) regions
+                    LEFT JOIN filtered_region_embeddings joint
+                    ON {region_joint_join_clause}
+                    ORDER BY regions.row_number
+                    """
+
+                    relation_to_parquet(
+                        relation=joined_query,
+                        result_parquet_path=current_result_file_path,
+                        tmp_dir_path=tmp_dir_path,
+                    )
+                    force_empty_file_creation = False
+
+                    current_offset += current_limit
+                    pbar.n = min(current_offset, total_rows)
+                    pbar.refresh()
+
+                except (duckdb.OutOfMemoryException, MemoryError) as ex:
+                    current_result_file_path.unlink(missing_ok=True)
+
+                    current_limit //= 10
+                    if current_limit == 1:
+                        raise
+
+                    print(
+                        f"Encountered {ex.__class__.__name__} during operation."
+                        f" Retrying with lower number of rows per batch ({current_limit} rows)."
+                    )
+
+                    warnings.warn(
+                        f"Encountered {ex.__class__.__name__} during operation."
+                        f" Retrying with lower number of rows per batch ({current_limit} rows).",
+                        stacklevel=1,
+                    )
 
     def _parse_expected_output_features(
         self,
@@ -223,27 +443,34 @@ class CountEmbedder(Embedder):
         return sorted(list(expected_output_features))
 
     def _maybe_filter_to_expected_features(
-        self, region_embeddings: pl.LazyFrame, current_embedding_columns: list[str]
-    ) -> tuple[pl.LazyFrame, list[str]]:
+        self, current_embedding_columns: list[str]
+    ) -> tuple[list[str], list[str]]:
         """
         Add missing and remove excessive columns from embeddings.
 
         Args:
-            region_embeddings (pl.LazyFrame): Counted frequencies of each feature value.
+            region_embeddings (duckdb.DuckDBPyRelation): Counted frequencies of each feature value.
+            regions_index_name (str): Name of index used in regions relation.
             current_embedding_columns (list[str]): List of current embedding columns.
 
         Returns:
-            tuple[pl.LazyFrame, list[str]]: Embeddings with expected columns only and new list
-            of columns.
+            tuple[list[str], list[str]]: New list of select clauses columns
+            and a new list of columns.
         """
         if self.expected_output_features is None:
-            return region_embeddings, current_embedding_columns
+            escaped_column_names = [f'"{sql_escape(c)}"' for c in current_embedding_columns]
+            return escaped_column_names, current_embedding_columns
 
         missing_features = self.expected_output_features[
             ~self.expected_output_features.isin(current_embedding_columns)
-        ]
+        ].to_list()
 
-        region_embeddings = region_embeddings.with_columns(
-            [pl.lit(0, pl.Int32).alias(col) for col in missing_features]
-        ).select([REGIONS_INDEX, *self.expected_output_features])
-        return region_embeddings, list(self.expected_output_features)
+        select_clauses = []
+        for col in self.expected_output_features:
+            escaped_column = sql_escape(col)
+            if col in missing_features:
+                select_clauses.append(f'0 AS "{escaped_column}"')
+            else:
+                select_clauses.append(f'"{escaped_column}"')
+
+        return select_clauses, list(self.expected_output_features)

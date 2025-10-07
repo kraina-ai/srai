@@ -1,10 +1,13 @@
 """Utility H3 related functions."""
 
+import tempfile
 from collections.abc import Iterable
-from typing import Literal, Union, overload
+from pathlib import Path
+from typing import Literal, Optional, Union, cast, overload
 
+import duckdb
 import geopandas as gpd
-import h3
+import h3.api.basic_int as h3int
 import numpy as np
 import numpy.typing as npt
 from h3ronpy import __version__ as h3ronpy_version
@@ -13,6 +16,8 @@ from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
+from srai.duckdb import prepare_duckdb_extensions, relation_to_parquet
+from srai.geodatatable import GeoDataTable
 
 is_new_h3ronpy_api = version.parse(h3ronpy_version) >= version.parse("0.22.0")
 
@@ -35,14 +40,17 @@ __all__ = [
     "ring_buffer_h3_indexes",
     "ring_buffer_geometry",
     "ring_buffer_h3_regions_gdf",
+    "H3IndexType",
 ]
+
+H3IndexType = Union[int, str]
 
 
 def shapely_geometry_to_h3(
     geometry: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
     h3_resolution: int,
     buffer: bool = True,
-) -> list[str]:
+) -> list[int]:
     """
     Convert Shapely geometry to H3 indexes.
 
@@ -54,7 +62,7 @@ def shapely_geometry_to_h3(
             H3 Cells (visible on the borders). Defaults to True.
 
     Returns:
-        List[str]: List of H3 indexes that cover a given geometry.
+        List[int]: List of H3 indexes that cover a given geometry.
 
     Raises:
         ValueError: If resolution is not between 0 and 15.
@@ -85,11 +93,11 @@ def shapely_geometry_to_h3(
     else:
         h3_indexes = h3_indexes.unique()
 
-    return [h3.int_to_str(h3_index) for h3_index in h3_indexes.tolist()]
+    return cast("list[int]", h3_indexes.tolist())
 
 
 # TODO: write tests (#322)
-def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd.GeoSeries:
+def h3_to_geoseries(h3_index: Union[H3IndexType, Iterable[H3IndexType]]) -> gpd.GeoSeries:
     """
     Convert H3 index to GeoPandas GeoSeries.
 
@@ -100,26 +108,24 @@ def h3_to_geoseries(h3_index: Union[int, str, Iterable[Union[int, str]]]) -> gpd
     Returns:
         GeoSeries: Geometries as GeoSeries with default CRS applied.
     """
-    if isinstance(h3_index, (str, int)):
+    if isinstance(h3_index, (int, str)):
         return h3_to_geoseries([h3_index])
     else:
-        h3_int_indexes = list(
-            h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_index
-        )
+        h3_int_indexes = _map_h3_indexes_to_int(h3_index)
         return gpd.GeoSeries.from_wkb(cells_to_wkb_polygons(h3_int_indexes), crs=WGS84_CRS)
 
 
 @overload
-def h3_to_shapely_geometry(h3_index: Union[int, str]) -> Polygon: ...
+def h3_to_shapely_geometry(h3_index: H3IndexType) -> Polygon: ...
 
 
 @overload
-def h3_to_shapely_geometry(h3_index: Iterable[Union[int, str]]) -> list[Polygon]: ...
+def h3_to_shapely_geometry(h3_index: Iterable[H3IndexType]) -> list[Polygon]: ...
 
 
 # TODO: write tests (#322)
 def h3_to_shapely_geometry(
-    h3_index: Union[int, str, Iterable[Union[int, str]]],
+    h3_index: Union[H3IndexType, Iterable[H3IndexType]],
 ) -> Union[Polygon, list[Polygon]]:
     """
     Convert H3 index to Shapely polygon.
@@ -131,14 +137,29 @@ def h3_to_shapely_geometry(
     Returns:
         Union[Polygon, List[Polygon]]: Converted polygon (or list of polygons).
     """
-    if isinstance(h3_index, (str, int)):
-        coords = h3.cell_to_boundary(h3_index, geo_json=True)
+    if isinstance(h3_index, (int, str)):
+        h3_index_int = h3_index if isinstance(h3_index, int) else h3int.str_to_int(h3_index)
+        coords = h3int.cell_to_boundary(h3_index_int, geo_json=True)
         return Polygon(coords)
     return h3_to_geoseries(h3_index).values.tolist()
 
 
 @overload
+def get_local_ij_index(origin_index: int, h3_index: int) -> tuple[int, int]: ...
+
+
+@overload
 def get_local_ij_index(origin_index: str, h3_index: str) -> tuple[int, int]: ...
+
+
+@overload
+def get_local_ij_index(origin_index: H3IndexType, h3_index: H3IndexType) -> tuple[int, int]: ...
+
+
+@overload
+def get_local_ij_index(
+    origin_index: int, h3_index: list[int], return_as_numpy: Literal[False]
+) -> list[tuple[int, int]]: ...
 
 
 @overload
@@ -149,7 +170,25 @@ def get_local_ij_index(
 
 @overload
 def get_local_ij_index(
+    origin_index: H3IndexType, h3_index: list[H3IndexType], return_as_numpy: Literal[False]
+) -> list[tuple[int, int]]: ...
+
+
+@overload
+def get_local_ij_index(
+    origin_index: int, h3_index: list[int], return_as_numpy: Literal[True]
+) -> npt.NDArray[np.int8]: ...
+
+
+@overload
+def get_local_ij_index(
     origin_index: str, h3_index: list[str], return_as_numpy: Literal[True]
+) -> npt.NDArray[np.int8]: ...
+
+
+@overload
+def get_local_ij_index(
+    origin_index: H3IndexType, h3_index: list[H3IndexType], return_as_numpy: Literal[True]
 ) -> npt.NDArray[np.int8]: ...
 
 
@@ -157,12 +196,20 @@ def get_local_ij_index(
 # https://mypy.readthedocs.io/en/stable/literal_types.html#literal-types
 @overload
 def get_local_ij_index(
+    origin_index: int, h3_index: list[int], return_as_numpy: bool
+) -> Union[list[tuple[int, int]], npt.NDArray[np.int8]]: ...
+
+
+@overload
+def get_local_ij_index(
     origin_index: str, h3_index: list[str], return_as_numpy: bool
 ) -> Union[list[tuple[int, int]], npt.NDArray[np.int8]]: ...
 
 
 def get_local_ij_index(
-    origin_index: str, h3_index: Union[str, list[str]], return_as_numpy: bool = False
+    origin_index: H3IndexType,
+    h3_index: Union[H3IndexType, list[H3IndexType], list[int], list[str]],
+    return_as_numpy: bool = False,
 ) -> Union[tuple[int, int], list[tuple[int, int]], npt.NDArray[np.int8]]:
     """
     Calculate the local H3 ij index based on provided origin index.
@@ -171,8 +218,8 @@ def get_local_ij_index(
     around provided origin cell.
 
     Args:
-        origin_index (str): H3 index of the origin region.
-        h3_index (Union[str, List[str]]): H3 index of the second region or list of regions.
+        origin_index (int): H3 index of the origin region.
+        h3_index (Union[int, List[int]]): H3 index of the second region or list of regions.
         return_as_numpy (bool, optional): Flag whether to return calculated indexes as a Numpy array
             or a list of tuples.
 
@@ -180,11 +227,21 @@ def get_local_ij_index(
         Union[Tuple[int, int], List[Tuple[int, int]], npt.NDArray[np.int8]]: The local ij index of
             the second region (or regions) with respect to the first one.
     """
-    origin_coords = h3.cell_to_local_ij(origin_index, origin_index)
-    if isinstance(h3_index, str):
-        ijs = h3.cell_to_local_ij(origin_index, h3_index)
+    if isinstance(origin_index, str):
+        origin_index = h3int.str_to_int(origin_index)
+
+    origin_coords = h3int.cell_to_local_ij(origin_index, origin_index)
+    if isinstance(h3_index, (int, str)):
+        h3_index_int = h3_index if isinstance(h3_index, int) else h3int.str_to_int(h3_index)
+        ijs = h3int.cell_to_local_ij(origin_index, h3_index_int)
         return (origin_coords[0] - ijs[0], origin_coords[1] - ijs[1])
-    ijs = np.array([h3.cell_to_local_ij(origin_index, h3_cell) for h3_cell in h3_index])
+
+    ijs = np.array(
+        [
+            h3int.cell_to_local_ij(origin_index, h3_cell)
+            for h3_cell in _map_h3_indexes_to_int(h3_index)
+        ]
+    )
     local_ijs = np.array(origin_coords) - ijs
 
     if not return_as_numpy:
@@ -193,7 +250,7 @@ def get_local_ij_index(
     return local_ijs
 
 
-def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int) -> list[str]:
+def ring_buffer_h3_indexes(h3_indexes: Iterable[H3IndexType], distance: int) -> list[int]:
     """
     Buffer H3 indexes by a given number of k-rings.
 
@@ -206,13 +263,11 @@ def ring_buffer_h3_indexes(h3_indexes: Iterable[Union[int, str]], distance: int)
     Returns:
         List[str]: Buffered list of H3 cells containing both original and new cells.
     """
-    assert all(h3.is_valid_cell(h3_cell) for h3_cell in h3_indexes), (
+    assert all(h3int.is_valid_cell(h3_cell) for h3_cell in h3_indexes), (
         "Not all values in h3_indexes are valid H3 cells."
     )
 
-    h3_int_indexes = list(
-        h3_cell if isinstance(h3_cell, int) else h3.str_to_int(h3_cell) for h3_cell in h3_indexes
-    )
+    h3_int_indexes = _map_h3_indexes_to_int(h3_indexes)
 
     if is_new_h3ronpy_api:
         buffered_h3s = np.unique(
@@ -263,23 +318,145 @@ def ring_buffer_geometry(
     return h3_to_geoseries(buffered_h3s).union_all()
 
 
-def ring_buffer_h3_regions_gdf(regions_gdf: gpd.GeoDataFrame, distance: int) -> gpd.GeoDataFrame:
+def ring_buffer_h3_regions_gdf(regions: GeoDataTable, distance: int) -> GeoDataTable:
     """
     Buffer H3 indexes by a given number of k-rings.
 
     List of provided H3 indexes will be buffered by a given distance.
 
     Args:
-        regions_gdf (gpd.GeoDataFrame): GeoDataFrame with H3 regions from H3Regionalizer.
+        regions (GeoDataTable): GeoDataTable with H3 regions from H3Regionalizer.
         distance (int): The k-ring buffer distance in H3 cells.
 
     Returns:
-        gpd.GeoDataFrame: Buffered regions_gdf with new H3 cells added.
+        GeoDataTable: Buffered regions with new H3 cells added.
     """
-    buffered_h3_indexes = ring_buffer_h3_indexes(h3_indexes=regions_gdf.index, distance=distance)
-    buffered_gdf_h3 = gpd.GeoDataFrame(
-        data={REGIONS_INDEX: buffered_h3_indexes},
-        geometry=h3_to_geoseries(buffered_h3_indexes),
-        crs=WGS84_CRS,
-    ).set_index(REGIONS_INDEX)
-    return buffered_gdf_h3
+    with (
+        tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
+        duckdb.connect(
+            database=str(Path(tmp_dir_name) / "db.duckdb"),
+            config=dict(preserve_insertion_order=True),
+        ) as connection,
+    ):
+        prepare_duckdb_extensions(connection=connection)
+        relation = regions.to_duckdb(connection=connection)
+
+        buffered_relation = _ring_buffer_h3_cells(
+            h3_cells_relation=relation, h3_cell_column_name=REGIONS_INDEX, distance=distance
+        )
+        print(buffered_relation)
+
+        buffered_relation_with_geometry = buffered_relation.select(
+            f"""
+            "{REGIONS_INDEX}",
+            ST_GeomFromText(h3_cell_to_boundary_wkt("{REGIONS_INDEX}")) AS "{GEOMETRY_COLUMN}"
+            """
+        )
+        print(buffered_relation_with_geometry)
+
+        result_file_name = GeoDataTable.generate_filename()
+        result_parquet_path = (
+            GeoDataTable.get_directory() / f"{result_file_name}_regions_buffered.parquet"
+        )
+
+        relation_to_parquet(
+            relation=buffered_relation_with_geometry,
+            result_parquet_path=result_parquet_path,
+            connection=connection,
+        )
+
+        return GeoDataTable.from_parquet(
+            result_parquet_path, index_column_names=REGIONS_INDEX, sort_geometries=True
+        )
+
+
+def _map_h3_indexes_to_int(h3_indexes: Iterable[H3IndexType]) -> list[int]:
+    return list(
+        h3int.str_to_int(h3_cell) if isinstance(h3_cell, str) else h3_cell for h3_cell in h3_indexes
+    )
+
+
+def _ring_buffer_h3_cells(
+    h3_cells_relation: duckdb.DuckDBPyRelation,
+    h3_cell_column_name: str,
+    distance: int,
+) -> duckdb.DuckDBPyRelation:
+    return h3_cells_relation.select(f"""
+        UNNEST(
+            h3_grid_disk("{h3_cell_column_name}", {distance})
+        ) as "{h3_cell_column_name}"
+    """).distinct()
+
+
+def _geometry_to_h3(
+    geometry_relation: duckdb.DuckDBPyRelation,
+    h3_resolution: int,
+    buffer: bool = True,
+    connection: Optional[duckdb.DuckDBPyConnection] = None,
+) -> duckdb.DuckDBPyRelation:
+    connection = connection or duckdb
+    prepare_duckdb_extensions(connection)
+
+    # containment = "CONTAINMENT_OVERLAPPING" if buffer else "CONTAINMENT_CENTER"
+    # parameters_order = (
+    #     f"wkt, {h3_resolution}, '{containment}'"
+    #     if DUCKDB_ABOVE_130
+    #     else f"wkt, '{containment}', {h3_resolution}"
+    # )
+
+    # h3_coverage_query = f"""
+    # WITH geometries AS (
+    #     SELECT ST_AsText(geom) as wkt
+    #     FROM (
+    #         SELECT
+    #             UNNEST(
+    #                 ST_Dump({GEOMETRY_COLUMN}), recursive := true
+    #             )
+    #         FROM ({geometry_relation.sql_query()})
+    #     )
+    # ),
+    # h3_cells AS (
+    #     SELECT DISTINCT UNNEST(
+    #         h3_polygon_wkt_to_cells_experimental({parameters_order})
+    #     ) h3_cell
+    #     FROM geometries
+    # )
+    # SELECT
+    #     h3_cell as {REGIONS_INDEX},
+    #     ST_GeomFromText(h3_cell_to_boundary_wkt(h3_cell)) AS {GEOMETRY_COLUMN}
+    # FROM h3_cells
+    # """
+
+
+# def h3_cells_relation_to_geodatatable(h3_cells_relation: duckdb.DuckDBPyRelation)
+#     pass
+# SELECT
+#                 h3_cell as {REGIONS_INDEX},
+#                 ST_GeomFromText(h3_cell_to_boundary_wkt(h3_cell)) AS {GEOMETRY_COLUMN}
+#             FROM h3_cells
+#             """
+
+#             result_file_name = ParquetDataTable.generate_filename()
+#             result_parquet_path = (
+#                 ParquetDataTable.get_directory() / f"{result_file_name}_regions.parquet"
+#             )
+#             result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
+
+#             save_query = f"""
+#             COPY ({h3_coverage_query}) TO '{result_parquet_path}' (
+#                 FORMAT parquet,
+#                 COMPRESSION {PARQUET_COMPRESSION},
+#                 COMPRESSION_LEVEL {PARQUET_COMPRESSION_LEVEL},
+#                 ROW_GROUP_SIZE {PARQUET_ROW_GROUP_SIZE}
+#             );
+#             """
+
+#             run_query_with_memory_monitoring(
+#                 sql_query=save_query,
+#                 connection=connection,
+#                 preserve_insertion_order=True,
+#             )
+
+#             return GeoDataTable.from_parquet(
+#                 result_parquet_path, index_column_names=REGIONS_INDEX, sort_geometries=True
+#             )

@@ -8,18 +8,20 @@ References:
 """
 
 import json
+from collections.abc import Iterable
 from functools import reduce
 from pathlib import Path
 from typing import Any, Optional, Union
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
 
 from srai._optional import import_optional_dependencies
+from srai.constants import GEOMETRY_COLUMN
 from srai.embedders import Embedder, ModelT
 from srai.embedders.gtfs2vec.model import GTFS2VecModel
 from srai.exceptions import ModelNotFitException
+from srai.geodatatable import VALID_DATA_INPUT, ParquetDataTable, prepare_data_input
 from srai.loaders.gtfs_loader import GTFS2VEC_DIRECTIONS_PREFIX, GTFS2VEC_TRIPS_PREFIX
 
 
@@ -27,7 +29,10 @@ class GTFS2VecEmbedder(Embedder):
     """GTFS2Vec Embedder."""
 
     def __init__(
-        self, hidden_size: int = 48, embedding_size: int = 64, skip_autoencoder: bool = False
+        self,
+        hidden_size: int = 48,
+        embedding_size: int = 64,
+        skip_autoencoder: bool = False,
     ) -> None:
         """
         Init GTFS2VecEmbedder.
@@ -49,94 +54,133 @@ class GTFS2VecEmbedder(Embedder):
 
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
-    ) -> pd.DataFrame:
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
+    ) -> ParquetDataTable:
         """
         Embed a given data.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes and geometries.
+            features (VALID_DATA_INPUT): Feature indexes, geometries and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
+            ParquetDataTable: Embedding and geometry index for each region in regions.
 
         Raises:
             ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If joint_gdf.index doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
             ValueError: If number of features is incosistent with the model.
             ModelNotFitException: If model is not fit.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+        regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        features_pdt = prepare_data_input(features).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        joint_pdt = prepare_data_input(joint).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+
+        self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
+        gtfs_features = self._prepare_features(
+            regions_pdt.to_dataframe(),
+            features_pdt.to_dataframe(),
+            joint_pdt.to_dataframe(),
+        )
+
+        result_file_name = ParquetDataTable.generate_filename()
+        result_parquet_path = (
+            ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
+        )
+        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         if self._skip_autoencoder:
-            return features
-        return self._embed(features)
+            return ParquetDataTable.from_dataframe(gtfs_features, result_parquet_path)
+
+        embedded_gtfs_features = self._embed(gtfs_features)
+        return ParquetDataTable.from_dataframe(embedded_gtfs_features, result_parquet_path)
 
     def fit(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
         trainer_kwargs: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Fit model to a given data.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes and geometries.
+            features (VALID_DATA_INPUT): Feature indexes, geometries and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Raises:
             ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If joint.index doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+        regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        features_pdt = prepare_data_input(features).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        joint_pdt = prepare_data_input(joint).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+
+        self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
+        gtfs_features = self._prepare_features(
+            regions_pdt.to_dataframe(),
+            features_pdt.to_dataframe(),
+            joint_pdt.to_dataframe(),
+        )
 
         if not self._skip_autoencoder:
-            self._model = self._train_model_unsupervised(features, trainer_kwargs)
+            self._model = self._train_model_unsupervised(gtfs_features, trainer_kwargs)
 
     def fit_transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
         trainer_kwargs: Optional[dict[str, Any]] = None,
-    ) -> pd.DataFrame:
+    ) -> ParquetDataTable:
         """
         Fit model and transform a given data.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes and geometries.
+            features (VALID_DATA_INPUT): Feature indexes, geometries and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
             trainer_kwargs (Optional[Dict[str, Any]], optional): Trainer kwargs. Defaults to None.
 
         Returns:
-            pd.DataFrame: Embedding and geometry index for each region in regions_gdf.
+            ParquetDataTable: Embedding and geometry index for each region in regions.
 
         Raises:
             ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If joint_gdf.index doesn't have 2 levels.
             ValueError: If index levels in gdfs don't overlap correctly.
         """
-        self._validate_indexes(regions_gdf, features_gdf, joint_gdf)
-        features = self._prepare_features(regions_gdf, features_gdf, joint_gdf)
+        regions_pdt = prepare_data_input(regions).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        features_pdt = prepare_data_input(features).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+        joint_pdt = prepare_data_input(joint).drop_columns([GEOMETRY_COLUMN], missing_ok=True)
+
+        self._validate_indexes(regions_pdt, features_pdt, joint_pdt)
+        gtfs_features = self._prepare_features(
+            regions_pdt.to_dataframe(),
+            features_pdt.to_dataframe(),
+            joint_pdt.to_dataframe(),
+        )
+
+        result_file_name = ParquetDataTable.generate_filename()
+        result_parquet_path = (
+            ParquetDataTable.get_directory() / f"{result_file_name}_embeddings.parquet"
+        )
+        result_parquet_path.parent.mkdir(exist_ok=True, parents=True)
 
         if self._skip_autoencoder:
-            return features
-        else:
-            self._model = self._train_model_unsupervised(features, trainer_kwargs)
-            return self._embed(features)
+            return ParquetDataTable.from_dataframe(gtfs_features, result_parquet_path)
+
+        self._model = self._train_model_unsupervised(gtfs_features, trainer_kwargs)
+        embedded_gtfs_features = self._embed(gtfs_features)
+        return ParquetDataTable.from_dataframe(embedded_gtfs_features, result_parquet_path)
 
     def _maybe_get_model(self) -> GTFS2VecModel:
         """Check if model is fit and return it."""
@@ -146,30 +190,26 @@ class GTFS2VecEmbedder(Embedder):
 
     def _prepare_features(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
+        regions_df: pd.DataFrame,
+        features_df: pd.DataFrame,
+        joint_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """
         Prepare features for embedding.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions_df (pd.DataFrame): Region indexes and geometries.
+            features_df (pd.DataFrame): Feature indexes, geometries and feature values.
+            joint_df (pd.DataFrame): Joiner result with region-feature multi-index.
         """
-        regions_gdf = self._remove_geometry_if_present(regions_gdf)
-        features_gdf = self._remove_geometry_if_present(features_gdf)
-        joint_gdf = self._remove_geometry_if_present(joint_gdf)
-
         joint_features = (
-            joint_gdf.join(features_gdf, on=features_gdf.index.name)
-            .groupby(regions_gdf.index.name)
-            .agg(self._get_columns_aggregation(features_gdf.columns))
+            joint_df.join(features_df, on=features_df.index.name)
+            .groupby(regions_df.index.name)
+            .agg(self._get_columns_aggregation(features_df.columns))
         )
 
         regions_features = (
-            regions_gdf.join(joint_features, on=regions_gdf.index.name).fillna(0).astype(int)
+            regions_df.join(joint_features, on=regions_df.index.name).fillna(0).astype(int)
         )
         regions_features = self._normalize_features(regions_features)
         return regions_features
@@ -191,7 +231,7 @@ class GTFS2VecEmbedder(Embedder):
                 agg_dict[column] = "sum"
             elif column.startswith(GTFS2VEC_DIRECTIONS_PREFIX):
                 agg_dict[column] = lambda x: len(
-                    reduce(set.union, (val for val in x if not pd.isna(val)), set())
+                    reduce(set.union, (set(val) for val in x if isinstance(val, Iterable)), set())
                 )
         return agg_dict
 
@@ -343,6 +383,6 @@ class GTFS2VecEmbedder(Embedder):
             path (Path): Path to the directory.
 
         Returns:
-            Hex2VecEmbedder: The loaded embedder.
+            GTFS2VecEmbedder: The loaded embedder.
         """
         return cls._load(path, GTFS2VecModel)

@@ -144,7 +144,8 @@ class Hex2VecEmbedder(CountEmbedder):
 
         num_features = len(self.expected_output_features)
         self._model = Hex2VecModel(
-            layer_sizes=[num_features, *self._encoder_sizes], learning_rate=learning_rate
+            layer_sizes=[num_features, *self._encoder_sizes],
+            learning_rate=learning_rate,
         )
         dataset = NeighbourDataset(counts_df, neighbourhood, negative_sample_k_distance)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -209,9 +210,17 @@ class Hex2VecEmbedder(CountEmbedder):
         return trainer_kwargs
 
     def _get_raw_counts(
-        self, regions_gdf: pd.DataFrame, features_gdf: pd.DataFrame, joint_gdf: pd.DataFrame
+        self,
+        regions_gdf: pd.DataFrame,
+        features_gdf: pd.DataFrame,
+        joint_gdf: pd.DataFrame,
     ) -> pd.DataFrame:
-        return super().transform(regions_gdf, features_gdf, joint_gdf).astype(np.float32)
+        return (
+            super()
+            .transform(regions_gdf, features_gdf, joint_gdf)
+            .to_dataframe()
+            .astype(np.float32)
+        )
 
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:

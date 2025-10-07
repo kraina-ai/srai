@@ -272,7 +272,12 @@ class S2VecEmbedder(CountEmbedder):
         features_gdf: pd.DataFrame,
         joint_gdf: pd.DataFrame,
     ) -> pd.DataFrame:
-        return super().transform(regions_gdf, features_gdf, joint_gdf).astype(np.float32)
+        return (
+            super()
+            .transform(regions_gdf, features_gdf, joint_gdf)
+            .to_dataframe()
+            .astype(np.float32)
+        )
 
     def _check_is_fitted(self) -> None:
         if not self._is_fitted or self._model is None:

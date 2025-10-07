@@ -13,10 +13,15 @@ References:
     2. https://uber.github.io/h3-py/api_comparison
 """
 
-import geopandas as gpd
+import tempfile
+from pathlib import Path
 
-from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.h3 import h3_to_geoseries, shapely_geometry_to_h3
+import duckdb
+from rq_geo_toolkit.duckdb import DUCKDB_ABOVE_130
+
+from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
+from srai.duckdb import prepare_duckdb_extensions, relation_to_parquet
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
 from srai.regionalizers import Regionalizer
 
 
@@ -49,7 +54,7 @@ class H3Regionalizer(Regionalizer):
         self.resolution = resolution
         self.buffer = buffer
 
-    def transform(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def transform(self, geo_input: VALID_GEO_INPUT) -> GeoDataTable:
         """
         Regionalize a given GeoDataFrame.
 
@@ -57,31 +62,64 @@ class H3Regionalizer(Regionalizer):
         and optionally applies buffering.
 
         Args:
-            gdf (gpd.GeoDataFrame): (Multi)Polygons to be regionalized.
+            geo_input (VALID_GEO_INPUT): (Multi)Polygons to be regionalized.
+                Expected to be in WGS84 CRS.
 
         Returns:
-            gpd.GeoDataFrame: H3 cells.
-
-        Raises:
-            ValueError: If provided GeoDataFrame has no crs defined.
+            GeoDataTable: H3 cells with geometries.
         """
-        gdf_wgs84 = gdf.to_crs(crs=WGS84_CRS)
+        gdt = prepare_geo_input(geo_input)
 
-        gdf_exploded = self._explode_multipolygons(gdf_wgs84)
+        with (
+            tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
+            duckdb.connect(
+                database=str(Path(tmp_dir_name) / "db.duckdb"),
+                config=dict(preserve_insertion_order=True),
+            ) as connection,
+        ):
+            prepare_duckdb_extensions(connection=connection)
+            relation = gdt.to_duckdb(connection=connection)
 
-        h3_indexes = list(
-            set(
-                shapely_geometry_to_h3(
-                    gdf_exploded[GEOMETRY_COLUMN],
-                    h3_resolution=self.resolution,
-                    buffer=self.buffer,
-                )
+            containment = "CONTAINMENT_OVERLAPPING" if self.buffer else "CONTAINMENT_CENTER"
+            parameters_order = (
+                f"wkt, {self.resolution}, '{containment}'"
+                if DUCKDB_ABOVE_130
+                else f"wkt, '{containment}', {self.resolution}"
             )
-        )
-        gdf_h3 = gpd.GeoDataFrame(
-            data={REGIONS_INDEX: h3_indexes},
-            geometry=h3_to_geoseries(h3_indexes),
-            crs=WGS84_CRS,
-        ).set_index(REGIONS_INDEX)
+            h3_coverage_query = f"""
+            WITH geometries AS (
+                SELECT ST_AsText(geom) as wkt
+                FROM (
+                    SELECT
+                        UNNEST(
+                            ST_Dump({GEOMETRY_COLUMN}), recursive := true
+                        )
+                    FROM ({relation.sql_query()})
+                )
+            ),
+            h3_cells AS (
+                SELECT DISTINCT UNNEST(
+                    h3_polygon_wkt_to_cells_experimental({parameters_order})
+                ) h3_cell
+                FROM geometries
+            )
+            SELECT
+                h3_cell as {REGIONS_INDEX},
+                ST_GeomFromText(h3_cell_to_boundary_wkt(h3_cell)) AS {GEOMETRY_COLUMN}
+            FROM h3_cells
+            """
 
-        return gdf_h3.to_crs(gdf.crs)
+            result_file_name = GeoDataTable.generate_filename()
+            result_parquet_path = (
+                GeoDataTable.get_directory() / f"{result_file_name}_regions.parquet"
+            )
+
+            relation_to_parquet(
+                relation=h3_coverage_query,
+                result_parquet_path=result_parquet_path,
+                connection=connection,
+            )
+
+            return GeoDataTable.from_parquet(
+                result_parquet_path, index_column_names=REGIONS_INDEX, sort_geometries=True
+            )

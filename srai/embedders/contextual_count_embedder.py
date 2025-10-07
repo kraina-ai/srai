@@ -8,21 +8,27 @@ References:
     1. https://arxiv.org/abs/2111.00990
 """
 
-from collections.abc import Collection, Iterator
+import tempfile
+import warnings
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
 from functools import partial
+from itertools import product
 from math import ceil
 from multiprocessing import cpu_count
-from typing import Any, Literal, Optional, Union
+from pathlib import Path
+from typing import Literal, Optional, Union, cast
 
-import geopandas as gpd
-import numpy as np
-import numpy.typing as npt
+import duckdb
 import pandas as pd
+import polars as pl
+from rq_geo_toolkit.multiprocessing_utils import WorkerProcess, run_process_with_memory_monitoring
 from tqdm import tqdm
 
-from srai.constants import FORCE_TERMINAL
+from srai.constants import FORCE_TERMINAL, REGIONS_INDEX
+from srai.duckdb import prepare_duckdb_extensions, relation_from_parquet_paths
 from srai.embedders.count_embedder import CountEmbedder
+from srai.geodatatable import VALID_DATA_INPUT, ParquetDataTable
 from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
@@ -41,8 +47,6 @@ class ContextualCountEmbedder(CountEmbedder):
         ] = None,
         count_subcategories: bool = False,
         aggregation_function: Literal["average", "median", "sum", "min", "max"] = "average",
-        num_of_multiprocessing_workers: int = -1,
-        multiprocessing_activation_threshold: Optional[int] = None,
     ) -> None:
         """
         Init ContextualCountEmbedder.
@@ -66,13 +70,6 @@ class ContextualCountEmbedder(CountEmbedder):
                 Defaults to False.
             aggregation_function (Literal["average", "median", "sum", "min", "max"], optional):
                 Function used to aggregate data from the neighbours. Defaults to average.
-            num_of_multiprocessing_workers (int, optional): Number of workers used for
-                multiprocessing. Defaults to -1 which results in a total number of available
-                cpu threads. `0` and `1` values disable multiprocessing.
-                Similar to `n_jobs` parameter from `scikit-learn` library.
-            multiprocessing_activation_threshold (int, optional): Number of seeds required to start
-                processing on multiple processes. Activating multiprocessing for a small
-                amount of points might not be feasible. Defaults to 100.
 
         Raises:
             ValueError: If `neighbourhood_distance` is negative.
@@ -87,21 +84,14 @@ class ContextualCountEmbedder(CountEmbedder):
         if self.neighbourhood_distance < 0:
             raise ValueError("Neighbourhood distance must be positive.")
 
-        self.num_of_multiprocessing_workers = _parse_num_of_multiprocessing_workers(
-            num_of_multiprocessing_workers
-        )
-        self.multiprocessing_activation_threshold = _parse_multiprocessing_activation_threshold(
-            multiprocessing_activation_threshold
-        )
-
     def transform(
         self,
-        regions_gdf: gpd.GeoDataFrame,
-        features_gdf: gpd.GeoDataFrame,
-        joint_gdf: gpd.GeoDataFrame,
-    ) -> pd.DataFrame:
+        regions: VALID_DATA_INPUT,
+        features: VALID_DATA_INPUT,
+        joint: VALID_DATA_INPUT,
+    ) -> ParquetDataTable:
         """
-        Embed a given GeoDataFrame.
+        Embed a given GeoDataTable.
 
         Creates region embeddings by counting the frequencies of each feature value and applying
         a contextualization based on neighbours of regions. For each region, features will be
@@ -114,250 +104,281 @@ class ContextualCountEmbedder(CountEmbedder):
         all neighbours on a given level.
 
         Args:
-            regions_gdf (gpd.GeoDataFrame): Region indexes and geometries.
-            features_gdf (gpd.GeoDataFrame): Feature indexes, geometries and feature values.
-            joint_gdf (gpd.GeoDataFrame): Joiner result with region-feature multi-index.
+            regions (VALID_DATA_INPUT): Region indexes.
+            features (VALID_DATA_INPUT): Feature indexes and feature values.
+            joint (VALID_DATA_INPUT): Joiner result with region-feature multi-index.
 
         Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf.
+            ParquetDataTable: Embedding for each region in regions.
 
         Raises:
-            ValueError: If features_gdf is empty and self.expected_output_features is not set.
-            ValueError: If any of the gdfs index names is None.
-            ValueError: If joint_gdf.index is not of type pd.MultiIndex or doesn't have 2 levels.
-            ValueError: If index levels in gdfs don't overlap correctly.
+            ValueError: If features is empty and self.expected_output_features is not set.
+            ValueError: If any of the input index names is None.
+            ValueError: If joint.index is not of type pd.MultiIndex or doesn't have 2 levels.
+            ValueError: If index levels in inputs don't overlap correctly.
         """
-        counts_df = super().transform(regions_gdf, features_gdf, joint_gdf)
+        counts_pdt = super().transform(regions, features, joint)
 
-        result_df: pd.DataFrame
-        if self.concatenate_vectors:
-            result_df = self._get_concatenated_embeddings(counts_df)
-        else:
-            result_df = self._get_squashed_embeddings(counts_df)
-
-        return result_df
-
-    def _get_squashed_embeddings(self, counts_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Generate embeddings for regions by summing all neighbourhood levels.
-
-        Creates embedding by getting an average of a neighbourhood at a given distance and adding it
-        to the base values with weight equal to 1 / (distance + 1) squared. This way, farther
-        neighbourhoods have lower impact on feature values.
-
-        Args:
-            counts_df (pd.DataFrame): Calculated features from CountEmbedder.
-
-        Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf with number of features equal to
-                the same as returned by the CountEmbedder.
-        """
-        base_columns = list(counts_df.columns)
-
-        result_array = counts_df.values.astype(float)
-
-        for distance, aggregated_values in self._get_aggregated_values_for_distances(counts_df):
-            result_array += aggregated_values / ((distance + 1) ** 2)
-
-        return pd.DataFrame(data=result_array, index=counts_df.index, columns=base_columns)
-
-    def _get_concatenated_embeddings(self, counts_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Generate embeddings for regions by concatenating different neighbourhood levels.
-
-        Creates embedding by getting an average of a neighbourhood at a given distance and adding
-        those features as separate columns with a postfix added to feature name. This way,
-        all neighbourhoods can be analyzed separately, but number of columns grows linearly with
-        a distance.
-
-        Args:
-            counts_df (pd.DataFrame): Calculated features from CountEmbedder.
-
-        Returns:
-            pd.DataFrame: Embedding for each region in regions_gdf with number of features equal to
-                a number of features returned by the CountEmbedder multiplied
-                by (neighbourhood distance + 1).
-        """
-        base_columns = list(counts_df.columns)
-        number_of_base_columns = len(base_columns)
-        columns = [
-            f"{column}_{distance}"
-            for distance in range(self.neighbourhood_distance + 1)
-            for column in base_columns
-        ]
-
-        result_array = np.zeros(shape=(len(counts_df.index), len(columns)))
-        result_array[:, 0:number_of_base_columns] = counts_df.values
-
-        for distance, aggregated_values in self._get_aggregated_values_for_distances(counts_df):
-            result_array[
-                :,
-                number_of_base_columns * distance : number_of_base_columns * (distance + 1),
-            ] = aggregated_values
-
-        return pd.DataFrame(data=result_array, index=counts_df.index, columns=columns)
-
-    def _get_aggregated_values_for_distances(
-        self, counts_df: pd.DataFrame
-    ) -> Iterator[tuple[int, npt.NDArray[np.float32]]]:
-        """
-        Generate aggregated values for neighbours at given distances.
-
-        Function will yield tuples of distances and aggregated values arrays
-        calculated based on neighbours at a given distance.
-
-        Distance 0 is skipped.
-        If embedder has `neighbourhood_distance` set to 0, nothing will be returned.
-
-        Args:
-            counts_df (pd.DataFrame): Calculated features from CountEmbedder.
-
-        Yields:
-            Iterator[Tuple[int, npt.NDArray[np.float32]]]: Iterator of distances and values.
-        """
-        if self.neighbourhood_distance == 0:
-            return
-
-        number_of_base_columns = len(counts_df.columns)
-
-        activate_multiprocessing = (
-            self.num_of_multiprocessing_workers > 1
-            and len(counts_df.index) >= self.multiprocessing_activation_threshold
-        )
-
-        with (
-            tqdm(
-                total=self.neighbourhood_distance * len(counts_df.index) * 2,
-                desc="Generating embeddings for neighbours",
-                disable=FORCE_TERMINAL,
-            ) as pbar,
-            ProcessPoolExecutor(max_workers=self.num_of_multiprocessing_workers) as executor,
-        ):
-            for distance in range(1, self.neighbourhood_distance + 1):
-                pbar.set_postfix_str(f"Distance: {distance}", refresh=True)
-                if len(counts_df.index) == 0:
-                    continue
-
-                neighbours_series = []
-
-                if activate_multiprocessing:
-                    fn_neighbours = partial(
-                        _get_existing_neighbours_at_distance,
-                        neighbour_distance=distance,
-                        counts_index=counts_df.index,
-                        neighbourhood=self.neighbourhood,
-                    )
-
-                    for result in executor.map(
-                        fn_neighbours,
-                        counts_df.index,
-                        chunksize=ceil(
-                            len(counts_df.index) / (4 * self.num_of_multiprocessing_workers)
-                        ),
-                    ):
-                        neighbours_series.append(result)
-                        pbar.update()
-                else:
-                    for result in counts_df.index.map(
-                        lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                            self.neighbourhood.get_neighbours_at_distance(
-                                region_id, neighbour_distance, include_center=False
+        if counts_pdt.empty:
+            if self.concatenate_vectors:
+                empty_df = pd.DataFrame(
+                    [],
+                    columns=[
+                        counts_pdt.index_name,
+                        *(
+                            f"{column}_{distance}"
+                            for distance, column in product(
+                                range(self.neighbourhood_distance + 1), counts_pdt.columns
                             )
-                        ).values
-                    ):
-                        neighbours_series.append(result)
-                        pbar.update()
-
-                if not neighbours_series:
-                    continue
-
-                values_to_stack = []
-
-                if activate_multiprocessing:
-                    fn_embeddings = partial(
-                        _get_embeddings_for_neighbours,
-                        counts_df=counts_df,
-                        aggregation_function=self.aggregation_function,
-                        number_of_base_columns=number_of_base_columns,
-                    )
-
-                    for result in executor.map(
-                        fn_embeddings,
-                        neighbours_series,
-                        chunksize=ceil(
-                            len(neighbours_series) / (4 * self.num_of_multiprocessing_workers)
                         ),
-                    ):
-                        values_to_stack.append(result)
-                        pbar.update()
-                else:
-                    for neighbours in neighbours_series:
-                        values_to_stack.append(
-                            _get_embeddings_for_neighbours(
-                                region_ids=neighbours,
-                                counts_df=counts_df,
+                    ],
+                )
+                prefix_path = ParquetDataTable.generate_filename()
+                save_parquet_path = (
+                    ParquetDataTable.get_directory()
+                    / f"{prefix_path}_empty_concatenated_embeddings.parquet"
+                )
+                empty_df.to_parquet(save_parquet_path)
+                return ParquetDataTable.from_parquet(
+                    parquet_path=save_parquet_path,
+                    index_column_names=counts_pdt.index_column_names,
+                )
+            else:
+                return counts_pdt
+
+        return self._iterate_parquet_data(counts_pdt=counts_pdt)
+
+    def _iterate_parquet_data(self, counts_pdt: ParquetDataTable) -> ParquetDataTable:
+        total_rows = counts_pdt.rows
+        current_offset = 0
+        current_limit = min(self.ceil_to_power_of_10(total_rows), 10_000_000)
+
+        result_dir_name = ParquetDataTable.generate_filename()
+        embedding_type = "concatenated" if self.concatenate_vectors else "squashed"
+        result_dir_path = (
+            ParquetDataTable.get_directory() / f"{result_dir_name}_{embedding_type}_embeddings"
+        )
+        result_dir_path.mkdir(parents=True, exist_ok=True)
+
+        with tqdm(
+            total=total_rows,
+            desc="Generating embeddings for neighbours",
+            disable=FORCE_TERMINAL,
+        ) as pbar:
+            while current_offset < total_rows:
+                timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                current_result_file_path = result_dir_path / f"{timestr}.parquet"
+                with (
+                    tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
+                ):
+                    try:
+                        process = WorkerProcess(
+                            target=_parse_single_batch,
+                            kwargs=dict(
+                                tmp_dir_path=Path(tmp_dir_name),
+                                neighbourhood=self.neighbourhood,
+                                neighbourhood_distance=self.neighbourhood_distance,
                                 aggregation_function=self.aggregation_function,
-                                number_of_base_columns=number_of_base_columns,
-                            )
+                                concatenate_vectors=self.concatenate_vectors,
+                                counts_parquet_files=counts_pdt.parquet_paths,
+                                index_name=cast("str", counts_pdt.index_name),
+                                feature_column_names=counts_pdt.columns,
+                                limit=current_limit,
+                                offset=current_offset,
+                                result_file_path=current_result_file_path,
+                            ),
                         )
-                        pbar.update()
+                        run_process_with_memory_monitoring(process)
 
-                aggregated_values_stacked = np.stack(values_to_stack)
+                        current_offset += current_limit
+                        pbar.n = min(current_offset, total_rows)
+                        pbar.refresh()
 
-                yield distance, aggregated_values_stacked
+                    except (duckdb.OutOfMemoryException, MemoryError) as ex:
+                        current_result_file_path.unlink(missing_ok=True)
+                        current_limit //= 10
+                        if current_limit == 1:
+                            raise
 
+                        warnings.warn(
+                            f"Encountered {ex.__class__.__name__} during operation."
+                            " Retrying with lower number of rows per batch"
+                            f" ({current_limit} rows).",
+                            stacklevel=1,
+                        )
 
-def _parse_num_of_multiprocessing_workers(num_of_multiprocessing_workers: int) -> int:
-    if num_of_multiprocessing_workers == 0:
-        num_of_multiprocessing_workers = 1
-    elif num_of_multiprocessing_workers < 0:
-        num_of_multiprocessing_workers = cpu_count()
-
-    return num_of_multiprocessing_workers
-
-
-def _parse_multiprocessing_activation_threshold(
-    multiprocessing_activation_threshold: Optional[int],
-) -> int:
-    if not multiprocessing_activation_threshold:
-        multiprocessing_activation_threshold = 100
-
-    return multiprocessing_activation_threshold
-
-
-def _get_existing_neighbours_at_distance(
-    region_id: IndexType,
-    neighbour_distance: int,
-    neighbourhood: Neighbourhood[IndexType],
-    counts_index: pd.Index,
-) -> Any:
-    return counts_index.intersection(
-        neighbourhood.get_neighbours_at_distance(
-            region_id, neighbour_distance, include_center=False
+        return ParquetDataTable.from_parquet_directory(
+            directory_path=result_dir_path, index_column_names=counts_pdt.index_name
         )
-    ).values
 
 
-def _get_embeddings_for_neighbours(
-    region_ids: Collection[IndexType],
-    counts_df: pd.DataFrame,
+def _parse_single_batch(
+    tmp_dir_path: Path,
+    neighbourhood: Neighbourhood[IndexType],
+    neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
-    number_of_base_columns: int,
-) -> Any:
-    if len(region_ids) == 0:  # noqa: FURB115
-        return np.zeros((number_of_base_columns,))
+    concatenate_vectors: bool,
+    counts_parquet_files: list[Path],
+    index_name: str,
+    feature_column_names: list[str],
+    limit: int,
+    offset: int,
+    result_file_path: Path,
+) -> None:
+    num_of_multiprocessing_workers = min(1, cpu_count() - 2)
+    with (
+        duckdb.connect(
+            database=str(tmp_dir_path / "db.duckdb"),
+            config=dict(preserve_insertion_order=True),
+        ) as connection,
+        ProcessPoolExecutor(max_workers=num_of_multiprocessing_workers) as executor,
+    ):
+        print("_parse_single_batch", limit, offset, result_file_path)
+        prepare_duckdb_extensions(connection=connection)
+        full_relation = relation_from_parquet_paths(
+            parquet_paths=counts_parquet_files, connection=connection, with_row_number=True
+        )
+        current_batch_relation = full_relation.limit(n=limit, offset=offset)
+        current_regions = (
+            current_batch_relation.sort("row_number").select(index_name, "row_number").pl()
+        )
+        current_region_ids = current_regions[index_name]
+        print("_parse_single_batch", "loaded regions to polars")
 
+        all_neighbours = [(region_id, region_id, 0) for region_id in current_region_ids]
+
+        print("_parse_single_batch", "calculating neighbours")
+        fn_neighbours = partial(
+            _get_existing_neighbours_up_to_distance,
+            neighbourhood=neighbourhood,
+            neighbourhood_distance=neighbourhood_distance,
+        )
+        precalculated_neighbours_dir_path = tmp_dir_path / "neighbours"
+        precalculated_neighbours_dir_path.mkdir(parents=True, exist_ok=True)
+        for result in executor.map(
+            fn_neighbours,
+            current_region_ids,
+            chunksize=ceil(len(current_region_ids) / (4 * num_of_multiprocessing_workers)),
+        ):
+            all_neighbours.extend(result)
+            if len(all_neighbours) >= limit:
+                timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                pd.DataFrame(
+                    all_neighbours,
+                    columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+                ).to_parquet(precalculated_neighbours_dir_path / f"{timestr}.parquet")
+                all_neighbours = []
+
+        if all_neighbours:
+            timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            pd.DataFrame(
+                all_neighbours,
+                columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+            ).to_parquet(precalculated_neighbours_dir_path / f"{timestr}.parquet")
+            del all_neighbours
+
+        # precalculated_neighbours_path = tmp_dir_path / "neighbours.parquet"
+        # print(len(all_neighbours), "neighbours found")
+        # pd.DataFrame(
+        #     all_neighbours,
+        #     columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+        # ).to_parquet(precalculated_neighbours_path)
+        print("_parse_single_batch", "saved neighbours")
+
+        current_regions_lf = current_regions.lazy()
+        neighbours_lf = pl.scan_parquet(precalculated_neighbours_dir_path)
+        print(
+            "_parse_single_batch",
+            neighbours_lf.select(pl.len()).collect().item(),
+            "neighbours loaded",
+        )
+        embeddings_lf = pl.scan_parquet(counts_parquet_files)
+
+        neighbours_joined_with_embeddings_lf = neighbours_lf.join(
+            embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
+        )
+
+        print("_parse_single_batch", "creating lazyframe execution tree")
+        if concatenate_vectors:
+            embeddings = _generate_concatenated_embeddings_lazyframe(
+                neighbours_joined_with_embeddings_lf=neighbours_joined_with_embeddings_lf,
+                feature_column_names=feature_column_names,
+                neighbourhood_distance=neighbourhood_distance,
+                aggregation_function=aggregation_function,
+            )
+        else:
+            embeddings = _generate_squashed_embeddings_lazyframe(
+                neighbours_joined_with_embeddings_lf=neighbours_joined_with_embeddings_lf,
+                feature_column_names=feature_column_names,
+                aggregation_function=aggregation_function,
+            )
+
+        print("_parse_single_batch", "saving embeddings to parquet")
+        current_regions_lf.join(
+            embeddings, left_on=index_name, right_on=REGIONS_INDEX, how="left"
+        ).fill_null(0).sort("row_number").drop("row_number").sink_parquet(result_file_path)
+
+
+def _generate_squashed_embeddings_lazyframe(
+    neighbours_joined_with_embeddings_lf: pl.LazyFrame,
+    feature_column_names: list[str],
+    aggregation_function: Literal["average", "median", "sum", "min", "max"],
+) -> pl.LazyFrame:
+    return (
+        neighbours_joined_with_embeddings_lf.group_by([REGIONS_INDEX, "distance"])
+        .agg(
+            (_apply_polars_aggregation(pl.col(column), aggregation_function).alias(column))
+            for column in feature_column_names
+        )
+        .with_columns((pl.col("distance") + 1).pow(2).alias("divisor"))
+        .with_columns(pl.col(column) / pl.col("divisor") for column in feature_column_names)
+        .group_by(REGIONS_INDEX)
+        .agg((pl.col(column).sum().alias(column)) for column in feature_column_names)
+    )
+
+
+def _generate_concatenated_embeddings_lazyframe(
+    neighbours_joined_with_embeddings_lf: pl.LazyFrame,
+    feature_column_names: list[str],
+    neighbourhood_distance: int,
+    aggregation_function: Literal["average", "median", "sum", "min", "max"],
+) -> pl.LazyFrame:
+    return neighbours_joined_with_embeddings_lf.group_by(REGIONS_INDEX).agg(
+        (
+            _apply_polars_aggregation(
+                pl.col(column).filter(pl.col("distance") == distance), aggregation_function
+            ).alias(f"{column}_{distance}")
+        )
+        for distance, column in product(range(neighbourhood_distance + 1), feature_column_names)
+    )
+
+
+def _apply_polars_aggregation(
+    expr: pl.Expr, aggregation_function: Literal["average", "median", "sum", "min", "max"]
+) -> pl.Expr:
     if aggregation_function == "average":
-        aggregation = np.nanmean(counts_df.loc[region_ids].values, axis=0)
+        return expr.mean()
     elif aggregation_function == "median":
-        aggregation = np.nanmedian(counts_df.loc[region_ids].values, axis=0)
+        return expr.median()
     elif aggregation_function == "sum":
-        aggregation = np.sum(counts_df.loc[region_ids].values, axis=0)
+        return expr.sum()
     elif aggregation_function == "min":
-        aggregation = np.min(counts_df.loc[region_ids].values, axis=0)
+        return expr.min()
     elif aggregation_function == "max":
-        aggregation = np.max(counts_df.loc[region_ids].values, axis=0)
+        return expr.max()
     else:
         raise ValueError(f"Unknown aggregation function: {aggregation_function}")
 
-    return np.nan_to_num(aggregation)
+
+def _get_existing_neighbours_up_to_distance(
+    region_id: IndexType,
+    neighbourhood: Neighbourhood[IndexType],
+    neighbourhood_distance: int,
+) -> list[tuple[IndexType, IndexType, int]]:
+    return [
+        (region_id, neighbour_region_id, distance)
+        for distance in range(1, neighbourhood_distance + 1)
+        for neighbour_region_id in neighbourhood.get_neighbours_at_distance(
+            region_id, distance, include_center=False
+        )
+    ]

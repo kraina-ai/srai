@@ -92,7 +92,7 @@ def features_embedded() -> pd.DataFrame:
     )
     features = pd.DataFrame(embeddings.T)
     features.index = pd.Index(["ff1", "ff2", "ff3"], name=REGIONS_INDEX)
-    features.columns = pd.RangeIndex(0, 4, 1)
+    features.columns = list(map(str, range(4)))
     return features
 
 
@@ -227,13 +227,13 @@ def test_embedder(
 
     seed_everything(42)
     embedder.fit(regions_gdf, features_gdf, joint_gdf, trainer_kwargs=TRAINER_KWARGS)
-    features_embedded = embedder.transform(regions_gdf, features_gdf, joint_gdf)
+    features_embedded = embedder.transform(regions_gdf, features_gdf, joint_gdf).to_dataframe()
 
     pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)
 
     seed_everything(42)
     features_embedded = embedder.fit_transform(
         regions_gdf, features_gdf, joint_gdf, trainer_kwargs=TRAINER_KWARGS
-    )
+    ).to_dataframe()
 
     pd.testing.assert_frame_equal(features_embedded, expected_features, atol=1e-3)

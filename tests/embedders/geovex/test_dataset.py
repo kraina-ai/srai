@@ -11,7 +11,7 @@ from srai.embedders.geovex.dataset import HexagonalDataset
 from srai.h3 import get_local_ij_index
 from srai.neighbourhoods import AdjacencyNeighbourhood, H3Neighbourhood
 
-ROOT_REGION = "891e205194bffff"
+ROOT_REGION = 617523135453593599
 RING_DISTANCE = 25
 
 
@@ -64,10 +64,10 @@ def test_raises_with_incorrect_ring_distance(
     "ring_distance",
     [2, 3, 4],
 )  # type: ignore
-def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame):
+def test_dataset_length(ring_distance: int, regions_data_df: pd.DataFrame) -> None:
     """Test if HexagonalDataset constructs lookup tables correctly."""
-    neighbourhood: H3Neighbourhood = H3Neighbourhood(regions_data_df)
-    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)  # type: ignore
+    neighbourhood: H3Neighbourhood[int] = H3Neighbourhood(regions_data_df)
+    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)
     assert len(dataset) == len(
         neighbourhood.get_neighbours_up_to_distance(
             ROOT_REGION, distance=RING_DISTANCE - ring_distance, include_center=True, unchecked=True
@@ -98,7 +98,7 @@ def test_dataset_item(regions_data_df: pd.DataFrame) -> None:
     ring_distance = 2
 
     neighbourhood = H3Neighbourhood(regions_data_df)
-    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)  # type: ignore
+    dataset = HexagonalDataset(regions_data_df, neighbourhood, neighbor_k_ring=ring_distance)
     item = next(iter(dataset)).detach().numpy()
     # flatten it out and get the corresponding hexagons
     cells = regions_data_df.reset_index().set_index("data").loc[item.reshape(-1).tolist()].values

@@ -5,15 +5,11 @@ This module contains loader capable of loading Overture Maps features from the p
 on the s3 bucket.
 """
 
-from collections.abc import Iterable
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import geopandas as gpd
-from shapely.geometry.base import BaseGeometry
-
 from srai._optional import import_optional_dependencies
-from srai.constants import FEATURES_INDEX, GEOMETRY_COLUMN, WGS84_CRS
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
 from srai.loaders._base import Loader
 
 
@@ -90,9 +86,9 @@ class OvertureMapsLoader(Loader):
 
     def load(
         self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
+        area: VALID_GEO_INPUT,
         ignore_cache: bool = False,
-    ) -> gpd.GeoDataFrame:
+    ) -> GeoDataTable:
         """
         Load Overture Maps features for a given area in a wide format.
 
@@ -108,23 +104,22 @@ class OvertureMapsLoader(Loader):
             the given area.
 
         Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
             ignore_cache: (bool, optional): Whether to ignore precalculated geoparquet files or not.
                 Defaults to False.
 
         Returns:
-            gpd.GeoDataFrame: Downloaded features as a GeoDataFrame.
+            GeoDataTable: Downloaded features as a GeoDataTable.
         """
         from overturemaestro.advanced_functions import (
-            convert_geometry_to_wide_form_geodataframe_for_all_types,
-            convert_geometry_to_wide_form_geodataframe_for_multiple_types,
+            convert_geometry_to_wide_form_parquet_for_all_types,
+            convert_geometry_to_wide_form_parquet_for_multiple_types,
         )
 
-        area_wgs84 = self._prepare_area_gdf(area)
+        area_wgs84 = prepare_geo_input(area)
 
         if self.theme_type_pairs:
-            features_gdf = convert_geometry_to_wide_form_geodataframe_for_multiple_types(
+            features_parquet_path = convert_geometry_to_wide_form_parquet_for_multiple_types(
                 theme_type_pairs=self.theme_type_pairs,
                 geometry_filter=area_wgs84.union_all(),
                 release=self.release,
@@ -138,7 +133,7 @@ class OvertureMapsLoader(Loader):
                 places_use_primary_category_only=self.places_use_primary_category_only,
             )
         else:
-            features_gdf = convert_geometry_to_wide_form_geodataframe_for_all_types(
+            features_parquet_path = convert_geometry_to_wide_form_parquet_for_all_types(
                 geometry_filter=area_wgs84.union_all(),
                 release=self.release,
                 include_all_possible_columns=self.include_all_possible_columns,
@@ -151,14 +146,10 @@ class OvertureMapsLoader(Loader):
                 places_use_primary_category_only=self.places_use_primary_category_only,
             )
 
-        features_gdf.index.name = FEATURES_INDEX
-        features_gdf = features_gdf.to_crs(WGS84_CRS)
-
-        features_columns = [
-            column
-            for column in features_gdf.columns
-            if column != GEOMETRY_COLUMN and features_gdf[column].notnull().any()
-        ]
-        features_gdf = features_gdf[[GEOMETRY_COLUMN, *sorted(features_columns)]]
-
-        return features_gdf
+        features_gdt = GeoDataTable.from_parquet(
+            features_parquet_path,
+            index_column_names="id",
+            persist_files=True,
+            sort_geometries=False,
+        )
+        return features_gdt

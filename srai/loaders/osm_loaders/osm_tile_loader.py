@@ -4,30 +4,27 @@ OSM tile loader.
 This module implements downloading tiles from given OSM tile server.
 """
 
-from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional, Union
 from urllib.parse import urljoin
 
-import geopandas as gpd
 import pandas as pd
 import requests
-from shapely.geometry.base import BaseGeometry
 
 from srai._optional import import_optional_dependencies
-from srai.loaders._base import prepare_area_gdf_for_loader
-from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
-
-from .osm_tile_data_collector import (
+from srai.geodatatable import VALID_GEO_INPUT, GeoDataTable, prepare_geo_input
+from srai.loaders._base import Loader
+from srai.loaders.osm_loaders.osm_tile_data_collector import (
     DataCollector,
     DataCollectorType,
-    InMemoryDataCollector,
+    SavingDataCollector,
     get_collector,
 )
+from srai.regionalizers.slippy_map_regionalizer import SlippyMapRegionalizer
 
 
-class OSMTileLoader:
+class OSMTileLoader(Loader):
     """
     OSM Tile Loader.
 
@@ -48,7 +45,7 @@ class OSMTileLoader:
         resource_type: str = "png",
         auth_token: Optional[str] = None,
         data_collector: Optional[Union[str, DataCollector]] = None,
-        storage_path: Optional[Union[str, Path]] = None,
+        storage_path: Union[str, Path] = "files/osm_tiles",
     ) -> None:
         """
         Initialize TileLoader.
@@ -62,11 +59,12 @@ class OSMTileLoader:
             auth_token (str, optional): auth token. Added as access_token parameter
                 to request. Defaults to None.
             data_collector (Union[str, DataCollector], optional): DataCollector object or
-            enum defining default collector. If None uses InMemoryDataCollector. Defaults to None.
-            If `return` uses  InMemoryDataCollector
-            If `save` uses  SavingDataCollector
+                enum defining default collector. If None uses InMemoryDataCollector.
+                Defaults to None.
+                If `return` uses  InMemoryDataCollector.
+                If `save` uses  SavingDataCollector.
             storage_path (Union[str, Path], optional): path to save data,
-                used with SavingDataCollector. Defaults to None.
+                used with SavingDataCollector. Defaults to "files/osm_tiles".
 
         References:
             1. https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
@@ -81,7 +79,7 @@ class OSMTileLoader:
         self.data_collector = (
             self._get_collector(data_collector)
             if data_collector is not None
-            else InMemoryDataCollector()
+            else SavingDataCollector(save_path=self.save_path, file_extension=self.resource_type)
         )
         self.regionalizer = SlippyMapRegionalizer(zoom=self.zoom)
 
@@ -96,22 +94,21 @@ class OSMTileLoader:
 
     def load(
         self,
-        area: Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame],
-    ) -> gpd.GeoDataFrame:
+        area: VALID_GEO_INPUT,
+    ) -> GeoDataTable:
         """
         Return all tiles of region.
 
         Args:
-            area (Union[BaseGeometry, Iterable[BaseGeometry], gpd.GeoSeries, gpd.GeoDataFrame]):
-                Area for which to download objects.
+            area (VALID_GEO_INPUT): Area for which to download objects.
 
         Returns:
             gpd.GeoDataFrame: Pandas of tiles for each region in area transformed by DataCollector
         """
-        area_wgs84 = prepare_area_gdf_for_loader(area)
+        area_wgs84 = prepare_geo_input(area).to_geodataframe()
         regions = self.regionalizer.transform(gdf=area_wgs84)
         regions["tile"] = regions.apply(self._get_tile_for_area, axis=1)
-        return regions
+        return GeoDataTable.from_geodataframe(regions)
 
     def _get_tile_for_area(self, row: pd.Series) -> Any:
         idx = row.name

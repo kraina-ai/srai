@@ -10,7 +10,6 @@ from srai.geometry import convert_to_features_gdf
 
 from ._base import Loader
 from .download import download_file
-from .geoparquet_loader import GeoparquetLoader
 from .gtfs_loader import GTFSLoader
 from .osm_loaders import OSMLoader, OSMOnlineLoader, OSMPbfLoader, OSMTileLoader
 from .osm_way_loader import OSMNetworkType, OSMWayLoader
@@ -18,7 +17,6 @@ from .overturemaps_loader import OvertureMapsLoader
 
 __all__ = [
     "Loader",
-    "GeoparquetLoader",
     "GTFSLoader",
     "OSMLoader",
     "OSMWayLoader",
