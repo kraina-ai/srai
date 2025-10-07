@@ -2,13 +2,9 @@
 
 import importlib
 import sys
-
-from collections.abc import Generator
-from contextlib import nullcontext as does_not_raise
-from typing import Any, Callable
 from collections.abc import Callable, Generator
 from contextlib import nullcontext as does_not_raise
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import geopandas as gpd
 import pytest
