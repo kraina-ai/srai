@@ -5,6 +5,7 @@ This module contains count embedder implementation.
 """
 
 import hashlib
+import math
 import tempfile
 import warnings
 from datetime import datetime
@@ -265,6 +266,15 @@ class CountEmbedder(Embedder):
 
         return features_select_relation, feature_columns
 
+    # TODO: move to rq_geo_toolkit
+    def ceil_to_power_of_10(self, n: int) -> int:
+        """Return the smallest power of 10 greater than or equal to n."""
+        if n <= 0:
+            raise ValueError("Input must be a positive integer.")
+
+        exponent = math.ceil(math.log10(n))
+        return cast("int", 10**exponent)
+
     def _save_relation_in_batches(
         self,
         regions_pdt: ParquetDataTable,
@@ -281,7 +291,7 @@ class CountEmbedder(Embedder):
     ) -> None:
         total_rows = regions_pdt.rows
         current_offset = 0
-        current_limit = 10_000_000
+        current_limit = min(self.ceil_to_power_of_10(total_rows), 10_000_000)
 
         force_empty_file_creation = total_rows == 0
 

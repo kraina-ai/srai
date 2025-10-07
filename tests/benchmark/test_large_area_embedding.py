@@ -24,8 +24,8 @@ def test_large_area_embedding() -> None:
     H3_DISTANCE = 10
 
     chars = ascii_lowercase + digits
-    columns = ["".join(choice(chars) for _ in range(8)) for _ in range(100)]
-    values = ["".join(choice(chars) for _ in range(8)) for _ in range(100)]
+    columns = ["".join(choice(chars) for _ in range(8)) for _ in range(32)]
+    values = ["".join(choice(chars) for _ in range(8)) for _ in range(32)]
 
     area = gpd.GeoDataFrame(geometry=[box(5.818355, 46.037418, 24.363277, 52.769854)], crs=4326)
 

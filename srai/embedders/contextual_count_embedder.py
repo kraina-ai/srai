@@ -25,7 +25,7 @@ import polars as pl
 from rq_geo_toolkit.multiprocessing_utils import WorkerProcess, run_process_with_memory_monitoring
 from tqdm import tqdm
 
-from srai.constants import FORCE_TERMINAL
+from srai.constants import FORCE_TERMINAL, REGIONS_INDEX
 from srai.duckdb import prepare_duckdb_extensions, relation_from_parquet_paths
 from srai.embedders.count_embedder import CountEmbedder
 from srai.geodatatable import VALID_DATA_INPUT, ParquetDataTable
@@ -151,7 +151,7 @@ class ContextualCountEmbedder(CountEmbedder):
     def _iterate_parquet_data(self, counts_pdt: ParquetDataTable) -> ParquetDataTable:
         total_rows = counts_pdt.rows
         current_offset = 0
-        current_limit = 10_000_000
+        current_limit = min(self.ceil_to_power_of_10(total_rows), 10_000_000)
 
         result_dir_name = ParquetDataTable.generate_filename()
         embedding_type = "concatenated" if self.concatenate_vectors else "squashed"
@@ -166,41 +166,46 @@ class ContextualCountEmbedder(CountEmbedder):
             disable=FORCE_TERMINAL,
         ) as pbar:
             while current_offset < total_rows:
-                try:
-                    timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                    current_result_file_path = result_dir_path / f"{timestr}.parquet"
-                    process = WorkerProcess(
-                        target=_parse_single_batch,
-                        kwargs=dict(
-                            neighbourhood=self.neighbourhood,
-                            neighbourhood_distance=self.neighbourhood_distance,
-                            aggregation_function=self.aggregation_function,
-                            concatenate_vectors=self.concatenate_vectors,
-                            counts_parquet_files=counts_pdt.parquet_paths,
-                            index_name=cast("str", counts_pdt.index_name),
-                            feature_column_names=counts_pdt.columns,
-                            limit=current_limit,
-                            offset=current_offset,
-                            result_file_path=current_result_file_path,
-                        ),
-                    )
-                    run_process_with_memory_monitoring(process)
+                timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                current_result_file_path = result_dir_path / f"{timestr}.parquet"
+                with (
+                    tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
+                ):
+                    try:
+                        process = WorkerProcess(
+                            target=_parse_single_batch,
+                            kwargs=dict(
+                                tmp_dir_path=Path(tmp_dir_name),
+                                neighbourhood=self.neighbourhood,
+                                neighbourhood_distance=self.neighbourhood_distance,
+                                aggregation_function=self.aggregation_function,
+                                concatenate_vectors=self.concatenate_vectors,
+                                counts_parquet_files=counts_pdt.parquet_paths,
+                                index_name=cast("str", counts_pdt.index_name),
+                                feature_column_names=counts_pdt.columns,
+                                limit=current_limit,
+                                offset=current_offset,
+                                result_file_path=current_result_file_path,
+                            ),
+                        )
+                        run_process_with_memory_monitoring(process)
 
-                    current_offset += current_limit
-                    pbar.n = min(current_offset, total_rows)
-                    pbar.refresh()
+                        current_offset += current_limit
+                        pbar.n = min(current_offset, total_rows)
+                        pbar.refresh()
 
-                except (duckdb.OutOfMemoryException, MemoryError) as ex:
-                    current_result_file_path.unlink(missing_ok=True)
-                    current_limit //= 10
-                    if current_limit == 1:
-                        raise
+                    except (duckdb.OutOfMemoryException, MemoryError) as ex:
+                        current_result_file_path.unlink(missing_ok=True)
+                        current_limit //= 10
+                        if current_limit == 1:
+                            raise
 
-                    warnings.warn(
-                        f"Encountered {ex.__class__.__name__} during operation."
-                        f" Retrying with lower number of rows per batch ({current_limit} rows).",
-                        stacklevel=1,
-                    )
+                        warnings.warn(
+                            f"Encountered {ex.__class__.__name__} during operation."
+                            " Retrying with lower number of rows per batch"
+                            f" ({current_limit} rows).",
+                            stacklevel=1,
+                        )
 
         return ParquetDataTable.from_parquet_directory(
             directory_path=result_dir_path, index_column_names=counts_pdt.index_name
@@ -208,6 +213,7 @@ class ContextualCountEmbedder(CountEmbedder):
 
 
 def _parse_single_batch(
+    tmp_dir_path: Path,
     neighbourhood: Neighbourhood[IndexType],
     neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
@@ -221,14 +227,13 @@ def _parse_single_batch(
 ) -> None:
     num_of_multiprocessing_workers = min(1, cpu_count() - 2)
     with (
-        tempfile.TemporaryDirectory(dir="files") as tmp_dir_name,
         duckdb.connect(
-            database=str(Path(tmp_dir_name) / "db.duckdb"),
+            database=str(tmp_dir_path / "db.duckdb"),
             config=dict(preserve_insertion_order=True),
         ) as connection,
         ProcessPoolExecutor(max_workers=num_of_multiprocessing_workers) as executor,
     ):
-        tmp_dir_path = Path(tmp_dir_name)
+        print("_parse_single_batch", limit, offset, result_file_path)
         prepare_duckdb_extensions(connection=connection)
         full_relation = relation_from_parquet_paths(
             parquet_paths=counts_parquet_files, connection=connection, with_row_number=True
@@ -238,35 +243,62 @@ def _parse_single_batch(
             current_batch_relation.sort("row_number").select(index_name, "row_number").pl()
         )
         current_region_ids = current_regions[index_name]
+        print("_parse_single_batch", "loaded regions to polars")
 
-        all_neighbours = set((region_id, region_id, 0) for region_id in current_region_ids)
+        all_neighbours = [(region_id, region_id, 0) for region_id in current_region_ids]
 
+        print("_parse_single_batch", "calculating neighbours")
         fn_neighbours = partial(
-            _get_existing_neighbours_at_distance,
+            _get_existing_neighbours_up_to_distance,
             neighbourhood=neighbourhood,
             neighbourhood_distance=neighbourhood_distance,
         )
+        precalculated_neighbours_dir_path = tmp_dir_path / "neighbours"
+        precalculated_neighbours_dir_path.mkdir(parents=True, exist_ok=True)
         for result in executor.map(
             fn_neighbours,
             current_region_ids,
             chunksize=ceil(len(current_region_ids) / (4 * num_of_multiprocessing_workers)),
         ):
-            all_neighbours.update(result)
+            all_neighbours.extend(result)
+            if len(all_neighbours) >= limit:
+                timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                pd.DataFrame(
+                    all_neighbours,
+                    columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+                ).to_parquet(precalculated_neighbours_dir_path / f"{timestr}.parquet")
+                all_neighbours = []
 
-        precalculated_neighbours_path = tmp_dir_path / "neighbours.parquet"
-        pd.DataFrame(
-            all_neighbours,
-            columns=["region_id", "neighbour_id", "distance"],
-        ).to_parquet(precalculated_neighbours_path)
+        if all_neighbours:
+            timestr = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            pd.DataFrame(
+                all_neighbours,
+                columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+            ).to_parquet(precalculated_neighbours_dir_path / f"{timestr}.parquet")
+            del all_neighbours
+
+        # precalculated_neighbours_path = tmp_dir_path / "neighbours.parquet"
+        # print(len(all_neighbours), "neighbours found")
+        # pd.DataFrame(
+        #     all_neighbours,
+        #     columns=[REGIONS_INDEX, "neighbour_id", "distance"],
+        # ).to_parquet(precalculated_neighbours_path)
+        print("_parse_single_batch", "saved neighbours")
 
         current_regions_lf = current_regions.lazy()
-        neighbours_lf = pl.scan_parquet(precalculated_neighbours_path)
+        neighbours_lf = pl.scan_parquet(precalculated_neighbours_dir_path)
+        print(
+            "_parse_single_batch",
+            neighbours_lf.select(pl.len()).collect().item(),
+            "neighbours loaded",
+        )
         embeddings_lf = pl.scan_parquet(counts_parquet_files)
 
         neighbours_joined_with_embeddings_lf = neighbours_lf.join(
             embeddings_lf, left_on="neighbour_id", right_on=index_name, how="left"
         )
 
+        print("_parse_single_batch", "creating lazyframe execution tree")
         if concatenate_vectors:
             embeddings = _generate_concatenated_embeddings_lazyframe(
                 neighbours_joined_with_embeddings_lf=neighbours_joined_with_embeddings_lf,
@@ -281,8 +313,9 @@ def _parse_single_batch(
                 aggregation_function=aggregation_function,
             )
 
+        print("_parse_single_batch", "saving embeddings to parquet")
         current_regions_lf.join(
-            embeddings, left_on=index_name, right_on="region_id", how="left"
+            embeddings, left_on=index_name, right_on=REGIONS_INDEX, how="left"
         ).fill_null(0).sort("row_number").drop("row_number").sink_parquet(result_file_path)
 
 
@@ -292,14 +325,14 @@ def _generate_squashed_embeddings_lazyframe(
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
 ) -> pl.LazyFrame:
     return (
-        neighbours_joined_with_embeddings_lf.group_by(["region_id", "distance"])
+        neighbours_joined_with_embeddings_lf.group_by([REGIONS_INDEX, "distance"])
         .agg(
             (_apply_polars_aggregation(pl.col(column), aggregation_function).alias(column))
             for column in feature_column_names
         )
         .with_columns((pl.col("distance") + 1).pow(2).alias("divisor"))
         .with_columns(pl.col(column) / pl.col("divisor") for column in feature_column_names)
-        .group_by("region_id")
+        .group_by(REGIONS_INDEX)
         .agg((pl.col(column).sum().alias(column)) for column in feature_column_names)
     )
 
@@ -310,7 +343,7 @@ def _generate_concatenated_embeddings_lazyframe(
     neighbourhood_distance: int,
     aggregation_function: Literal["average", "median", "sum", "min", "max"],
 ) -> pl.LazyFrame:
-    return neighbours_joined_with_embeddings_lf.group_by("region_id").agg(
+    return neighbours_joined_with_embeddings_lf.group_by(REGIONS_INDEX).agg(
         (
             _apply_polars_aggregation(
                 pl.col(column).filter(pl.col("distance") == distance), aggregation_function
@@ -337,15 +370,15 @@ def _apply_polars_aggregation(
         raise ValueError(f"Unknown aggregation function: {aggregation_function}")
 
 
-def _get_existing_neighbours_at_distance(
+def _get_existing_neighbours_up_to_distance(
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
     neighbourhood_distance: int,
-) -> set[tuple[IndexType, IndexType, int]]:
-    return set(
+) -> list[tuple[IndexType, IndexType, int]]:
+    return [
         (region_id, neighbour_region_id, distance)
         for distance in range(1, neighbourhood_distance + 1)
         for neighbour_region_id in neighbourhood.get_neighbours_at_distance(
             region_id, distance, include_center=False
         )
-    )
+    ]
