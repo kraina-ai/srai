@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-10-07
+
 ### Added
 
-- Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets
+- Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets, implemented by the Kraina AI team ([@mskaa3](https://github.com/mskaa3), [@Repcak00](https://github.com/Repcak00), [@Kubson900](https://github.com/Kubson900), [@SzymonLeszkiewicz](https://github.com/SzymonLeszkiewicz), [@ofurman](https://github.com/ofurman))
 - New optional dependency group: `datasets`
 - Weight-based examples sorting in documentation with `mkdocs-nav-weight` plugin
 
@@ -452,7 +454,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.9.9...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.10.0...HEAD
+
+[0.10.0]: https://github.com/kraina-ai/srai/compare/0.9.9...0.10.0
 
 [0.9.9]: https://github.com/kraina-ai/srai/compare/0.9.8...0.9.9
 

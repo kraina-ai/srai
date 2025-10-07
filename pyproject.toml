@@ -1,6 +1,6 @@
 [project]
 name = "srai"
-version = "0.9.9"
+version = "0.10.0"
 description = "A set of python modules for geospatial machine learning and data mining"
 authors = [
     { name = "Piotr Gramacki", email = "pgramacki@kraina.ai" },
@@ -62,7 +62,7 @@ osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.11.0"]
 # pdm add -G overturemaps <library>
 overturemaps = ["overturemaestro>=0.5.0"]
 # pdm add -G datasets <library>
-datasets = ["datasets<4", "fastdtw>=0.3.4"]
+datasets = ["datasets>=3,<4", "fastdtw>=0.3.4"]
 # pdm add -G voronoi <library>
 voronoi = [
     "pymap3d>=3.0.0",
@@ -205,7 +205,7 @@ close-quotes-on-newline = true
 wrap-one-line = true
 
 [tool.bumpver]
-current_version = "0.9.9"
+current_version = "0.10.0"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore(CI/CD): bump version {old_version} -> {new_version}"
 commit = true
