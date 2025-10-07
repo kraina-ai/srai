@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets
+- Open Benchmark for Spatial Representations (OBSR) - added benchmark module with 7 public datasets, implemented by the Kraina AI team ([@mskaa3](https://github.com/mskaa3), [@Repcak00](https://github.com/Repcak00), [@Kubson900](https://github.com/Kubson900), [@SzymonLeszkiewicz](https://github.com/SzymonLeszkiewicz), [@ofurman](https://github.com/ofurman))
 - New optional dependency group: `datasets`
 - Weight-based examples sorting in documentation with `mkdocs-nav-weight` plugin
 
