@@ -14,7 +14,6 @@ The benchmark tasks are split into two main categories: point-based and trajecto
 
 Below is the list of example tasks:
 
-# TODO - finish definitions and remove this header after
 
 ### Point-based tasks
 
