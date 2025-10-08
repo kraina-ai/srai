@@ -107,8 +107,6 @@ You can also see the recordings of the tutorials on YouTube:
 
 ## Usage
 
-If you prefer an interactive notebook, examples of `srai` usage are available in this [Colab Notebook](https://colab.research.google.com/drive/17z2OYZG82FZNRK86Kt-eSgbJn9m7meSH?usp=sharing)
-
 ### Downloading OSM data
 
 To download OSM data for a given area, using a set of tags use one of `OSMLoader` classes:
@@ -353,4 +351,5 @@ If you wish to cite the SRAI library, please use our [paper](https://arxiv.org/a
 This library is licensed under the [Apache License 2.0](https://github.com/kraina-ai/srai/blob/main/LICENSE.md).
 
 The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).
+
 
