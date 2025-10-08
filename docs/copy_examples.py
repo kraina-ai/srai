@@ -6,6 +6,7 @@ import mkdocs_gen_files
 import nbformat
 
 EXAMPLES_DIRECTORY_PATH = Path("examples")
+DATASETS_DIRECTORY_NAME = "datasets"
 
 RUN_IN_COLAB_CELL_MARKDOWN = """
 Run this notebook in Google Colab:
@@ -29,8 +30,13 @@ def write_file(file_path: Path) -> None:
         file_path (Path): Current file path.
     """
     root_path = file_path.relative_to(".")
-    print(f"Copying {root_path} file to {root_path}")
-    with root_path.open("r") as src, mkdocs_gen_files.open(root_path, "w") as dst:
+    destination_path = root_path
+
+    if file_path.parts[1] == DATASETS_DIRECTORY_NAME:
+        destination_path = Path(DATASETS_DIRECTORY_NAME) / Path(*file_path.parts[2:])
+
+    print(f"Copying {file_path} file to {destination_path}")
+    with root_path.open("r") as src, mkdocs_gen_files.open(destination_path, "w") as dst:
         if root_path.suffix != ".ipynb":
             dst.write(src.read())
             return
@@ -65,19 +71,38 @@ banned_directories = [
     # exclude long running notebooks
     "benchmark",
 ]
-banned_extensions = [".pbf", ".parquet", ".json", ".geojson", ".pt", ".toml", ".pkl"]
+banned_extensions = [
+    ".pbf",
+    ".parquet",
+    ".json",
+    ".geojson",
+    ".pt",
+    ".toml",
+    ".pkl",
+    ".duckdb",
+    ".png",
+]
+banned_filenames = [".DS_Store"]
 for i in EXAMPLES_DIRECTORY_PATH.glob("**/*"):
     if i.is_file():
         should_copy = True
-        for banned_extension in banned_extensions:
-            if banned_extension in i.suffixes:
-                should_copy = False
-                break
+
+        if i.name in banned_filenames:
+            should_copy = False
 
         for banned_directory in banned_directories:
             if banned_directory in i.parts:
                 should_copy = False
                 break
 
+        for banned_extension in banned_extensions:
+            if banned_extension in i.suffixes:
+                should_copy = False
+                break
+
         if should_copy:
-            write_file(i)
+            try:
+                write_file(i)
+            except:
+                print(i)
+                raise

@@ -2,6 +2,7 @@ nav:
   - Home: README.md
   - Getting Started: getting_started
   - Examples: examples
+  - Datasets: datasets
   - ...
   - Releases: releases
   - Contributing: CONTRIBUTING.md
