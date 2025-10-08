@@ -29,9 +29,9 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
+          key: ${{ runner.os }}-pip-prod-${{ hashFiles('**/pdm.lock') }}
           restore-keys: |
-            ${{ runner.os }}-pip-dev-
+            ${{ runner.os }}-pip-prod-
       - name: Install pdm
         run: pip install pdm uv
       - name: Regenerate lock with environment markers
