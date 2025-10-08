@@ -75,4 +75,3 @@ jobs:
         run: python -c "print('MINOR_VERSION=' + '.'.join('${{steps.previoustag.outputs.tag}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
       - name: Publish latest documentation
         run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
-
