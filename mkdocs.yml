@@ -161,6 +161,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       check_paths: true
+  - admonition
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid

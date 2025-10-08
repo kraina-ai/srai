@@ -4,26 +4,15 @@
 <p align="center">
     <img alt="GitHub" src="https://img.shields.io/github/license/kraina-ai/srai?logo=apache&logoColor=%23fff">
     <img src="https://img.shields.io/github/checks-status/kraina-ai/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
-    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-dev.yml" target="_blank">
-        <img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff">
-    </a>
-    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-prod.yml" target="_blank">
-        <img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff">
-    </a>
-    <a href="https://results.pre-commit.ci/latest/github/kraina-ai/srai/main" target="_blank">
-        <img src="https://results.pre-commit.ci/badge/github/kraina-ai/srai/main.svg" alt="pre-commit.ci status">
-    </a>
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-dev.yml" target="_blank"><img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff"></a>
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-prod.yml" target="_blank"><img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff"></a>
+    <a href="https://results.pre-commit.ci/latest/github/kraina-ai/srai/main" target="_blank"><img src="https://results.pre-commit.ci/badge/github/kraina-ai/srai/main.svg" alt="pre-commit.ci status"></a>
     <a href="https://www.codefactor.io/repository/github/kraina-ai/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/kraina-ai/srai?logo=codefactor&logoColor=%23fff"></a>
     <a href="https://app.codecov.io/gh/kraina-ai/srai/tree/main"><img alt="Codecov" src="https://img.shields.io/codecov/c/github/kraina-ai/srai?logo=codecov&token=PRS4E02ZX0&logoColor=%23fff"></a>
-    <a href="https://pypi.org/project/srai" target="_blank">
-        <img src="https://img.shields.io/pypi/v/srai?color=%2334D058&label=pypi%20package&logo=pypi&logoColor=%23fff" alt="Package version">
-    </a>
-    <a href="https://pypi.org/project/srai" target="_blank">
-        <img src="https://img.shields.io/pypi/pyversions/srai.svg?color=%2334D058&logo=python&logoColor=%23fff" alt="Supported Python versions">
-    </a>
-    <a href="https://pypi.org/project/srai" target="_blank">
-        <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/srai">
-    </a>
+    <a href="https://pypi.org/project/srai" target="_blank"><img src="https://img.shields.io/pypi/v/srai?color=%2334D058&label=pypi%20package&logo=pypi&logoColor=%23fff" alt="Package version"></a>
+    <a href="https://pypi.org/project/srai" target="_blank"><img src="https://img.shields.io/pypi/pyversions/srai.svg?color=%2334D058&logo=python&logoColor=%23fff" alt="Supported Python versions"></a>
+    <a href="https://pypi.org/project/srai" target="_blank"><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/srai"></a>
+    <a href="https://huggingface.co/kraina" target="_blank"><img alt="HuggingFace" src="https://img.shields.io/badge/Hugging_Face-Kraina-FFD21E?logo=huggingface"></a>
 </p>
 
 # Spatial Representations for Artificial Intelligence
@@ -32,7 +21,7 @@
 
 <p align="center">💬 Feel free to open an issue if you find anything confusing or not working 💬</p>
 
-Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to provide simple and efficient solutions to geospatial problems that are accessible to everybody and reusable in various contexts where geospatial data can be used. It is a Python module integrating many geo-related algorithms in a single package with unified API. Please see getting started for installation and quick start instructions.
+Project **Spatial Representations for Artificial Intelligence** (`srai`) is a Python library for geospatial machine learning focusing on vector geometries. It provides tools for acquiring spatial data, dividing areas into micro-regions and embedding those regions into embeddings.
 
 <p align="center">
   <img src="https://drive.google.com/thumbnail?id=1iyajkX81PLrel-Xmz1lQpYQvePnLoO1U&sz=s1024"  style="max-width:600px;width:100%"/>
@@ -42,11 +31,12 @@ Project **Spatial Representations for Artificial Intelligence** (`srai`) aims to
 
 In the current state, `srai` provides the following functionalities:
 
-* **OSM data download** - downloading OpenStreetMap data for a given area using different sources
-* **OSM data processing** - processing OSM data to extract useful information (e.g. road network, buildings, POIs, etc.)
+* **OSM / OvertureMaps data download** - downloading OpenStreetMap / Overture Maps data for a given area using different sources
+* **Vector data processing** - processing acquired vector data to extract useful information (e.g. road network, buildings, POIs, etc.)
 * **GTFS processing** - extracting features from GTFS data
 * **Regionalization** - splitting a given area into smaller regions using different algorithms (e.g. Uber's H3[1], Voronoi, etc.)
-* **Embedding** - embedding regions into a vector space based on different spatial features, and using different algorithms (eg. hex2vec[2], etc.)
+* **Embedding** - embedding regions into a vector space based on different spatial features, and using different algorithms and [PyTorch](https://pytorch.org/) models (eg. hex2vec[2], etc.)
+* **Datasets** - provides prepared datasets for downstream tasks
 * Utilities for spatial data visualization and processing
 
 For future releases, we plan to add more functionalities, such as:
@@ -57,9 +47,19 @@ For future releases, we plan to add more functionalities, such as:
 
 ### End-to-end examples
 
-Right now, `srai` provides a toolset for data download and processing sufficient to solve downstream tasks. Please see [this project](https://kraina-ai.github.io/Transfer-learning-approach-to-bicycle-sharing-systems-station-location-planning-using-OpenStreetMap/) by [@RaczeQ](https://github.com/RaczeQ), which predicts Bike Sharing System (BSS) stations' locations for a wide range of cities worldwide.
+Look into an [example page](https://kraina-ai.github.io/srai/latest/examples/use_cases/) with dedicated real-world scenarios and downstream tasks.
 
-For `srai` integration into full [kedro](https://kedro.org/) pipeline, see [this project](https://github.com/Calychas/highway2vec_remaster/) by [@Calychas](https://github.com/Calychas).
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/use_case_example_results.png"  style="max-width:600px;width:100%"/>
+</p>
+
+### Datasets
+
+The library also includes a dedicated [`datasets`](https://kraina-ai.github.io/srai/latest/datasets/) and benchmark modules for downstream tasks based on public data.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/kraina-ai/srai/main/docs/assets/images/london_airbnb.png"  style="max-width:600px;width:100%"/>
+</p>
 
 ## Installation
 
@@ -77,14 +77,33 @@ The following optional dependencies can be installed to enable additional functi
 
 * `srai[all]` - all optional dependencies
 * `srai[osm]` - dependencies required to download OpenStreetMap data
+* `srai[overturemaps]` - dependencies required to download Overture Maps data
+* `srai[datasets]` - dependencies required for downloading datasets
 * `srai[voronoi]` - dependencies to use Voronoi-based regionalization method
 * `srai[gtfs]` - dependencies to process GTFS data
 * `srai[plotting]` - dependencies to plot graphs and maps
 * `srai[torch]` - dependencies to use torch-based embedders
 
+## Documentation
+
+You can find the documentation for SRAI hosted on [Github Pages](https://kraina-ai.github.io/srai/).
+
+It includes API documentation, contributing instructions and many [examples](https://kraina-ai.github.io/srai/latest/examples/). You can also check out our [paper](https://arxiv.org/abs/2310.13098).
+
 ## Tutorial
 
-For a full tutorial on `srai` and geospatial data in general visit the [srai-tutorial](https://github.com/kraina-ai/srai-tutorial) repository. It contains easy to follow jupyter notebooks concentrating on every part of the library. Additionally, there is [a recording](https://www.youtube.com/watch?v=JlyPh_AdQ8E) available from the EuroScipy 2023 conference covering that material.
+For a full tutorial on `srai` and geospatial data in general visit the [srai-tutorial](https://github.com/kraina-ai/srai-tutorial) repository. It contains easy to follow jupyter notebooks concentrating on every part of the library.
+
+You can also see the recordings of the tutorials on YouTube:
+
+<p style="display: flex;">
+    <a href="https://www.youtube.com/watch?v=JlyPh_AdQ8E" style="margin: 0 10px">
+        <img src="https://img.youtube.com/vi/JlyPh_AdQ8E/0.jpg">
+    </a>
+    <a href="https://www.youtube.com/watch?v=1-xLkFwibb4&t=17416s" style="margin: 0 10px">
+        <img src="https://img.youtube.com/vi/1-xLkFwibb4/0.jpg">
+    </a>
+</p>
 
 ## Usage
 
