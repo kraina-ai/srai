@@ -21,7 +21,7 @@
 
 <p align="center">💬 Feel free to open an issue if you find anything confusing or not working 💬</p>
 
-Project **Spatial Representations for Artificial Intelligence** (`srai`) is a Python library for geospatial machine learning focusing on vector geometries. It provides tools for acquiring spatial data, dividing areas into micro-regions and embedding those regions into embeddings.
+Project **Spatial Representations for Artificial Intelligence** (`srai`) is a Python library for geospatial machine learning focusing on vector geometries. It provides tools for acquiring spatial data, dividing areas into micro-regions and embedding those regions into vector spaces.
 
 <p align="center">
   <img src="https://drive.google.com/thumbnail?id=1iyajkX81PLrel-Xmz1lQpYQvePnLoO1U&sz=s1024"  style="max-width:600px;width:100%"/>
@@ -353,3 +353,4 @@ If you wish to cite the SRAI library, please use our [paper](https://arxiv.org/a
 This library is licensed under the [Apache License 2.0](https://github.com/kraina-ai/srai/blob/main/LICENSE.md).
 
 The free [OpenStreetMap](https://www.openstreetmap.org/) data, which is used for the development of SRAI, is licensed under the [Open Data Commons Open Database License](https://opendatacommons.org/licenses/odbl/) (ODbL) by the [OpenStreetMap Foundation](https://osmfoundation.org/) (OSMF).
+
