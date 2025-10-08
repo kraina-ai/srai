@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+      - name: Install image libraries
+        run: sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
@@ -35,7 +37,7 @@ jobs:
       - name: Regenerate lock with environment markers
         run: pdm lock --update-reuse --strategy inherit_metadata
       - name: Generate requirements.txt
-        run: pdm export --no-default -dG docs -dG visualization -f requirements -o requirements.txt
+        run: pdm export --no-default -G all -dG docs -dG visualization -f requirements -o requirements.txt
       - name: Install dependencies
         run: uv pip install --no-deps -r requirements.txt --system
       - name: Install nbconvert dependency
