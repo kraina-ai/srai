@@ -15,7 +15,7 @@ import h3
 import pandas as pd
 from tqdm import trange
 
-from srai.constants import WGS84_CRS
+from srai.constants import FORCE_TERMINAL, WGS84_CRS
 from srai.datasets import TrajectoryDataset
 
 
@@ -244,6 +244,7 @@ class PortoTaxiDataset(TrajectoryDataset):
                     len(unique_trajectory_ids),
                     batch_size,
                     desc="Transforming Porto taxi trajectories",
+                    disable=FORCE_TERMINAL,
                 ):
                     batch_trajectory_ids = unique_trajectory_ids[row_id : row_id + batch_size]
                     save_file_path = tmp_dir_path / f"{row_id}.parquet"

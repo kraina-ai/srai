@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from srai.constants import WGS84_CRS
+from srai.constants import FORCE_TERMINAL, WGS84_CRS
 from srai.datasets import TrajectoryDataset
 from srai.loaders.download import download_file
 
@@ -80,7 +80,7 @@ class GeolifeDataset(TrajectoryDataset):
             # --- Extract with progress ---
             with ZipFile(zip_path) as zfile:
                 members = zfile.namelist()
-                for member in tqdm(members, desc="Extracting Geolife"):
+                for member in tqdm(members, desc="Extracting Geolife", disable=FORCE_TERMINAL):
                     zfile.extract(member, self.raw_data_path)
 
         else:
@@ -161,7 +161,11 @@ class GeolifeDataset(TrajectoryDataset):
 
         self.processed_path.mkdir(exist_ok=True, parents=True)
 
-        with tqdm(total=len(user_id_dirs), desc="Loading Geolife user trajectories") as pbar:
+        with tqdm(
+            total=len(user_id_dirs),
+            desc="Loading Geolife user trajectories",
+            disable=FORCE_TERMINAL,
+        ) as pbar:
             for user_id in np.sort(user_id_dirs):
                 user_result_path = self.processed_path / f"{user_id}.parquet"
                 if user_result_path.exists():
@@ -411,7 +415,9 @@ class GeolifeDataset(TrajectoryDataset):
                 tmp_dir_path = Path(tmp_dir_name)
                 transformed_file_paths = []
                 for user_trajectories_parquet_file in tqdm(
-                    user_trajectories_parquet_files, desc="Transforming Geolife user trajectories"
+                    user_trajectories_parquet_files,
+                    desc="Transforming Geolife user trajectories",
+                    disable=FORCE_TERMINAL,
                 ):
                     save_file_path = tmp_dir_path / user_trajectories_parquet_file.name
                     hexes_gdf = self._transform_single_user_data(
