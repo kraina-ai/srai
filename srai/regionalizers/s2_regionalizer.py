@@ -71,7 +71,7 @@ class S2Regionalizer(Regionalizer):
             gdf_wgs84,
             how="inner",
             predicate="intersects" if self.buffer else "within",
-        ).drop(columns=["index_right"])
+        ).drop(columns=["index_right", REGIONS_INDEX], errors="ignore")
 
         res = res[~res.index.duplicated(keep="first")]
 

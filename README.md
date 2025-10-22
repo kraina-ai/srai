@@ -317,6 +317,9 @@ Some of the methods implemented in `srai` have been published in scientific jour
 3. Kamil Raczycki and Piotr Szymański. 2021. Transfer learning approach to bicycle-sharing systems' station location planning using OpenStreetMap data. In Proceedings of the 4th ACM SIGSPATIAL International Workshop on Advances in Resilient and Intelligent Cities (ARIC '21). Association for Computing Machinery, New York, NY, USA, 1–12. [paper](https://doi.org/10.1145/3486626.3493434), [arXiv](https://arxiv.org/abs/2111.00990)
 4. Kacper Leśniara and Piotr Szymański. 2022. Highway2vec: representing OpenStreetMap microregions with respect to their road network characteristics. In Proceedings of the 5th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '22). Association for Computing Machinery, New York, NY, USA, 18–29. [paper](https://doi.org/10.1145/3557918.3565865), [arXiv](https://arxiv.org/abs/2304.13865)
 5. Daniele Donghi and Anne Morvan. 2023. GeoVeX: Geospatial Vectors with Hexagonal Convolutional Autoencoders. In Proceedings of the 6th ACM SIGSPATIAL International Workshop on AI for Geographic Knowledge Discovery (GeoAI '23). Association for Computing Machinery, New York, NY, USA, 3–13. [paper](https://doi.org/10.1145/3615886.3627750)
+6. Shushman Choudhury, Elad Aharoni, Chandrakumari Suvarna, Iveel Tsogsuren, Abdul Rahman Kreidieh, Chun-Ta Lu and Neha Arora. 2025. S2Vec: Self-Supervised Geospatial Embeddings (No. arXiv:2504.16942). [arXiv](https://arxiv.org/abs/2504.16942)
+7. Julia Moska, Oleksii Furman, Kacper Kozaczko, Szymon Leszkiewicz, Jakub Polczyk, Piotr Gramacki and Piotr Szymański. 2025. OBSR: Open Benchmark for Spatial Representations. In Proceedings of the 33rd ACM SIGSPATIAL International Conference on Advances in Geographic Information Systems (ACM SIGSPATIAL 2025). [paper](https://doi.org/10.1145/3748636.3762783), [arxiv](https://arxiv.org/abs/2510.05879)
+
 
 ## Acknowledgements
 

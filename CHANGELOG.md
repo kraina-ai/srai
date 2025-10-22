@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- S2Regionalizer failing with geopandas >= 1.0.0 [#558](https://github.com/kraina-ai/srai/issues/558)
+
 ## [0.10.0] - 2025-10-07
 
 ### Added
