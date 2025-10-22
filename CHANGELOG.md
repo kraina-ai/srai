@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2025-10-22
+
 ### Fixed
 
 - S2Regionalizer failing with geopandas >= 1.0.0 [#558](https://github.com/kraina-ai/srai/issues/558)
@@ -458,7 +460,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Intersection Joiner
 - Geoparquet Loader
 
-[Unreleased]: https://github.com/kraina-ai/srai/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/kraina-ai/srai/compare/0.10.1...HEAD
+
+[0.10.1]: https://github.com/kraina-ai/srai/compare/0.10.0...0.10.1
 
 [0.10.0]: https://github.com/kraina-ai/srai/compare/0.9.9...0.10.0
 
