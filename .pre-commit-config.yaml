@@ -3,12 +3,12 @@
 default_stages: [pre-commit]
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.2.0
+    rev: v4.3.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.12.2'
+    rev: 'v0.14.3'
     hooks:
       - id: ruff
         types_or: [ python, pyi, jupyter ]
@@ -22,13 +22,13 @@ repos:
         additional_dependencies: [tomli]
         args: [--in-place, --config, ./pyproject.toml]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.16.1
+    rev: v1.18.2
     hooks:
       - id: mypy
         args: ["--config-file", "pyproject.toml"]
         additional_dependencies: ['types-requests', 'types-six']
   - repo: https://github.com/pdm-project/pdm
-    rev: 2.25.4
+    rev: 2.26.1
     hooks:
       - id: pdm-lock-check
       - id: pdm-export
@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: nbstripout
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -51,7 +51,7 @@ repos:
         args: ['--maxkb=1000']
       - id: detect-private-key
   - repo: https://github.com/dosisod/refurb
-    rev: v2.1.0
+    rev: v2.2.0
     hooks:
       - id: refurb
         args: ["--python-version", "3.9", "--disable", "FURB184", "--format", "github"]
