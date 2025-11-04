@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Union
 
 from srai._optional import import_optional_dependencies
 from srai.embedders import Model
-from srai.embedders.s2vec.positional_encoding import get_2d_sincos_pos_embed
 
 if TYPE_CHECKING:  # pragma: no cover
     import torch
@@ -191,6 +190,8 @@ class S2VecModel(Model):
             dependency_group="torch", modules=["timm", "torch", "pytorch_lightning"]
         )
         from torch import nn
+
+        from srai.embedders.s2vec.positional_encoding import get_2d_sincos_pos_embed
 
         super().__init__()
 

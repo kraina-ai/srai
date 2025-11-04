@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Move torch import inside `s2vec` related functions to avoid import errors when torch is not installed
+
 ## [0.10.1] - 2025-10-22
 
 ### Fixed
