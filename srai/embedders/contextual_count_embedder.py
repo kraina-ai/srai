@@ -225,7 +225,7 @@ def _parse_single_batch(
     offset: int,
     result_file_path: Path,
 ) -> None:
-    num_of_multiprocessing_workers = min(1, cpu_count() - 2)
+    num_of_multiprocessing_workers = max(1, cpu_count() - 2)
     with (
         duckdb.connect(
             database=str(tmp_dir_path / "db.duckdb"),
