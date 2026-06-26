@@ -9,13 +9,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           # Disable macos for now - stuck indefinitely
           # - os: macos-latest
           #   python-version: "3.12"
           - os: windows-latest
-            python-version: "3.12"
+            python-version: "3.13"
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}

@@ -54,7 +54,7 @@ repos:
     rev: v2.1.0
     hooks:
       - id: refurb
-        args: ["--python-version", "3.9", "--disable", "FURB184", "--format", "github"]
+        args: ["--python-version", "3.10", "--disable", "FURB184", "--format", "github"]
         language: python
         stages: [manual]
   - repo: https://github.com/FHPythonUtils/LicenseCheck

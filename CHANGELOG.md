@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `GeoparquetLoader`
+- Support for Python 3.9
 
 ## [0.9.9] - 2025-09-26
 

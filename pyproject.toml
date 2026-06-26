@@ -26,13 +26,13 @@ dependencies = [
     "osmnx>=1.3.0",
     "polars>=1.25.0",
     "duckdb>=1.2.0",
-    "rq-geo-toolkit>=2025.9.0",
+    "rq-geo-toolkit>=2026.6.0",
     "geoarrow-rust-core>=0.4.0",
     "geoarrow-pyarrow>=0.1.2",
     "pooch>=1.6.0",
     "sedonadb[geopandas]>=0.1.0",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 classifiers = [
@@ -43,7 +43,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -64,9 +63,9 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.16.2"]
+osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.18.0"]
 # pdm add -G overturemaps <library>
-overturemaps = ["overturemaestro>=0.5.0"]
+overturemaps = ["overturemaestro>=0.6.1"]
 # pdm add -G voronoi <library>
 voronoi = [
     "pymap3d>=3.0.0",
