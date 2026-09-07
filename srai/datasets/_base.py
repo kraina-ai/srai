@@ -489,9 +489,7 @@ class TrajectoryDataset(HuggingFaceDataset):
                 gdf_copy["stratify_col"] = gdf_copy["timestamp"].apply(
                     #     lambda ts: (0.0 if len(ts) < 2 else (ts[-1] - ts[0]).total_seconds())
                     # )
-                    lambda ts: (
-                        0.0 if len(ts) < 2 else pd.Timedelta(ts[-1] - ts[0]).total_seconds()
-                    )
+                    lambda ts: 0.0 if len(ts) < 2 else pd.Timedelta(ts[-1] - ts[0]).total_seconds()
                 )
             else:
                 raise ValueError(
