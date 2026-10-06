@@ -113,14 +113,15 @@ class TrajectoryRegressionEvaluator(BaseEvaluator):
 
     def _compute_metrics(self, predictions: np.ndarray, labels: np.ndarray) -> dict[str, float]:
         """
-        Calucates regression metrics. Metrics included :  (MSE, RMSE, MAE, MAPE, sMAPE).
+        Calucates regression metrics.
 
-        Args:
-            predictions (np.ndarray): Predictions return by model.
-            labels (np.ndarray): Target values.
+        Metrics included :  (MSE, RMSE, MAE, MAPE, sMAPE).
+                Args:
+                    predictions (np.ndarray): Predictions return by model.
+                    labels (np.ndarray): Target values.
 
-        Returns:
-            dict[str, float]: dictionary with regression metrics values.
+                Returns:
+                    dict[str, float]: dictionary with regression metrics values.
         """
         mse = mean_squared_error(labels, predictions)
         rmse = np.sqrt(mse)
