@@ -1,6 +1,5 @@
 """Custom exceptions for the SRAI package."""
 
-
 class SRAIException(Exception):
     """Base class for all SRAI exceptions."""
 

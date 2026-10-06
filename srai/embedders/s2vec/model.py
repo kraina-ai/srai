@@ -349,16 +349,17 @@ class S2VecModel(Model):
 
     def training_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
-        Perform a training step. This is called by PyTorch Lightning.
+        Perform a training step.
 
-        One training step consists of a forward pass, a loss calculation, and a backward pass.
+        This is called by PyTorch Lightning.
+                One training step consists of a forward pass, a loss calculation, and a backward pass.
 
-        Args:
-            batch (List[torch.Tensor]): The batch of data.
-            batch_idx (int): The index of the batch.
+                Args:
+                    batch (List[torch.Tensor]): The batch of data.
+                    batch_idx (int): The index of the batch.
 
-        Returns:
-            torch.Tensor: The loss value.
+                Returns:
+                    torch.Tensor: The loss value.
         """
         rec, target, mask = self(batch)
 
@@ -370,14 +371,15 @@ class S2VecModel(Model):
 
     def validation_step(self, batch: list["torch.Tensor"], batch_idx: int) -> "torch.Tensor":
         """
-        Perform a validation step. This is called by PyTorch Lightning.
+        Perform a validation step.
 
-        Args:
-            batch (List[torch.Tensor]): The batch of data.
-            batch_idx (int): The index of the batch.
+        This is called by PyTorch Lightning.
+                Args:
+                    batch (List[torch.Tensor]): The batch of data.
+                    batch_idx (int): The index of the batch.
 
-        Returns:
-            torch.Tensor: The loss value.
+                Returns:
+                    torch.Tensor: The loss value.
         """
         rec, target, mask = self(batch)
 
@@ -388,10 +390,11 @@ class S2VecModel(Model):
 
     def configure_optimizers(self) -> dict[str, Any]:
         """
-        Configure the optimizers. This is called by PyTorch Lightning.
+        Configure the optimizers.
 
-        Returns:
-            List[torch.optim.Optimizer]: The optimizers.
+        This is called by PyTorch Lightning.
+                Returns:
+                    List[torch.optim.Optimizer]: The optimizers.
         """
         opt: torch.optim.Optimizer = torch.optim.AdamW(
             self.parameters(),
