@@ -259,11 +259,13 @@ class ContextualCountEmbedder(CountEmbedder):
                         pbar.update()
                 else:
                     for result in counts_df.index.map(
-                        lambda region_id, neighbour_distance=distance: counts_df.index.intersection(
-                            self.neighbourhood.get_neighbours_at_distance(
-                                region_id, neighbour_distance, include_center=False
-                            )
-                        ).values
+                        lambda region_id, neighbour_distance=distance: (
+                            counts_df.index.intersection(
+                                self.neighbourhood.get_neighbours_at_distance(
+                                    region_id, neighbour_distance, include_center=False
+                                )
+                            ).values
+                        )
                     ):
                         neighbours_series.append(result)
                         pbar.update()
