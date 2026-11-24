@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Default basemap of the `plot_numeric_data` function from CARTO to OpenFreeMap
 - Bumped minimal `folium` version to `0.15.0`
+- Bumped minimal `quackosm` version to `0.20.0` and `overturemaestro` version to `0.8.0`
 - Replaced `contextily` with `basemaplibre` in the example notebooks
 
 ### Removed

@@ -57,9 +57,9 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 # add tests
 
 # pdm add -G osm <library>
-osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.11.0"]
+osm = ["overpass>=0.7", "pillow>=8.0.0", "beautifulsoup4", "quackosm>=0.20.0"]
 # pdm add -G overturemaps <library>
-overturemaps = ["overturemaestro>=0.5.0"]
+overturemaps = ["overturemaestro>=0.8.0"]
 # pdm add -G datasets <library>
 datasets = ["datasets>=3,<4", "fastdtw>=0.3.4"]
 # pdm add -G voronoi <library>
