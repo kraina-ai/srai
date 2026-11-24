@@ -8,4 +8,25 @@ jobs:
   run-tests:
     name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  github-release:
+    if: "startsWith(github.event.head_commit.message, 'chore(CI/CD): bump version')"
+    name: "GitHub release job"
+    needs: [run-tests]
+    uses: ./.github/workflows/gh-release.yml
+    secrets:
+      CICD_PAT_TOKEN: ${{ secrets.CICD_PAT_TOKEN }}
+
+  docs:
+    name: Start the build of docs 📚
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run docs.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

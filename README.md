@@ -4,7 +4,7 @@
 <p align="center">
     <img alt="GitHub" src="https://img.shields.io/github/license/kraina-ai/srai?logo=apache&logoColor=%23fff">
     <img src="https://img.shields.io/github/checks-status/kraina-ai/srai/main?logo=GitHubActions&logoColor=%23fff" alt="Checks">
-    <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-dev.yml" target="_blank"><img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff"></a>
+    <a href="https://github.com/kraina-ai/srai/actions/workflows/test-dev.yml" target="_blank"><img alt="GitHub Workflow Status - DEV" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/test-dev.yml?label=build-dev&logo=GitHubActions&logoColor=%23fff"></a>
     <a href="https://github.com/kraina-ai/srai/actions/workflows/ci-prod.yml" target="_blank"><img alt="GitHub Workflow Status - PROD" src="https://img.shields.io/github/actions/workflow/status/kraina-ai/srai/ci-prod.yml?label=build-prod&logo=GitHubActions&logoColor=%23fff"></a>
     <a href="https://results.pre-commit.ci/latest/github/kraina-ai/srai/main" target="_blank"><img src="https://results.pre-commit.ci/badge/github/kraina-ai/srai/main.svg" alt="pre-commit.ci status"></a>
     <a href="https://www.codefactor.io/repository/github/kraina-ai/srai"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/kraina-ai/srai?logo=codefactor&logoColor=%23fff"></a>

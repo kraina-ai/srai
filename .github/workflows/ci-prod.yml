@@ -7,16 +7,17 @@ jobs:
   run-tests:
     name: "Run tests job"
     uses: ./.github/workflows/_tests.yml
-    secrets: inherit
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
     needs: [run-tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: 3.12
       - uses: pdm-project/setup-pdm@v3
@@ -29,76 +30,14 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         run: pdm publish --repository pypi --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} --verbose
 
-  generate-docs:
-    name: Generate latest library 📚 documentation 📄
-    needs: [run-tests]
+  docs:
+    name: Start the build of docs 📚
+    needs: [build-n-publish]
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pages: write
-      id-token: write
-    env:
-      MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
-      MKDOCS_DEV: false
-      FORCE_TERMINAL_MODE: true
+      actions: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.CICD_PAT_TOKEN }}
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-      - name: Install image libraries
-        run: sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-prod-${{ hashFiles('**/pdm.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-prod-
-      - name: Install pdm
-        run: pip install pdm uv
-      - name: Regenerate lock with environment markers
-        run: pdm lock --update-reuse --strategy inherit_metadata
-      - name: Generate requirements.txt
-        run: pdm export --no-default -G all -dG docs -dG visualization -f requirements -o requirements.txt
-      - name: Install dependencies
-        run: uv pip install --no-deps -r requirements.txt --system
-      - name: Install nbconvert dependency
-        run: uv pip install jupyter nbconvert nbformat black --system
-      - name: Install srai
-        run: |
-          pdm build -v -d dist
-          uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
-      - name: Configure Git user
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-      - name: Cache Overpass data
-        uses: actions/cache@v3
-        with:
-          path: "**/cache"
-          key: mkdocs-overpass-dev-cache-${{ runner.os }}
-      - name: Execute jupyter notebooks
-        run: |
-          jupyter nbconvert --to notebook --inplace --execute $(find examples/ -type f -name "*.ipynb" -not -path "examples/benchmark/*") --ExecutePreprocessor.kernel_name='python3'
-      - uses: jannekem/run-python-script-action@v1
-        name: Replace copyright date
-        with:
-          script: |
-            import time
-            file_name = "mkdocs.yml"
-            with open(file_name) as f:
-                data = f.read().replace('{current_year}', time.strftime("%Y"))
-            with open(file_name, "w") as f:
-                f.write(data)
-      - name: Create remote for srai-docs repository
-        run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
-      - name: Fetch gh-pages branch
-        run: git fetch origin-srai-docs gh-pages --depth=1
-      - name: Get minor version
-        id: get-minor-version
-        run: python -c "print('MINOR_VERSION=' + '.'.join('${{github.ref_name}}'.split('.')[:2]))" >> "$GITHUB_OUTPUT"
-      - name: Publish latest documentation
-        run: mike deploy --remote origin-srai-docs --push --update-aliases ${{steps.get-minor-version.outputs.MINOR_VERSION}} latest
+      - run: gh workflow run docs.yml --ref main -f release="$GITHUB_REF_NAME" -f ref="$GITHUB_REF_NAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
