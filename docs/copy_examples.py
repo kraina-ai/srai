@@ -9,16 +9,9 @@ EXAMPLES_DIRECTORY_PATH = Path("examples")
 DATASETS_DIRECTORY_NAME = "datasets"
 
 RUN_IN_COLAB_CELL_MARKDOWN = """
-Run this notebook in Google Colab:
-
 <a target="_blank" href="https://colab.research.google.com/github/kraina-ai/srai/blob/main/{relative_file_path}">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
-
-Remember to install the `srai` library before running the notebook:
-```python
-%pip install srai[all]
-```
 """
 
 
@@ -42,21 +35,15 @@ def write_file(file_path: Path) -> None:
             return
 
         nb = nbformat.read(src, as_version=4)
-        has_google_colab_link = any(
-            "colab.research.google.com" in cell.get("source", "") for cell in nb["cells"]
-        )
-        if not has_google_colab_link:
-            for i, cell in enumerate(nb["cells"]):
-                if cell["cell_type"] == "code":
-                    nb["cells"][i:] = (
-                        nbformat.v4.new_markdown_cell(
-                            RUN_IN_COLAB_CELL_MARKDOWN.format(relative_file_path=root_path)
-                        ),
-                        *nb["cells"][i:],
-                    )
-                    break
+        for i, cell in enumerate(nb["cells"]):
+            # Cell installing the libraries in the Google Colab
+            if "colab" in cell["metadata"].get("tags", []):
+                nb["cells"][i] = nbformat.v4.new_markdown_cell(
+                    RUN_IN_COLAB_CELL_MARKDOWN.format(relative_file_path=root_path)
+                )
+                break
         else:
-            print("Google Colab link already present in the notebook.")
+            print(f"No cell tagged `colab` in the {root_path} notebook.")
 
         nbformat.write(nb, dst)
 

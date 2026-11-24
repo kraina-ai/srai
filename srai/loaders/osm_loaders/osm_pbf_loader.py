@@ -18,7 +18,6 @@ from srai.loaders.osm_loaders.filters import GroupedOsmTagsFilter, OsmTagsFilter
 
 if TYPE_CHECKING:
     from quackosm import PbfFileReader
-    from quackosm.osm_extracts import OsmExtractSource
 
 
 class OSMPbfLoader(OSMLoader):
@@ -46,7 +45,7 @@ class OSMPbfLoader(OSMLoader):
     def __init__(
         self,
         pbf_file: Optional[Union[str, Path]] = None,
-        download_source: "OsmExtractSource" = "any",
+        download_source: str = "any",
         download_directory: Union[str, Path] = "files",
         verbosity_mode: Literal["silent", "transient", "verbose"] = "transient",
     ) -> None:
@@ -57,9 +56,9 @@ class OSMPbfLoader(OSMLoader):
             pbf_file (Union[str, Path], optional): Downloaded `*.osm.pbf` file to be used by
                 the loader. If not provided, it will be automatically downloaded for a given area.
                 Defaults to None.
-            download_source (OsmExtractSource, optional): Source to use when downloading PBF files.
-                Can be one of: `any`, `geofabrik`, `osmfr`, `bbbike`.
-                Defaults to "any".
+            download_source (str, optional): Source to use when downloading PBF files.
+                Can be one of: `any`, `geofabrik`, `osmfr`, `bbbike`, `bbbike-region`, `geo2day`,
+                `movisda-admin`, `movisda-grid`. Defaults to "any".
             download_directory (Union[str, Path], optional): Directory where to save the downloaded
                 `*.osm.pbf` files. Ignored if `pbf_file` is provided. Defaults to "files".
             verbosity_mode (Literal["silent", "transient", "verbose"], optional): Set progress
@@ -125,7 +124,7 @@ class OSMPbfLoader(OSMLoader):
 
         if self.pbf_file is not None:
             features_gdf = pbf_reader.convert_pbf_to_geodataframe(
-                file_paths=self.pbf_file,
+                pbf_path=self.pbf_file,
                 keep_all_tags=keep_all_tags,
                 explode_tags=explode_tags,
                 ignore_cache=ignore_cache,
@@ -207,13 +206,12 @@ class OSMPbfLoader(OSMLoader):
         self, area_wgs84: gpd.GeoDataFrame, tags: Union[OsmTagsFilter, GroupedOsmTagsFilter]
     ) -> "PbfFileReader":
         from quackosm import PbfFileReader
-        from quackosm.osm_extracts import OsmExtractSource
 
         pbf_reader = PbfFileReader(
             tags_filter=tags,
             geometry_filter=area_wgs84.union_all(),
             working_directory=self.download_directory,
-            osm_extract_source=OsmExtractSource(self.download_source),
+            osm_extract_source=self.download_source,
             verbosity_mode=self.verbosity_mode,
         )
         return pbf_reader
