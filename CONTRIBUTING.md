@@ -24,7 +24,7 @@ For first setup of the project locally, the following commands have to be execut
 
     ```sh
     # Optional if you want to create venv in a specific version. More info: https://pdm.fming.dev/latest/usage/venv/#create-a-virtualenv-yourself
-    pdm venv create 3.10 # or any higher version of Python
+    pdm venv create 3.12 # or any version from 3.10, example notebooks with basemaplibre require at least 3.11
 
     pdm install -G:all
     ```
