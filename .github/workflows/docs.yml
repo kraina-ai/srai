@@ -1,32 +1,42 @@
-name: "Build & publish - DEV"
+name: "Build & deploy docs"
 on:
-  workflow_run:
-    workflows: [Test - DEV]
-    types:
-      - completed
+  # Started by "Test - DEV" and "Build & publish - PROD". Not a part of the latter: a release runs on
+  # a tag, which the github-pages environment does not accept.
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release to publish the docs as (e.g. 1.2.3), the dev version if empty"
+        type: string
+      ref:
+        description: "Branch or tag to build the docs from, the selected branch if empty"
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.release }}
+
+permissions:
+  contents: read
 
 jobs:
-  generate-docs:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    name: Generate latest library 📚 documentation 📄
+  build:
+    name: Generate library 📚 documentation 📄
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
       MKDOCS_EXECUTE_JUPYTER: false # execution is done before rendering documentation
-      MKDOCS_DEV: true
+      MKDOCS_DEV: ${{ inputs.release == '' }}
       FORCE_TERMINAL_MODE: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.ref }}
           token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install image libraries
         run: sudo apt-get install libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev pngquant
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
@@ -51,7 +61,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
       - name: Cache Overpass data
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: "**/cache"
           key: mkdocs-overpass-dev-cache-${{ runner.os }}
@@ -72,5 +82,23 @@ jobs:
         run: git remote add origin-srai-docs https://github.com/kraina-ai/srai-docs
       - name: Fetch gh-pages branch
         run: git fetch origin-srai-docs gh-pages --depth=1
-      - name: Publish dev documentation
-        run: mike deploy --remote origin-srai-docs --push dev
+      - name: Publish documentation
+        run: |
+          if [ -z "$RELEASE" ]; then
+            mike deploy --remote origin-srai-docs --push dev
+          else
+            mike deploy --remote origin-srai-docs --push --update-aliases "${RELEASE%.*}" latest
+          fi
+        env:
+          RELEASE: ${{ inputs.release }}
+
+  deploy:
+    name: "Deploy docs job"
+    needs: [build]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/redeploy_docs.yml
+    secrets:
+      CICD_PAT_TOKEN: ${{ secrets.CICD_PAT_TOKEN }}

@@ -20,7 +20,7 @@ jobs:
     name: Bump ⬆️ and create a Pull Request with a new library version (${{ inputs.bumpType }})
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.CICD_PAT_TOKEN }}
@@ -29,7 +29,7 @@ jobs:
           git config --local user.name "Kraina CI/CD"
           git config --local user.email "cicd@kraina.ai"
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - uses: pdm-project/setup-pdm@v3
@@ -59,7 +59,7 @@ jobs:
         run: |
           pdm run bumpver show -n -e | grep CURRENT_VERSION >> $GITHUB_OUTPUT
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           title: ${{ steps.commit_message.outputs.COMMIT_MESSAGE }}
           branch: ${{ format('release/{0}', steps.new_version.outputs.CURRENT_VERSION) }}

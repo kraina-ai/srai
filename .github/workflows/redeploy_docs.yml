@@ -1,34 +1,43 @@
 name: "Deploy docs on demand"
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - 'Build & publish - DEV'
-      - 'Build & publish - PROD'
-      - 'Publish docs on demand - DEV'
-      - 'Publish docs on demand - PROD (latest tag)'
-    types:
-      - completed
+  workflow_call:
+    secrets:
+      CICD_PAT_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
 jobs:
-  deploy-docs:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    name: Deploy documentation 📄 to Github Pages 🌐
+  package-docs:
+    name: Package documentation 📄
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: 'kraina-ai/srai-docs'
           ref: 'gh-pages'
           token: ${{ secrets.CICD_PAT_TOKEN }}
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           # Upload entire repository
           path: '.'
+
+  # Not a step of the packaging: right after the upload, deploy-pages often does not see the artifact
+  # yet (https://github.com/actions/deploy-pages/issues/451).
+  deploy-docs:
+    name: Deploy documentation 📄 to Github Pages 🌐
+    needs: [package-docs]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

@@ -26,9 +26,9 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
       COLUMNS: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
@@ -53,9 +53,9 @@ jobs:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pdm
@@ -75,14 +75,12 @@ jobs:
     env:
       FORCE_TERMINAL_MODE: true
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.CICD_PAT_TOKEN }}
+      - uses: actions/checkout@v6
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-dev-${{ hashFiles('**/pdm.lock') }}
@@ -103,7 +101,7 @@ jobs:
           pdm build -v -d dist
           uv pip install 'srai[all] @ file://'"$(pwd)/$(find dist -name '*.whl')" --system
       - name: Cache Overpass data
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: "**/cache"
           key: mkdocs-overpass-dev-cache-${{ runner.os }}
