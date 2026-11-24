@@ -5,6 +5,7 @@ This module contains functions for quick plotting of analysed gdfs using Geopand
 function.
 """
 
+import re
 from itertools import cycle, islice
 from typing import Optional, Union
 
@@ -14,18 +15,30 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from rq_geo_toolkit.folium import MapLibreLayer
 
 from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX
 from srai.neighbourhoods import Neighbourhood
 from srai.neighbourhoods._base import IndexType
 
-import_optional_dependencies(dependency_group="plotting", modules=["folium", "plotly"])
+import_optional_dependencies(
+    dependency_group="plotting", modules=["folium", "plotly", "rq_geo_toolkit"]
+)
+
+POSITRON_STYLE = "https://tiles.openfreemap.org/styles/positron"
+
+
+def _get_tiles(tiles_style: Union[str, folium.TileLayer]) -> Union[str, folium.TileLayer]:
+    # An URL without placeholders is not a template of raster tiles, so it has to be a style
+    if isinstance(tiles_style, str) and re.fullmatch(r"https?://[^{]+", tiles_style):
+        return MapLibreLayer(tiles_style)
+    return tiles_style
 
 
 def plot_regions(
     regions_gdf: gpd.GeoDataFrame,
-    tiles_style: str = "OpenStreetMap",
+    tiles_style: Union[str, folium.TileLayer] = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.qualitative.Bold,
@@ -37,7 +50,8 @@ def plot_regions(
 
     Args:
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles_style (Union[str, folium.TileLayer], optional): Map style background. Can be an URL
+            of a MapLibre style. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
@@ -55,7 +69,7 @@ def plot_regions(
     return regions_gdf.reset_index().explore(
         column=REGIONS_INDEX,
         tooltip=REGIONS_INDEX,
-        tiles=tiles_style,
+        tiles=_get_tiles(tiles_style),
         height=height,
         width=width,
         legend=False,
@@ -70,7 +84,7 @@ def plot_numeric_data(
     regions_gdf: gpd.GeoDataFrame,
     data_column: str,
     embedding_df: Optional[Union[pd.DataFrame, gpd.GeoDataFrame]] = None,
-    tiles_style: str = "CartoDB positron",
+    tiles_style: Union[str, folium.TileLayer] = POSITRON_STYLE,
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.sequential.Sunsetdark,
@@ -86,9 +100,10 @@ def plot_numeric_data(
         embedding_df (Union[pd.DataFrame, gpd.GeoDataFrame], optional): Region indexes and numerical
             data to plot. If not provided, will use regions_gdf.
         data_column (str): Name of the column used to colour the regions.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles_style (Union[str, folium.TileLayer], optional): Map style background. Can be an URL
+            of a MapLibre style. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
-            Defaults to "CartoDB positron".
+            Defaults to Positron style from OpenFreeMap.
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
         width (Union[str, float], optional): Width of the plot. Defaults to "100%".
         colormap (Union[str, List[str]], optional): Colormap to apply to the regions.
@@ -122,7 +137,7 @@ def plot_numeric_data(
     return regions_gdf_copy.reset_index().explore(
         column="value",
         tooltip=[REGIONS_INDEX, "value"],
-        tiles=tiles_style,
+        tiles=_get_tiles(tiles_style),
         height=height,
         width=width,
         legend=True,
@@ -137,7 +152,7 @@ def plot_neighbours(
     regions_gdf: gpd.GeoDataFrame,
     region_id: IndexType,
     neighbours_ids: set[IndexType],
-    tiles_style: str = "OpenStreetMap",
+    tiles_style: Union[str, folium.TileLayer] = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     map: Optional[folium.Map] = None,
@@ -150,7 +165,8 @@ def plot_neighbours(
         regions_gdf (gpd.GeoDataFrame): Region indexes and geometries to plot.
         region_id (IndexType): Center `region_id` around which the neighbourhood should be plotted.
         neighbours_ids (Set[IndexType]): List of neighbours to highlight.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles_style (Union[str, folium.TileLayer], optional): Map style background. Can be an URL
+            of a MapLibre style. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
@@ -173,7 +189,7 @@ def plot_neighbours(
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=REGIONS_INDEX,
-        tiles=tiles_style,
+        tiles=_get_tiles(tiles_style),
         height=height,
         width=width,
         cmap=[
@@ -193,7 +209,7 @@ def plot_all_neighbourhood(
     region_id: IndexType,
     neighbourhood: Neighbourhood[IndexType],
     neighbourhood_max_distance: int = 100,
-    tiles_style: str = "OpenStreetMap",
+    tiles_style: Union[str, folium.TileLayer] = "OpenStreetMap",
     height: Union[str, float] = "100%",
     width: Union[str, float] = "100%",
     colormap: Union[str, list[str]] = px.colors.sequential.Agsunset_r,
@@ -211,7 +227,8 @@ def plot_all_neighbourhood(
         neighbourhood_max_distance (int, optional): Max distance for rendering neighbourhoods.
             Neighbours farther away won't be coloured, and will be left as "other" regions.
             Defaults to 100.
-        tiles_style (str, optional): Map style background. For more styles, look at tiles param at
+        tiles_style (Union[str, folium.TileLayer], optional): Map style background. Can be an URL
+            of a MapLibre style. For more styles, look at tiles param at
             https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.explore.html.
             Defaults to "OpenStreetMap".
         height (Union[str, float], optional): Height of the plot. Defaults to "100%".
@@ -252,7 +269,7 @@ def plot_all_neighbourhood(
     return regions_gdf_copy.reset_index().explore(
         column="region",
         tooltip=[REGIONS_INDEX, "region"],
-        tiles=tiles_style,
+        tiles=_get_tiles(tiles_style),
         height=height,
         width=width,
         cmap=colormap,

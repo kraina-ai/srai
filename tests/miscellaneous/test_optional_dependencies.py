@@ -31,6 +31,7 @@ def optional_packages() -> list[str]:
         "mapclassify",
         "plotly",
         "kaleido",
+        "rq_geo_toolkit",
         "pytorch-lightning",
         "torch",
         "datasets",

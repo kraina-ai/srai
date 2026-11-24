@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `MapLibreLayer` from `rq_geo_toolkit` with a basemap of any MapLibre style for Folium maps, plotting functions also accept an URL of a style as the `tiles_style`
+- Install cells for Google Colab in the example notebooks, replaced by the "Open in Colab" badge in the documentation
+
+### Changed
+
+- Default basemap of the `plot_numeric_data` function from CARTO to OpenFreeMap
+- Bumped minimal `folium` version to `0.15.0`
+- Replaced `contextily` with `basemaplibre` in the example notebooks
+
+### Removed
+
+- Support for Python 3.9
+
 ## [0.10.2] - 2025-11-04
 
 ### Fixed

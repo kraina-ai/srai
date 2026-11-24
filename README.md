@@ -126,7 +126,11 @@ area = geocode_to_region_gdf("Wrocław, Poland")
 loader = OSMOnlineLoader()
 
 parks_gdf = loader.load(area, query)
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 parks_gdf.explore(m=folium_map, color="forestgreen")
 ```
 
@@ -148,7 +152,11 @@ loader = OSMWayLoader(OSMNetworkType.BIKE)
 
 nodes, edges = loader.load(area)
 
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0.1)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 edges[["geometry"]].explore(m=folium_map, color="seagreen")
 ```
 
@@ -174,7 +182,11 @@ loader = GTFSLoader()
 
 features = loader.load(gtfs_file)
 
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0.1)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 features[["trips_at_8", "geometry"]].explore("trips_at_8", m=folium_map)
 ```
 
@@ -201,7 +213,11 @@ regionalizer = H3Regionalizer(resolution=7)
 
 regions = regionalizer.transform(area)
 
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0.1)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 plot_regions(regions_gdf=regions, map=folium_map)
 ```
 
@@ -241,7 +257,11 @@ joint = joiner.transform(regions, features)
 embedder = CountEmbedder()
 embeddings = embedder.transform(regions, features, joint)
 
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0.1)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 plot_numeric_data(regions, "amenity_bicycle_parking", embeddings, map=folium_map)
 ```
 
@@ -281,7 +301,11 @@ embedder = Hex2VecEmbedder([15, 10, 3])
 # Option 2: fit_transform
 embeddings = embedder.fit_transform(regions, features, joint, neighbourhood, batch_size=128)
 
-folium_map = plot_regions(area, colormap=["rgba(0,0,0,0.1)"], tiles_style="CartoDB positron")
+folium_map = plot_regions(
+    area,
+    colormap=["rgba(0,0,0,0.1)"],
+    tiles_style="https://tiles.openfreemap.org/styles/positron",
+)
 plot_numeric_data(regions, 0, embeddings, map=folium_map)
 ```
 
