@@ -5,11 +5,12 @@ from typing import Union
 
 import geopandas as gpd
 import pytest
+from rq_geo_toolkit.folium import MapLibreLayer
 from shapely.geometry import box
 
 from srai.constants import REGIONS_INDEX, WGS84_CRS
 from srai.neighbourhoods.h3_neighbourhood import H3Neighbourhood
-from srai.plotting import MapLibreLayer, plot_numeric_data, plot_regions
+from srai.plotting import plot_numeric_data, plot_regions
 from srai.plotting.folium_wrapper import _get_tiles, plot_neighbours
 from srai.regionalizers.geocode import geocode_to_region_gdf
 from srai.regionalizers.h3_regionalizer import H3Regionalizer

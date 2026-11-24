@@ -6,19 +6,6 @@ components. By default, `folium` based functions are exposed within `plotting` m
 functions can be found in `srai.plotting.plotly_wrapper` module.
 """
 
-from rq_geo_toolkit.folium import MapLibreLayer
+from .folium_wrapper import plot_all_neighbourhood, plot_neighbours, plot_numeric_data, plot_regions
 
-from .folium_wrapper import (
-    plot_all_neighbourhood,
-    plot_neighbours,
-    plot_numeric_data,
-    plot_regions,
-)
-
-__all__ = [
-    "MapLibreLayer",
-    "plot_regions",
-    "plot_numeric_data",
-    "plot_neighbours",
-    "plot_all_neighbourhood",
-]
+__all__ = ["plot_regions", "plot_numeric_data", "plot_neighbours", "plot_all_neighbourhood"]

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `MapLibreLayer` from `rq_geo_toolkit` with a basemap of any MapLibre style for Folium maps, plotting functions also accept an URL of a style as the `tiles_style`
+- Basemaps of MapLibre styles in the plotting functions: `tiles_style` accepts an URL of a style or a Folium layer (`MapLibreLayer` from `rq_geo_toolkit`)
 - Install cells for Google Colab in the example notebooks, replaced by the "Open in Colab" badge in the documentation
 
 ### Changed
