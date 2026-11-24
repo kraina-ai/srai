@@ -37,4 +37,6 @@ jobs:
         with:
           token: ${{ secrets.CICD_PAT_TOKEN }}
           tag_name: ${{ steps.extract-version.outputs._5 }}
+          # the tested commit, the newest one on main by default
+          target_commitish: ${{ github.sha }}
           body: ${{ steps.extract-release-notes.outputs.release_notes }}
