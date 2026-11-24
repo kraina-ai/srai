@@ -90,6 +90,9 @@ class HuggingFaceDataset(abc.ABC):
                 or validation split is already present.
                 - With `validation_split=False`, regenerates and overwrites the test split.
                 - With `validation_split=True`, regenerates and overwrites the validation split.
+                The new split is made only from the current train split. Rows from the overwritten
+                split are discarded and not merged back, so each forced split reduces the total
+                number of rows. Call `load` again to restore the original data.
             task (Optional[str], optional): Task identifier. Subclasses may use this argument to
                 determine stratification logic (e.g., by duration or spatial pattern).\
                     Defaults to None.
@@ -231,6 +234,9 @@ class PointDataset(HuggingFaceDataset):
                 or validation split is already present.
                 - With `validation_split=False`, regenerates and overwrites the test split.
                 - With `validation_split=True`, regenerates and overwrites the validation split.
+                The new split is made only from the current train split. Rows from the overwritten
+                split are discarded and not merged back, so each forced split reduces the total
+                number of rows. Call `load` again to restore the original data.
             task (Optional[str], optional): Currently not supported. Ignored in this subclass.
 
         Returns:
@@ -455,6 +461,9 @@ class TrajectoryDataset(HuggingFaceDataset):
                 or validation split is already present.
                 - With `validation_split=False`, regenerates and overwrites the test split.
                 - With `validation_split=True`, regenerates and overwrites the validation split.
+                The new split is made only from the current train split. Rows from the overwritten
+                split are discarded and not merged back, so each forced split reduces the total
+                number of rows. Call `load` again to restore the original data.
             resolution (int, optional): H3 resolution to regionalize data. Currently ignored in\
                 this subclass, different resolutions splits not supported yet.\
                     Defaults to default value from the dataset.
@@ -538,33 +547,12 @@ class TrajectoryDataset(HuggingFaceDataset):
             random_state=random_state,
         )
 
+        gdf_copy = gdf_copy.drop(
+            columns=["x_len", "y_len", "stratification_bin", "stratify_col"], errors="ignore"
+        )
+
         train_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(train_indices)]
         test_gdf = gdf_copy[gdf_copy[trajectory_id_column].isin(test_indices)]
-
-        test_gdf = test_gdf.drop(
-            columns=[
-                col
-                for col in (
-                    "x_len",
-                    "y_len",
-                    "stratification_bin",
-                    "stratify_col",
-                )
-                if col in test_gdf.columns
-            ],
-        )
-        train_gdf = train_gdf.drop(
-            columns=[
-                col
-                for col in (
-                    "x_len",
-                    "y_len",
-                    "stratification_bin",
-                    "stratify_col",
-                )
-                if col in test_gdf.columns
-            ],
-        )
 
         self.train_gdf = train_gdf
         if not validation_split:

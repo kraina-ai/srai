@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Spatial splitting could return an empty split
 - Spatial splitting didn't stratify the target with one dominating value
 - Spatial splitting time growing quadratically with the number of cells
+- Helper columns used for stratification left in the train split by the `TrajectoryDataset.train_test_split` method
+- Docstrings of the `train_test_split` methods in datasets now state that `force_split=True` discards rows from the overwritten split
 
 ## [0.10.2] - 2025-11-04
 
