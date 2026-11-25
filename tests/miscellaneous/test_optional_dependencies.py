@@ -20,7 +20,7 @@ def optional_packages() -> list[str]:
     return [
         "quackosm",
         "overturemaestro",
-        "overpass",
+        "duckdb",
         "beautifulsoup4",
         "pymap3d",
         "haversine",

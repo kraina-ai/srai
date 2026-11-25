@@ -58,7 +58,7 @@ Changelog = "https://github.com/kraina-ai/srai/blob/main/CHANGELOG.md"
 
 # pdm add -G osm <library>
 osm = [
-    "overpass>=0.7",
+    "duckdb>=1.1.2",
     "pillow>=8.0.0",
     "beautifulsoup4",
     "quackosm>=0.20.0",
