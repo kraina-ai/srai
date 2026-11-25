@@ -5,7 +5,7 @@
 groups = ["default", "all", "datasets", "dev", "docs", "gtfs", "license", "lint", "osm", "overturemaps", "plotting", "test", "torch", "visualization", "voronoi"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d70e023acd56e704345fb40816c1ed71068e91e0a00a8056daa3765804104137"
+content_hash = "sha256:343a5c67bf9574318f208b0457d8f2644ec4408da99b01bffa4fdd003e1a211a"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -1550,17 +1550,6 @@ groups = ["all", "osm", "overturemaps", "plotting"]
 files = [
     {file = "geographiclib-2.0-py3-none-any.whl", hash = "sha256:6b7225248e45ff7edcee32becc4e0a1504c606ac5ee163a5656d482e0cd38734"},
     {file = "geographiclib-2.0.tar.gz", hash = "sha256:f7f41c85dc3e1c2d3d935ec86660dc3b2c848c83e17f9a9e51ba9d5146a15859"},
-]
-
-[[package]]
-name = "geojson"
-version = "3.2.0"
-requires_python = ">=3.7"
-summary = "Python bindings and utilities for GeoJSON"
-groups = ["all", "osm"]
-files = [
-    {file = "geojson-3.2.0-py3-none-any.whl", hash = "sha256:69d14156469e13c79479672eafae7b37e2dcd19bdfd77b53f74fa8fe29910b52"},
-    {file = "geojson-3.2.0.tar.gz", hash = "sha256:b860baba1e8c6f71f8f5f6e3949a694daccf40820fa8f138b3f712bd85804903"},
 ]
 
 [[package]]
@@ -3329,21 +3318,6 @@ dependencies = [
 files = [
     {file = "osmnx-2.0.0-py3-none-any.whl", hash = "sha256:962f4ddf61f7b04be7e571357b543ebbac1b9b3be2a01d40e13523167a77e9c3"},
     {file = "osmnx-2.0.0.tar.gz", hash = "sha256:4fd2eb3736cea503be94ab18d31a669addbaf2dd6a8249527cef94163bb93975"},
-]
-
-[[package]]
-name = "overpass"
-version = "0.7"
-summary = "Python wrapper for the OpenStreetMap Overpass API"
-groups = ["all", "osm"]
-dependencies = [
-    "geojson>=1.0.9",
-    "requests>=2.3.0",
-    "shapely>=1.6.4",
-]
-files = [
-    {file = "overpass-0.7-py3-none-any.whl", hash = "sha256:1db80a3afd7693056033b61577fba56747ede6f47cf70a6ced6dae47b9ac0bb4"},
-    {file = "overpass-0.7.tar.gz", hash = "sha256:267fac92d15caac15e15db6d9752341493065c94e7eae1187a8aea0d64005650"},
 ]
 
 [[package]]
