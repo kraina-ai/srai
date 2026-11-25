@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped minimal `folium` version to `0.15.0`
 - Bumped minimal `quackosm` version to `0.20.0` and `overturemaestro` version to `0.8.0`, required `osmfinder` in version `1.3.0` or newer
 - Replaced Overpass and Nominatim with the Layercake GeoParquet file as a source of boundaries in the `AdministrativeBoundaryRegionalizer`
+- Named closed ways are also used as boundaries in the `AdministrativeBoundaryRegionalizer`
+- Repeated names of regions in the `AdministrativeBoundaryRegionalizer` have an OpenStreetMap type and id added, instead of replacing all names with numbers
 - Replaced `contextily` with `basemaplibre` in the example notebooks
 
 ### Removed
