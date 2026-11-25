@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Basemaps of MapLibre styles in the plotting functions: `tiles_style` accepts an URL of a style or a Folium layer (`MapLibreLayer` from `rq_geo_toolkit`)
 - Install cells for Google Colab in the example notebooks, replaced by the "Open in Colab" badge in the documentation
+- Functions `spatial_split` and `spatial_kfold` for splitting points into any number of splits or folds using H3 cells or custom geometries [#546](https://github.com/kraina-ai/srai/issues/546)
+- Option to pass GeoSeries or list of points with a list of target values to the `train_test_spatial_split` and `spatial_split_points` functions [#546](https://github.com/kraina-ai/srai/issues/546)
 
 ### Changed
 
@@ -18,10 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped minimal `folium` version to `0.15.0`
 - Bumped minimal `quackosm` version to `0.20.0` and `overturemaestro` version to `0.8.0`, required `osmfinder` in version `1.3.0` or newer
 - Replaced `contextily` with `basemaplibre` in the example notebooks
+- Spatial splitting raises an error for missing or infinite target values, sizes given as a float greater or equal to 1, and if there are fewer regions than splits
 
 ### Removed
 
 - Support for Python 3.9
+
+### Fixed
+
+- Spatial splitting duplicated rows and shared them between splits if the index wasn't unique
+- Spatial splitting dropped rows with missing target values
+- Spatial splitting ignored the CRS of the points
+- Spatial splitting failed for a constant target, the same number of points in all cells and categorical data type
+- Spatial splitting treated target columns named `count` and `h3` as reserved ones
+- Spatial splitting could return an empty split
+- Spatial splitting didn't stratify the target with one dominating value
+- Spatial splitting time growing quadratically with the number of cells
+- Helper columns used for stratification left in the train split by the `TrajectoryDataset.train_test_split` method
+- Docstrings of the `train_test_split` methods in datasets now state that `force_split=True` discards rows from the overwritten split
 
 ## [0.10.2] - 2025-11-04
 
