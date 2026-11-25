@@ -90,15 +90,9 @@ def _boundary(
 
 @pytest.fixture  # type: ignore
 def boundaries_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """Use a local file with the boundaries and an empty cache."""
+    """Use a local file with the boundaries."""
     path = tmp_path / "boundaries.parquet"
-    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(abr_module, "LAYERCAKE_BOUNDARIES_URL", str(path))
-    monkeypatch.setattr(
-        abr_module,
-        "_get_boundaries_version",
-        lambda: str(Path(abr_module.LAYERCAKE_BOUNDARIES_URL).stat().st_mtime_ns),
-    )
     return path
 
 
@@ -268,22 +262,42 @@ def test_regions_not_found(
 def _transform(*geometries: BaseGeometry, **kwargs: Any) -> gpd.GeoDataFrame:
     gdf = gpd.GeoDataFrame({GEOMETRY_COLUMN: list(geometries)}, crs=WGS84_CRS)
     return AdministrativeBoundaryRegionalizer(
-        **{"admin_level": 4, "clip_regions": False, "toposimplify": False, **kwargs}
+        admin_level=4, clip_regions=False, toposimplify=False, **kwargs
     ).transform(gdf)
 
 
-def test_only_administrative_relations_on_level(boundaries_path: Path) -> None:
-    """Test if other levels, ways and other boundaries are skipped."""
+def test_only_administrative_boundaries_on_level(boundaries_path: Path) -> None:
+    """Test if other levels and other boundaries are skipped."""
     geometry = box(0, 0, 1, 1)
     _save_boundaries(
         boundaries_path,
         _boundary(1, geometry, name=["Valid"]),
         _boundary(2, geometry, name=["Other level"], admin_level="5"),
-        _boundary(3, geometry, name=["Way"], type="way"),
-        _boundary(4, geometry, name=["Place"], boundary="place"),
-        _boundary(5, box(5, 5, 6, 6), name=["Far away"]),
+        _boundary(3, geometry, name=["Place"], boundary="place"),
+        _boundary(4, box(5, 5, 6, 6), name=["Far away"]),
     )
     assert _transform(box(0.2, 0.2, 0.8, 0.8)).index.tolist() == ["Valid"]
+
+
+def test_ways(boundaries_path: Path) -> None:
+    """Test if only named ways not covered by a relation on the same level are used."""
+    relation = box(0, 0, 1, 1).union(box(2, 0, 3, 1))
+    _save_boundaries(
+        boundaries_path,
+        # ids are unique only for a given type
+        _boundary(1, relation, name=["Relation"]),
+        _boundary(1, box(1, 0, 2, 1), name=["Way"], type="way"),
+        _boundary(2, box(1, 1, 2, 2), type="way"),
+        _boundary(3, box(2, 0, 3, 1), name=["Part of the relation"], type="way"),
+        _boundary(4, box(0, 1, 1, 2), name=["Other level"], type="way", admin_level="5"),
+    )
+    assert sorted(_transform(box(0, 0, 3, 2)).index) == ["Relation", "Way"]
+
+
+def test_only_ways(boundaries_path: Path) -> None:
+    """Test if ways are used without any relations."""
+    _save_boundaries(boundaries_path, _boundary(1, box(0, 0, 1, 1), name=["Way"], type="way"))
+    assert _transform(box(0.2, 0.2, 0.8, 0.8)).index.tolist() == ["Way"]
 
 
 @pytest.mark.parametrize(  # type: ignore
@@ -311,6 +325,21 @@ def test_region_id(
     assert result_gdf.index.tolist() == [expected_region_id]
 
 
+def test_duplicated_names(boundaries_path: Path) -> None:
+    """Test if regions with the same name are distinguishable."""
+    _save_boundaries(
+        boundaries_path,
+        _boundary(1, box(0, 0, 1, 1), name=["Same"]),
+        _boundary(1, box(1, 0, 2, 1), name=["Same"], type="way"),
+        _boundary(2, box(2, 0, 3, 1), name=["Other"]),
+    )
+    assert sorted(_transform(box(0, 0, 3, 1)).index) == [
+        "Other",
+        "Same (relation/1)",
+        "Same (way/1)",
+    ]
+
+
 def test_bounding_box_intersection_is_not_enough(boundaries_path: Path) -> None:
     """Test if a region crossing the antimeridian isn't returned for the whole latitude."""
     antimeridian = box(-180, 0, -179, 1).union(box(179, 0, 180, 1))
@@ -334,25 +363,6 @@ def test_distant_points(boundaries_path: Path) -> None:
     )
     result_gdf = _transform(Point(0.5, 0.5), Point(100.5, 0.5))
     assert sorted(result_gdf.index) == ["East", "West"]
-
-
-def test_cache(boundaries_path: Path) -> None:
-    """Test if the result is cached until the source file changes."""
-    _save_boundaries(boundaries_path, _boundary(1, box(0, 0, 1, 1), name=["Old"]))
-    area = box(0.2, 0.2, 0.8, 0.8)
-    assert _transform(area).index.tolist() == ["Old"]
-    cached_files = set(Path("cache").iterdir())
-    assert len(cached_files) == 2
-
-    assert _transform(area).index.tolist() == ["Old"]
-    assert set(Path("cache").iterdir()) == cached_files
-
-    _save_boundaries(
-        boundaries_path,
-        _boundary(1, box(0, 0, 1, 1), name=["New"]),
-        _boundary(2, box(5, 5, 6, 6), name=["Far away"]),
-    )
-    assert _transform(area).index.tolist() == ["New"]
 
 
 def test_real_data() -> None:

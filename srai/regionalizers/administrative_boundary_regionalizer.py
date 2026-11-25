@@ -4,33 +4,20 @@ Administrative Boundary Regionalizer.
 This module contains administrative boundary regionalizer implementation.
 """
 
-import hashlib
-import tempfile
-from pathlib import Path
+from collections.abc import Iterable
 from typing import Union
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-import requests
-from shapely import STRtree, box, from_wkb
-from shapely.geometry.base import BaseGeometry
+from shapely import from_wkb
 
 from srai._optional import import_optional_dependencies
 from srai.constants import GEOMETRY_COLUMN, REGIONS_INDEX, WGS84_CRS
-from srai.geometry import flatten_geometry_series
 from srai.regionalizers._boundary_regionalizer import BoundaryRegionalizer
 
 LAYERCAKE_BOUNDARIES_URL = "https://data.openstreetmap.us/layercake/boundaries.parquet"
 # Bounding boxes are saved as 32-bit floats
 BBOX_TOLERANCE = 1e-4
-
-
-def _get_boundaries_version() -> str:
-    """Get version of the published file, it's replaced under the same URL."""
-    response = requests.head(LAYERCAKE_BOUNDARIES_URL, timeout=60)
-    response.raise_for_status()
-    return response.headers["ETag"]
 
 
 class AdministrativeBoundaryRegionalizer(BoundaryRegionalizer):
@@ -110,15 +97,16 @@ class AdministrativeBoundaryRegionalizer(BoundaryRegionalizer):
         Regionalize a given GeoDataFrame.
 
         Will query Layercake [1] GeoParquet file with OpenStreetMap boundaries using `duckdb` [2]
-        library for administrative boundaries on a given admin_level and then download geometries
-        of those intersecting given geometries. Results are saved in the `cache` directory.
+        library for administrative boundaries on a given admin_level that intersect given
+        geometries. Relations and named closed ways are used, without ways covered by a relation.
 
-        Geometries are stored in big chunks, so first download can take a while, especially
-        for a big area.
+        Geometries are stored in big chunks, so the download can take a while, especially
+        for a big area. Newer `duckdb` versions (2.0+) download less data. Results aren't cached.
 
         If `prioritize_english_name` is set to `True`, method will try to extract the `name:en` tag
         first before resorting to the `name` tag. If boundary doesn't have a `name` tag, an `id`
-        will be used.
+        will be used. Names repeated in the result have an OpenStreetMap type and id added:
+        `name (relation/id)`.
 
         Before returning downloaded regions, a topology is built and can be simplified to reduce
         size of geometries while keeping neighbouring regions together without introducing gaps.
@@ -150,94 +138,68 @@ class AdministrativeBoundaryRegionalizer(BoundaryRegionalizer):
 
     def _load_regions(self, gdf_wgs84: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Load boundaries intersecting any of the geometries."""
-        geometries = flatten_geometry_series(gdf_wgs84.geometry)
-        version = _get_boundaries_version()
-        source_query = (
-            f"FROM read_parquet('{LAYERCAKE_BOUNDARIES_URL}') WHERE boundary = 'administrative'"
-            f" AND type = 'relation' AND admin_level = '{self.admin_level}'"
-        )
+        boundaries = self._query_boundaries(gdf_wgs84.total_bounds)
 
-        # Geometries make up almost the whole file, so they are read only for matching boundaries
-        boundaries = self._query_with_cache(
-            "SELECT id, array_to_string(name, ';') AS name,"
-            " array_to_string(map_extract(names, 'en')[1], ';') AS name_en,"
-            f" bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax {source_query} ORDER BY id",
-            version,
-        )
-        bounding_boxes = box(
-            boundaries["xmin"] - BBOX_TOLERANCE,
-            boundaries["ymin"] - BBOX_TOLERANCE,
-            boundaries["xmax"] + BBOX_TOLERANCE,
-            boundaries["ymax"] + BBOX_TOLERANCE,
-        )
-        boundaries = boundaries.iloc[self._get_intersecting(bounding_boxes, geometries)]
-        # Boundaries crossing the antimeridian would extend the bounds to the whole globe
-        is_wide = boundaries["xmax"] - boundaries["xmin"] > 180
-        boundaries_wkb = [
-            self._query_with_cache(
-                f"SELECT id, geometry {source_query} AND {self._get_rows_filter(group)}", version
-            )
-            for group in (boundaries[~is_wide], boundaries[is_wide])
-            if not group.empty
-        ]
-        if not boundaries_wkb:
-            return gpd.GeoDataFrame({GEOMETRY_COLUMN: []}, geometry=GEOMETRY_COLUMN, crs=WGS84_CRS)
-
-        boundaries = boundaries.merge(pd.concat(boundaries_wkb), on="id")
-        boundaries[GEOMETRY_COLUMN] = from_wkb(boundaries[GEOMETRY_COLUMN])
         boundaries = boundaries.iloc[
-            self._get_intersecting(boundaries[GEOMETRY_COLUMN], geometries)
+            boundaries.sindex.query(
+                gdf_wgs84.geometry.union_all(), predicate="intersects", sort=True
+            )
         ]
 
-        region_ids = boundaries["name"].replace("", None).fillna(boundaries["id"].astype(str))
+        # Closed ways can be a part of a relation with the same boundary
+        is_way = boundaries["type"] == "way"
+        ways, relations = boundaries[is_way], boundaries[~is_way]
+        duplicated_ways, _ = relations.sindex.query(ways.geometry, predicate="covered_by")
+        boundaries = boundaries.drop(index=ways.index[duplicated_ways])
+
+        region_ids = boundaries["name"].fillna(boundaries["id"].astype(str))
         if self.prioritize_english_name:
-            region_ids = boundaries["name_en"].replace("", None).fillna(region_ids)
+            region_ids = boundaries["name_en"].fillna(region_ids)
+
+        # Index has to be unique, otherwise it's lost during the topology simplification
+        osm_ids = boundaries["type"] + "/" + boundaries["id"].astype(str)
+        region_ids = region_ids.mask(
+            region_ids.duplicated(keep=False), region_ids + " (" + osm_ids + ")"
+        )
 
         return gpd.GeoDataFrame(
-            {GEOMETRY_COLUMN: boundaries[GEOMETRY_COLUMN].to_numpy()},
+            {GEOMETRY_COLUMN: boundaries.geometry.to_numpy()},
             index=pd.Index(region_ids, name=REGIONS_INDEX, dtype=object),
             geometry=GEOMETRY_COLUMN,
             crs=WGS84_CRS,
         )
 
-    def _get_rows_filter(self, boundaries: pd.DataFrame) -> str:
-        """
-        Get filter for the selected boundaries.
-
-        DuckDB can skip reading geometries only using the simple filters on the bounds, without them
-        a list of ids downloads almost the whole file.
-        """
-        # ponytail: single range, so distant areas also read everything between them.
-        # Split boundaries into clusters, if it's too slow.
-        bounds = [
-            f"bbox.{c} BETWEEN {boundaries[c].min()!s}::FLOAT AND {boundaries[c].max()!s}::FLOAT"
-            for c in ("xmin", "ymin", "xmax", "ymax")
-        ]
-        return f"{' AND '.join(bounds)} AND id IN ({', '.join(map(str, boundaries['id']))})"
-
-    def _get_intersecting(
-        self, boundaries: "np.ndarray", geometries: list[BaseGeometry]
-    ) -> "np.ndarray":
-        """Get sorted positions of the boundaries intersecting any of the geometries."""
-        return np.unique(STRtree(boundaries).query(geometries, predicate="intersects")[1])
-
-    def _query_with_cache(self, query: str, version: str) -> pd.DataFrame:
-        """Query boundaries and save the result to not download it again."""
+    def _query_boundaries(self, bounds: Iterable[float]) -> gpd.GeoDataFrame:
+        """Download boundaries with bounding boxes intersecting given bounds."""
         import duckdb
 
-        query_hash = hashlib.sha256(f"{version}{query}".encode()).hexdigest()
-        result_path = Path("cache").resolve() / f"{query_hash}.parquet"
+        # ponytail: single bounding box, so distant areas also read everything between them.
+        # Query each cluster of areas separately, if it's too slow.
+        xmin, ymin, xmax, ymax = map(float, bounds)
+        # Unnamed ways are mostly parts of other boundaries
+        query = f"""
+        SELECT
+            type,
+            id,
+            nullif(array_to_string(name, ';'), '') AS name,
+            nullif(array_to_string(map_extract(names, 'en')[1], ';'), '') AS name_en,
+            geometry
+        FROM read_parquet('{LAYERCAKE_BOUNDARIES_URL}')
+        WHERE boundary = 'administrative'
+            AND admin_level = '{self.admin_level}'
+            AND (type = 'relation' OR len(name) > 0)
+            AND bbox.xmin <= {xmax + BBOX_TOLERANCE}
+            AND bbox.xmax >= {xmin - BBOX_TOLERANCE}
+            AND bbox.ymin <= {ymax + BBOX_TOLERANCE}
+            AND bbox.ymax >= {ymin - BBOX_TOLERANCE}
+        ORDER BY type, id
+        """
+        with duckdb.connect() as connection:
+            # Keep geometries as WKB
+            connection.execute("SET enable_geoparquet_conversion = false")
+            rows = connection.execute(query).fetchall()
 
-        if not result_path.exists():
-            result_path.parent.mkdir(parents=True, exist_ok=True)
-            with (
-                tempfile.TemporaryDirectory(dir=result_path.parent) as tmp_dir,
-                duckdb.connect() as connection,
-            ):
-                tmp_path = Path(tmp_dir) / result_path.name
-                # Keep geometries as WKB
-                connection.execute("SET enable_geoparquet_conversion = false")
-                connection.execute(f"COPY ({query}) TO '{tmp_path}' (FORMAT parquet)")
-                tmp_path.replace(result_path)
-
-        return pd.read_parquet(result_path)
+        boundaries = pd.DataFrame(rows, columns=["type", "id", "name", "name_en", GEOMETRY_COLUMN])
+        return gpd.GeoDataFrame(
+            boundaries, geometry=from_wkb(boundaries[GEOMETRY_COLUMN]), crs=WGS84_CRS
+        )
