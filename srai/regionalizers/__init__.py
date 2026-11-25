@@ -13,6 +13,7 @@ from ._base import Regionalizer
 from .administrative_boundary_regionalizer import AdministrativeBoundaryRegionalizer
 from .geocode import geocode_to_region_gdf
 from .h3_regionalizer import H3Regionalizer
+from .overture_divisions_regionalizer import OvertureDivisionsRegionalizer
 from .s2_regionalizer import S2Regionalizer
 from .slippy_map_regionalizer import SlippyMapRegionalizer
 from .voronoi_regionalizer import VoronoiRegionalizer
@@ -21,6 +22,7 @@ __all__ = [
     "Regionalizer",
     "AdministrativeBoundaryRegionalizer",
     "H3Regionalizer",
+    "OvertureDivisionsRegionalizer",
     "S2Regionalizer",
     "VoronoiRegionalizer",
     "SlippyMapRegionalizer",

@@ -128,8 +128,10 @@ def _test_osm() -> None:
 
 def _test_overturemaps() -> None:
     from srai.loaders import OvertureMapsLoader
+    from srai.regionalizers import OvertureDivisionsRegionalizer
 
     OvertureMapsLoader()
+    OvertureDivisionsRegionalizer("county")
 
 
 def _test_gtfs() -> None:

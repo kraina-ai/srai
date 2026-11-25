@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `OvertureDivisionsRegionalizer` with regions from the Overture Maps divisions
 - Basemaps of MapLibre styles in the plotting functions: `tiles_style` accepts an URL of a style or a Folium layer (`MapLibreLayer` from `rq_geo_toolkit`)
 - Install cells for Google Colab in the example notebooks, replaced by the "Open in Colab" badge in the documentation
 
