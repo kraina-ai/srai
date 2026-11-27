@@ -14,7 +14,8 @@ from srai._optional import import_optional_dependencies
 def mean_absolute_percentage_error(
     y_true: np.ndarray, y_pred: np.ndarray, epsilon: float = 1e-10
 ) -> float:
-    """Calculates regression metric: Mean Absolute Percentage Error.
+    """
+    Calculates regression metric: Mean Absolute Percentage Error.
 
     Args:
         y_true (np.ndarray): Expected values
@@ -30,7 +31,8 @@ def mean_absolute_percentage_error(
 def symmetric_mean_absolute_percentage_error(
     y_true: np.ndarray, y_pred: np.ndarray, epsilon: float = 1e-10
 ) -> float:
-    """Calculates regression metric: Symmetric Mean Absolute Percentage Error.
+    """
+    Calculates regression metric: Symmetric Mean Absolute Percentage Error.
 
     Args:
         y_true (np.ndarray): Expected values

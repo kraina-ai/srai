@@ -35,7 +35,6 @@ OSMNX_WAY_KEYS: list[str] = [
 ]
 """Extended OSMnx way tags."""
 
-
 OSM_WAY_TAGS: dict[str, list[str]] = {
     "oneway": ["False", "True"],
     "lanes": list(map(str, range(1, 21))),
@@ -192,7 +191,6 @@ References:
     1. https://taginfo.openstreetmap.org/
     2. https://wiki.openstreetmap.org/wiki/Main_Page
 """
-
 
 OSM_IMPLICIT_MAXSPEEDS = {
     "AR:urban": "40",
